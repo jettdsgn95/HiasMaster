@@ -188,101 +188,113 @@
 
     <!-- ============ KPI CARDS ============ -->
     <div class="kpi-grid">
-      <div class="kpi kpi--brand kpi--hero" data-show-roles="admin,account">
+      <div class="kpi kpi--brand kpi--hero" data-show-roles="admin,account" data-card-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Total Orders">
         <div class="kpi-head">
           <span class="kpi-label">Total Orders</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
         </div>
         <span class="kpi-value" data-count-up="128">128</span>
         <span class="kpi-trend up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg><b>+16</b> so với tháng trước</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--red kpi--attention" data-show-roles="admin,account">
+      <div class="kpi kpi--red kpi--attention" data-show-roles="admin,account" data-card-key="new_requests" tabindex="0" role="link" aria-label="Drilldown: New Requests">
         <div class="kpi-head">
           <span class="kpi-label">New Requests</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
         </div>
         <span class="kpi-value" data-count-up="12">12</span>
         <span class="kpi-trend up"><b>+3</b> chờ xác nhận</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--warn" data-show-roles="admin,account">
+      <div class="kpi kpi--warn" data-show-roles="admin,account" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Brief Need Info">
         <div class="kpi-head">
           <span class="kpi-label">Brief Need Info</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
         </div>
         <span class="kpi-value">5</span>
         <span class="kpi-trend down"><b>-2</b> cần bổ sung</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi" data-show-roles="admin,account,design,editor">
+      <div class="kpi" data-show-roles="admin,account,design,editor" data-card-key="in_production" tabindex="0" role="link" aria-label="Drilldown: In Production">
         <div class="kpi-head">
           <span class="kpi-label">In Production</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
         </div>
         <span class="kpi-value">34</span>
         <span class="kpi-trend up"><b>+5</b> đang xử lý</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi" data-show-roles="admin,account,design,editor">
+      <div class="kpi" data-show-roles="admin,account,design,editor" data-card-key="internal_review" tabindex="0" role="link" aria-label="Drilldown: Internal Review">
         <div class="kpi-head">
           <span class="kpi-label">Internal Review</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
         </div>
         <span class="kpi-value">7</span>
         <span class="kpi-trend up"><b>+2</b> chờ duyệt</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--ok" data-show-roles="admin,account">
+      <div class="kpi kpi--ok" data-show-roles="admin,account" data-card-key="ready_for_delivery" tabindex="0" role="link" aria-label="Drilldown: Ready for Delivery">
         <div class="kpi-head">
           <span class="kpi-label">Ready for Delivery</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
         </div>
         <span class="kpi-value">9</span>
         <span class="kpi-trend"><b>3</b> đang chờ Account</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--warn" data-show-roles="admin,account,design,editor">
+      <div class="kpi kpi--warn" data-show-roles="admin,account,design,editor" data-card-key="due_soon" tabindex="0" role="link" aria-label="Drilldown: Due Soon">
         <div class="kpi-head">
           <span class="kpi-label">Due Soon</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
         </div>
         <span class="kpi-value">11</span>
         <span class="kpi-trend"><b>48h</b> tới</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--red" data-show-roles="admin,account,design,editor">
+      <div class="kpi kpi--red" data-show-roles="admin,account,design,editor" data-card-key="overdue" tabindex="0" role="link" aria-label="Drilldown: Overdue">
         <div class="kpi-head">
           <span class="kpi-label">Overdue</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
         </div>
         <span class="kpi-value">4</span>
         <span class="kpi-trend down"><b>+1</b> mới hôm nay</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--ok" data-show-roles="admin,account,design,editor">
+      <div class="kpi kpi--ok" data-show-roles="admin,account,design,editor" data-card-key="completed" tabindex="0" role="link" aria-label="Drilldown: Completed">
         <div class="kpi-head">
           <span class="kpi-label">Completed</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
         </div>
         <span class="kpi-value">68</span>
         <span class="kpi-trend up"><b>+22</b> kỳ này</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--ok" data-show-roles="admin,account">
+      <div class="kpi kpi--ok" data-show-roles="admin,account" data-card-key="on_time_rate" tabindex="0" role="link" aria-label="Drilldown: On-time Rate">
         <div class="kpi-head">
           <span class="kpi-label">On-time Rate</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
         </div>
         <span class="kpi-value">92%</span>
         <span class="kpi-trend up"><b>+3%</b> so kỳ trước</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--brand" data-show-roles="admin,account">
+      <div class="kpi kpi--brand" data-show-roles="admin,account" data-card-key="average_rating" tabindex="0" role="link" aria-label="Drilldown: Average Rating">
         <div class="kpi-head">
           <span class="kpi-label">Average Rating</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
         </div>
         <span class="kpi-value">4.7</span>
         <span class="kpi-trend"><b>/5</b> từ 52 đánh giá</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi" data-show-roles="admin,account">
+      <div class="kpi" data-show-roles="admin,account" data-card-key="rating_coverage" tabindex="0" role="link" aria-label="Drilldown: Rating Coverage">
         <div class="kpi-head">
           <span class="kpi-label">Rating Coverage</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
         </div>
         <span class="kpi-value">76%</span>
         <span class="kpi-trend"><b>52/68</b> đơn được rating</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
     </div>
 
@@ -745,6 +757,35 @@
   document.querySelectorAll('[data-count-up]').forEach((el) => {
     el.textContent = '0';
     countObserver.observe(el);
+  });
+
+  /* ============ KPI card → drilldown ============ */
+  const DRILLDOWN_MAP = {
+    total_orders:      { href: 'database-orders.html',  label: 'Total Orders' },
+    new_requests:      { href: 'database-orders.html',  label: 'New Requests' },
+    brief_need_info:   { href: 'database-orders.html',  label: 'Brief Need Info' },
+    completed:         { href: 'database-orders.html',  label: 'Completed' },
+    in_production:     { href: 'production-board.html', label: 'In Production' },
+    internal_review:   { href: 'production-board.html', label: 'Internal Review' },
+    due_soon:          { href: 'production-board.html', label: 'Due Soon' },
+    overdue:           { href: 'production-board.html', label: 'Overdue' },
+    on_time_rate:      { href: 'production-board.html', label: 'On-time Rate' },
+    ready_for_delivery:{ href: 'delivery-log.html',     label: 'Ready for Delivery' },
+    average_rating:    { href: 'delivery-log.html',     label: 'Average Rating' },
+    rating_coverage:   { href: 'delivery-log.html',     label: 'Rating Coverage' }
+  };
+  function goDrilldown(card) {
+    const key = card.getAttribute('data-card-key');
+    const map = DRILLDOWN_MAP[key];
+    if (!map) return;
+    const params = new URLSearchParams({ dl: key, from: 'dashboard' });
+    location.href = `${map.href}?${params.toString()}`;
+  }
+  document.querySelectorAll('.kpi[data-card-key]').forEach((card) => {
+    card.addEventListener('click', () => goDrilldown(card));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goDrilldown(card); }
+    });
   });
 
   /* ============ Refresh button ============ */

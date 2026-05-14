@@ -252,6 +252,8 @@
           case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
           case 'review': if (t.status !== 'review') return false; break;
           case 'ready': if (t.status !== 'ready') return false; break;
+          case 'inproduction': if (!['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)) return false; break;
+          case 'completed': if (t.status !== 'completed') return false; break;
         }
       }
       return true;
@@ -790,6 +792,62 @@
   document.getElementById('view-kanban').addEventListener('click', openByEvent);
   document.getElementById('view-mytasks').addEventListener('click', openByEvent);
 
+  /* ---------- Drilldown from Master Dashboard ---------- */
+  const DRILLDOWN_MAP = {
+    in_production:   { quick: 'inproduction', view: 'table', label: 'In Production',   desc: 'Task đang sản xuất (Nhận / Đang thực hiện / Chỉnh sửa).' },
+    internal_review: { quick: 'review',       view: 'table', label: 'Internal Review', desc: 'Task chờ duyệt nội bộ.' },
+    due_soon:        { quick: 'soon',         view: 'table', label: 'Due Soon',        desc: 'Task tới hạn trong 48h, chưa hoàn thành.' },
+    overdue:         { quick: 'overdue',      view: 'table', label: 'Overdue',         desc: 'Task đã quá hạn nội bộ, chưa hoàn thành.' },
+    on_time_rate:    { quick: 'completed',    view: 'table', label: 'On-time Rate',    desc: 'Task đã hoàn thành — đối chiếu deadline để tính SLA.' }
+  };
+  function applyDrilldownFromURL() {
+    const params = new URLSearchParams(location.search);
+    const key = params.get('dl');
+    if (!key || !DRILLDOWN_MAP[key]) return null;
+    const cfg = DRILLDOWN_MAP[key];
+    state.view = cfg.view;
+    state.quick = cfg.quick;
+    document.querySelectorAll('.pb-stat').forEach((c) => c.classList.toggle('is-active', c.getAttribute('data-quick') === cfg.quick));
+    return cfg;
+  }
+  function clearDrilldown() {
+    state.quick = null;
+    state.view = ['design', 'editor'].includes(user.role) ? 'mytasks' : 'table';
+    document.querySelectorAll('.pb-stat').forEach((c) => c.classList.remove('is-active'));
+    history.replaceState(null, '', location.pathname);
+    const banner = document.getElementById('dl-banner');
+    if (banner) banner.remove();
+    setView(state.view);
+  }
+  function injectDrilldownBanner(cfg) {
+    const anchor = document.querySelector('.table-card');
+    if (!anchor) return;
+    const filtered = applyFilters(visibleTasks());
+    const banner = document.createElement('div');
+    banner.className = 'drilldown-banner';
+    banner.id = 'dl-banner';
+    banner.innerHTML = `
+      <span class="dl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      <span class="dl-text">
+        <span class="dl-from">Drilldown từ Master Dashboard</span>
+        <span class="dl-label">${cfg.label}</span>
+      </span>
+      <span class="dl-count"><b id="dl-count">${filtered.length}</b> kết quả · ${cfg.desc}</span>
+      <button class="dl-clear" type="button" id="dl-clear" aria-label="Xóa filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Xóa filter
+      </button>
+    `;
+    anchor.parentElement.insertBefore(banner, anchor);
+    document.getElementById('dl-clear').addEventListener('click', clearDrilldown);
+  }
+
+  const drilldownCfg = applyDrilldownFromURL();
+
   /* ---------- Init ---------- */
   setView(state.view);
+  if (drilldownCfg) {
+    injectDrilldownBanner(drilldownCfg);
+    document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 })();

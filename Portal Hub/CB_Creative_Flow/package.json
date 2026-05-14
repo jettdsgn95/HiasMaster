@@ -1,0 +1,16 @@
+{
+  "name": "cb-creative-flow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CB Media Hub — Creative Service Portal (static MVP demo)",
+  "scripts": {
+    "start": "serve . -l tcp://0.0.0.0:${PORT:-3000} --no-clipboard --no-request-logging",
+    "dev": "serve . -l 3000 --no-clipboard"
+  },
+  "dependencies": {
+    "serve": "14.2.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -96,7 +96,7 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **15 HTML pages · 12 JS files · 1 CSS file · 1 logo asset**.
+Build hiện tại: **15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset**.
 
 ---
 
@@ -126,6 +126,30 @@ Spec gốc nằm tại [`../Brief Wflow/`](../Brief%20Wflow/):
 - `CB_Creative_Flow_08_settings_module.md`
 - `CB_Creative_Flow_09_ai_tools_module.md`
 - `CB_Creative_Flow_10_chatbot_module.md`
+
+---
+
+## Deploy (Railway)
+
+Project có sẵn `package.json` và `railway.json` để deploy lên [Railway](https://railway.app) qua Nixpacks builder + `serve` package.
+
+```text
+1. Commit + push code lên GitHub remote (jettdsgn95/HiasMaster).
+2. Tại Railway dashboard: New Project → Deploy from GitHub repo → chọn HiasMaster.
+3. Vào Settings của service → "Root Directory" → set thành: Portal Hub/CB_Creative_Flow
+4. Save → Railway tự install + start.
+5. Generate public domain ở tab Networking để có URL test.
+```
+
+Local dev:
+
+```bash
+cd "Portal Hub/CB_Creative_Flow"
+npm install
+npm run dev          # http://localhost:3000
+```
+
+`npm start` dùng `$PORT` env (Railway tự set), không chạy được trên Windows cmd. Local dùng `npm run dev`.
 
 ---
 

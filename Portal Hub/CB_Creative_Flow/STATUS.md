@@ -154,17 +154,17 @@ No pending MVP modules. Remaining work is production integration: backend APIs, 
 
 ## File Inventory
 
-Build total: 15 HTML pages · 12 JS files · 1 CSS file · 1 logo asset.
+Build total: 15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset.
 
 | File | KB |
 |---|---:|
-| `assets/styles.css` | 185.0 |
+| `assets/styles.css` | 187.9 |
 | `request.html` | 63.7 |
-| `assets/database-orders.js` | 50.9 |
-| `assets/delivery-log.js` | 50.2 |
+| `assets/database-orders.js` | 54.2 |
+| `assets/delivery-log.js` | 53.2 |
+| `dashboard.html` | 51.8 |
+| `assets/production-board.js` | 49.2 |
 | `settings.html` | 47.4 |
-| `dashboard.html` | 46.0 |
-| `assets/production-board.js` | 45.9 |
 | `assets/user-management.js` | 43.5 |
 | `assets/ai-tools.js` | 30.5 |
 | `assets/reports.js` | 28.4 |
@@ -173,9 +173,9 @@ Build total: 15 HTML pages · 12 JS files · 1 CSS file · 1 logo asset.
 | `assets/settings.js` | 24.0 |
 | `user-management.html` | 23.4 |
 | `assets/order-form.js` | 20.7 |
-| `assets/chatbot.js` | 20.5 |
+| `assets/chatbot.js` | 20.6 |
 | `production-board.html` | 20.0 |
-| `tracking.html` | 19.0 |
+| `tracking.html` | 21.5 |
 | `database-orders.html` | 17.5 |
 | `delivery-log.html` | 15.8 |
 | `help.html` | 15.0 |
@@ -184,7 +184,7 @@ Build total: 15 HTML pages · 12 JS files · 1 CSS file · 1 logo asset.
 | `deliveries.html` | 13.3 |
 | `assets/logo.png` | 13.0 |
 | `chatbot.html` | 9.1 |
-| `assets/app.js` | 5.9 |
+| `assets/app.js` | 23.0 |
 
 ---
 
@@ -208,6 +208,11 @@ Build total: 15 HTML pages · 12 JS files · 1 CSS file · 1 logo asset.
 | 2026-05-14 | Tracking | Synced public tracking demo with `MEDIA-*` Order Data codes and client scope |
 | 2026-05-14 | Handoff docs | Created README, `_hot.md`, `STATUS.md` |
 | 2026-05-14 | Handoff docs | Optimized README, `_hot.md`, `STATUS.md` for clarity and maintainability |
+| 2026-05-14 | Handoff docs | `check_update`: synced JS count 12→10, `tracking.html` 19.0→21.5 KB, `chatbot.js` 20.5→20.6 KB |
+| 2026-05-14 | Auth/Profile | Added editable Profile modal in `app.js` (Hồ sơ menu): edit name/initials/title, auto-avatar, persists to `mh-user`, refreshes profile chip live across all internal pages |
+| 2026-05-14 | Auth/Profile | Extended Profile modal: avatar image upload (auto-resize 256px, JPEG 85%), phone/department/bio fields, role select gated to Admin only, chip avatar img sync on page load |
+| 2026-05-14 | Dashboard | KPI cards click-through drilldown: 12 cards mapped to Orders/Production/Delivery via `?dl=<card_key>` URL; target modules apply view/quick filter on load, show drilldown banner with count + Xóa filter, scroll to table. Spec: `Master_dashboard_clickthrough_drilldown.md` (Option B MVP) |
+| 2026-05-14 | Deploy | Added `package.json` + `railway.json` for Railway deploy via Nixpacks + `serve` package. Root Directory phải set = `Portal Hub/CB_Creative_Flow` trong Railway dashboard |
 
 ---
 

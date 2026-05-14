@@ -782,6 +782,69 @@
     }
   }
 
+  /* ---------- Drilldown from Master Dashboard ---------- */
+  const DRILLDOWN_MAP = {
+    total_orders:    { view: 'all',       sortKey: 'created_at',   sortDir: 'desc', label: 'Total Orders',    desc: 'Toàn bộ order trong kỳ.' },
+    new_requests:    { view: 'pending',   sortKey: 'created_at',   sortDir: 'asc',  label: 'New Requests',    desc: 'Đơn mới chờ Account xác nhận.' },
+    brief_need_info: { view: 'needinfo',  sortKey: 'last_updated', sortDir: 'desc', label: 'Brief Need Info', desc: 'Đơn cần bổ sung thông tin.' },
+    completed:       { view: 'completed', sortKey: 'last_updated', sortDir: 'desc', label: 'Completed',       desc: 'Đơn đã hoàn thành hoặc đã bàn giao.' }
+  };
+  function applyDrilldownFromURL() {
+    const params = new URLSearchParams(location.search);
+    const key = params.get('dl');
+    if (!key || !DRILLDOWN_MAP[key]) return null;
+    const cfg = DRILLDOWN_MAP[key];
+    state.view = cfg.view;
+    state.sortKey = cfg.sortKey;
+    state.sortDir = cfg.sortDir;
+    state.page = 1;
+    document.querySelectorAll('.saved-view-chip').forEach((c) => c.classList.toggle('is-active', c.getAttribute('data-view') === cfg.view));
+    document.querySelectorAll('th.sortable').forEach((th) => {
+      th.classList.remove('is-asc', 'is-desc');
+      if (th.getAttribute('data-sort') === cfg.sortKey) th.classList.add(cfg.sortDir === 'asc' ? 'is-asc' : 'is-desc');
+    });
+    return cfg;
+  }
+  function clearDrilldown() {
+    state.view = 'all';
+    state.sortKey = 'created_at';
+    state.sortDir = 'desc';
+    state.page = 1;
+    document.querySelectorAll('.saved-view-chip').forEach((c) => c.classList.toggle('is-active', c.getAttribute('data-view') === 'all'));
+    history.replaceState(null, '', location.pathname);
+    const banner = document.getElementById('dl-banner');
+    if (banner) banner.remove();
+    render();
+  }
+  function injectDrilldownBanner(cfg) {
+    const anchor = document.querySelector('.table-card');
+    if (!anchor) return;
+    const filtered = applyFilters();
+    const banner = document.createElement('div');
+    banner.className = 'drilldown-banner';
+    banner.id = 'dl-banner';
+    banner.innerHTML = `
+      <span class="dl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      <span class="dl-text">
+        <span class="dl-from">Drilldown từ Master Dashboard</span>
+        <span class="dl-label">${cfg.label}</span>
+      </span>
+      <span class="dl-count"><b id="dl-count">${filtered.length}</b> kết quả · ${cfg.desc}</span>
+      <button class="dl-clear" type="button" id="dl-clear" aria-label="Xóa filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Xóa filter
+      </button>
+    `;
+    anchor.parentElement.insertBefore(banner, anchor);
+    document.getElementById('dl-clear').addEventListener('click', clearDrilldown);
+  }
+
+  const drilldownCfg = applyDrilldownFromURL();
+
   /* ---------- Initial render ---------- */
   render();
+  if (drilldownCfg) {
+    injectDrilldownBanner(drilldownCfg);
+    document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 })();

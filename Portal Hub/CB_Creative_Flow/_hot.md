@@ -10,7 +10,7 @@
 
 **CB Media Hub / CB Creative Flow** là Creative Service Portal cho **CB Centres**.
 
-- Static multi-page site: 15 HTML pages, 12 JS files, 1 shared CSS, zero build.
+- Static multi-page site: 15 HTML pages, 10 JS files, 1 shared CSS, zero build.
 - Workflow chính: Order Form → Database Orders → Production Board → Delivery Log → Reports.
 - Brand: navy `#191970` + red `#BA110F`, Inter / Plus Jakarta Sans + Playfair italic accent.
 - Done: 6 public pages + 10 internal modules, gồm AI Tools MVP và Chatbot MVP.
@@ -81,7 +81,7 @@ Interaction/style invariants:
 Shared assets:
 
 - `assets/styles.css` — design tokens, components, page styles.
-- `assets/app.js` — theme toggle, mobile nav, toast, copy helpers.
+- `assets/app.js` — theme toggle, mobile nav, toast, copy helpers, Profile editor modal (delegated on `.profile-menu a "Hồ sơ"`; updates `mh-user` + live-refreshes `#pc-name|avatar|role-badge|title`; avatar image upload + auto-resize; role select gated `user.role === 'admin'`).
 - `assets/logo.png` — resized brand logo, 256×256, ~13 KB.
 
 ---
@@ -96,9 +96,19 @@ Session key: `localStorage['mh-user']`.
   "name": "Mai Phương",
   "email": "admin@cb.vn",
   "initials": "MP",
-  "title": "Admin · Account Lead"
+  "title": "Admin · Account Lead",
+  "avatar": "",
+  "phone": "",
+  "department": "",
+  "bio": ""
 }
 ```
+
+Optional profile fields (set via Profile modal trong sidebar):
+
+- `avatar`: data URL JPEG ≤ 256px, render qua `.avatar.has-img > img`. Trống = fallback initials.
+- `phone`, `department`, `bio`: free text (department có datalist 7 chi nhánh).
+- Role chỉ Admin được đổi (select); các role khác readonly badge.
 
 Demo accounts, password `cb2026`:
 
@@ -264,6 +274,20 @@ Badges:
 | `mh-chatbot-feedback` | Chatbot Good/Bad feedback demo, last 50 |
 
 ---
+
+## 8b. Dashboard KPI Drilldown
+
+Mỗi KPI card trong `dashboard.html` có `data-card-key` + click handler → redirect tới module tương ứng với `?dl=<card_key>`:
+
+```text
+total_orders / new_requests / brief_need_info / completed → database-orders.html
+in_production / internal_review / due_soon / overdue / on_time_rate → production-board.html
+ready_for_delivery / average_rating / rating_coverage → delivery-log.html
+```
+
+Target page reads `?dl=...` → set `state.view` / `state.quick` → render → inject `.drilldown-banner` (label + count + "Xóa filter") trước `.table-card` → smooth-scroll vào table. Row click vẫn dùng existing drawer logic.
+
+New quick filter values: `production-board` thêm `inproduction` (received/inprogress/revision/feedback_fix) và `completed`; `delivery-log` thêm `ready_for_delivery` (waiting/ready) và `rated` (has score).
 
 ## 9. Known Decisions
 

@@ -1451,10 +1451,52 @@ body[data-user-role="editor"]  .dash-section[data-show-roles*="editor"] { displa
   overflow: hidden;
 }
 .kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+.kpi[data-card-key] { cursor: pointer; }
+.kpi[data-card-key]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.kpi[data-card-key]:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+.kpi[data-card-key] .kpi-drill {
+  position: absolute; right: var(--space-3); bottom: var(--space-3);
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface-2); color: var(--text-muted);
+  display: grid; place-items: center;
+  opacity: 0; transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.kpi[data-card-key]:hover .kpi-drill { opacity: 1; transform: translateX(2px); }
+.kpi[data-card-key] .kpi-drill svg { width: 12px; height: 12px; }
 .kpi::after {
   content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px;
   background: var(--grad-navy);
 }
+
+/* Drilldown banner shown on module pages when arriving from Dashboard KPI click */
+.drilldown-banner {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  padding: 10px 14px; border-radius: var(--radius);
+  background: var(--primary-soft); border: 1px solid var(--brand-200);
+  color: var(--brand-600); font-size: var(--text-sm);
+}
+.drilldown-banner .dl-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface); color: var(--brand-600);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.drilldown-banner .dl-icon svg { width: 14px; height: 14px; }
+.drilldown-banner .dl-text { display: flex; flex-direction: column; gap: 2px; }
+.drilldown-banner .dl-text .dl-from { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.drilldown-banner .dl-text .dl-label { font-weight: 700; }
+.drilldown-banner .dl-count { font-size: 12px; color: var(--text-muted); }
+.drilldown-banner .dl-count b { color: var(--brand-600); }
+.drilldown-banner .dl-clear {
+  margin-left: auto;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); font-size: var(--text-xs); font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+}
+.drilldown-banner .dl-clear:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.drilldown-banner .dl-clear svg { width: 12px; height: 12px; }
+[data-theme="dark"] .drilldown-banner { background: rgb(25 25 112 / 0.18); }
 .kpi--red::after  { background: var(--grad-red); }
 .kpi--warn::after { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); }
 .kpi--ok::after   { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
