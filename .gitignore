@@ -1,0 +1,25 @@
+# OS / sync junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# Google Drive Desktop temp uploads — auto-deleted by Drive, never commit
+.tmp.driveupload/
+.tmp.drivedownload/
+.tmp.drive*/
+
+# Node / build
+node_modules/
+dist/
+build/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+.idea/
+*.swp
