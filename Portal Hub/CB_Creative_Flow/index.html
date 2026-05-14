@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CB Media Hub — Cổng dịch vụ sáng tạo</title>
+<meta name="description" content="Cổng dịch vụ CB Media Hub: gửi yêu cầu thiết kế / video, tra cứu tiến độ, nhận file bàn giao và phản hồi nhanh — chuyên nghiệp, minh bạch." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html" aria-label="CB Media Hub — Trang chủ">
+      <span class="brand-mark" aria-hidden="true">
+        <img src="assets/logo.png" alt="" width="36" height="36" />
+      </span>
+      <span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span>
+    </a>
+
+    <nav class="nav" id="site-nav" aria-label="Điều hướng chính">
+      <a href="index.html">Trang chủ</a>
+      <a href="request.html">Gửi yêu cầu</a>
+      <a href="tracking.html">Tra cứu</a>
+      <a href="deliveries.html">Sản phẩm</a>
+      <a href="help.html">Hướng dẫn</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm" href="login.html">Đăng nhập</a>
+      <a class="btn btn-primary btn-sm" href="request.html">
+        Gửi yêu cầu
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Mở menu" aria-expanded="false" aria-controls="site-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ===== Hero ===== -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div>
+        <span class="badge badge-primary fade-up">
+          <span class="dot"></span> Hệ thống đang hoạt động ổn định
+        </span>
+        <h1 class="fade-up delay-1">Cổng dịch vụ <span class="accent">sáng tạo</span> — gửi yêu cầu &amp; theo dõi <span class="accent-blue">minh bạch</span>.</h1>
+        <p class="lead fade-up delay-2">CB Media Hub giúp khách hàng tạo yêu cầu thiết kế / video, theo dõi tiến độ theo thời gian thực và nhận sản phẩm bàn giao trong cùng một nơi — không còn email rời rạc, không còn câu hỏi "đến đâu rồi?"</p>
+        <div class="hero-cta fade-up delay-3">
+          <a class="btn btn-primary btn-lg" href="request.html">
+            Gửi yêu cầu ngay
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a class="btn btn-secondary btn-lg" href="tracking.html">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Tra cứu tiến độ
+          </a>
+        </div>
+
+        <div class="hero-meta fade-up delay-4">
+          <div><strong>2.4h</strong><span>Phản hồi yêu cầu trung bình</span></div>
+          <div><strong>96%</strong><span>Đúng deadline cam kết</span></div>
+          <div><strong>320+</strong><span>Dự án bàn giao / năm</span></div>
+        </div>
+      </div>
+
+      <!-- Hero visual mock -->
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-floating hero-floating--tl">
+          <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <div><b>Yêu cầu đã tiếp nhận</b><span class="mono">CB-2026-031</span></div>
+        </div>
+        <div class="hero-mock">
+          <div class="hero-mock-head">
+            <div>
+              <b style="font-size:.875rem">Đơn hàng gần đây</b>
+              <span style="font-size:.75rem" class="muted">Cập nhật 12:24</span>
+            </div>
+            <span class="badge badge-success"><span class="dot"></span> Hoạt động</span>
+          </div>
+          <div class="hero-mock-rows">
+            <div class="hero-mock-row">
+              <span class="hero-mock-thumb"></span>
+              <div class="hero-mock-info"><b>Summer Campaign 2026</b><span class="mono">CB-2026-028 · Video</span></div>
+              <span class="badge badge-warning"><span class="dot"></span> 68%</span>
+            </div>
+            <div class="hero-mock-row">
+              <span class="hero-mock-thumb alt-1"></span>
+              <div class="hero-mock-info"><b>Bộ KV Sự kiện Q3</b><span class="mono">CB-2026-027 · Thiết kế</span></div>
+              <span class="badge badge-info"><span class="dot"></span> Preview</span>
+            </div>
+            <div class="hero-mock-row">
+              <span class="hero-mock-thumb alt-2"></span>
+              <div class="hero-mock-info"><b>Reel Sản phẩm mới</b><span class="mono">CB-2026-024 · Motion</span></div>
+              <span class="badge badge-success"><span class="dot"></span> Hoàn tất</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-floating hero-floating--br">
+          <span class="check" style="background:var(--info-soft);color:var(--info-fg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9 6 9-6"/><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"/></svg></span>
+          <div><b>1 sản phẩm chờ duyệt</b><span>Reel Sản phẩm v1.2</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trust-strip" id="trust-strip" style="margin-top: var(--space-12)">
+      <div class="trust-item"><b>4 phút</b><span>Tạo yêu cầu trung bình</span></div>
+      <div class="trust-item"><span class="pulse-dot" aria-hidden="true"></span><b>24/7</b><span>Tra cứu tiến độ mọi lúc</span></div>
+      <div class="trust-item"><b>SLA rõ ràng</b><span>Cam kết deadline</span></div>
+      <div class="trust-item"><b>1 nơi duy nhất</b><span>Toàn bộ file &amp; lịch sử</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Quick Actions ===== -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Bắt đầu nhanh</span>
+        <h2><span class="serif-italic serif-italic--red">4 tác vụ chính</span> trên CB Media Hub</h2>
+        <p class="lead">Mọi hành động bạn cần làm với team sáng tạo đều nằm gọn trong bốn lối truy cập bên dưới.</p>
+      </div>
+    </div>
+
+    <div class="quick-grid">
+      <a class="card card--lift quick-card" href="request.html">
+        <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+        <h3>Gửi yêu cầu mới</h3>
+        <p>Mô tả nhu cầu, đính kèm tài liệu tham chiếu và nhận mã đơn hàng ngay sau khi gửi.</p>
+        <span class="quick-link">Bắt đầu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </a>
+      <a class="card card--lift quick-card" href="tracking.html">
+        <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <h3>Tra cứu tiến độ</h3>
+        <p>Nhập mã đơn hàng để xem trạng thái, % hoàn thành và bước tiếp theo — không cần hỏi qua chat.</p>
+        <span class="quick-link">Tra cứu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </a>
+      <a class="card card--lift quick-card" href="deliveries.html">
+        <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+        <h3>Xem sản phẩm</h3>
+        <p>Truy cập toàn bộ file preview, file final cùng lịch sử phiên bản theo từng dự án của bạn.</p>
+        <span class="quick-link">Xem ngay <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </a>
+      <a class="card card--lift quick-card" href="help.html">
+        <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <h3>Hướng dẫn &amp; FAQ</h3>
+        <p>Câu hỏi thường gặp, nguyên tắc xử lý và quy trình bàn giao — sẵn sàng cho mọi người mới.</p>
+        <span class="quick-link">Đọc hướng dẫn <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Workflow ===== -->
+<section class="section section--tight">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Quy trình</span>
+        <h2><span class="serif-italic">Hành trình</span> một yêu cầu trên CB Media Hub</h2>
+        <p class="lead">Sáu bước minh bạch — bạn luôn biết yêu cầu của mình đang ở đâu và bước kế tiếp là gì.</p>
+      </div>
+    </div>
+    <div class="workflow">
+      <div class="wf-step"><span class="wf-num">01</span><b>Tiếp nhận</b><span>Khách hàng gửi yêu cầu kèm tài liệu.</span></div>
+      <div class="wf-step"><span class="wf-num">02</span><b>Xác nhận</b><span>Account team rà brief &amp; chốt scope.</span></div>
+      <div class="wf-step"><span class="wf-num">03</span><b>Thực hiện</b><span>Đội ngũ creative bắt đầu sản xuất.</span></div>
+      <div class="wf-step"><span class="wf-num">04</span><b>Gửi preview</b><span>Bản review đầu tiên gửi tới khách hàng.</span></div>
+      <div class="wf-step"><span class="wf-num">05</span><b>Phản hồi</b><span>Khách hàng góp ý, team chỉnh sửa.</span></div>
+      <div class="wf-step"><span class="wf-num">06</span><b>Bàn giao</b><span>File final + bộ tài liệu hoàn chỉnh.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Tracking Quick Lookup ===== -->
+<section class="section section--tight">
+  <div class="container container--narrow">
+    <div class="card card--glass lookup-card">
+      <div class="row between" style="align-items:flex-start">
+        <div>
+          <span class="eyebrow">Tra cứu nhanh</span>
+          <h2 style="margin-top:6px">Đã có mã đơn hàng?</h2>
+          <p class="muted" style="margin-top:6px">Nhập mã để xem ngay trạng thái và % hoàn thành.</p>
+        </div>
+        <span class="badge badge-default mono">CB-2026-XXX</span>
+      </div>
+      <form class="lookup-row" action="tracking.html" method="get">
+        <div class="input-group">
+          <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input class="input" type="text" name="code" placeholder="Nhập mã đơn hàng, ví dụ CB-2026-028" aria-label="Mã đơn hàng" />
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit">
+          Tra cứu
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+      <div class="lookup-examples">
+        <span>Thử nhanh:</span>
+        <code data-fill="CB-2026-028">CB-2026-028</code>
+        <code data-fill="CB-2026-031">CB-2026-031</code>
+        <code data-fill="CB-2026-024">CB-2026-024</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Deliveries Preview ===== -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Bàn giao gần đây</span>
+        <h2>Sản phẩm mới được gửi tới khách hàng</h2>
+      </div>
+      <div class="right">
+        <a class="btn btn-outline btn-sm" href="deliveries.html">
+          Xem tất cả
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="del-grid">
+      <article class="card card--lift del-card">
+        <div class="del-thumb alt-3"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></span></div>
+        <div class="del-body">
+          <div class="del-meta">
+            <span class="badge badge-info"><span class="dot"></span> Preview v1</span>
+            <span class="mono text-xs muted">CB-2026-028</span>
+          </div>
+          <h4>Video Recap Sự kiện Launch</h4>
+          <div class="del-info">
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> 1:24 phút</span>
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Cập nhật 2 giờ trước</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card card--lift del-card">
+        <div class="del-thumb alt-4"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg></span></div>
+        <div class="del-body">
+          <div class="del-meta">
+            <span class="badge badge-success"><span class="dot"></span> Final</span>
+            <span class="mono text-xs muted">CB-2026-027</span>
+          </div>
+          <h4>Bộ Key Visual Sự kiện Q3</h4>
+          <div class="del-info">
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> 8 file PSD</span>
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Cập nhật hôm qua</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card card--lift del-card">
+        <div class="del-thumb alt-5"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></span></div>
+        <div class="del-body">
+          <div class="del-meta">
+            <span class="badge badge-warning"><span class="dot"></span> Đang xử lý</span>
+            <span class="mono text-xs muted">CB-2026-031</span>
+          </div>
+          <h4>Motion Logo Sản phẩm Mới</h4>
+          <div class="del-info">
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Còn 3 ngày</span>
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 12/05/2026</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FAQ Preview ===== -->
+<section class="section section--tight">
+  <div class="container container--narrow">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Câu hỏi thường gặp</span>
+        <h2>Bạn cần biết trước khi bắt đầu</h2>
+      </div>
+      <div class="right">
+        <a class="btn btn-ghost btn-sm" href="help.html">
+          Xem tất cả
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="faq-list">
+      <details class="faq-item" open>
+        <summary>Bao lâu thì team phản hồi yêu cầu của tôi?</summary>
+        <div class="faq-body">Yêu cầu mới được tiếp nhận và phản hồi trong <strong>tối đa 4 giờ làm việc</strong>. Trung bình thực tế của 30 ngày gần nhất là 2.4 giờ. Yêu cầu gửi ngoài giờ hành chính sẽ được xử lý vào đầu giờ ngày làm việc kế tiếp.</div>
+      </details>
+      <details class="faq-item">
+        <summary>Tôi có thể chỉnh sửa yêu cầu sau khi đã gửi không?</summary>
+        <div class="faq-body">Có. Khi yêu cầu chưa chuyển sang trạng thái <em>"Đang xử lý"</em>, bạn có thể yêu cầu account team chỉnh sửa brief. Sau khi đã bắt đầu sản xuất, vui lòng sử dụng chức năng <strong>Phản hồi</strong> trong từng sản phẩm bàn giao để gửi yêu cầu chỉnh sửa.</div>
+      </details>
+      <details class="faq-item">
+        <summary>File bàn giao sẽ ở định dạng nào?</summary>
+        <div class="faq-body">Mặc định CB Media Hub bàn giao: <strong>Thiết kế</strong> — PSD/AI + PNG/JPG xuất bản; <strong>Video</strong> — MP4 1080p &amp; bản gốc theo định dạng yêu cầu. Định dạng đặc biệt vui lòng ghi rõ trong phần "Mô tả chi tiết" khi tạo yêu cầu.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Support strip ===== -->
+<section class="section">
+  <div class="container">
+    <div class="support-strip">
+      <div>
+        <span class="eyebrow" style="color:rgba(255,255,255,0.7)">Hỗ trợ chuyên biệt</span>
+        <h2 style="margin-block:8px 8px">Cần tư vấn dự án lớn hoặc booking dài hạn?</h2>
+        <p>Đặt lịch với account team để được tư vấn quy trình, scope và bảng giá theo nhu cầu thực tế của thương hiệu.</p>
+      </div>
+      <a class="btn btn-secondary btn-lg" href="help.html#contact">
+        Liên hệ tư vấn
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ===== Footer ===== -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="brand" href="index.html">
+          <span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span>
+          <span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span>
+        </a>
+        <p class="muted text-sm" style="margin-top:var(--space-3); max-width:38ch">Cổng dịch vụ sáng tạo nội bộ — minh bạch quy trình, tập trung file, giảm hỏi-đáp lặp lại.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Dịch vụ</h5>
+        <a href="request.html">Gửi yêu cầu</a>
+        <a href="tracking.html">Tra cứu tiến độ</a>
+        <a href="deliveries.html">Sản phẩm bàn giao</a>
+      </div>
+      <div class="footer-col">
+        <h5>Hỗ trợ</h5>
+        <a href="help.html">Hướng dẫn / FAQ</a>
+        <a href="help.html#contact">Liên hệ</a>
+        <a href="login.html">Đăng nhập</a>
+      </div>
+      <div class="footer-col">
+        <h5>Liên hệ</h5>
+        <a href="mailto:hub@creative.vn">hub@creative.vn</a>
+        <a href="tel:+84000000000">+84 000 000 000</a>
+        <p class="muted text-xs" style="margin-top:var(--space-2)">Giờ làm việc: 8:30 — 18:00 (T2 – T6)</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year>2026</span> CB Media Hub. Creative Service Portal.</span>
+      <span class="text-xs muted">v0.1 · MVP</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script>
+  // Fill tracking code from example chips
+  document.querySelectorAll('[data-fill]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const target = document.querySelector('input[name="code"]');
+      if (target) { target.value = el.getAttribute('data-fill'); target.focus(); }
+    });
+  });
+
+  // Trust strip — stagger reveal on scroll
+  (function () {
+    const strip = document.getElementById('trust-strip');
+    if (!strip) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        strip.classList.add('is-in');
+        io.disconnect();
+      });
+    }, { threshold: 0.35 });
+    io.observe(strip);
+})();
+</script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

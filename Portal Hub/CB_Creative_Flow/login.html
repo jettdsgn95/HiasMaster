@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Đăng nhập — CB Media Hub</title>
+<meta name="description" content="Đăng nhập vào CB Media Hub để xem toàn bộ dự án, sản phẩm bàn giao và phản hồi của bạn." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Trang chủ</a>
+      <a href="request.html">Gửi yêu cầu</a>
+      <a href="tracking.html">Tra cứu</a>
+      <a href="deliveries.html">Sản phẩm</a>
+      <a href="help.html">Hướng dẫn</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm" href="help.html">Trợ giúp</a>
+      <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<div class="auth-shell">
+
+  <section class="auth-form-side">
+    <div class="auth-card">
+      <h1>Đăng nhập</h1>
+      <p class="lead">Truy cập toàn bộ dự án, file bàn giao và lịch sử phản hồi của bạn.</p>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label class="label" for="email">Email công ty <span class="req">*</span></label>
+          <div class="input-group">
+            <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+            <input class="input" id="email" type="email" placeholder="name@company.com" required autocomplete="email" />
+          </div>
+          <span class="error">Vui lòng nhập email hợp lệ.</span>
+        </div>
+
+        <div class="field">
+          <label class="label" for="password">Mật khẩu <span class="req">*</span></label>
+          <div class="input-group">
+            <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <input class="input" id="password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+            <button type="button" class="icon-btn" id="toggle-pwd" aria-label="Hiện / ẩn mật khẩu" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:36px; height:36px">
+              <svg id="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="eye-off" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <span class="error">Mật khẩu không được để trống.</span>
+        </div>
+
+        <div class="form-foot">
+          <label class="checkbox">
+            <input type="checkbox" />
+            <span class="checkbox-text">Ghi nhớ tôi</span>
+          </label>
+          <a href="#" id="forgot-pwd">Quên mật khẩu?</a>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-block" type="submit" id="login-btn">Đăng nhập</button>
+
+        <div class="auth-divider">hoặc</div>
+
+        <button class="btn btn-secondary btn-block" type="button">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.48a4.8 4.8 0 0 1 4.48-3.3z"/></svg>
+          Đăng nhập với Google công ty
+        </button>
+      </form>
+
+      <p class="auth-foot">Chưa có tài khoản? <a href="help.html#contact">Liên hệ admin để được cấp quyền</a></p>
+
+      <!-- Demo accounts -->
+      <div class="demo-accounts">
+        <h5>
+          Demo accounts
+          <span class="demo-badge">Test mode</span>
+        </h5>
+        <p class="text-xs muted" style="margin-bottom: var(--space-3)">Click một role để đăng nhập nhanh và kiểm tra giao diện theo quyền truy cập.</p>
+        <div class="demo-grid">
+          <button type="button" class="demo-tile t--admin" data-demo="admin">
+            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span>
+            <div class="role-info"><b>Admin</b><span>admin@cb.vn</span></div>
+          </button>
+          <button type="button" class="demo-tile t--account" data-demo="account">
+            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>
+            <div class="role-info"><b>Account</b><span>account@cb.vn</span></div>
+          </button>
+          <button type="button" class="demo-tile t--design" data-demo="design">
+            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 0-4h-2a4 4 0 1 1 0-8h7a4 4 0 0 0 0-8H12z"/></svg></span>
+            <div class="role-info"><b>Design</b><span>design@cb.vn</span></div>
+          </button>
+          <button type="button" class="demo-tile t--editor" data-demo="editor">
+            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+            <div class="role-info"><b>Editor</b><span>editor@cb.vn</span></div>
+          </button>
+          <button type="button" class="demo-tile t--client" data-demo="client">
+            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 11h-4"/><path d="M20 9v4"/></svg></span>
+            <div class="role-info"><b>Client</b><span>client@cb.vn</span></div>
+          </button>
+        </div>
+        <p class="text-xs muted" style="margin-top: var(--space-3)">Mật khẩu mặc định: <code class="mono" style="padding:2px 6px; background:var(--surface-2); border:1px solid var(--border); border-radius:4px">cb2026</code></p>
+      </div>
+    </div>
+  </section>
+
+  <aside class="auth-side" aria-hidden="true">
+    <div class="auth-side-content">
+      <span class="eyebrow">Welcome back</span>
+      <h2>Mọi dự án sáng tạo của bạn — gọn trong một cổng.</h2>
+      <p>Đăng nhập để xem dashboard cá nhân, danh sách đơn hàng đang xử lý, sản phẩm chờ duyệt và lịch sử file bàn giao.</p>
+
+      <div class="auth-quote">
+        <p>"Trước đây tôi mất nửa ngày để check email tìm file. Bây giờ chỉ cần mở CB Media Hub là biết ngay yêu cầu nào đến đâu, file final nằm ở đâu."</p>
+        <div class="who">
+          <span class="avatar">MP</span>
+          <div><b>Mai Phương</b> · Marketing Lead</div>
+        </div>
+      </div>
+
+      <div class="row" style="gap: var(--space-3); margin-top: var(--space-8)">
+        <div><b style="font-family:var(--font-display); font-size:var(--text-2xl); display:block">2.4h</b><span style="font-size:var(--text-xs); opacity:.8">SLA phản hồi</span></div>
+        <div style="width:1px; height:32px; background: rgba(255,255,255,0.2)"></div>
+        <div><b style="font-family:var(--font-display); font-size:var(--text-2xl); display:block">96%</b><span style="font-size:var(--text-xs); opacity:.8">Đúng deadline</span></div>
+        <div style="width:1px; height:32px; background: rgba(255,255,255,0.2)"></div>
+        <div><b style="font-family:var(--font-display); font-size:var(--text-2xl); display:block">320+</b><span style="font-size:var(--text-xs); opacity:.8">Dự án / năm</span></div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+(function(){
+  // Demo accounts directory (shared with dashboard via localStorage)
+  const ACCOUNTS = {
+    'admin@cb.vn': {
+      role: 'admin', name: 'Mai Phương', initials: 'MP',
+      title: 'Admin · Account Lead', team: 'CB Centres HCM'
+    },
+    'account@cb.vn': {
+      role: 'account', name: 'Hậu Nguyễn', initials: 'HN',
+      title: 'Account Manager', team: 'CB Centres HCM'
+    },
+    'design@cb.vn': {
+      role: 'design', name: 'Duy Trần', initials: 'DT',
+      title: 'Senior Designer', team: 'Creative Team'
+    },
+    'editor@cb.vn': {
+      role: 'editor', name: 'Linh Chi', initials: 'LC',
+      title: 'Video Editor', team: 'Creative Team'
+    },
+    'client@cb.vn': {
+      role: 'client', name: 'Lan Anh', initials: 'LA',
+      title: 'Client · CB Mekong', team: 'CB Mekong',
+      client_scope: ['MEDIA-2026-0001', 'MEDIA-2026-0008']
+    }
+  };
+  const DEMO_PWD = 'cb2026';
+
+  const form = document.getElementById('login-form');
+  const email = document.getElementById('email');
+  const password = document.getElementById('password');
+  const btn = document.getElementById('login-btn');
+
+  function clearErr(){ form.querySelectorAll('.has-error').forEach(f => f.classList.remove('has-error')); }
+  function mark(el){ el.closest('.field').classList.add('has-error'); }
+
+  function loginAs(emailVal, pwdVal) {
+    btn.classList.add('is-loading');
+    btn.textContent = 'Đang đăng nhập...';
+    setTimeout(() => {
+      const acct = ACCOUNTS[emailVal.toLowerCase()];
+      // If known demo account, use its profile; otherwise default to admin (any well-formed credential)
+      const user = acct ? { ...acct, email: emailVal.toLowerCase() }
+                        : { role: 'admin', name: 'Mai Phương', initials: 'MP', title: 'Admin', email: emailVal.toLowerCase() };
+      localStorage.setItem('mh-user', JSON.stringify(user));
+      window.MH.toast({
+        type: 'success',
+        title: 'Đăng nhập thành công',
+        message: 'Chào ' + user.name + ' (' + user.role.toUpperCase() + ') — đang vào khu vực phù hợp...'
+      });
+      const redirect = user.role === 'client' ? 'tracking.html' : 'dashboard.html';
+      setTimeout(() => location.href = redirect, 700);
+    }, 600);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearErr();
+    let ok = true;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { mark(email); ok = false; }
+    if (!password.value.trim()) { mark(password); ok = false; }
+    if (!ok) {
+      window.MH.toast({ type: 'error', title: 'Thông tin chưa hợp lệ', message: 'Vui lòng kiểm tra lại email và mật khẩu.' });
+      return;
+    }
+    // If using known demo account, enforce demo password
+    const known = ACCOUNTS[email.value.trim().toLowerCase()];
+    if (known && password.value !== DEMO_PWD) {
+      mark(password);
+      window.MH.toast({ type: 'error', title: 'Sai mật khẩu', message: 'Mật khẩu demo cho các account là ' + DEMO_PWD });
+      return;
+    }
+    loginAs(email.value.trim(), password.value);
+  });
+
+  // Demo tiles — one-click login
+  document.querySelectorAll('[data-demo]').forEach((tile) => {
+    tile.addEventListener('click', () => {
+      const role = tile.getAttribute('data-demo');
+      const emailVal = role + '@cb.vn';
+      email.value = emailVal;
+      password.value = DEMO_PWD;
+      loginAs(emailVal, DEMO_PWD);
+    });
+  });
+
+  // Password toggle
+  const toggle = document.getElementById('toggle-pwd');
+  const eyeOn = document.getElementById('eye-on');
+  const eyeOff = document.getElementById('eye-off');
+  toggle.addEventListener('click', () => {
+    const show = password.type === 'password';
+    password.type = show ? 'text' : 'password';
+    eyeOn.style.display = show ? 'none' : 'block';
+    eyeOff.style.display = show ? 'block' : 'none';
+  });
+
+  document.getElementById('forgot-pwd').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.MH.toast({ type: 'info', title: 'Khôi phục mật khẩu', message: 'Link đặt lại mật khẩu sẽ được gửi tới email của bạn (demo).' });
+  });
+})();
+</script>
+</body>
+</html>

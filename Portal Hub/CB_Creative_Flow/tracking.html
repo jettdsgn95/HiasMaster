@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tra cứu tiến độ — CB Media Hub</title>
+<meta name="description" content="Nhập mã đơn hàng để xem ngay trạng thái, tiến độ và bước tiếp theo của yêu cầu trên CB Media Hub." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Trang chủ</a>
+      <a href="request.html">Gửi yêu cầu</a>
+      <a href="tracking.html">Tra cứu</a>
+      <a href="deliveries.html">Sản phẩm</a>
+      <a href="help.html">Hướng dẫn</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm" href="login.html">Đăng nhập</a>
+      <a class="btn btn-primary btn-sm" href="request.html">Gửi yêu cầu</a>
+      <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section class="track-hero">
+  <div class="container container--narrow">
+    <span class="eyebrow">Tra cứu nhanh</span>
+    <h1>Yêu cầu của bạn đang ở đâu?</h1>
+    <p class="lead">Nhập mã đơn hàng nhận được khi gửi yêu cầu để xem trạng thái và bước xử lý tiếp theo.</p>
+
+    <form class="track-search" id="track-form">
+      <div class="lookup-row">
+        <div class="input-group">
+          <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input class="input" id="code-input" type="text" name="code" placeholder="Nhập mã đơn hàng, ví dụ MEDIA-2026-0001" autocomplete="off" />
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit">Tra cứu</button>
+      </div>
+      <div class="lookup-examples" style="margin-top:var(--space-3); justify-content:center">
+        <span>Thử nhanh:</span>
+        <code data-fill="MEDIA-2026-0001">MEDIA-2026-0001</code>
+        <code data-fill="MEDIA-2026-0008">MEDIA-2026-0008</code>
+        <code data-fill="MEDIA-2026-0010">MEDIA-2026-0010</code>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- Empty state -->
+<section class="section section--tight" id="empty-state">
+  <div class="container container--narrow">
+    <div class="card result-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>Chưa có kết quả</h3>
+      <p class="mt-2">Nhập mã đơn hàng dạng <code class="mono">MEDIA-2026-0001</code> hoặc bấm một mã ví dụ ở trên để xem demo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Not found state -->
+<section class="section section--tight hidden" id="notfound-state">
+  <div class="container container--narrow">
+    <div class="card result-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <h3>Không tìm thấy đơn hàng</h3>
+      <p class="mt-2" id="notfound-msg">Kiểm tra lại mã đơn hàng hoặc liên hệ account team nếu bạn cho rằng có nhầm lẫn.</p>
+      <a class="btn btn-outline mt-4" href="help.html#contact">Liên hệ hỗ trợ</a>
+    </div>
+  </div>
+</section>
+
+<!-- Result -->
+<section class="section section--tight hidden" id="result-state">
+  <div class="container">
+
+    <div class="order-head">
+      <div class="order-id">
+        <span class="code mono" id="r-code">CB-2026-028</span>
+        <h3 id="r-project">Summer Campaign 2026</h3>
+        <div class="row">
+          <span class="badge badge-warning" id="r-badge"><span class="dot"></span> Đang xử lý</span>
+          <span class="text-sm muted" id="r-stage">Bước hiện tại: Sản xuất bản preview đầu tiên</span>
+        </div>
+      </div>
+      <div class="order-actions">
+        <button class="btn btn-ghost btn-sm" data-copy="CB-2026-028" id="r-copy">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Sao chép mã
+        </button>
+        <a class="btn btn-secondary btn-sm" href="deliveries.html">Xem sản phẩm</a>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-item"><label>Loại dịch vụ</label><b id="r-service">Video</b></div>
+        <div class="meta-item"><label>Deadline</label><b id="r-deadline">30/03/2026</b></div>
+        <div class="meta-item"><label>Mức ưu tiên</label><b id="r-priority">Cao</b></div>
+        <div class="meta-item"><label>Ngày tạo</label><b id="r-created">21/03/2026</b></div>
+      </div>
+
+      <div style="grid-column: 1 / -1; width:100%; margin-top: var(--space-5)">
+        <div class="row between" style="margin-bottom: var(--space-2)">
+          <span class="text-sm muted">Tiến độ xử lý</span>
+          <b id="r-percent">68%</b>
+        </div>
+        <div class="progress"><span style="width:68%" id="r-progress"></span></div>
+      </div>
+    </div>
+
+    <div class="order-detail">
+      <div class="card timeline">
+        <div class="row between mb-4">
+          <h4 style="font-size:var(--text-lg)">Timeline xử lý</h4>
+          <span class="text-xs muted">Cập nhật gần nhất: <span class="mono" id="r-updated">27/03/2026 16:20</span></span>
+        </div>
+        <ol id="r-timeline">
+          <li class="is-done">
+            <div><b>Đã tiếp nhận</b><span>Yêu cầu được tạo và gán vào account team.</span></div>
+            <time>21/03 · 08:00</time>
+          </li>
+          <li class="is-done">
+            <div><b>Đã xác nhận</b><span>Brief được rà soát, scope &amp; deadline được chốt với khách.</span></div>
+            <time>21/03 · 14:30</time>
+          </li>
+          <li class="is-current">
+            <div><b>Đang sản xuất</b><span>Đội ngũ đang thực hiện bản preview đầu tiên. Dự kiến gửi vào 28/03.</span></div>
+            <time>22/03 · 09:15</time>
+          </li>
+          <li>
+            <div><b>Gửi preview</b><span>Khách hàng review &amp; gửi feedback.</span></div>
+            <time>—</time>
+          </li>
+          <li>
+            <div><b>Chỉnh sửa</b><span>Team chỉnh sửa theo phản hồi.</span></div>
+            <time>—</time>
+          </li>
+          <li>
+            <div><b>Bàn giao</b><span>Gửi file final &amp; tài liệu hoàn chỉnh.</span></div>
+            <time>—</time>
+          </li>
+        </ol>
+      </div>
+
+      <div class="stack">
+        <div class="card side-card">
+          <h4>Người phụ trách</h4>
+          <div class="assignee">
+            <span class="avatar" id="r-avatar">AT</span>
+            <div><b id="r-assignee">Account Team — Mai Phương</b><span>Phản hồi trong 2.4 giờ</span></div>
+          </div>
+          <hr style="border:none; border-top:1px solid var(--border)" />
+          <h4>Hành động</h4>
+          <div class="stack-sm">
+            <a class="btn btn-primary btn-block" href="deliveries.html">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              Xem sản phẩm
+            </a>
+            <button class="btn btn-secondary btn-block" id="open-feedback">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Gửi phản hồi
+            </button>
+            <a class="btn btn-ghost btn-block" href="request.html">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tạo yêu cầu tương tự
+            </a>
+          </div>
+        </div>
+
+        <div class="card side-card">
+          <h4>Brief gốc</h4>
+          <p class="text-sm muted">Sản xuất video recap kéo dài 1–2 phút cho sự kiện ra mắt sản phẩm hè 2026. Tone trẻ trung, dynamic. Đính kèm: 1 brief PDF, 1 logo AI, 12 hình tham chiếu.</p>
+          <a href="#" class="text-sm" style="color:var(--primary); font-weight:600; display:inline-flex; align-items:center; gap:6px">
+            Mở chi tiết brief
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Feedback modal -->
+<div class="hidden" id="fb-modal" style="position:fixed; inset:0; z-index: var(--z-modal); display:grid; place-items:center; padding: var(--space-4); background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px);">
+  <div class="card" style="max-width: 520px; width:100%; padding: var(--space-7)">
+    <div class="row between mb-4">
+      <h3>Gửi phản hồi</h3>
+      <button class="icon-btn" id="fb-close" aria-label="Đóng">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="text-sm muted mb-4">Phản hồi sẽ được gắn vào đơn <span class="mono" id="fb-code">CB-2026-028</span>.</p>
+    <div class="stack">
+      <div class="field">
+        <label class="label">Loại phản hồi</label>
+        <div class="chips">
+          <label class="chip is-active"><input type="radio" name="fbType" value="revision" hidden checked /> Yêu cầu chỉnh sửa</label>
+          <label class="chip"><input type="radio" name="fbType" value="approve" hidden /> Duyệt final</label>
+          <label class="chip"><input type="radio" name="fbType" value="question" hidden /> Hỏi thêm</label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="fb-msg">Nội dung</label>
+        <textarea class="textarea" id="fb-msg" placeholder="Mô tả chi tiết phản hồi của bạn..."></textarea>
+      </div>
+    </div>
+    <div class="row" style="justify-content: flex-end; margin-top: var(--space-5)">
+      <button class="btn btn-ghost" id="fb-cancel">Hủy</button>
+      <button class="btn btn-primary" id="fb-send">Gửi phản hồi</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© <span data-year>2026</span> CB Media Hub. Creative Service Portal.</span>
+      <span class="text-xs muted">v0.1 · MVP</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script>
+(function(){
+  // Mock data
+  const DB = {
+    'MEDIA-2026-0001': {
+      project: 'Summer Campaign 2026', service: 'Design / POSM', deadline: '25/05/2026', priority: 'Gấp',
+      created: '12/05/2026', updated: '12/05/2026 09:24', percent: 5, statusKey: 'received',
+      statusLabel: 'Đã tiếp nhận', stage: 'Account đang kiểm tra brief và chờ xác nhận scope',
+      assignee: 'Account Team — Hậu Nguyễn', avatar: 'HN'
+    },
+    'MEDIA-2026-0004': {
+      project: 'Bộ Key Visual Sự kiện Q3', service: 'Design / POSM', deadline: '22/05/2026', priority: 'Gấp',
+      created: '10/05/2026', updated: '12/05/2026 11:42', percent: 50, statusKey: 'progress',
+      statusLabel: 'Đang sản xuất', stage: 'Design đang thực hiện bộ key visual và chuẩn bị preview',
+      assignee: 'Account Team — Mai Phương', avatar: 'MP'
+    },
+    'MEDIA-2026-0008': {
+      project: 'Social Post Lịch Thi IELTS', service: 'Ads / Post', deadline: '16/05/2026', priority: 'Bình thường',
+      created: '08/05/2026', updated: '12/05/2026 16:00', percent: 80, statusKey: 'preview',
+      statusLabel: 'Chờ phản hồi preview', stage: 'Preview đã gửi, đang chờ client phản hồi',
+      assignee: 'Account Team — Hậu Nguyễn', avatar: 'HN'
+    },
+    'MEDIA-2026-0010': {
+      project: 'Bộ Poster Tuyển dụng', service: 'Design / POSM', deadline: '10/05/2026', priority: 'Bình thường',
+      created: '04/05/2026', updated: '09/05/2026 11:30', percent: 95, statusKey: 'preview',
+      statusLabel: 'Đã bàn giao', stage: 'Final đã bàn giao, chờ xác nhận/rating',
+      assignee: 'Account Team — Hậu Nguyễn', avatar: 'HN'
+    },
+    'CB-2026-028': {
+      project: 'Summer Campaign 2026', service: 'Video', deadline: '30/03/2026', priority: 'Cao',
+      created: '21/03/2026', updated: '27/03/2026 16:20', percent: 68, statusKey: 'progress',
+      statusLabel: 'Đang xử lý', stage: 'Sản xuất bản preview đầu tiên',
+      assignee: 'Account Team — Mai Phương', avatar: 'MP'
+    },
+    'CB-2026-031': {
+      project: 'Motion Logo Sản phẩm Mới', service: 'Motion', deadline: '15/05/2026', priority: 'Bình thường',
+      created: '01/05/2026', updated: '10/05/2026 09:30', percent: 35, statusKey: 'received',
+      statusLabel: 'Đã tiếp nhận', stage: 'Đang chốt scope với khách',
+      assignee: 'Account Team — Đức Anh', avatar: 'ĐA'
+    },
+    'CB-2026-024': {
+      project: 'Reel Sản phẩm mới', service: 'Motion', deadline: '20/02/2026', priority: 'Bình thường',
+      created: '01/02/2026', updated: '18/02/2026 11:00', percent: 100, statusKey: 'completed',
+      statusLabel: 'Hoàn tất', stage: 'Đã bàn giao file final',
+      assignee: 'Account Team — Linh Chi', avatar: 'LC'
+    }
+  };
+
+  const statusBadge = {
+    received:  { cls: 'badge-info',    label: 'Đã tiếp nhận' },
+    progress:  { cls: 'badge-warning', label: 'Đang xử lý' },
+    preview:   { cls: 'badge-info',    label: 'Gửi preview' },
+    completed: { cls: 'badge-success', label: 'Hoàn tất' }
+  };
+
+  const form = document.getElementById('track-form');
+  const input = document.getElementById('code-input');
+  const empty = document.getElementById('empty-state');
+  const notFound = document.getElementById('notfound-state');
+  const notFoundMsg = document.getElementById('notfound-msg');
+  const result = document.getElementById('result-state');
+  let user = null;
+  try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
+
+  function show(state) {
+    empty.classList.toggle('hidden', state !== 'empty');
+    notFound.classList.toggle('hidden', state !== 'notfound');
+    result.classList.toggle('hidden', state !== 'result');
+  }
+
+  function render(code, data) {
+    document.getElementById('r-code').textContent = code;
+    document.getElementById('r-copy').setAttribute('data-copy', code);
+    document.getElementById('r-project').textContent = data.project;
+    document.getElementById('r-service').textContent = data.service;
+    document.getElementById('r-deadline').textContent = data.deadline;
+    document.getElementById('r-priority').textContent = data.priority;
+    document.getElementById('r-created').textContent = data.created;
+    document.getElementById('r-updated').textContent = data.updated;
+    document.getElementById('r-percent').textContent = data.percent + '%';
+    document.getElementById('r-progress').style.width = data.percent + '%';
+    document.getElementById('r-stage').textContent = 'Bước hiện tại: ' + data.stage;
+    document.getElementById('r-assignee').textContent = data.assignee;
+    document.getElementById('r-avatar').textContent = data.avatar;
+    document.getElementById('fb-code').textContent = code;
+
+    const meta = statusBadge[data.statusKey] || statusBadge.progress;
+    const badge = document.getElementById('r-badge');
+    badge.className = 'badge ' + meta.cls;
+    badge.innerHTML = '<span class="dot"></span> ' + (data.statusLabel || meta.label);
+
+    // Adjust timeline (simple: completed → all done)
+    const items = document.querySelectorAll('#r-timeline li');
+    items.forEach((li) => li.classList.remove('is-done', 'is-current'));
+    if (data.statusKey === 'received') {
+      items[0].classList.add('is-current');
+    } else if (data.statusKey === 'progress') {
+      items[0].classList.add('is-done'); items[1].classList.add('is-done'); items[2].classList.add('is-current');
+    } else if (data.statusKey === 'preview') {
+      items[0].classList.add('is-done'); items[1].classList.add('is-done'); items[2].classList.add('is-done'); items[3].classList.add('is-current');
+    } else if (data.statusKey === 'completed') {
+      items.forEach((li) => li.classList.add('is-done'));
+    }
+  }
+
+  function lookup(code) {
+    code = (code || '').trim().toUpperCase();
+    if (!code) { show('empty'); return; }
+    const data = DB[code];
+    if (!data) {
+      notFoundMsg.textContent = 'Mã này chưa có trong dữ liệu tracking public demo. Hiện tracking đã hỗ trợ các mã MEDIA trong ví dụ phía trên.';
+      show('notfound');
+      return;
+    }
+    if (user && user.role === 'client' && Array.isArray(user.client_scope) && !user.client_scope.includes(code)) {
+      notFoundMsg.textContent = 'Bạn đang đăng nhập vai trò Client và không có quyền xem mã đơn này. Vui lòng dùng mã thuộc phạm vi của client demo hoặc liên hệ Account phụ trách.';
+      show('notfound');
+      return;
+    }
+    notFoundMsg.textContent = 'Kiểm tra lại mã đơn hàng hoặc liên hệ account team nếu bạn cho rằng có nhầm lẫn.';
+    render(code, data);
+    show('result');
+    setTimeout(() => result.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  }
+
+  // From query string
+  const params = new URLSearchParams(location.search);
+  const initial = params.get('code');
+  if (initial) { input.value = initial; lookup(initial); }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); lookup(input.value); });
+
+  // Example chips
+  document.querySelectorAll('[data-fill]').forEach((el) => {
+    el.addEventListener('click', () => {
+      input.value = el.getAttribute('data-fill'); lookup(input.value);
+    });
+  });
+
+  // Chips toggle
+  document.querySelectorAll('.chips').forEach((group) => {
+    const chips = group.querySelectorAll('.chip');
+    chips.forEach((c) => c.addEventListener('click', () => {
+      chips.forEach(x => x.classList.remove('is-active'));
+      c.classList.add('is-active');
+      c.querySelector('input').checked = true;
+    }));
+  });
+
+  // Feedback modal
+  const modal = document.getElementById('fb-modal');
+  function openFb() { modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+  function closeFb() { modal.classList.add('hidden'); document.body.style.overflow = ''; }
+  document.getElementById('open-feedback').addEventListener('click', openFb);
+  document.getElementById('fb-close').addEventListener('click', closeFb);
+  document.getElementById('fb-cancel').addEventListener('click', closeFb);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeFb(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeFb(); });
+  document.getElementById('fb-send').addEventListener('click', () => {
+    const msg = document.getElementById('fb-msg').value.trim();
+    if (!msg) { window.MH.toast({ type: 'error', message: 'Vui lòng nhập nội dung phản hồi.' }); return; }
+    closeFb();
+    document.getElementById('fb-msg').value = '';
+    window.MH.toast({ type: 'success', title: 'Đã gửi phản hồi', message: 'Team sẽ phản hồi trong 4 giờ làm việc.' });
+  });
+})();
+</script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

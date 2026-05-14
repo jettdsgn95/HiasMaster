@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Settings — CB Media Hub</title>
+<meta name="description" content="Settings — Admin cấu hình workflow, SLA, notification, brand, AI, security của hệ thống CB Media Hub." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-3)">
+      <button class="icon-btn sidebar-toggle" id="sb-toggle" aria-label="Mở menu" aria-controls="dash-sb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Thông báo" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--red-600); border:2px solid var(--surface)"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop"></div>
+
+<div class="dash-shell">
+
+  <!-- ============ APP SIDEBAR ============ -->
+  <aside class="dash-sidebar" id="dash-sb">
+    <h6>Vận hành</h6>
+    <ul class="dash-nav">
+      <li><a href="dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span><span>Dashboard</span></a></li>
+      <li><a href="request.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span>Order Form</span></a></li>
+      <li data-show-roles="admin,account"><a href="database-orders.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span><span>Database Orders</span></a></li>
+      <li><a href="production-board.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Production Board</span></a></li>
+      <li data-show-roles="admin,account"><a href="delivery-log.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span><span>Delivery Log</span></a></li>
+      <li data-show-roles="admin,account"><a href="reports.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span>Reports</span></a></li>
+    </ul>
+
+    <h6>Hệ thống</h6>
+    <ul class="dash-nav">
+      <li><a href="ai-tools.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span><span>AI Tools</span></a></li>
+      <li><a href="chatbot.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Chatbot</span></a></li>
+      <li data-show-roles="admin"><a href="user-management.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>User Management</span></a></li>
+      <li data-show-roles="admin"><a href="settings.html" class="is-active"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.15.68.41.94.74.27.34.41.74.43 1.16.02.42-.08.82-.29 1.17-.21.34-.51.6-.86.74"/></svg></span><span>Settings</span></a></li>
+    </ul>
+
+    <div class="dash-sidebar-foot">
+      <div class="profile-chip" id="profile-chip" tabindex="0">
+        <span class="avatar" id="pc-avatar">MP</span>
+        <div class="pinfo">
+          <div class="pname" id="pc-name">Mai Phương</div>
+          <div class="prole"><span id="pc-role-badge" class="role-badge r--admin">Admin</span></div>
+        </div>
+        <div class="profile-menu" id="profile-menu">
+          <a href="#" onclick="event.preventDefault()">Hồ sơ</a>
+          <a href="#" onclick="event.preventDefault()">Cài đặt</a>
+          <button type="button" class="danger" id="logout-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="dash-main">
+
+    <div class="dash-page-head">
+      <div>
+        <h1><span class="serif-italic">System</span> Settings</h1>
+        <p>Cấu hình workflow, SLA, notification, brand, AI và security của portal.</p>
+      </div>
+      <div class="row" style="gap:var(--space-2)">
+        <button class="btn btn-ghost btn-sm" id="reset-defaults">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset defaults
+        </button>
+        <button class="btn btn-secondary btn-sm" id="export-settings">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-shell">
+
+      <!-- ============ SETTINGS NAV ============ -->
+      <aside class="settings-nav">
+        <h6>Vận hành</h6>
+        <button class="nav-btn is-active" data-cat="general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> General</button>
+        <button class="nav-btn" data-cat="workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="20 6 9 17 4 12"/></svg> Workflow Status</button>
+        <button class="nav-btn" data-cat="sla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> SLA & Deadline</button>
+        <button class="nav-btn" data-cat="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications</button>
+        <button class="nav-btn" data-cat="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/></svg> Brand</button>
+
+        <h6>Tools</h6>
+        <button class="nav-btn" data-cat="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/></svg> AI Tools</button>
+        <button class="nav-btn" data-cat="chatbot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chatbot</button>
+        <button class="nav-btn" data-cat="files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> Files & Drive</button>
+
+        <h6>Org & Data</h6>
+        <button class="nav-btn" data-cat="departments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg> Departments</button>
+        <button class="nav-btn" data-cat="client_portal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Client Portal</button>
+        <button class="nav-btn" data-cat="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Reports & Export</button>
+        <button class="nav-btn" data-cat="security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Security</button>
+      </aside>
+
+      <!-- ============ SETTINGS CONTENT ============ -->
+      <div class="settings-main">
+
+        <!-- ===== General ===== -->
+        <section class="settings-panel is-active" data-panel="general">
+          <div class="settings-panel-head">
+            <div>
+              <h2>General Settings</h2>
+              <p>Thông tin chung của portal — tên, timezone, ngày giờ, hỗ trợ.</p>
+            </div>
+            <div class="right">
+              <button class="btn btn-ghost btn-sm" data-action="cancel">Hủy</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="setting-row">
+              <label>System Name<span class="desc">Hiển thị ở header + email</span></label>
+              <input class="input" id="g-name" type="text" value="CB Creative Flow" />
+            </div>
+            <div class="setting-row">
+              <label>System Subtitle</label>
+              <input class="input" id="g-subtitle" type="text" value="Media Hub by CB Centres" />
+            </div>
+            <div class="setting-row">
+              <label>Default Language</label>
+              <select class="select" id="g-language">
+                <option value="vi">Vietnamese</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>Default Timezone</label>
+              <select class="select" id="g-timezone">
+                <option>Asia/Ho_Chi_Minh</option>
+                <option>Asia/Bangkok</option>
+                <option>Asia/Singapore</option>
+                <option>UTC</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>Date Format</label>
+              <select class="select" id="g-dateformat">
+                <option>DD/MM/YYYY</option>
+                <option>MM/DD/YYYY</option>
+                <option>YYYY-MM-DD</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>Time Format</label>
+              <select class="select" id="g-timeformat">
+                <option>24h</option>
+                <option>12h (AM/PM)</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>Support Email</label>
+              <input class="input" id="g-email" type="email" value="support@cbcentres.com" />
+            </div>
+            <div class="setting-row">
+              <label>Support Phone</label>
+              <input class="input" id="g-phone" type="tel" value="+84 000 000 000" />
+            </div>
+            <div class="setting-row">
+              <label>Maintenance Mode<span class="desc">Tạm khóa portal cho user thường</span></label>
+              <label class="toggle"><input type="checkbox" id="g-maintenance"><span class="track"></span><span class="toggle-label" id="g-maintenance-label">Tắt</span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Workflow ===== -->
+        <section class="settings-panel" data-panel="workflow">
+          <div class="settings-panel-head">
+            <div>
+              <h2>Workflow Status Settings</h2>
+              <p>Cấu hình danh sách status và progress mapping cho 3 module (Account / Production / Delivery).</p>
+            </div>
+            <div class="right">
+              <button class="btn btn-ghost btn-sm" data-action="cancel">Hủy</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+
+          <div class="workflow-tabs">
+            <button class="workflow-tab is-active" data-wf="account">Account Status</button>
+            <button class="workflow-tab" data-wf="production">Production Status</button>
+            <button class="workflow-tab" data-wf="delivery">Delivery Status</button>
+          </div>
+
+          <div class="settings-section">
+            <p class="help-row">Drag-free editor: chỉnh tên, màu, progress %, public mapping. Status đang được dữ liệu sử dụng <b>không thể xóa</b> (chỉ tắt active).</p>
+            <div class="status-config-list" id="status-list"></div>
+            <button class="add-status-btn" id="add-status-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Thêm status
+            </button>
+          </div>
+        </section>
+
+        <!-- ===== SLA ===== -->
+        <section class="settings-panel" data-panel="sla">
+          <div class="settings-panel-head">
+            <div>
+              <h2>SLA &amp; Deadline Settings</h2>
+              <p>Cấu hình thời gian xử lý tiêu chuẩn và ngưỡng cảnh báo deadline.</p>
+            </div>
+            <div class="right">
+              <button class="btn btn-ghost btn-sm" data-action="cancel">Hủy</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> SLA theo request type</h3>
+            <div class="setting-row"><label>Design / POSM</label><input class="input" id="sla-design" value="1–7 ngày làm việc"/></div>
+            <div class="setting-row"><label>Digital Design</label><input class="input" id="sla-digital" value="1–3 ngày làm việc"/></div>
+            <div class="setting-row"><label>Video Editing</label><input class="input" id="sla-video" value="3–10 ngày làm việc"/></div>
+            <div class="setting-row"><label>Quay</label><input class="input" id="sla-shoot" value="Xác nhận lịch riêng"/></div>
+            <div class="setting-row"><label>Chụp ảnh</label><input class="input" id="sla-photo" value="Xác nhận lịch riêng"/></div>
+            <div class="setting-row"><label>Ads / Post Basic</label><input class="input" id="sla-ads" value="0.5–2 ngày làm việc"/></div>
+            <div class="setting-row"><label>Slide / Proposal</label><input class="input" id="sla-slide" value="2–7 ngày làm việc"/></div>
+          </div>
+
+          <div class="settings-section">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Deadline warning thresholds</h3>
+            <div class="setting-row"><label>Due Soon<span class="desc">Còn bao nhiêu giờ thì cảnh báo</span></label>
+              <div class="row" style="gap:6px"><input class="input" id="sla-duesoon" type="number" min="1" value="48" style="max-width:120px"/><span class="text-xs muted">giờ</span></div>
+            </div>
+            <div class="setting-row"><label>Task not accepted<span class="desc">PIC chưa nhận task sau X giờ</span></label>
+              <div class="row" style="gap:6px"><input class="input" id="sla-notaccept" type="number" min="1" value="4" style="max-width:120px"/><span class="text-xs muted">giờ</span></div>
+            </div>
+            <div class="setting-row"><label>No status update<span class="desc">Cảnh báo nếu task không cập nhật</span></label>
+              <div class="row" style="gap:6px"><input class="input" id="sla-noupdate" type="number" min="1" value="2" style="max-width:120px"/><span class="text-xs muted">ngày</span></div>
+            </div>
+            <div class="setting-row"><label>Client feedback waiting<span class="desc">Chờ client phản hồi tối đa</span></label>
+              <div class="row" style="gap:6px"><input class="input" id="sla-clientwait" type="number" min="1" value="3" style="max-width:120px"/><span class="text-xs muted">ngày</span></div>
+            </div>
+            <div class="setting-row"><label>Auto close after final<span class="desc">Tự đóng delivery nếu client im lặng</span></label>
+              <div class="row" style="gap:6px"><input class="input" id="sla-autoclose" type="number" min="1" value="3" style="max-width:120px"/><span class="text-xs muted">ngày</span></div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Working days</h3>
+            <div class="setting-row"><label>Working days</label>
+              <select class="select" id="sla-workdays">
+                <option>Thứ 2 – Thứ 7</option>
+                <option>Thứ 2 – Thứ 6</option>
+                <option>Tất cả 7 ngày</option>
+              </select>
+            </div>
+            <div class="setting-row"><label>Working hours</label>
+              <div class="row" style="gap:8px"><input class="input" type="time" id="sla-hourstart" value="08:00" style="max-width:140px"/><span class="text-xs muted">→</span><input class="input" type="time" id="sla-hourend" value="17:30" style="max-width:140px"/></div>
+            </div>
+            <div class="setting-row"><label>Allow weekend tasks</label>
+              <label class="toggle"><input type="checkbox" id="sla-weekend"><span class="track"></span><span class="toggle-label">Tắt</span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Notifications ===== -->
+        <section class="settings-panel" data-panel="notifications">
+          <div class="settings-panel-head">
+            <div>
+              <h2>Notification Settings</h2>
+              <p>Cấu hình kênh + nội dung notification cho từng event nghiệp vụ.</p>
+            </div>
+            <div class="right">
+              <button class="btn btn-secondary btn-sm" id="test-notif">Send Test</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Channels available</h3>
+            <div class="row" style="gap:var(--space-3); flex-wrap:wrap">
+              <label class="toggle"><input type="checkbox" id="ch-inapp" checked><span class="track"></span><span class="toggle-label">In-app</span></label>
+              <label class="toggle"><input type="checkbox" id="ch-email" checked><span class="track"></span><span class="toggle-label">Email</span></label>
+              <label class="toggle"><input type="checkbox" id="ch-slack"><span class="track"></span><span class="toggle-label">Google Chat / Slack</span></label>
+              <label class="toggle"><input type="checkbox" id="ch-zalo"><span class="track"></span><span class="toggle-label">Zalo OA (Phase 2)</span></label>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Notification events</h3>
+            <div class="event-table" id="event-table"></div>
+          </div>
+        </section>
+
+        <!-- ===== Brand ===== -->
+        <section class="settings-panel" data-panel="brand">
+          <div class="settings-panel-head">
+            <div>
+              <h2>Brand Settings</h2>
+              <p>Logo, màu sắc, font và preview UI.</p>
+            </div>
+            <div class="right">
+              <button class="btn btn-ghost btn-sm" data-action="cancel">Hủy</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="setting-row"><label>System display name</label><input class="input" id="b-name" value="CB Media Hub"/></div>
+            <div class="setting-row"><label>Logo URL<span class="desc">Hoặc upload qua /api/files/upload</span></label><input class="input" id="b-logo" value="assets/logo.png"/></div>
+            <div class="setting-row"><label>Favicon URL</label><input class="input" id="b-favicon" placeholder="favicon.ico"/></div>
+            <div class="setting-row"><label>Primary Color<span class="desc">Brand chính (navy)</span></label>
+              <div class="color-input"><input type="color" id="b-primary" value="#191970"><span class="hex" id="b-primary-hex">#191970</span></div>
+            </div>
+            <div class="setting-row"><label>Accent Color<span class="desc">Brand phụ (red)</span></label>
+              <div class="color-input"><input type="color" id="b-accent" value="#BA110F"><span class="hex" id="b-accent-hex">#BA110F</span></div>
+            </div>
+            <div class="setting-row"><label>Background Color</label>
+              <div class="color-input"><input type="color" id="b-bg" value="#FAFBFC"><span class="hex" id="b-bg-hex">#FAFBFC</span></div>
+            </div>
+            <div class="setting-row"><label>Font Family</label>
+              <select class="select" id="b-font">
+                <option>Inter + Plus Jakarta Sans (current)</option>
+                <option>Montserrat</option>
+                <option>Roboto</option>
+                <option>System default</option>
+              </select>
+            </div>
+            <div class="setting-row"><label>Card radius<span class="desc">Đơn vị px</span></label>
+              <input class="input" id="b-radius" type="number" min="0" max="32" value="14" style="max-width:140px"/>
+            </div>
+          </div>
+
+          <div class="brand-preview">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Live preview
+            </h4>
+            <div class="brand-preview-grid">
+              <div class="preview-item">
+                <label>Primary Button</label>
+                <button class="btn btn-primary btn-sm" id="bp-btn-primary">Primary action</button>
+              </div>
+              <div class="preview-item">
+                <label>Accent Button</label>
+                <button class="btn btn-primary btn-sm" id="bp-btn-accent" style="background: var(--grad-red)">Send Final</button>
+              </div>
+              <div class="preview-item">
+                <label>Status badges</label>
+                <div class="row" style="gap:4px">
+                  <span class="badge badge-primary"><span class="dot"></span>Active</span>
+                  <span class="badge badge-warning"><span class="dot"></span>Pending</span>
+                  <span class="badge badge-danger"><span class="dot"></span>Overdue</span>
+                </div>
+              </div>
+              <div class="preview-item">
+                <label>Progress bar</label>
+                <div class="progress"><span style="width:68%"></span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== AI Tools ===== -->
+        <section class="settings-panel" data-panel="ai">
+          <div class="settings-panel-head">
+            <div>
+              <h2>AI Tools Settings</h2>
+              <p>API provider, model, brand preset cho các AI generator.</p>
+            </div>
+            <div class="right">
+              <button class="btn btn-secondary btn-sm" id="test-ai">Test connection</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>API connection</h3>
+            <div class="setting-row"><label>AI Provider</label>
+              <select class="select" id="ai-provider">
+                <option>Anthropic (Claude)</option>
+                <option>OpenAI (GPT)</option>
+                <option>Google (Gemini)</option>
+                <option>Custom endpoint</option>
+              </select>
+            </div>
+            <div class="setting-row"><label>API Key<span class="desc">Sẽ được encrypt khi save</span></label>
+              <input class="input" id="ai-key" type="password" placeholder="sk-..." />
+            </div>
+            <div class="setting-row"><label>Default Model</label>
+              <select class="select" id="ai-model">
+                <option>claude-sonnet-4-6</option>
+                <option>claude-opus-4-7</option>
+                <option>gpt-4o</option>
+                <option>gemini-2.5-pro</option>
+              </select>
+            </div>
+            <div class="setting-row"><label>Temperature<span class="desc">0 = deterministic, 1 = creative</span></label>
+              <input class="input" id="ai-temp" type="number" min="0" max="1" step="0.1" value="0.7" style="max-width:140px"/>
+            </div>
+            <div class="setting-row"><label>Max tokens / request</label>
+              <input class="input" id="ai-tokens" type="number" min="100" max="100000" value="2000" style="max-width:140px"/>
+            </div>
+            <div class="setting-row"><label>Usage limit / user / day</label>
+              <input class="input" id="ai-limit" type="number" min="0" value="50" style="max-width:140px"/>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>AI Tools enabled</h3>
+            <div class="row" style="gap:var(--space-3); flex-wrap:wrap">
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Post Generator</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Ads Copy Generator</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Caption Builder</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Brief Optimizer</span></label>
+              <label class="toggle"><input type="checkbox"><span class="track"></span><span class="toggle-label">Visual Prompt</span></label>
+              <label class="toggle"><input type="checkbox"><span class="track"></span><span class="toggle-label">Slide Outline</span></label>
+              <label class="toggle"><input type="checkbox"><span class="track"></span><span class="toggle-label">Campaign Idea</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Hashtag / CTA</span></label>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Brand preset</h3>
+            <div class="setting-row" style="grid-template-columns:1fr"><label>Tone &amp; voice</label>
+              <textarea class="textarea" id="ai-preset" style="min-height:100px">Brand: CB Centres
+Tone: professional, clean, modern, education brand
+Primary color: #BA110F · Secondary: #191970
+Audience: Vietnamese students, parents, teachers, partners
+Language: Vietnamese (Vietnamese-first), fallback English
+Avoid: clickbait, over-promise, sensational claims</textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Chatbot ===== -->
+        <section class="settings-panel" data-panel="chatbot">
+          <div class="settings-panel-head">
+            <div><h2>Chatbot Settings</h2><p>Trợ lý hỗ trợ quy trình + tra cứu order trực tiếp trên portal.</p></div>
+            <div class="right"><button class="btn btn-primary btn-sm" data-action="save">Lưu</button></div>
+          </div>
+          <div class="settings-section">
+            <div class="setting-row"><label>Enable chatbot</label>
+              <label class="toggle"><input type="checkbox" id="cb-enabled" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Allowed roles</label>
+              <select class="select" id="cb-roles" multiple style="min-height:80px">
+                <option selected>Admin</option><option selected>Manager</option><option selected>Account</option><option selected>Staff</option><option>Client</option>
+              </select>
+            </div>
+            <div class="setting-row"><label>Can query order status</label>
+              <label class="toggle"><input type="checkbox" id="cb-query" checked><span class="track"></span><span class="toggle-label">Có</span></label>
+            </div>
+            <div class="setting-row"><label>Can generate copy</label>
+              <label class="toggle"><input type="checkbox" id="cb-copy" checked><span class="track"></span><span class="toggle-label">Có</span></label>
+            </div>
+            <div class="setting-row"><label>Access internal notes</label>
+              <label class="toggle"><input type="checkbox" id="cb-internal"><span class="track"></span><span class="toggle-label">Không (security)</span></label>
+            </div>
+            <div class="setting-row" style="grid-template-columns:1fr"><label>Default greeting</label>
+              <textarea class="textarea" id="cb-greeting" style="min-height:70px">Xin chào! Tôi là trợ lý CB Creative Flow. Bạn cần hỗ trợ gửi brief, kiểm tra trạng thái order hay tạo nội dung media cơ bản?</textarea>
+            </div>
+            <div class="setting-row" style="grid-template-columns:1fr"><label>Fallback message</label>
+              <textarea class="textarea" id="cb-fallback" style="min-height:60px">Mình chưa hiểu ý này. Bạn có thể mô tả lại, hoặc gõ "liên hệ Account" để được hỗ trợ trực tiếp.</textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Files & Drive ===== -->
+        <section class="settings-panel" data-panel="files">
+          <div class="settings-panel-head">
+            <div><h2>File &amp; Drive Settings</h2><p>Upload file + Google Drive integration.</p></div>
+            <div class="right">
+              <button class="btn btn-secondary btn-sm" id="test-drive">Test Drive connection</button>
+              <button class="btn btn-primary btn-sm" data-action="save">Lưu</button>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="setting-row"><label>Max file size<span class="desc">MB / file</span></label>
+              <input class="input" id="f-maxsize" type="number" min="1" value="100" style="max-width:140px"/>
+            </div>
+            <div class="setting-row"><label>Allowed file types</label>
+              <input class="input" id="f-types" value="DOC, DOCX, PDF, PPT, PPTX, XLS, XLSX, JPG, JPEG, PNG, SVG, AI, PSD, EPS, MP4, MOV, ZIP, RAR"/>
+            </div>
+            <div class="setting-row"><label>Storage provider</label>
+              <select class="select" id="f-provider"><option>Google Drive</option><option>AWS S3</option><option>Local server</option></select>
+            </div>
+            <div class="setting-row"><label>Drive root folder</label>
+              <input class="input" id="f-root" placeholder="https://drive.google.com/drive/folders/..." value="https://drive.google.com/drive/folders/cb-media-hub"/>
+            </div>
+            <div class="setting-row"><label>Auto create folder per order</label>
+              <label class="toggle"><input type="checkbox" id="f-autofolder" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Folder naming convention</label>
+              <input class="input" id="f-naming" value="{order_id}_{project_name}_{requester}"/>
+            </div>
+            <div class="setting-row"><label>Require Drive permission check</label>
+              <label class="toggle"><input type="checkbox" id="f-permcheck" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Allow external links<span class="desc">Drive / Dropbox / OneDrive</span></label>
+              <label class="toggle"><input type="checkbox" id="f-external" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Departments ===== -->
+        <section class="settings-panel" data-panel="departments">
+          <div class="settings-panel-head">
+            <div><h2>Departments / Branches</h2><p>Master data dùng cho Order Form, User Management và Reports.</p></div>
+            <div class="right">
+              <button class="btn btn-secondary btn-sm" id="dept-import">Import CSV</button>
+              <button class="btn btn-primary btn-sm" id="dept-add">+ Add</button>
+            </div>
+          </div>
+          <div class="settings-section">
+            <div class="dept-table" id="dept-table"></div>
+          </div>
+        </section>
+
+        <!-- ===== Client Portal ===== -->
+        <section class="settings-panel" data-panel="client_portal">
+          <div class="settings-panel-head">
+            <div><h2>Client Portal Settings</h2><p>Public status mapping + dữ liệu Client/Requester được xem.</p></div>
+            <div class="right"><button class="btn btn-primary btn-sm" data-action="save">Lưu</button></div>
+          </div>
+          <div class="settings-section">
+            <h3>Public status mapping</h3>
+            <p class="help-row">Status nội bộ → status hiển thị cho client. Giúp giấu thông tin nội bộ.</p>
+            <div class="dept-table">
+              <div class="dept-row"><b>Chờ xác nhận</b><span>→</span><input class="input" value="Đã nhận yêu cầu" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Đang kiểm tra brief</b><span>→</span><input class="input" value="Đang kiểm tra thông tin" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Cần bổ sung thông tin</b><span>→</span><input class="input" value="Cần bổ sung brief" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Đã xác nhận brief</b><span>→</span><input class="input" value="Đã tiếp nhận" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Đang thực hiện</b><span>→</span><input class="input" value="Đang sản xuất" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Chờ duyệt nội bộ</b><span>→</span><input class="input" value="Đang kiểm tra nội bộ" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Sẵn sàng bàn giao</b><span>→</span><input class="input" value="Sắp bàn giao" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Đã bàn giao</b><span>→</span><input class="input" value="Đã bàn giao" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+              <div class="dept-row"><b>Hoàn thành</b><span>→</span><input class="input" value="Hoàn thành" style="min-height:30px; padding-block:4px; font-size:11px"/><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Client visible fields</h3>
+            <div class="row" style="gap:var(--space-3); flex-wrap:wrap">
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Order ID</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Project name</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Submitted Date</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Requested Deadline</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Public Status</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Preview Link</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Final Link</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Feedback form</span></label>
+              <label class="toggle"><input type="checkbox" checked><span class="track"></span><span class="toggle-label">Rating form</span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Reports & Export ===== -->
+        <section class="settings-panel" data-panel="reports">
+          <div class="settings-panel-head">
+            <div><h2>Reports &amp; Export Settings</h2><p>Cấu hình export PDF/Excel và scheduled reports.</p></div>
+            <div class="right"><button class="btn btn-primary btn-sm" data-action="save">Lưu</button></div>
+          </div>
+          <div class="settings-section">
+            <div class="setting-row"><label>Default report period</label>
+              <select class="select" id="r-period"><option>Tháng này</option><option>30 ngày qua</option><option>Quý này</option></select>
+            </div>
+            <div class="setting-row"><label>Enable PDF export</label>
+              <label class="toggle"><input type="checkbox" id="r-pdf" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Enable Excel export</label>
+              <label class="toggle"><input type="checkbox" id="r-xlsx" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Include raw data in export</label>
+              <label class="toggle"><input type="checkbox" id="r-raw"><span class="track"></span><span class="toggle-label">Tắt (size lớn)</span></label>
+            </div>
+            <div class="setting-row"><label>Company logo in export</label>
+              <label class="toggle"><input type="checkbox" id="r-logo" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row" style="grid-template-columns:1fr"><label>Report footer text</label>
+              <textarea class="textarea" id="r-footer" style="min-height:60px">© CB Centres — CB Creative Flow Reports. Internal use only.</textarea>
+            </div>
+            <div class="setting-row"><label>Scheduled email report</label>
+              <select class="select" id="r-schedule"><option>Tắt</option><option>Hàng tuần (T2 9:00)</option><option>Hàng tháng (Ngày 1, 9:00)</option></select>
+            </div>
+            <div class="setting-row"><label>Default recipients<span class="desc">Email cách nhau bằng dấu phẩy</span></label>
+              <input class="input" id="r-recipients" value="admin@cb.vn, manager@cb.vn"/>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Security ===== -->
+        <section class="settings-panel" data-panel="security">
+          <div class="settings-panel-head">
+            <div><h2>Security Settings</h2><p>Auth method, password rules, session policy.</p></div>
+            <div class="right"><button class="btn btn-primary btn-sm" data-action="save">Lưu</button></div>
+          </div>
+          <div class="settings-section">
+            <h3>Authentication</h3>
+            <div class="setting-row"><label>Enable Email + Password</label>
+              <label class="toggle"><input type="checkbox" id="s-email-pwd" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Enable Google Workspace SSO</label>
+              <label class="toggle"><input type="checkbox" id="s-sso"><span class="track"></span><span class="toggle-label">Tắt (Phase 2)</span></label>
+            </div>
+            <div class="setting-row"><label>Enable Magic link</label>
+              <label class="toggle"><input type="checkbox" id="s-magic"><span class="track"></span><span class="toggle-label">Tắt</span></label>
+            </div>
+            <div class="setting-row"><label>Allowed email domains<span class="desc">Cách nhau bằng dấu phẩy. Bỏ trống = cho tất cả</span></label>
+              <input class="input" id="s-domains" value="cbcentres.com, cb.vn"/>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Password policy</h3>
+            <div class="setting-row"><label>Minimum length</label>
+              <input class="input" id="s-pwlen" type="number" min="6" max="32" value="8" style="max-width:140px"/>
+            </div>
+            <div class="setting-row"><label>Require password reset on first login</label>
+              <label class="toggle"><input type="checkbox" id="s-resetfirst" checked><span class="track"></span><span class="toggle-label">Bật</span></label>
+            </div>
+            <div class="setting-row"><label>Login attempt limit<span class="desc">Trước khi khoá tạm thời</span></label>
+              <input class="input" id="s-loginlimit" type="number" min="3" value="5" style="max-width:140px"/>
+            </div>
+            <div class="setting-row"><label>Two-factor authentication</label>
+              <label class="toggle"><input type="checkbox" id="s-2fa"><span class="track"></span><span class="toggle-label">Tắt (Phase 2)</span></label>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Session &amp; audit</h3>
+            <div class="setting-row"><label>Invite token expiry</label>
+              <div class="row" style="gap:6px"><input class="input" id="s-invite" type="number" min="1" value="7" style="max-width:120px"/><span class="text-xs muted">ngày</span></div>
+            </div>
+            <div class="setting-row"><label>Session timeout</label>
+              <div class="row" style="gap:6px"><input class="input" id="s-session" type="number" min="0.5" step="0.5" value="8" style="max-width:120px"/><span class="text-xs muted">giờ</span></div>
+            </div>
+            <div class="setting-row"><label>Audit log retention</label>
+              <div class="row" style="gap:6px"><input class="input" id="s-audit" type="number" min="30" value="365" style="max-width:120px"/><span class="text-xs muted">ngày</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Activity log (shared bottom) ===== -->
+        <div class="settings-activity">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Settings activity log
+            <span class="text-xs muted" style="margin-left:auto; font-weight:500" id="activity-count">0 changes</span>
+          </h3>
+          <ul class="settings-activity-list" id="activity-list"></ul>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/settings.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

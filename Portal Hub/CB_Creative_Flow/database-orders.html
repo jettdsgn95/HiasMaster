@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Database Orders — CB Media Hub</title>
+<meta name="description" content="Database Orders nội bộ — kho dữ liệu tổng, kiểm tra brief, xác nhận và điều phối order sang Production Board." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-3)">
+      <button class="icon-btn sidebar-toggle" id="sb-toggle" aria-label="Mở menu" aria-controls="dash-sb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Thông báo" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--red-600); border:2px solid var(--surface)"></span>
+      </button>
+      <a class="btn btn-primary btn-sm" href="request.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tạo Order
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop"></div>
+
+<div class="dash-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="dash-sidebar" id="dash-sb">
+    <h6>Vận hành</h6>
+    <ul class="dash-nav">
+      <li><a href="dashboard.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+        <span>Dashboard</span>
+      </a></li>
+      <li><a href="request.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+        <span>Order Form</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="database-orders.html" class="is-active">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+        <span>Database Orders</span>
+        <span class="nav-badge" id="nav-pending">—</span>
+      </a></li>
+      <li><a href="production-board.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+        <span>Production Board</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="delivery-log.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+        <span>Delivery Log</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="reports.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span>Reports</span>
+      </a></li>
+    </ul>
+
+    <h6>Hệ thống</h6>
+    <ul class="dash-nav">
+      <li><a href="ai-tools.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>
+        <span>AI Tools</span>
+      </a></li>
+      <li><a href="chatbot.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <span>Chatbot</span>
+      </a></li>
+      <li data-show-roles="admin"><a href="user-management.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+        <span>User Management</span>
+      </a></li>
+      <li data-show-roles="admin"><a href="settings.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.15.68.41.94.74.27.34.41.74.43 1.16.02.42-.08.82-.29 1.17-.21.34-.51.6-.86.74"/></svg></span>
+        <span>Settings</span>
+      </a></li>
+    </ul>
+
+    <div class="dash-sidebar-foot">
+      <div class="profile-chip" id="profile-chip" tabindex="0">
+        <span class="avatar" id="pc-avatar">MP</span>
+        <div class="pinfo">
+          <div class="pname" id="pc-name">Mai Phương</div>
+          <div class="prole">
+            <span id="pc-role-badge" class="role-badge r--admin">Admin</span>
+          </div>
+        </div>
+        <div class="profile-menu" id="profile-menu">
+          <a href="#" onclick="event.preventDefault()">Hồ sơ</a>
+          <a href="#" onclick="event.preventDefault()">Cài đặt</a>
+          <button type="button" class="danger" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="dash-main">
+
+    <!-- Page head -->
+    <div class="dash-page-head">
+      <div>
+        <h1><span class="serif-italic">Database</span> Orders</h1>
+        <p>Kho dữ liệu tổng — kiểm tra brief, xác nhận và điều phối order sang Production Board.</p>
+      </div>
+      <div class="row" style="gap:var(--space-2)">
+        <button class="btn btn-secondary btn-sm">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <a class="btn btn-primary btn-sm" href="request.html">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tạo Order
+        </a>
+      </div>
+    </div>
+
+    <!-- Saved views -->
+    <div class="saved-views" id="saved-views">
+      <button class="saved-view-chip is-active" data-view="all">Tất cả <span class="count" id="count-all">0</span></button>
+      <button class="saved-view-chip" data-view="pending">Đơn mới cần kiểm tra <span class="count" id="count-pending">0</span></button>
+      <button class="saved-view-chip" data-view="needinfo">Cần bổ sung brief <span class="count" id="count-needinfo">0</span></button>
+      <button class="saved-view-chip" data-view="confirmed">Đã xác nhận brief <span class="count" id="count-confirmed">0</span></button>
+      <button class="saved-view-chip" data-view="unassigned">Chưa gán P.I.C <span class="count" id="count-unassigned">0</span></button>
+      <button class="saved-view-chip" data-view="urgent">Đơn gấp <span class="count" id="count-urgent">0</span></button>
+      <button class="saved-view-chip" data-view="overdue">Trễ deadline <span class="count" id="count-overdue">0</span></button>
+      <button class="saved-view-chip" data-view="completed">Đã hoàn thành <span class="count" id="count-completed">0</span></button>
+    </div>
+
+    <!-- Toolbar / filter -->
+    <div class="toolbar">
+      <div class="input-group">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input class="input" id="search-input" type="search" placeholder="Tìm theo Order ID, requester, project, email, brief..." />
+      </div>
+      <select class="select" id="filter-priority">
+        <option value="">Mọi ưu tiên</option>
+        <option value="critical">Rất gấp</option>
+        <option value="urgent">Gấp</option>
+        <option value="normal">Bình thường</option>
+      </select>
+      <select class="select" id="filter-type">
+        <option value="">Mọi loại</option>
+        <option value="design">Thiết kế / POSM</option>
+        <option value="digital">Digital Design</option>
+        <option value="video">Video Editing</option>
+        <option value="motion">Motion Graphic</option>
+        <option value="shoot">Quay</option>
+        <option value="photo">Chụp ảnh</option>
+        <option value="ads">Ads / Post</option>
+        <option value="slide">Slide</option>
+      </select>
+      <select class="select" id="filter-department">
+        <option value="">Mọi chi nhánh</option>
+        <option>HO Marketing</option>
+        <option>Academic</option>
+        <option>Sales</option>
+        <option>CB Mekong</option>
+        <option>CB Hưng Phú</option>
+        <option>CB Cần Thơ</option>
+        <option>CB Tiên Thủy</option>
+      </select>
+      <select class="select" id="filter-pic">
+        <option value="">Mọi PIC</option>
+        <option>Duy</option>
+        <option>Vinh</option>
+        <option>Hậu</option>
+        <option>Linh Chi</option>
+        <option>Đức Anh</option>
+        <option>Mai Phương</option>
+      </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-head">
+        <h3>Order list</h3>
+        <span class="count-text">Hiển thị <b id="visible-count">0</b> / <b id="total-count">0</b> orders</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="order_id">Order ID</th>
+              <th class="sortable" data-sort="created_at">Created</th>
+              <th>Requester</th>
+              <th class="sortable" data-sort="project_name">Project / Campaign</th>
+              <th>Type</th>
+              <th class="sortable" data-sort="priority">Priority</th>
+              <th class="sortable" data-sort="requested_deadline">Deadline</th>
+              <th>Account Status</th>
+              <th>Production Status</th>
+              <th>P.I.C</th>
+              <th class="sortable" data-sort="progress">Progress</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <div class="info" id="page-info">Trang 1 / 1</div>
+        <div class="controls" id="page-controls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ ORDER DETAIL DRAWER ============ -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<aside class="drawer" id="order-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="order-id-large">
+        <span id="d-order-id">MEDIA-2026-0000</span>
+        <button class="icon-btn" id="d-copy" aria-label="Sao chép Order ID" style="width:24px; height:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <h2 id="d-project">—</h2>
+      <div class="head-status">
+        <span class="tb-status" id="d-status">—</span>
+        <span class="priority-pill" id="d-priority"><span class="dot"></span>—</span>
+        <span class="text-xs muted" id="d-created">Tạo lúc —</span>
+      </div>
+    </div>
+    <button class="icon-btn" id="drawer-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-actions">
+    <button class="btn btn-secondary btn-sm" id="act-checking">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Kiểm tra brief
+    </button>
+    <button class="btn btn-secondary btn-sm" id="act-needinfo">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Yêu cầu bổ sung
+    </button>
+    <button class="btn btn-primary btn-sm" id="act-confirm">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+      Xác nhận brief
+    </button>
+    <button class="btn btn-primary btn-sm" id="act-push" style="background: var(--grad-red); border-color: transparent;">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      Push → Production
+    </button>
+    <button class="btn btn-ghost btn-sm" id="act-cancel">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Hủy đơn
+    </button>
+  </div>
+
+  <div class="drawer-body" id="drawer-body">
+    <!-- Filled by JS -->
+  </div>
+</aside>
+
+<script src="assets/app.js"></script>
+<script src="assets/database-orders.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

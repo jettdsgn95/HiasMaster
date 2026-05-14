@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reports — CB Media Hub</title>
+<meta name="description" content="Reports & Performance Dashboard — báo cáo hiệu suất vận hành Media theo thời gian, vị trí, P.I.C, SLA, delivery và rating." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-3)">
+      <button class="icon-btn sidebar-toggle" id="sb-toggle" aria-label="Mở menu" aria-controls="dash-sb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Thông báo" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--red-600); border:2px solid var(--surface)"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop"></div>
+
+<div class="dash-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="dash-sidebar" id="dash-sb">
+    <h6>Vận hành</h6>
+    <ul class="dash-nav">
+      <li><a href="dashboard.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+        <span>Dashboard</span>
+      </a></li>
+      <li><a href="request.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+        <span>Order Form</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="database-orders.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+        <span>Database Orders</span>
+      </a></li>
+      <li><a href="production-board.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+        <span>Production Board</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="delivery-log.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+        <span>Delivery Log</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="reports.html" class="is-active">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span>Reports</span>
+      </a></li>
+    </ul>
+
+    <h6>Hệ thống</h6>
+    <ul class="dash-nav">
+      <li><a href="ai-tools.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>
+        <span>AI Tools</span>
+      </a></li>
+      <li><a href="chatbot.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <span>Chatbot</span>
+      </a></li>
+      <li data-show-roles="admin"><a href="user-management.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+        <span>User Management</span>
+      </a></li>
+      <li data-show-roles="admin"><a href="settings.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.15.68.41.94.74.27.34.41.74.43 1.16.02.42-.08.82-.29 1.17-.21.34-.51.6-.86.74"/></svg></span>
+        <span>Settings</span>
+      </a></li>
+    </ul>
+
+    <div class="dash-sidebar-foot">
+      <div class="profile-chip" id="profile-chip" tabindex="0">
+        <span class="avatar" id="pc-avatar">MP</span>
+        <div class="pinfo">
+          <div class="pname" id="pc-name">Mai Phương</div>
+          <div class="prole"><span id="pc-role-badge" class="role-badge r--admin">Admin</span></div>
+        </div>
+        <div class="profile-menu" id="profile-menu">
+          <a href="#" onclick="event.preventDefault()">Hồ sơ</a>
+          <a href="#" onclick="event.preventDefault()">Cài đặt</a>
+          <button type="button" class="danger" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="dash-main">
+
+    <!-- Page head -->
+    <div class="dash-page-head">
+      <div>
+        <h1><span class="serif-italic">Reports</span> &amp; Performance</h1>
+        <p>Báo cáo hiệu suất vận hành Media — task, P.I.C, SLA, delivery và rating.</p>
+      </div>
+      <div class="row" style="gap:var(--space-2)">
+        <button class="btn btn-secondary btn-sm" id="export-pdf">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Export PDF
+        </button>
+        <button class="btn btn-primary btn-sm" id="export-xlsx">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="toolbar">
+      <select class="select" id="filter-period">
+        <option value="30">30 ngày qua</option>
+        <option value="7">7 ngày qua</option>
+        <option value="14">14 ngày qua</option>
+        <option value="month">Tháng này</option>
+        <option value="quarter">Quý này</option>
+      </select>
+      <select class="select" id="filter-role">
+        <option value="">Mọi vị trí</option>
+        <option value="account">Account</option>
+        <option value="design">Design</option>
+        <option value="editor">Editor</option>
+        <option value="shoot">Shooting</option>
+      </select>
+      <select class="select" id="filter-pic">
+        <option value="">Mọi PIC</option>
+        <option>Duy</option>
+        <option>Vinh</option>
+        <option>Linh Chi</option>
+        <option>Mai Phương</option>
+        <option>Hậu</option>
+        <option>Đức Anh</option>
+      </select>
+      <select class="select" id="filter-department">
+        <option value="">Mọi chi nhánh</option>
+        <option>HO Marketing</option>
+        <option>Academic</option>
+        <option>Sales</option>
+        <option>CB Mekong</option>
+        <option>CB Hưng Phú</option>
+        <option>CB Cần Thơ</option>
+        <option>CB Tiên Thủy</option>
+      </select>
+      <select class="select" id="filter-type">
+        <option value="">Mọi loại task</option>
+        <option value="design">Design / POSM</option>
+        <option value="digital">Digital</option>
+        <option value="video">Video</option>
+        <option value="motion">Motion</option>
+        <option value="shoot">Quay</option>
+        <option value="photo">Chụp ảnh</option>
+        <option value="ads">Ads</option>
+      </select>
+      <div class="grow"></div>
+      <span class="text-xs muted" id="filter-summary">Báo cáo <b style="color:var(--text)">30 ngày</b> · toàn hệ thống</span>
+    </div>
+
+    <!-- ============ KPI CARDS (12) ============ -->
+    <div class="reports-kpi">
+      <div class="kpi kpi--brand"><div class="kpi-head"><span class="kpi-label">Total Orders</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div><span class="kpi-value" id="kpi-orders">0</span><span class="kpi-trend up"><b>+22</b> kỳ này</span></div>
+      <div class="kpi"><div class="kpi-head"><span class="kpi-label">Total Tasks</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span></div><span class="kpi-value" id="kpi-tasks">0</span><span class="kpi-trend up"><b>+38</b> kỳ này</span></div>
+      <div class="kpi kpi--ok"><div class="kpi-head"><span class="kpi-label">Completed</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span></div><span class="kpi-value" id="kpi-completed">0</span><span class="kpi-trend up"><b>92%</b> hoàn tất</span></div>
+      <div class="kpi"><div class="kpi-head"><span class="kpi-label">In Progress</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span></div><span class="kpi-value" id="kpi-progress">0</span><span class="kpi-trend"><b>5</b> review</span></div>
+      <div class="kpi kpi--ok"><div class="kpi-head"><span class="kpi-label">On-time Rate</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span></div><span class="kpi-value" id="kpi-ontime">0%</span><span class="kpi-trend up"><b>+3%</b> so kỳ trước</span></div>
+      <div class="kpi kpi--red"><div class="kpi-head"><span class="kpi-label">Overdue</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></span></div><span class="kpi-value" id="kpi-overdue">0</span><span class="kpi-trend down"><b>+1</b> hôm nay</span></div>
+      <div class="kpi kpi--brand"><div class="kpi-head"><span class="kpi-label">Avg Rating</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span></div><span class="kpi-value" id="kpi-rating">0</span><span class="kpi-trend"><b>/5</b> từ <span id="kpi-rated-count">0</span> đánh giá</span></div>
+      <div class="kpi"><div class="kpi-head"><span class="kpi-label">Rating Coverage</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span></div><span class="kpi-value" id="kpi-coverage">0%</span><span class="kpi-trend"><b id="kpi-coverage-ratio">0/0</b> rated</span></div>
+      <div class="kpi"><div class="kpi-head"><span class="kpi-label">Revision Avg</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span></div><span class="kpi-value" id="kpi-revision">0</span><span class="kpi-trend"><b>vòng</b> /task</span></div>
+      <div class="kpi kpi--warn"><div class="kpi-head"><span class="kpi-label">Reopened</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span></div><span class="kpi-value" id="kpi-reopened">0</span><span class="kpi-trend"><b>task</b> mở lại</span></div>
+      <div class="kpi kpi--warn"><div class="kpi-head"><span class="kpi-label">Brief Need Info</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg></span></div><span class="kpi-value" id="kpi-briefneed">0</span><span class="kpi-trend"><b>brief</b> thiếu</span></div>
+      <div class="kpi kpi--ok"><div class="kpi-head"><span class="kpi-label">Delivery Done</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span></div><span class="kpi-value" id="kpi-delivery">0</span><span class="kpi-trend up"><b>+12</b> kỳ này</span></div>
+    </div>
+
+    <!-- ============ CHART 1: Task trend (full width) ============ -->
+    <div class="chart-card" style="margin-bottom: var(--space-5)">
+      <div class="chart-card-head">
+        <div>
+          <h3><span class="serif-italic">Task</span> theo thời gian</h3>
+          <p class="desc">Order mới, task tạo, task hoàn thành & task trễ trong 14 ngày qua.</p>
+        </div>
+      </div>
+      <div class="line-chart-wrap" id="line-chart-wrap"></div>
+      <div class="chart-legend">
+        <span><i style="background: var(--brand-600)"></i> Orders</span>
+        <span><i style="background: #f59e0b"></i> Tasks created</span>
+        <span><i style="background: #10b981"></i> Tasks completed</span>
+        <span><i style="background: var(--red-600)"></i> Tasks overdue</span>
+      </div>
+    </div>
+
+    <!-- ============ CHARTS ROW 2: Type distribution + Role performance ============ -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-card-head"><div><h3>Cơ cấu task theo hạng mục</h3><p class="desc">Phân bổ workload theo loại sản xuất.</p></div></div>
+        <div class="donut-wrap">
+          <div class="donut" id="type-donut" role="img" aria-label="Donut chart">
+            <div class="donut-inner"><div><b id="type-total">0</b><span>tasks</span></div></div>
+          </div>
+          <div class="status-legend" id="type-legend"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head"><div><h3><span class="serif-italic serif-italic--red">Báo cáo</span> theo vị trí</h3><p class="desc">Total tasks · completed · rating TB theo role.</p></div></div>
+        <div class="h-bar-list" id="role-bars"></div>
+      </div>
+    </div>
+
+    <!-- ============ CHARTS ROW 3: PIC performance + Heatmap ============ -->
+    <div class="chart-grid chart-grid--wide-narrow">
+      <div class="chart-card">
+        <div class="chart-card-head"><div><h3>Hiệu suất theo P.I.C</h3><p class="desc">Stacked bar: đúng hạn · sắp trễ · trễ hạn · hoàn thành.</p></div></div>
+        <div class="stacked-list" id="pic-bars"></div>
+        <div class="chart-legend">
+          <span><i style="background: var(--brand-600)"></i> Đúng hạn</span>
+          <span><i style="background: var(--warning)"></i> Sắp trễ</span>
+          <span><i style="background: var(--red-600)"></i> Trễ hạn</span>
+          <span><i style="background: var(--success)"></i> Hoàn thành</span>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head"><div><h3>Workload theo thứ</h3><p class="desc">Order & task tạo theo ngày trong tuần.</p></div></div>
+        <div class="heatmap" id="heatmap"></div>
+        <div class="chart-legend" style="margin-top: var(--space-3)">
+          <span><i style="background: rgb(25 25 112 / 0.08)"></i> Thấp</span>
+          <span><i style="background: rgb(25 25 112 / 0.32)"></i> TB</span>
+          <span><i style="background: var(--brand-600)"></i> Cao</span>
+          <span><i style="background: linear-gradient(135deg, var(--brand-700), var(--red-700))"></i> Đỉnh</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CHARTS ROW 4: Delivery Funnel + Rating Dist + SLA ============ -->
+    <div class="chart-grid chart-grid--3">
+      <div class="chart-card">
+        <div class="chart-card-head"><div><h3>Delivery Funnel</h3><p class="desc">Conversion từng bước bàn giao.</p></div></div>
+        <div class="funnel-report" id="funnel"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head"><div><h3>Rating Distribution</h3><p class="desc">Phân bổ điểm 1–5 sao từ client.</p></div></div>
+        <div class="rating-dist" id="rating-dist"></div>
+      </div>
+      <div class="chart-card sla-card">
+        <div class="chart-card-head"><div><h3>SLA Overview</h3><p class="desc">Tỷ lệ đúng deadline nội bộ.</p></div></div>
+        <div class="sla-big"><span class="sla-num" id="sla-num">92</span><span class="sla-unit">%</span></div>
+        <div class="sla-target">Mục tiêu: <b>95%</b> · Avg completion: <b id="avg-completion">2.4</b> ngày</div>
+        <div class="sla-bar-wrap"><i id="sla-bar" style="width:92%"></i></div>
+        <div class="deadline-status">
+          <div class="deadline-status-item s--ok"><span>On Track</span><b id="dl-ontrack">0</b></div>
+          <div class="deadline-status-item s--soon"><span>Due Soon</span><b id="dl-soon">0</b></div>
+          <div class="deadline-status-item s--soon"><span>Today</span><b id="dl-today">0</b></div>
+          <div class="deadline-status-item s--late"><span>Overdue</span><b id="dl-late">0</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CHART 6: Brief & Delivery Quality ============ -->
+    <div class="chart-card" style="margin-bottom: var(--space-6)">
+      <div class="chart-card-head">
+        <div><h3>Chất lượng brief &amp; bàn giao</h3><p class="desc">Tổng quan brief đủ/thiếu + delivery performance.</p></div>
+      </div>
+      <div class="quality-grid">
+        <div class="quality-cell q--good"><label>Brief đủ thông tin</label><b id="q-brief-ok">0</b><span class="sub">order — không cần bổ sung</span></div>
+        <div class="quality-cell q--warn"><label>Brief thiếu</label><b id="q-brief-bad">0</b><span class="sub">order cần Account hỏi lại</span></div>
+        <div class="quality-cell q--good"><label>Có rating</label><b id="q-rated">0</b><span class="sub">delivery được client đánh giá</span></div>
+        <div class="quality-cell q--warn"><label>Chưa rating</label><b id="q-norate">0</b><span class="sub">delivery chờ rating client</span></div>
+        <div class="quality-cell q--bad"><label>Task mở lại</label><b id="q-reopen">0</b><span class="sub">phát sinh sau bàn giao</span></div>
+        <div class="quality-cell q--good"><label>Đúng hạn</label><b id="q-ontime">0%</b><span class="sub">tỷ lệ on-time</span></div>
+        <div class="quality-cell q--bad"><label>Trễ hạn</label><b id="q-late">0%</b><span class="sub">tỷ lệ late</span></div>
+        <div class="quality-cell q--warn"><label>Revision TB</label><b id="q-rev">0</b><span class="sub">vòng / task</span></div>
+      </div>
+    </div>
+
+    <!-- ============ TABLE 1: PIC / Role KPI ============ -->
+    <div class="table-card" style="margin-bottom: var(--space-5)">
+      <div class="table-head"><h3>KPI theo P.I.C</h3><span class="count-text">Bảng xếp hạng hiệu suất nhân sự</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Vị trí</th><th>Nhân sự</th><th>Tổng task</th><th>Hoàn thành</th><th>Đúng hạn</th><th>Trễ hạn</th><th>Revision TB</th><th>Rating TB</th><th>Thời gian TB</th><th>KPI</th>
+          </tr></thead>
+          <tbody id="pic-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ TABLE 2: Overdue & Risk ============ -->
+    <div class="table-card" style="margin-bottom: var(--space-5)">
+      <div class="table-head"><h3>Overdue &amp; Risk</h3><span class="count-text">Task/order cần xử lý gấp</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Order / Task</th><th>Project</th><th>Type</th><th>P.I.C</th><th>Account</th><th>Priority</th><th>Internal Deadline</th><th>Overdue</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="overdue-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ TABLE 3: Feedback & Rating ============ -->
+    <div class="table-card">
+      <div class="table-head"><h3>Feedback &amp; Rating gần đây</h3><span class="count-text">Top 6 rating + feedback từ client</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Order</th><th>Project</th><th>Requester</th><th>Account</th><th>P.I.C</th><th>Rating</th><th>Feedback</th><th>Categories</th><th>Date</th>
+          </tr></thead>
+          <tbody id="feedback-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/reports.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

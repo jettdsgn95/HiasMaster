@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Master Dashboard — CB Media Hub</title>
+<meta name="description" content="Master Dashboard nội bộ — tổng quan vận hành Media từ brief đến bàn giao." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-3)">
+      <button class="icon-btn sidebar-toggle" id="sb-toggle" aria-label="Mở menu" aria-controls="dash-sb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Thông báo" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--red-600); border:2px solid var(--surface)"></span>
+      </button>
+      <a class="btn btn-primary btn-sm" href="request.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tạo Order
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop"></div>
+
+<div class="dash-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="dash-sidebar" id="dash-sb">
+    <h6>Vận hành</h6>
+    <ul class="dash-nav">
+      <li><a href="dashboard.html" class="is-active">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+        <span>Dashboard</span>
+      </a></li>
+      <li><a href="request.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+        <span>Order Form</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="database-orders.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+        <span>Database Orders</span>
+        <span class="nav-badge">3</span>
+      </a></li>
+      <li><a href="production-board.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+        <span>Production Board</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="delivery-log.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+        <span>Delivery Log</span>
+        <span class="nav-badge">4</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="reports.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span>Reports</span>
+      </a></li>
+    </ul>
+
+    <h6>Hệ thống</h6>
+    <ul class="dash-nav">
+      <li><a href="ai-tools.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/><circle cx="17" cy="9" r="1"/><circle cx="14" cy="16" r="1"/></svg></span>
+        <span>AI Tools</span>
+        <span class="nav-badge">New</span>
+      </a></li>
+      <li><a href="chatbot.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <span>Chatbot</span>
+      </a></li>
+      <li data-show-roles="admin"><a href="user-management.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span>User Management</span>
+      </a></li>
+      <li data-show-roles="admin"><a href="settings.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.15.68.41.94.74.27.34.41.74.43 1.16.02.42-.08.82-.29 1.17-.21.34-.51.6-.86.74"/></svg></span>
+        <span>Settings</span>
+      </a></li>
+    </ul>
+
+    <div class="dash-sidebar-foot">
+      <div class="profile-chip" id="profile-chip" tabindex="0">
+        <span class="avatar" id="pc-avatar">MP</span>
+        <div class="pinfo">
+          <div class="pname" id="pc-name">Mai Phương</div>
+          <div class="prole">
+            <span id="pc-role-badge" class="role-badge r--admin">Admin</span>
+            <span id="pc-title" style="margin-left:4px">Account Lead</span>
+          </div>
+        </div>
+        <div class="profile-menu" id="profile-menu">
+          <a href="#" onclick="event.preventDefault()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Hồ sơ
+          </a>
+          <a href="#" onclick="event.preventDefault()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.15.68.41.94.74.27.34.41.74.43 1.16.02.42-.08.82-.29 1.17-.21.34-.51.6-.86.74"/></svg>
+            Cài đặt
+          </a>
+          <button type="button" class="danger" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="dash-main">
+
+    <!-- Page head -->
+    <div class="dash-page-head">
+      <div>
+        <h1><span class="serif-italic">Master</span> Dashboard</h1>
+        <p>Tổng quan vận hành Media từ brief đến bàn giao.</p>
+        <div class="meta-row">
+          <span>Last updated: <b id="last-updated">10/03/2026 16:02</b></span>
+          <button class="refresh-btn" id="refresh-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Làm mới
+          </button>
+        </div>
+      </div>
+      <div class="row" style="gap:var(--space-2)">
+        <button class="btn btn-secondary btn-sm">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <a class="btn btn-primary btn-sm" href="request.html">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tạo Order
+        </a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="dash-filters">
+      <select class="select">
+        <option>Tháng này</option>
+        <option>Hôm nay</option>
+        <option>7 ngày qua</option>
+        <option>30 ngày qua</option>
+        <option>Quý này</option>
+        <option>Custom...</option>
+      </select>
+      <select class="select">
+        <option>Tất cả role</option>
+        <option>Account</option>
+        <option>Design</option>
+        <option>Editor</option>
+        <option>Shooting</option>
+      </select>
+      <select class="select">
+        <option>Tất cả PIC</option>
+        <option>Duy</option>
+        <option>Vinh</option>
+        <option>Hậu</option>
+        <option>Linh Chi</option>
+        <option>Đức Anh</option>
+      </select>
+      <select class="select">
+        <option>Tất cả chi nhánh</option>
+        <option>HCM</option>
+        <option>HN</option>
+        <option>ĐN</option>
+      </select>
+      <div class="grow"></div>
+      <span class="text-xs muted">Hiển thị <b style="color:var(--text)">128</b> orders</span>
+    </div>
+
+    <!-- ============ KPI CARDS ============ -->
+    <div class="kpi-grid">
+      <div class="kpi kpi--brand kpi--hero" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">Total Orders</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+        </div>
+        <span class="kpi-value" data-count-up="128">128</span>
+        <span class="kpi-trend up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg><b>+16</b> so với tháng trước</span>
+      </div>
+      <div class="kpi kpi--red kpi--attention" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">New Requests</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+        </div>
+        <span class="kpi-value" data-count-up="12">12</span>
+        <span class="kpi-trend up"><b>+3</b> chờ xác nhận</span>
+      </div>
+      <div class="kpi kpi--warn" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">Brief Need Info</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        </div>
+        <span class="kpi-value">5</span>
+        <span class="kpi-trend down"><b>-2</b> cần bổ sung</span>
+      </div>
+      <div class="kpi" data-show-roles="admin,account,design,editor">
+        <div class="kpi-head">
+          <span class="kpi-label">In Production</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        </div>
+        <span class="kpi-value">34</span>
+        <span class="kpi-trend up"><b>+5</b> đang xử lý</span>
+      </div>
+      <div class="kpi" data-show-roles="admin,account,design,editor">
+        <div class="kpi-head">
+          <span class="kpi-label">Internal Review</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        </div>
+        <span class="kpi-value">7</span>
+        <span class="kpi-trend up"><b>+2</b> chờ duyệt</span>
+      </div>
+      <div class="kpi kpi--ok" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">Ready for Delivery</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </div>
+        <span class="kpi-value">9</span>
+        <span class="kpi-trend"><b>3</b> đang chờ Account</span>
+      </div>
+      <div class="kpi kpi--warn" data-show-roles="admin,account,design,editor">
+        <div class="kpi-head">
+          <span class="kpi-label">Due Soon</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        </div>
+        <span class="kpi-value">11</span>
+        <span class="kpi-trend"><b>48h</b> tới</span>
+      </div>
+      <div class="kpi kpi--red" data-show-roles="admin,account,design,editor">
+        <div class="kpi-head">
+          <span class="kpi-label">Overdue</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        </div>
+        <span class="kpi-value">4</span>
+        <span class="kpi-trend down"><b>+1</b> mới hôm nay</span>
+      </div>
+      <div class="kpi kpi--ok" data-show-roles="admin,account,design,editor">
+        <div class="kpi-head">
+          <span class="kpi-label">Completed</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+        </div>
+        <span class="kpi-value">68</span>
+        <span class="kpi-trend up"><b>+22</b> kỳ này</span>
+      </div>
+      <div class="kpi kpi--ok" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">On-time Rate</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+        </div>
+        <span class="kpi-value">92%</span>
+        <span class="kpi-trend up"><b>+3%</b> so kỳ trước</span>
+      </div>
+      <div class="kpi kpi--brand" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">Average Rating</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+        </div>
+        <span class="kpi-value">4.7</span>
+        <span class="kpi-trend"><b>/5</b> từ 52 đánh giá</span>
+      </div>
+      <div class="kpi" data-show-roles="admin,account">
+        <div class="kpi-head">
+          <span class="kpi-label">Rating Coverage</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+        </div>
+        <span class="kpi-value">76%</span>
+        <span class="kpi-trend"><b>52/68</b> đơn được rating</span>
+      </div>
+    </div>
+
+    <!-- ============ WORKFLOW HEALTH ============ -->
+    <section class="dash-section" data-show-roles="admin,account">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Workflow</span> Health</h2>
+          <p>Số order/task đang ở từng bước của luồng vận hành.</p>
+        </div>
+      </div>
+      <div class="pipeline">
+        <div class="pipe-stage"><span class="pipe-count">12</span><span class="pipe-label">New Request</span></div>
+        <div class="pipe-stage"><span class="pipe-count">8</span><span class="pipe-label">Brief Checking</span></div>
+        <div class="pipe-stage"><span class="pipe-count">34</span><span class="pipe-label">In Production</span></div>
+        <div class="pipe-stage"><span class="pipe-count">7</span><span class="pipe-label">Internal Review</span></div>
+        <div class="pipe-stage"><span class="pipe-count">9</span><span class="pipe-label">Delivery</span></div>
+        <div class="pipe-stage"><span class="pipe-count">68</span><span class="pipe-label">Completed</span></div>
+      </div>
+    </section>
+
+    <!-- ============ ALERT + WORKLOAD ============ -->
+    <div class="row-2">
+      <section class="dash-card" data-show-roles="admin,account,design,editor">
+        <div class="row between">
+          <div><h3>Alert Center</h3><p class="desc">Các điểm cần xử lý gấp.</p></div>
+          <span class="badge badge-danger"><span class="dot"></span> 6 cảnh báo</span>
+        </div>
+        <div class="alert-list">
+          <div class="alert-item alert-item--critical">
+            <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <div class="alert-body">
+              <b>Task trễ deadline nội bộ</b>
+              <div class="alert-meta"><span class="mono">MEDIA-2026-0008</span><span class="sep">·</span><span>Backdrop Summer Campaign</span><span class="sep">·</span><span>PIC: Duy</span><span class="sep">·</span><span style="color:var(--red-600); font-weight:600">Trễ 1 ngày 4 giờ</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Xem</button>
+          </div>
+          <div class="alert-item alert-item--critical">
+            <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <div class="alert-body">
+              <b>Link final thiếu sau khi gửi</b>
+              <div class="alert-meta"><span class="mono">MEDIA-2026-0011</span><span class="sep">·</span><span>TVC Sản phẩm Hè</span><span class="sep">·</span><span>Account: Hậu</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Xem</button>
+          </div>
+          <div class="alert-item alert-item--warning">
+            <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+            <div class="alert-body">
+              <b>Task sắp đến hạn trong 24h</b>
+              <div class="alert-meta"><span class="mono">MEDIA-2026-0028</span><span class="sep">·</span><span>Reel Recap Sự kiện Q3</span><span class="sep">·</span><span>PIC: Vinh</span><span class="sep">·</span><span style="color:var(--warning-fg); font-weight:600">Còn 18 giờ</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Xem</button>
+          </div>
+          <div class="alert-item alert-item--warning">
+            <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+            <div class="alert-body">
+              <b>Brief thiếu thông tin</b>
+              <div class="alert-meta"><span class="mono">MEDIA-2026-0034</span><span class="sep">·</span><span>Bộ KV Tuyển dụng</span><span class="sep">·</span><span>Account: Mai Phương</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Xem</button>
+          </div>
+          <div class="alert-item alert-item--info">
+            <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <div class="alert-body">
+              <b>Task chờ duyệt nội bộ &gt; 4 giờ</b>
+              <div class="alert-meta"><span class="mono">MEDIA-2026-0026</span><span class="sep">·</span><span>Motion Logo Sản phẩm Mới</span><span class="sep">·</span><span>Editor: Linh Chi</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Xem</button>
+          </div>
+          <div class="alert-item alert-item--info">
+            <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <div class="alert-body">
+              <b>Đã bàn giao nhưng chưa rating &gt; 5 ngày</b>
+              <div class="alert-meta"><span class="mono">MEDIA-2026-0019</span><span class="sep">·</span><span>Photoshoot Sản phẩm</span><span class="sep">·</span><span>Account: Đức Anh</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Xem</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="dash-card" data-show-roles="admin">
+        <div class="row between">
+          <div><h3>Workload by PIC</h3><p class="desc">Phân bổ task đang mở theo nhân sự.</p></div>
+          <span class="badge badge-warning"><span class="dot"></span> 2 PIC vượt ngưỡng</span>
+        </div>
+        <div class="workload-list">
+          <div class="workload-row">
+            <span class="wname"><span class="ava">Duy</span> Duy</span>
+            <div class="workload-bar" title="Đang thực hiện 5 · Chờ duyệt 1 · Trễ 1">
+              <span class="wb--progress" style="width:50%"></span>
+              <span class="wb--review"   style="width:12%"></span>
+              <span class="wb--overdue"  style="width:8%"></span>
+              <span class="wb--done"     style="width:30%"></span>
+            </div>
+            <span class="wcount"><b>8</b> /max 8</span>
+          </div>
+          <div class="workload-row">
+            <span class="wname"><span class="ava">Vi</span> Vinh</span>
+            <div class="workload-bar">
+              <span class="wb--progress" style="width:40%"></span>
+              <span class="wb--review"   style="width:20%"></span>
+              <span class="wb--overdue"  style="width:15%"></span>
+              <span class="wb--done"     style="width:25%"></span>
+            </div>
+            <span class="wcount"><b>9</b> /max 8</span>
+          </div>
+          <div class="workload-row">
+            <span class="wname"><span class="ava">Hậ</span> Hậu</span>
+            <div class="workload-bar">
+              <span class="wb--progress" style="width:42%"></span>
+              <span class="wb--review"   style="width:14%"></span>
+              <span class="wb--overdue"  style="width:0%"></span>
+              <span class="wb--done"     style="width:44%"></span>
+            </div>
+            <span class="wcount"><b>5</b> /max 8</span>
+          </div>
+          <div class="workload-row">
+            <span class="wname"><span class="ava">LC</span> Linh Chi</span>
+            <div class="workload-bar">
+              <span class="wb--progress" style="width:48%"></span>
+              <span class="wb--review"   style="width:8%"></span>
+              <span class="wb--overdue"  style="width:5%"></span>
+              <span class="wb--done"     style="width:39%"></span>
+            </div>
+            <span class="wcount"><b>7</b> /max 8</span>
+          </div>
+          <div class="workload-row">
+            <span class="wname"><span class="ava">ĐA</span> Đức Anh</span>
+            <div class="workload-bar">
+              <span class="wb--progress" style="width:35%"></span>
+              <span class="wb--review"   style="width:18%"></span>
+              <span class="wb--overdue"  style="width:0%"></span>
+              <span class="wb--done"     style="width:47%"></span>
+            </div>
+            <span class="wcount"><b>4</b> /max 8</span>
+          </div>
+          <div class="workload-row">
+            <span class="wname"><span class="ava">MP</span> Mai Phương</span>
+            <div class="workload-bar">
+              <span class="wb--progress" style="width:30%"></span>
+              <span class="wb--review"   style="width:25%"></span>
+              <span class="wb--overdue"  style="width:5%"></span>
+              <span class="wb--done"     style="width:40%"></span>
+            </div>
+            <span class="wcount"><b>6</b> /max 8</span>
+          </div>
+        </div>
+        <div class="workload-legend">
+          <span><i class="wl--progress"></i> Đang thực hiện</span>
+          <span><i class="wl--review"></i> Chờ duyệt</span>
+          <span><i class="wl--overdue"></i> Trễ hạn</span>
+          <span><i class="wl--done"></i> Hoàn thành</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ PRODUCTION + DEADLINE ============ -->
+    <div class="row-2 row-2--equal">
+      <section class="dash-card" data-show-roles="admin,account">
+        <div class="row between">
+          <div><h3>Production Status</h3><p class="desc">Phân bổ task theo status (in production).</p></div>
+        </div>
+        <div class="status-block">
+          <div class="donut" role="img" aria-label="Donut chart phân bổ status">
+            <div class="donut-inner"><div><b>48</b><span>task đang mở</span></div></div>
+          </div>
+          <div class="status-legend">
+            <div class="status-legend-item"><i class="sl--progress"></i><span>Đang thực hiện</span><span class="pct">36%</span></div>
+            <div class="status-legend-item"><i class="sl--review"></i><span>Chờ duyệt nội bộ</span><span class="pct">18%</span></div>
+            <div class="status-legend-item"><i class="sl--ready"></i><span>Sẵn sàng bàn giao</span><span class="pct">14%</span></div>
+            <div class="status-legend-item"><i class="sl--done"></i><span>Hoàn thành</span><span class="pct">22%</span></div>
+            <div class="status-legend-item"><i class="sl--overdue"></i><span>Trễ hạn</span><span class="pct">10%</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dash-card" data-show-roles="admin,account">
+        <div class="row between">
+          <div><h3>Deadline &amp; SLA</h3><p class="desc">Tỷ lệ đúng hạn và phân loại deadline.</p></div>
+          <span class="badge badge-success"><span class="dot"></span> 92% đúng hạn</span>
+        </div>
+        <div class="sla-gauge">
+          <span class="sla-num">92%</span>
+          <div class="grow">
+            <div class="sla-bar"><i style="width:92%"></i></div>
+            <div class="row between" style="margin-top:6px; font-size:11px; color:var(--text-muted)">
+              <span>On-time Rate</span>
+              <span>Mục tiêu 95%</span>
+            </div>
+          </div>
+        </div>
+        <div class="deadline-grid">
+          <div class="dl-tile dl--ok"><b>32</b><span>On Track (&gt;48h)</span></div>
+          <div class="dl-tile dl--soon"><b>11</b><span>Due Soon (24–48h)</span></div>
+          <div class="dl-tile dl--soon"><b>5</b><span>Due Today</span></div>
+          <div class="dl-tile dl--late"><b>4</b><span>Internal Overdue</span></div>
+          <div class="dl-tile dl--late"><b>1</b><span>Client Overdue</span></div>
+          <div class="dl-tile dl--ok"><b>63</b><span>Completed On Time</span></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ DELIVERY + RECENT ACTIVITY ============ -->
+    <div class="row-2 row-2--equal">
+      <section class="dash-card" data-show-roles="admin,account">
+        <div class="row between">
+          <div><h3>Delivery Funnel</h3><p class="desc">Tỷ lệ chuyển bước từ Ready → Completed.</p></div>
+        </div>
+        <div class="funnel">
+          <div class="funnel-step"><b>Ready for Delivery</b><span class="fn-count">22</span></div>
+          <div class="funnel-step"><b>Account Checked</b><span class="fn-count">21</span></div>
+          <div class="funnel-step"><b>Preview Sent</b><span class="fn-count">19</span></div>
+          <div class="funnel-step"><b>Client Approved</b><span class="fn-count">17</span></div>
+          <div class="funnel-step"><b>Final Sent</b><span class="fn-count">14</span></div>
+          <div class="funnel-step"><b>Rated &amp; Completed</b><span class="fn-count">11</span></div>
+        </div>
+        <div class="row" style="margin-top:var(--space-2); gap:var(--space-4); font-size:var(--text-xs); color:var(--text-muted)">
+          <span>Rating TB: <b style="color:var(--text)">4.7/5</b></span>
+          <span>Coverage: <b style="color:var(--text)">76%</b></span>
+          <span>Reopened: <b style="color:var(--red-600)">2 task</b></span>
+        </div>
+      </section>
+
+      <section class="dash-card" data-show-roles="admin,account,design,editor">
+        <div class="row between">
+          <div><h3>Recent Activity</h3><p class="desc">Cập nhật mới nhất từ team.</p></div>
+          <a href="#" class="text-xs" style="color:var(--primary); font-weight:600">Xem tất cả →</a>
+        </div>
+        <div class="activity-feed">
+          <div class="activity-item">
+            <span class="av">Duy</span>
+            <div>
+              <div class="a-text"><b>Duy</b> chuyển <span class="mono">MEDIA-2026-0003</span> từ <em>Đang thực hiện</em> sang <em>Chờ duyệt nội bộ</em>.</div>
+              <div class="a-meta"><span class="a-action act--up">STATUS</span><span>16:02 · hôm nay</span></div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="av">Hậ</span>
+            <div>
+              <div class="a-text"><b>Hậu</b> comment trên <span class="mono">MEDIA-2026-0003</span>: "Cần kiểm tra lại wording CTA."</div>
+              <div class="a-meta"><span class="a-action act--note">COMMENT</span><span>16:05 · hôm nay</span></div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="av">Vi</span>
+            <div>
+              <div class="a-text"><b>Vinh</b> upload preview link cho <span class="mono">MEDIA-2026-0028</span>.</div>
+              <div class="a-meta"><span class="a-action">UPLOAD</span><span>15:38 · hôm nay</span></div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="av">LC</span>
+            <div>
+              <div class="a-text"><b>Linh Chi</b> bàn giao final cho <span class="mono">MEDIA-2026-0024</span>.</div>
+              <div class="a-meta"><span class="a-action act--up">DELIVER</span><span>14:12 · hôm nay</span></div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="av">CB</span>
+            <div>
+              <div class="a-text">Client gửi <b>rating 5 sao</b> cho <span class="mono">MEDIA-2026-0019</span>: "Hài lòng với chất lượng &amp; timeline."</div>
+              <div class="a-meta"><span class="a-action act--up">RATING</span><span>11:24 · hôm nay</span></div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="av">ĐA</span>
+            <div>
+              <div class="a-text"><b>Đức Anh</b> assign <span class="mono">MEDIA-2026-0038</span> cho <b>Vinh</b>.</div>
+              <div class="a-meta"><span class="a-action act--note">ASSIGN</span><span>09:50 · hôm nay</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ QUICK ACTIONS ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic serif-italic--red">Quick</span> Actions</h2>
+          <p>Xử lý nhanh không cần đi sâu vào menu.</p>
+        </div>
+      </div>
+      <div class="qa-grid">
+        <a class="qa-btn" href="request.html" data-show-roles="admin,account">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+          <b>Tạo Order mới</b>
+          <span>Form 5 section · 4 phút</span>
+        </a>
+        <a class="qa-btn" href="tracking.html" data-show-roles="admin,account">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+          <b>Đơn chờ xác nhận</b>
+          <span>12 đơn mới</span>
+        </a>
+        <a class="qa-btn" href="#" data-show-roles="admin,account,design,editor">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+          <b>Task trễ hạn</b>
+          <span>4 task cần xử lý</span>
+        </a>
+        <a class="qa-btn" href="#" data-show-roles="admin,account">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <b>Task chờ duyệt</b>
+          <span>7 task internal review</span>
+        </a>
+        <a class="qa-btn" href="deliveries.html" data-show-roles="admin">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <b>Mở Reports</b>
+          <span>Báo cáo chi tiết tháng này</span>
+        </a>
+        <a class="qa-btn" href="#" data-show-roles="design,editor">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          <b>My Tasks</b>
+          <span>5 task assign cho bạn</span>
+        </a>
+        <a class="qa-btn" href="#" data-show-roles="design,editor">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+          <b>Upload preview</b>
+          <span>Gắn vào task đang mở</span>
+        </a>
+        <a class="qa-btn" href="#" data-show-roles="design,editor">
+          <span class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
+          <b>Cập nhật trạng thái</b>
+          <span>Đổi status task của bạn</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/chatbot.js"></script>
+<script>
+(function(){
+  /* ============ Auth guard + role setup ============ */
+  let user;
+  try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
+  if (!user || !user.role) {
+    // No session → back to login
+    location.replace('login.html');
+    return;
+  }
+  if (user.role === 'client') {
+    window.MH.toast({ type: 'info', title: 'Client portal', message: 'Client được chuyển về khu vực tra cứu public.' });
+    setTimeout(() => location.replace('tracking.html'), 500);
+    return;
+  }
+
+  // Apply role to body
+  document.body.setAttribute('data-user', user.email || user.role);
+  document.body.setAttribute('data-user-role', user.role);
+
+  // Update profile chip
+  const pcName   = document.getElementById('pc-name');
+  const pcAvatar = document.getElementById('pc-avatar');
+  const pcRole   = document.getElementById('pc-role-badge');
+  const pcTitle  = document.getElementById('pc-title');
+  if (pcName)   pcName.textContent   = user.name || 'User';
+  if (pcAvatar) pcAvatar.textContent = user.initials || (user.name || 'U').substring(0, 2).toUpperCase();
+  if (pcRole) {
+    pcRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+    pcRole.className   = 'role-badge r--' + user.role;
+  }
+  if (pcTitle)  pcTitle.textContent  = user.title ? user.title.replace(/^[A-Za-z]+ · /, '') : '';
+
+  // Update page subtitle per role
+  const subtitle = document.querySelector('.dash-page-head p');
+  if (subtitle) {
+    const text = {
+      admin:   'Tổng quan vận hành Media từ brief đến bàn giao.',
+      account: 'Theo dõi order bạn phụ trách: chờ xác nhận, chờ kiểm tra, chờ bàn giao.',
+      design:  'Theo dõi task được assign cho bạn: deadline, progress, upload preview.',
+      editor:  'Theo dõi task được assign cho bạn: deadline, progress, upload preview.'
+    };
+    subtitle.textContent = text[user.role] || text.admin;
+  }
+
+  // Show/hide PIC filter for design/editor (they only see own data)
+  if (user.role === 'design' || user.role === 'editor') {
+    const filters = document.querySelectorAll('.dash-filters .select');
+    if (filters[1]) filters[1].style.display = 'none'; // Role filter
+    if (filters[2]) filters[2].style.display = 'none'; // PIC filter
+  }
+
+  /* ============ Profile menu toggle ============ */
+  const chip = document.getElementById('profile-chip');
+  if (chip) {
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.profile-menu')) return; // ignore clicks inside menu
+      chip.classList.toggle('is-open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!chip.contains(e.target)) chip.classList.remove('is-open');
+    });
+  }
+
+  /* ============ Logout ============ */
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('mh-user');
+      window.MH.toast({ type: 'info', title: 'Đã đăng xuất', message: 'Hẹn gặp lại ' + (user.name || '') });
+      setTimeout(() => location.href = 'login.html', 500);
+    });
+  }
+
+  /* ============ Collapse row-2 layout when only one card visible ============ */
+  function reflowRows() {
+    document.querySelectorAll('.row-2, .row-2--equal').forEach((row) => {
+      const visible = [...row.children].filter(c => getComputedStyle(c).display !== 'none');
+      row.style.gridTemplateColumns = visible.length < 2 ? '1fr' : '';
+    });
+  }
+  reflowRows();
+
+  /* ============ Sidebar toggle (mobile) ============ */
+  const sb = document.getElementById('dash-sb');
+  const bd = document.getElementById('sb-backdrop');
+  const t  = document.getElementById('sb-toggle');
+  function openSb(){ sb.classList.add('is-open'); bd.classList.add('is-open'); }
+  function closeSb(){ sb.classList.remove('is-open'); bd.classList.remove('is-open'); }
+  if (t) t.addEventListener('click', openSb);
+  if (bd) bd.addEventListener('click', closeSb);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSb(); });
+
+  /* ============ Counter-up animation for KPI values ============ */
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function countUp(el, target, duration) {
+    el.classList.add('is-animating');
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      el.textContent = Math.round(target * eased);
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        el.textContent = target;
+        el.classList.remove('is-animating');
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  const countObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const target = parseInt(el.getAttribute('data-count-up'), 10);
+      if (isNaN(target)) return;
+      if (reduceMotion) {
+        el.textContent = target;
+      } else {
+        // Hero card slower for impact, smaller numbers faster
+        const duration = target > 50 ? 1400 : 900;
+        countUp(el, target, duration);
+      }
+      countObserver.unobserve(el);
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('[data-count-up]').forEach((el) => {
+    el.textContent = '0';
+    countObserver.observe(el);
+  });
+
+  /* ============ Refresh button ============ */
+  const rf = document.getElementById('refresh-btn');
+  const lu = document.getElementById('last-updated');
+  if (rf) {
+    rf.addEventListener('click', () => {
+      rf.classList.add('is-spinning');
+      setTimeout(() => {
+        rf.classList.remove('is-spinning');
+        const d = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        lu.textContent = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        window.MH.toast({ type: 'success', title: 'Đã làm mới', message: 'Dashboard cập nhật lúc ' + lu.textContent });
+      }, 700);
+    });
+  }
+})();
+</script>
+</body>
+</html>

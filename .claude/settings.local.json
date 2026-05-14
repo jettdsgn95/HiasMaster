@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(python --version)",
+      "PowerShell(ls \"C:\\\\Users\\\\ADMIN\\\\.claude\\\\skills\\\\\" -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path \"C:\\\\Users\\\\ADMIN\\\\.claude\\\\skills\"\\)\\) { Write-Host \"Directory does not exist\" })",
+      "PowerShell(Get-ChildItem \"d:\\\\HiasMaster\\\\Skill\" | Select-Object Name, @{N='Size\\(KB\\)';E={[math]::Round\\($_.Length/1KB,1\\)}} | Format-Table -AutoSize)",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\HiasMaster\\\\Portal Hub\\\\CB_Creative_Flow\" -Force)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "PowerShell($file = \"d:\\\\HiasMaster\\\\Portal Hub\\\\CB_Creative_Flow\\\\app.html\"; $size = \\(Get-Item $file\\).Length; $lines = \\(Get-Content $file\\).Count; Write-Host \"app.html: $size bytes, $lines lines\"; $idx = \"d:\\\\HiasMaster\\\\Portal Hub\\\\CB_Creative_Flow\\\\index.html\"; $isize = \\(Get-Item $idx\\).Length; $ilines = \\(Get-Content $idx\\).Count; Write-Host \"index.html: $isize bytes, $ilines lines\")",
+      "PowerShell(Start-Process \"d:\\\\HiasMaster\\\\Portal Hub\\\\CB_Creative_Flow\\\\index.html\")"
+    ]
+  }
+}

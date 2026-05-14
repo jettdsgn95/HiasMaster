@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phiếu yêu cầu Thiết kế &amp; Media — CB Media Hub</title>
+<meta name="description" content="Tạo yêu cầu thiết kế / video / quay / chụp / ads cho team CB Media. Form 7 section, hỗ trợ autosave draft + preview brief trước khi gửi." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    <nav class="nav" id="site-nav">
+      <a href="index.html">Trang chủ</a>
+      <a href="request.html">Gửi yêu cầu</a>
+      <a href="tracking.html">Tra cứu</a>
+      <a href="deliveries.html">Sản phẩm</a>
+      <a href="help.html">Hướng dẫn</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm" href="login.html">Đăng nhập</a>
+      <a class="btn btn-secondary btn-sm" href="tracking.html">Tra cứu</a>
+      <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Menu" aria-controls="site-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ FORM VIEW ============ -->
+<section class="page-intro" id="form-view">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-2)">
+      <a href="index.html" class="muted text-sm" style="display:inline-flex; align-items:center; gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Quay lại
+      </a>
+    </div>
+    <span class="eyebrow" style="margin-top:var(--space-3); display:inline-block">Tạo yêu cầu mới</span>
+    <h1><span class="serif-italic">Phiếu yêu cầu</span> Thiết kế &amp; Media</h1>
+    <p class="lead">Gửi yêu cầu thiết kế, video, quay, chụp và nội dung media cho team CB Centres. Vui lòng cung cấp đầy đủ brief, tài nguyên và deadline để team triển khai đúng chuẩn thương hiệu.</p>
+  </div>
+</section>
+
+<section class="section section--tight" id="form-section">
+  <div class="container container--wide">
+    <form class="order-form-layout" id="request-form" novalidate>
+
+      <!-- Sticky side stepper -->
+      <aside class="form-side" data-scroll-spy>
+        <a href="#sec-a"><span class="step-num">A</span> Người gửi</a>
+        <a href="#sec-b"><span class="step-num">B</span> Brief dự án</a>
+        <a href="#sec-c"><span class="step-num">C</span> Hạng mục</a>
+        <a href="#sec-d"><span class="step-num">D</span> Nội dung &amp; định hướng</a>
+        <a href="#sec-e"><span class="step-num">E</span> Tài nguyên</a>
+        <a href="#sec-f"><span class="step-num">F</span> Deadline &amp; ưu tiên</a>
+        <a href="#sec-g"><span class="step-num">G</span> Xác nhận</a>
+
+        <div class="draft-status" id="draft-status">
+          <span class="pulse"></span><span id="draft-msg">Bản nháp tự lưu mỗi 30 giây</span>
+        </div>
+      </aside>
+
+      <div>
+        <!-- ============ Section A — Requester ============ -->
+        <section class="card form-section" id="sec-a">
+          <div class="section-h">
+            <span class="section-num">A</span>
+            <div><h2>Thông tin người gửi</h2><p>Để Account có thể liên hệ và phân quyền tracking.</p></div>
+          </div>
+          <div class="stack-lg">
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="requester_name">Họ và tên <span class="req">*</span></label>
+                <input class="input" id="requester_name" name="requester_name" type="text" placeholder="VD: Nguyễn Văn A" required autocomplete="name" />
+                <span class="error">Vui lòng nhập họ và tên.</span>
+              </div>
+              <div class="field">
+                <label class="label" for="requester_email">Email <span class="req">*</span></label>
+                <input class="input" id="requester_email" name="requester_email" type="email" placeholder="name@cbcentres.com" required autocomplete="email" />
+                <span class="helper">Sẽ dùng để gửi Order ID và cập nhật trạng thái.</span>
+                <span class="error">Email không hợp lệ.</span>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="department">Chi nhánh / Bộ phận <span class="req">*</span></label>
+                <select class="select" id="department" name="department" required>
+                  <option value="">— Chọn chi nhánh / bộ phận —</option>
+                  <option>HO Marketing</option>
+                  <option>Academic</option>
+                  <option>Sales</option>
+                  <option>CB Mekong</option>
+                  <option>CB Hưng Phú</option>
+                  <option>CB Cần Thơ</option>
+                  <option>CB Tiên Thủy</option>
+                  <option>Khác</option>
+                </select>
+                <span class="error">Vui lòng chọn chi nhánh / bộ phận.</span>
+              </div>
+              <div class="field">
+                <label class="label" for="requester_contact">Thông tin liên hệ <span class="req">*</span></label>
+                <input class="input" id="requester_contact" name="requester_contact" type="text" placeholder="Số điện thoại hoặc email phụ" required />
+                <span class="error">Vui lòng nhập thông tin liên hệ.</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="requester_role_note">Vai trò người gửi</label>
+              <select class="select" id="requester_role_note" name="requester_role_note">
+                <option value="">— Tùy chọn —</option>
+                <option>Chi nhánh</option>
+                <option>HO</option>
+                <option>Academic</option>
+                <option>Sales</option>
+                <option>Partner</option>
+                <option>Khác</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Section B — Project / Brief ============ -->
+        <section class="card form-section" id="sec-b">
+          <div class="section-h">
+            <span class="section-num">B</span>
+            <div><h2>Thông tin dự án &amp; mục đích</h2><p>Order này phục vụ chương trình / campaign nào và truyền thông tới ai.</p></div>
+          </div>
+          <div class="stack-lg">
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="project_name">Tên dự án / Chương trình / Sự kiện <span class="req">*</span></label>
+                <input class="input" id="project_name" name="project_name" type="text" placeholder="VD: Summer Campaign 2026" required />
+                <span class="error">Vui lòng nhập tên dự án.</span>
+              </div>
+              <div class="field">
+                <label class="label" for="campaign_code">Mã / Tên campaign</label>
+                <input class="input" id="campaign_code" name="campaign_code" type="text" placeholder="Tùy chọn — VD: SUMMER-2026" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="project_purpose">Mục đích thiết kế / dự án <span class="req">*</span></label>
+              <textarea class="textarea" id="project_purpose" name="project_purpose" required placeholder="Quảng cáo, POSM, tuyển sinh, event, website... Càng cụ thể càng tốt (tối thiểu 20 ký tự)."></textarea>
+              <span class="helper">Tối thiểu 20 ký tự. Mô tả rõ chương trình / mục tiêu / bối cảnh sử dụng.</span>
+              <span class="error">Mục đích tối thiểu 20 ký tự.</span>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label class="label">Đối tượng mục tiêu <span class="req">*</span></label>
+                <div class="chips" id="target_audience" role="group">
+                  <label class="chip"><input type="checkbox" value="Học viên CB" hidden /> Học viên CB</label>
+                  <label class="chip"><input type="checkbox" value="Phụ huynh" hidden /> Phụ huynh</label>
+                  <label class="chip"><input type="checkbox" value="Học viên ngoài CB" hidden /> Học viên ngoài CB</label>
+                  <label class="chip"><input type="checkbox" value="Giáo viên / Nhân sự nội bộ" hidden /> Nội bộ</label>
+                  <label class="chip"><input type="checkbox" value="Trường học / Đơn vị liên kết" hidden /> Trường liên kết</label>
+                  <label class="chip"><input type="checkbox" value="Đối tác" hidden /> Đối tác</label>
+                  <label class="chip"><input type="checkbox" value="Khác" hidden /> Khác</label>
+                </div>
+                <span class="helper">Có thể chọn nhiều.</span>
+                <span class="error" data-error-for="target_audience">Vui lòng chọn ít nhất 1 đối tượng.</span>
+              </div>
+              <div class="field">
+                <label class="label">Kênh sử dụng <span class="req">*</span></label>
+                <div class="chips" id="usage_channels" role="group">
+                  <label class="chip"><input type="checkbox" value="Facebook" hidden /> Facebook</label>
+                  <label class="chip"><input type="checkbox" value="Zalo OA" hidden /> Zalo OA</label>
+                  <label class="chip"><input type="checkbox" value="Website" hidden /> Website</label>
+                  <label class="chip"><input type="checkbox" value="Landing Page" hidden /> Landing Page</label>
+                  <label class="chip"><input type="checkbox" value="TikTok / Reels" hidden /> TikTok / Reels</label>
+                  <label class="chip"><input type="checkbox" value="LCD / TV nội bộ" hidden /> LCD / TV</label>
+                  <label class="chip"><input type="checkbox" value="In ấn" hidden /> In ấn</label>
+                  <label class="chip"><input type="checkbox" value="Sự kiện" hidden /> Sự kiện</label>
+                  <label class="chip"><input type="checkbox" value="Email" hidden /> Email</label>
+                </div>
+                <span class="error" data-error-for="usage_channels">Vui lòng chọn ít nhất 1 kênh.</span>
+              </div>
+            </div>
+
+            <div class="field" style="max-width: 320px">
+              <label class="label" for="actual_use_date">Ngày sử dụng thực tế</label>
+              <input class="input" id="actual_use_date" name="actual_use_date" type="date" />
+              <span class="helper">Ngày sự kiện / chạy chương trình (nếu có).</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Section C — Request Type & Deliverables ============ -->
+        <section class="card form-section" id="sec-c">
+          <div class="section-h">
+            <span class="section-num">C</span>
+            <div><h2>Loại yêu cầu &amp; hạng mục</h2><p>Chọn loại dịch vụ chính — hạng mục sẽ hiện theo loại bạn chọn.</p></div>
+          </div>
+
+          <div class="stack-lg">
+            <div class="field">
+              <label class="label">Loại yêu cầu <span class="req">*</span></label>
+              <div class="service-grid" id="request_type_group">
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="design" required />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 0-4h-2a4 4 0 1 1 0-8h7a4 4 0 0 0 0-8H12z"/></svg></span>
+                  <span class="tile-body"><b>Thiết kế / POSM</b><span>Backdrop, standee, poster...</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="digital" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+                  <span class="tile-body"><b>Digital Design</b><span>Banner web, social, OA</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="video" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                  <span class="tile-body"><b>Video Editing</b><span>Recap, TVC, Reel</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="motion" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                  <span class="tile-body"><b>Motion Graphic</b><span>Logo motion, animation</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="shoot" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                  <span class="tile-body"><b>Quay</b><span>Sự kiện, lớp học, sản phẩm</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="photo" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+                  <span class="tile-body"><b>Chụp ảnh</b><span>Sự kiện, sản phẩm, chân dung</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="ads" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg></span>
+                  <span class="tile-body"><b>Ads / Post Basic</b><span>Caption, headline, CTA</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="slide" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span>
+                  <span class="tile-body"><b>Slide / Proposal</b><span>Powerpoint, pitch deck</span></span>
+                </label>
+                <label class="service-tile">
+                  <input type="radio" name="request_type" value="other" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
+                  <span class="tile-body"><b>Khác</b><span>Mô tả ở phần Nội dung</span></span>
+                </label>
+              </div>
+              <span class="error" data-error-for="request_type">Vui lòng chọn loại yêu cầu.</span>
+            </div>
+
+            <!-- Deliverables — visible per request type -->
+            <div class="field">
+              <label class="label">Hạng mục cần sản xuất</label>
+
+              <div class="deliverable-group" data-deliverable-for="design,digital">
+                <div class="group-label">Thiết kế / POSM</div>
+                <div class="deliverable-grid">
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Backdrop" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Backdrop</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Standee" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Standee</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Tờ rơi" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Tờ rơi</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Banner" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Banner</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Brochure" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Brochure</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Poster" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Poster</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Social Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Social Post</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Cover Facebook" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Cover FB</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="LCD/TV Screen" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> LCD / TV</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Website Banner" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Web Banner</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Zalo OA Banner" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Zalo OA</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Email Template" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Email</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Voucher/Coupon" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Voucher</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Certificate" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Certificate</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Name card" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Name card</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Booth/Event layout" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Booth / Event</label>
+                </div>
+              </div>
+
+              <div class="deliverable-group" data-deliverable-for="video,motion">
+                <div class="group-label">Video / Motion</div>
+                <div class="deliverable-grid">
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Recap Video" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Recap Video</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Reel/TikTok 9:16" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Reel / TikTok</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="TVC/Commercial" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> TVC</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Video Ads" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Video Ads</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Motion Graphic" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Motion Graphic</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Subtitle Video" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Subtitle</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Cutdown Video" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Cutdown</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Intro/Outro" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Intro / Outro</label>
+                </div>
+              </div>
+
+              <div class="deliverable-group" data-deliverable-for="shoot">
+                <div class="group-label">Quay</div>
+                <div class="deliverable-grid">
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay sự kiện" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Quay sự kiện</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay lớp học" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Quay lớp học</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay testimonial" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Testimonial</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay cơ sở" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Quay cơ sở</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay sản phẩm" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Quay sản phẩm</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay phỏng vấn" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Phỏng vấn</label>
+                </div>
+              </div>
+
+              <div class="deliverable-group" data-deliverable-for="photo">
+                <div class="group-label">Chụp ảnh</div>
+                <div class="deliverable-grid">
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp sự kiện" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp sự kiện</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp lớp học" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp lớp học</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp chân dung" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chân dung</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp cơ sở" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp cơ sở</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp sản phẩm" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp sản phẩm</label>
+                </div>
+              </div>
+
+              <div class="deliverable-group" data-deliverable-for="ads">
+                <div class="group-label">Ads / Post Basic</div>
+                <div class="deliverable-grid">
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Facebook Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Facebook Post</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Facebook Ads Copy" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Facebook Ads Copy</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Zalo OA Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Zalo OA Post</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Google Ads Copy" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Google Ads</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="TikTok Caption" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> TikTok Caption</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Headline/CTA" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Headline / CTA</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="size_ratio">Kích thước / Tỉ lệ</label>
+                <select class="select" id="size_ratio" name="size_ratio">
+                  <option value="">— Chọn preset hoặc nhập tự do —</option>
+                  <option>1:1 — Social Post</option>
+                  <option>4:5 — Facebook / Instagram Feed</option>
+                  <option>9:16 — Story / Reels / TikTok</option>
+                  <option>16:9 — Slide / LCD / Video</option>
+                  <option>A4</option>
+                  <option>A5</option>
+                  <option>Standee 80×180cm</option>
+                  <option>Backdrop 4×3m</option>
+                  <option>Banner ngang</option>
+                  <option>Khác — sẽ ghi rõ trong mô tả</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="version_quantity">Số lượng phiên bản</label>
+                <input class="input" id="version_quantity" name="version_quantity" type="number" min="1" placeholder="VD: 3" />
+                <span class="helper">Tùy chọn — số bản preview / version dự kiến.</span>
+              </div>
+            </div>
+
+            <!-- Sub-form: Video Editing -->
+            <div class="sub-form" data-subform-for="video,motion">
+              <div class="sub-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                Thông tin video / motion
+                <span class="sub-badge">Video</span>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label class="label" for="video_ratio">Tỉ lệ video</label>
+                  <select class="select" id="video_ratio" name="video_ratio">
+                    <option value="">— Chọn —</option>
+                    <option>16:9 — Horizontal</option>
+                    <option>9:16 — Vertical (Reel/TikTok)</option>
+                    <option>1:1 — Square</option>
+                    <option>4:5 — Portrait</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="video_duration">Thời lượng mong muốn</label>
+                  <input class="input" id="video_duration" name="video_duration" type="text" placeholder="VD: 30s, 60s, 1-2 phút" />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="label">Có footage / nguyên liệu sẵn chưa?</label>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="has_footage" value="yes" hidden /> Đã có</label>
+                  <label class="chip"><input type="radio" name="has_footage" value="partial" hidden /> Có một phần</label>
+                  <label class="chip"><input type="radio" name="has_footage" value="no" hidden /> Chưa có</label>
+                </div>
+              </div>
+              <div class="grid-2 mt-4">
+                <div class="field">
+                  <label class="label" for="footage_link">Link footage Drive</label>
+                  <input class="input" id="footage_link" name="footage_link" type="url" placeholder="https://drive.google.com/..." />
+                </div>
+                <div class="field">
+                  <label class="label">Yêu cầu khác</label>
+                  <div class="row" style="gap: var(--space-3); flex-wrap: wrap">
+                    <label class="checkbox"><input type="checkbox" name="subtitle_required" /><span class="checkbox-text">Subtitle</span></label>
+                    <label class="checkbox"><input type="checkbox" name="has_script" /><span class="checkbox-text">Đã có kịch bản</span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-form: Quay -->
+            <div class="sub-form" data-subform-for="shoot">
+              <div class="sub-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                Thông tin buổi quay
+                <span class="sub-badge">Quay</span>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label class="label" for="shooting_date">Ngày quay mong muốn <span class="req">*</span></label>
+                  <input class="input" id="shooting_date" name="shooting_date" type="date" data-conditional-req />
+                </div>
+                <div class="field">
+                  <label class="label" for="shooting_time">Thời gian quay <span class="req">*</span></label>
+                  <input class="input" id="shooting_time" name="shooting_time" type="text" placeholder="VD: 9:00 — 12:00" data-conditional-req />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="shooting_location">Địa điểm quay <span class="req">*</span></label>
+                <input class="input" id="shooting_location" name="shooting_location" type="text" placeholder="VD: CB Mekong, sảnh chính" data-conditional-req />
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="shooting_content">Nội dung cần quay</label>
+                <textarea class="textarea" id="shooting_content" name="shooting_content" placeholder="Mô tả các phân cảnh / shot list..."></textarea>
+              </div>
+              <div class="grid-2 mt-4">
+                <div class="field">
+                  <label class="label" for="onsite_contact_shoot">Người liên hệ onsite <span class="req">*</span></label>
+                  <input class="input" id="onsite_contact_shoot" name="onsite_contact" type="text" placeholder="Họ tên người đón team" data-conditional-req />
+                </div>
+                <div class="field">
+                  <label class="label" for="onsite_phone_shoot">SĐT onsite <span class="req">*</span></label>
+                  <input class="input" id="onsite_phone_shoot" name="onsite_phone" type="tel" placeholder="Số liên hệ tại địa điểm" data-conditional-req />
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-form: Photo -->
+            <div class="sub-form" data-subform-for="photo">
+              <div class="sub-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Thông tin buổi chụp
+                <span class="sub-badge">Chụp ảnh</span>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label class="label" for="photo_date">Ngày chụp mong muốn <span class="req">*</span></label>
+                  <input class="input" id="photo_date" name="photo_date" type="date" data-conditional-req />
+                </div>
+                <div class="field">
+                  <label class="label" for="photo_time">Thời gian chụp <span class="req">*</span></label>
+                  <input class="input" id="photo_time" name="photo_time" type="text" placeholder="VD: 9:00 — 11:30" data-conditional-req />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="photo_location">Địa điểm chụp <span class="req">*</span></label>
+                <input class="input" id="photo_location" name="photo_location" type="text" placeholder="VD: CB Cần Thơ, phòng học A2" data-conditional-req />
+              </div>
+              <div class="grid-2 mt-4">
+                <div class="field">
+                  <label class="label" for="photo_quantity">Số lượng ảnh mong muốn</label>
+                  <input class="input" id="photo_quantity" name="photo_quantity" type="number" min="1" placeholder="VD: 50" />
+                </div>
+                <div class="field">
+                  <label class="label" for="onsite_contact_photo">Người liên hệ onsite <span class="req">*</span></label>
+                  <input class="input" id="onsite_contact_photo" name="onsite_contact_photo" type="text" placeholder="Họ tên người đón team" data-conditional-req />
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-form: Ads -->
+            <div class="sub-form" data-subform-for="ads">
+              <div class="sub-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/></svg>
+                Thông tin Ads / Post
+                <span class="sub-badge">Ads</span>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label class="label" for="ads_objective">Mục tiêu nội dung</label>
+                  <select class="select" id="ads_objective" name="ads_objective">
+                    <option value="">— Chọn —</option>
+                    <option>Awareness</option>
+                    <option>Engagement</option>
+                    <option>Conversion / Sale</option>
+                    <option>Lead Gen</option>
+                    <option>Re-targeting</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="ads_cta">CTA mong muốn</label>
+                  <input class="input" id="ads_cta" name="ads_cta" type="text" placeholder="VD: Đăng ký ngay, Tìm hiểu thêm" />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="ads_key_message">Thông điệp chính</label>
+                <textarea class="textarea" id="ads_key_message" name="ads_key_message" placeholder="Key message / value prop chính..."></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Section D — Content & Creative ============ -->
+        <section class="card form-section" id="sec-d">
+          <div class="section-h">
+            <span class="section-num">D</span>
+            <div><h2>Nội dung &amp; định hướng sáng tạo</h2><p>Brief càng cụ thể, team càng ít phải hỏi lại.</p></div>
+          </div>
+          <div class="stack-lg">
+            <div class="field">
+              <label class="label" for="content_brief">Nội dung cần thể hiện <span class="req">*</span></label>
+              <textarea class="textarea" id="content_brief" name="content_brief" required placeholder="Headline, thông tin phụ, thời gian, địa điểm, ưu đãi, CTA, hotline, website, logo / đơn vị đồng hành, nội dung bắt buộc..."></textarea>
+              <span class="helper">Có thể paste từ Word / Notion. Hoặc dùng file đính kèm ở Section E.</span>
+              <span class="error">Vui lòng nhập nội dung hoặc đính kèm file brief.</span>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="main_headline">Headline chính</label>
+                <input class="input" id="main_headline" name="main_headline" type="text" placeholder="Tùy chọn" />
+              </div>
+              <div class="field">
+                <label class="label" for="cta">CTA mong muốn</label>
+                <input class="input" id="cta" name="cta" type="text" placeholder="VD: Đăng ký ngay" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="mandatory_info">Thông tin bắt buộc</label>
+              <textarea class="textarea" id="mandatory_info" name="mandatory_info" placeholder="Hotline, website, địa điểm, logo đồng hành..." style="min-height:80px"></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="creative_direction">Phong cách / định hướng thiết kế <span class="req">*</span></label>
+              <textarea class="textarea" id="creative_direction" name="creative_direction" required placeholder="Style, màu sắc, mood, tham khảo brand guideline..."></textarea>
+              <span class="error">Vui lòng mô tả định hướng thiết kế.</span>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="reference_link">Link tham khảo</label>
+                <input class="input" id="reference_link" name="reference_link" type="url" placeholder="https://..." />
+                <span class="helper">Link mẫu / inspiration (Behance, Pinterest...).</span>
+              </div>
+              <div class="field">
+                <label class="label">Có cần hỗ trợ wording? <span class="req">*</span></label>
+                <div class="chips" role="radiogroup" id="wording_chips">
+                  <label class="chip"><input type="radio" name="wording_required" value="yes" hidden required /> Có — Cần wording lại</label>
+                  <label class="chip"><input type="radio" name="wording_required" value="no" hidden /> Không — Dùng đúng nội dung</label>
+                </div>
+                <div class="callout callout--warning mt-2" id="wording-warning" style="display:none">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span>Team Media sẽ sử dụng đúng nội dung đã cung cấp. Vui lòng kiểm tra kỹ chính tả và thông tin trước khi gửi.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Section E — Assets ============ -->
+        <section class="card form-section" id="sec-e">
+          <div class="section-h">
+            <span class="section-num">E</span>
+            <div><h2>Tài nguyên đính kèm</h2><p>File brief, logo, hình ảnh, guideline, source cũ, link Drive...</p></div>
+          </div>
+          <div class="stack-lg">
+            <div class="callout callout--info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Nếu chương trình khuyến mãi dùng quà của CTKM cũ, vui lòng ghi rõ trong <b>Ghi chú tài nguyên</b>: quà nằm trong CTKM nào, thời gian chạy, hoặc đính kèm hình ảnh quà nếu có.</span>
+            </div>
+
+            <div class="field">
+              <label class="label">Upload tệp tham chiếu</label>
+              <label class="uploader" id="uploader">
+                <span class="up-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                <h4>Kéo &amp; thả tệp vào đây</h4>
+                <p>Hoặc <strong>chọn từ thiết bị</strong>. Hỗ trợ DOC/PDF/PPT/XLS/JPG/PNG/AI/PSD/MP4/MOV/ZIP — tối đa 100MB / tệp.</p>
+                <input id="file-input" type="file" multiple hidden />
+              </label>
+              <div class="file-list" id="file-list" aria-live="polite"></div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="source_link">Link Google Drive tài nguyên</label>
+                <input class="input" id="source_link" name="source_link" type="url" placeholder="https://drive.google.com/..." />
+                <span class="helper">Đảm bảo quyền truy cập "Anyone with the link".</span>
+              </div>
+              <div class="field">
+                <label class="label" for="working_drive_link">Folder Drive làm việc</label>
+                <input class="input" id="working_drive_link" name="working_drive_link" type="url" placeholder="Tùy chọn — folder team Media làm việc" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="asset_note">Ghi chú tài nguyên</label>
+              <textarea class="textarea" id="asset_note" name="asset_note" placeholder="Thông tin bổ sung về tài nguyên đính kèm..." style="min-height:80px"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Section F — Deadline & Priority ============ -->
+        <section class="card form-section" id="sec-f">
+          <div class="section-h">
+            <span class="section-num">F</span>
+            <div><h2>Deadline &amp; mức độ ưu tiên</h2><p>Cho team biết deadline để cân nhắc thứ tự xử lý.</p></div>
+          </div>
+          <div class="stack-lg">
+            <div class="callout callout--info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Thời gian hoàn thành dự kiến: <b>1–7 ngày làm việc</b> kể từ khi brief được xác nhận đầy đủ, tùy độ phức tạp. Video / quay / chụp sẽ trao đổi deadline riêng khi tiếp nhận.</span>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="requested_deadline">Deadline mong muốn <span class="req">*</span></label>
+                <input class="input" id="requested_deadline" name="requested_deadline" type="date" required />
+                <span class="error">Vui lòng chọn deadline.</span>
+              </div>
+              <div class="field">
+                <label class="label" for="requested_deadline_time">Giờ mong muốn hoàn thành</label>
+                <input class="input" id="requested_deadline_time" name="requested_deadline_time" type="time" />
+                <span class="helper">Tùy chọn — VD: 17:00.</span>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label class="label">Mức độ ưu tiên <span class="req">*</span></label>
+                <div class="chips" id="priority_chips" role="radiogroup">
+                  <label class="chip"><input type="radio" name="priority" value="normal" checked hidden /> Bình thường</label>
+                  <label class="chip"><input type="radio" name="priority" value="urgent" hidden /> Gấp</label>
+                  <label class="chip"><input type="radio" name="priority" value="critical" hidden /> Rất gấp</label>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">Deadline có cố định không? <span class="req">*</span></label>
+                <div class="chips" id="fixed_chips" role="radiogroup">
+                  <label class="chip"><input type="radio" name="is_fixed_deadline" value="yes" hidden required /> Có — bắt buộc đúng</label>
+                  <label class="chip"><input type="radio" name="is_fixed_deadline" value="no" hidden /> Không — có thể trao đổi</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="field" id="urgent_field" style="display:none">
+              <label class="label" for="urgent_reason">Lý do gấp <span class="req">*</span></label>
+              <textarea class="textarea" id="urgent_reason" name="urgent_reason" placeholder="Mô tả lý do yêu cầu rất gấp..."></textarea>
+              <div class="callout callout--warning mt-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Yêu cầu "Rất gấp" cần Account / Admin xác nhận khả năng thực hiện trước khi triển khai.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ Section G — Responsibility ============ -->
+        <section class="card form-section" id="sec-g">
+          <div class="section-h">
+            <span class="section-num">G</span>
+            <div><h2>Xác nhận trách nhiệm nội dung</h2><p>Cơ sở trách nhiệm về nội dung trước khi gửi brief.</p></div>
+          </div>
+          <div class="stack-lg">
+            <div class="callout callout--info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Bộ phận / Chi nhánh / Cá nhân gửi yêu cầu có trách nhiệm kiểm tra và đảm bảo toàn bộ nội dung cung cấp là đúng, đủ và đã được xác nhận. Sau khi sản phẩm đã được bàn giao theo đúng brief và qua duyệt, Team Media_MKT sẽ không chịu trách nhiệm về sai sót phát sinh từ nội dung chưa được kiểm tra kỹ.</span>
+            </div>
+
+            <label class="checkbox">
+              <input type="checkbox" id="content_responsibility_confirmed" name="content_responsibility_confirmed" required />
+              <div>
+                <span class="checkbox-text">Tôi xác nhận đã kiểm tra nội dung brief, thông tin chương trình, thời gian, địa điểm, ưu đãi, chính tả và các nội dung bắt buộc trước khi gửi yêu cầu.</span>
+                <span class="checkbox-hint">Bắt buộc — không thể gửi yêu cầu nếu chưa xác nhận.</span>
+              </div>
+            </label>
+
+            <label class="checkbox">
+              <input type="checkbox" id="deadline_policy_confirmed" name="deadline_policy_confirmed" />
+              <div>
+                <span class="checkbox-text">Tôi hiểu rằng deadline chính thức sẽ được Account / Media xác nhận sau khi kiểm tra brief.</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Sticky submit bar -->
+        <div class="sticky-submit">
+          <div class="sticky-info">
+            <span><span class="req" style="color:var(--danger)">*</span> Trường bắt buộc</span>
+            <span class="sep">·</span>
+            <span id="progress-info"><b>0</b>/7 section đã hoàn thành</span>
+          </div>
+          <div class="sticky-actions">
+            <button type="button" class="btn btn-ghost btn-sm" id="save-draft-btn">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Lưu nháp
+            </button>
+            <button type="button" class="btn btn-secondary" id="preview-btn">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview Brief
+            </button>
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+              Submit Request
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar guide -->
+      <aside class="form-tips">
+        <div class="tips-card">
+          <h4>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M2 9a10 10 0 1 1 20 0c0 4-3 6-3 9H5c0-3-3-5-3-9z"/></svg>
+            Mẹo viết brief tốt
+          </h4>
+          <ul>
+            <li><b>Mục tiêu rõ ràng</b> — channel sử dụng, key message, hành động mong muốn.</li>
+            <li><b>Kích thước / thời lượng</b> — luôn ghi rõ để team chuẩn output đúng.</li>
+            <li><b>Tone &amp; style</b> — link Behance / Pinterest / brand cũ là tốt nhất.</li>
+            <li><b>Deadline thực tế</b> — tính từ ngày brief được xác nhận, không phải ngày gửi.</li>
+            <li><b>Tài nguyên đầy đủ</b> — logo, hình ảnh sản phẩm, guideline ngay từ đầu.</li>
+            <li><b>Quà CTKM cũ</b> — ghi rõ CTKM nào, thời gian chạy, kèm hình nếu có.</li>
+          </ul>
+        </div>
+        <div class="tips-card" style="margin-top: var(--space-4); background: var(--surface); border-color: var(--border)">
+          <h4>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            SLA tham khảo
+          </h4>
+          <ul>
+            <li><b>Design / POSM</b> — 1–7 ngày làm việc</li>
+            <li><b>Digital Design</b> — 1–3 ngày làm việc</li>
+            <li><b>Video Editing</b> — 3–10 ngày tùy footage</li>
+            <li><b>Quay / Chụp</b> — cần xác nhận lịch riêng</li>
+            <li><b>Ads / Post Basic</b> — 0.5–2 ngày làm việc</li>
+            <li><b>Slide / Proposal</b> — 2–7 ngày làm việc</li>
+          </ul>
+        </div>
+      </aside>
+    </form>
+  </div>
+</section>
+
+<!-- ============ PREVIEW MODAL ============ -->
+<div class="preview-modal" id="preview-modal" aria-hidden="true">
+  <div class="preview-card" role="dialog" aria-labelledby="preview-title">
+    <div class="preview-head">
+      <div>
+        <h3 id="preview-title"><span class="serif-italic">Preview</span> Brief</h3>
+        <p class="text-sm muted" style="margin-top:2px">Kiểm tra lại thông tin trước khi gửi.</p>
+      </div>
+      <button class="icon-btn" id="preview-close" aria-label="Đóng">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="preview-body" id="preview-body">
+      <!-- Filled by JS -->
+    </div>
+    <div class="preview-foot">
+      <button class="btn btn-ghost" id="preview-edit">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Quay lại chỉnh sửa
+      </button>
+      <button class="btn btn-primary" id="preview-submit">
+        Xác nhận &amp; Gửi
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SUCCESS VIEW ============ -->
+<section class="section hidden" id="success-view">
+  <div class="container container--narrow">
+    <div class="success-card">
+      <div class="success-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <span class="badge badge-info"><span class="dot"></span> Chờ xác nhận brief</span>
+      <h2 style="margin-top:var(--space-3)">Yêu cầu của bạn đã được gửi thành công</h2>
+      <p class="lead" style="margin: var(--space-3) auto 0; max-width:52ch">Team Account / Media sẽ kiểm tra brief và phản hồi trong <strong>4 giờ làm việc</strong> nếu cần bổ sung thông tin. Vui lòng lưu Order ID để tra cứu.</p>
+      <div class="order-code">
+        <span class="muted text-xs">Order ID</span>
+        <b id="order-code">MEDIA-2026-0000</b>
+        <button type="button" class="copy" id="copy-code" aria-label="Sao chép Order ID">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+
+      <div class="grid-2" style="max-width: 480px; margin: var(--space-6) auto 0; text-align:left">
+        <div style="padding:var(--space-3); background:var(--surface-2); border-radius:var(--radius)">
+          <div class="text-xs muted">Account Status</div>
+          <b style="font-size:var(--text-sm)">Chờ xác nhận</b>
+        </div>
+        <div style="padding:var(--space-3); background:var(--surface-2); border-radius:var(--radius)">
+          <div class="text-xs muted">Progress</div>
+          <b style="font-size:var(--text-sm)">5%</b>
+        </div>
+      </div>
+
+      <div class="success-actions">
+        <a class="btn btn-primary" href="tracking.html" id="track-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Xem trạng thái đơn
+        </a>
+        <a class="btn btn-secondary" href="dashboard.html">Về Dashboard</a>
+        <button type="button" class="btn btn-ghost" id="new-request">Tạo yêu cầu mới</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© <span data-year>2026</span> CB Media Hub. Creative Service Portal.</span>
+      <span class="text-xs muted">v0.2 · Order Form</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script src="assets/order-form.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

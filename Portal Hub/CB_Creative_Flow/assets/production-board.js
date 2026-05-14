@@ -1,0 +1,795 @@
+/* =====================================================================
+   CB Media Hub — Production Board module logic
+   - Auth guard (admin/account/design/editor) — client redirected
+   - 3 views: Table / Kanban (drag-drop) / My Tasks
+   - Default view per role: design/editor → My Tasks, admin/account → Table
+   - Status transitions with auto-progress
+   - Task detail drawer with brief, files, status actions, comments, activity
+   - Ready-for-delivery validation (preview/final link required)
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  /* ---------- Auth guard ---------- */
+  let user;
+  try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
+  if (!user || !user.role) { location.replace('login.html'); return; }
+  if (user.role === 'client') {
+    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Production Board chỉ dành cho team nội bộ.' });
+    setTimeout(() => location.replace('tracking.html'), 1200);
+    return;
+  }
+  document.body.setAttribute('data-user', user.email || user.role);
+  document.body.setAttribute('data-user-role', user.role);
+
+  const pcName = document.getElementById('pc-name');
+  const pcAvatar = document.getElementById('pc-avatar');
+  const pcRole = document.getElementById('pc-role-badge');
+  if (pcName) pcName.textContent = user.name || 'User';
+  if (pcAvatar) pcAvatar.textContent = user.initials || (user.name || 'U').substring(0, 2).toUpperCase();
+  if (pcRole) { pcRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1); pcRole.className = 'role-badge r--' + user.role; }
+
+  const chip = document.getElementById('profile-chip');
+  if (chip) {
+    chip.addEventListener('click', (e) => { if (e.target.closest('.profile-menu')) return; chip.classList.toggle('is-open'); });
+    document.addEventListener('click', (e) => { if (!chip.contains(e.target)) chip.classList.remove('is-open'); });
+  }
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('mh-user');
+    window.MH.toast({ type: 'info', title: 'Đã đăng xuất', message: 'Hẹn gặp lại!' });
+    setTimeout(() => location.href = 'login.html', 500);
+  });
+
+  const sb = document.getElementById('dash-sb');
+  const sbd = document.getElementById('sb-backdrop');
+  const sbt = document.getElementById('sb-toggle');
+  if (sbt) sbt.addEventListener('click', () => { sb.classList.add('is-open'); sbd.classList.add('is-open'); });
+  if (sbd) sbd.addEventListener('click', () => { sb.classList.remove('is-open'); sbd.classList.remove('is-open'); });
+
+  /* ---------- Status & progress maps ---------- */
+  const STATUS_LABEL = {
+    pending: 'Chưa nhận task', received: 'Nhận task', inprogress: 'Đang thực hiện',
+    review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ',
+    feedback_wait: 'Chờ client phản hồi', feedback_fix: 'Chỉnh sửa theo feedback',
+    ready: 'Sẵn sàng bàn giao', delivered: 'Đã bàn giao', completed: 'Hoàn thành',
+    paused: 'Tạm dừng', cancelled: 'Hủy'
+  };
+  const STATUS_PROGRESS = {
+    pending: 20, received: 30, inprogress: 50, review: 65, revision: 75,
+    feedback_wait: 80, feedback_fix: 85, ready: 90, delivered: 95,
+    completed: 100, paused: 0, cancelled: 0
+  };
+  const TYPE_LABEL = {
+    design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion',
+    shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide'
+  };
+  const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
+
+  /* ---------- Mock tasks ---------- */
+  const TODAY = new Date('2026-05-13');
+  function fmtDT() { return new Date().toISOString().slice(0, 16).replace('T', ' '); }
+  function parseDate(s) { return s ? new Date(s.replace(' ', 'T')) : null; }
+  function diffDays(s) { const d = parseDate(s); if (!d) return null; return Math.ceil((d - TODAY) / 86400000); }
+  function fmtRelative(s) {
+    const days = diffDays(s);
+    if (days === null) return '';
+    if (days < 0) return `Trễ ${-days}d`;
+    if (days === 0) return 'Hôm nay';
+    if (days === 1) return 'Còn 1d';
+    return `Còn ${days}d`;
+  }
+  function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  const TASKS = [
+    { task_id: 'TASK-0001', order_id: 'MEDIA-2026-0004', project_name: 'Bộ Key Visual Sự kiện Q3',
+      task_type: 'design', content: 'Bộ KV cho sự kiện ra mắt khóa Q3 — Backdrop + Standee + Poster + Social Post + Banner. Tone chuyên nghiệp, hiện đại.',
+      priority: 'urgent', assigned_to: 'Duy', status: 'inprogress', progress: 50,
+      internal_deadline: '2026-05-20 17:00', link_drive: 'https://drive.google.com/folder/kv-q3', preview_link: '', final_link: '',
+      last_update: '2026-05-12 11:42', created_at: '2026-05-10 11:15',
+      comments: [
+        { author: 'Mai Phương', text: 'Brief đã xác nhận. Bắt đầu sản xuất nhé.', time: '2026-05-10 14:20', type: 'internal' }
+      ]
+    },
+    { task_id: 'TASK-0002', order_id: 'MEDIA-2026-0005', project_name: 'Photoshoot Cơ sở Mới',
+      task_type: 'photo', content: 'Chụp tổng quan cơ sở + chi tiết phòng học tại CB Cần Thơ. ~50–80 ảnh.',
+      priority: 'normal', assigned_to: 'Linh Chi', status: 'review', progress: 65,
+      internal_deadline: '2026-05-15 17:00', link_drive: 'https://drive.google.com/folder/photoshoot',
+      preview_link: 'https://drive.google.com/preview-photo', final_link: '',
+      last_update: '2026-05-12 08:15', created_at: '2026-05-09 14:30',
+      comments: [
+        { author: 'Đức Anh', text: 'Đã shoot xong. Đẩy review ạ.', time: '2026-05-12 08:15', type: 'internal' }
+      ]
+    },
+    { task_id: 'TASK-0003', order_id: 'MEDIA-2026-0006', project_name: 'Reel TikTok Tháng 5',
+      task_type: 'video', content: 'Loạt 4 reel ngắn TikTok cho tháng 5, 30s/reel. Trending, fast cut.',
+      priority: 'critical', assigned_to: 'Vinh', status: 'review', progress: 65,
+      internal_deadline: '2026-05-12 17:00', link_drive: 'https://drive.google.com/folder/may-reels',
+      preview_link: 'https://drive.google.com/preview-reels-v1', final_link: '',
+      last_update: '2026-05-12 16:45', created_at: '2026-05-08 18:00',
+      comments: [
+        { author: 'Hậu', text: 'Reel 1 caption hơi dài, cân nhắc cắt bớt.', time: '2026-05-12 17:00', type: 'revision' }
+      ]
+    },
+    { task_id: 'TASK-0004', order_id: 'MEDIA-2026-0007', project_name: 'Brochure Khóa AI Summer',
+      task_type: 'design', content: 'Brochure A4 gấp 3, 4 trang. Giới thiệu khóa, lộ trình, học phí, FAQ.',
+      priority: 'normal', assigned_to: 'Duy', status: 'inprogress', progress: 50,
+      internal_deadline: '2026-05-06 17:00', link_drive: 'https://drive.google.com/folder/brochure-ai', preview_link: '', final_link: '',
+      last_update: '2026-05-10 14:30', created_at: '2026-05-07 09:30',
+      comments: []
+    },
+    { task_id: 'TASK-0005', order_id: 'MEDIA-2026-0008', project_name: 'Logo Motion Sản phẩm Mới',
+      task_type: 'motion', content: 'Motion logo 3 phiên bản: 5s, 10s, 15s. Modern, dynamic.',
+      priority: 'normal', assigned_to: 'Linh Chi', status: 'inprogress', progress: 50,
+      internal_deadline: '2026-05-18 17:00', link_drive: 'https://drive.google.com/folder/motion-logo',
+      preview_link: '', final_link: '', last_update: '2026-05-11 16:20', created_at: '2026-05-06 14:00',
+      comments: []
+    },
+    { task_id: 'TASK-0006', order_id: 'MEDIA-2026-0009', project_name: 'Slide Proposal Đối tác Trường',
+      task_type: 'slide', content: 'Slide pitch deck giới thiệu chương trình liên kết, 20 slide 16:9.',
+      priority: 'normal', assigned_to: 'Duy', status: 'ready', progress: 90,
+      internal_deadline: '2026-05-13 17:00', link_drive: 'https://drive.google.com/folder/proposal-school',
+      preview_link: 'https://drive.google.com/preview-slide-v2', final_link: 'https://drive.google.com/final-slide',
+      last_update: '2026-05-12 10:00', created_at: '2026-05-05 09:00',
+      comments: [
+        { author: 'Mai Phương', text: 'Final OK, chuyển bàn giao.', time: '2026-05-12 10:00', type: 'internal' }
+      ]
+    },
+    { task_id: 'TASK-0007', order_id: 'MEDIA-2026-0010', project_name: 'Bộ Poster Tuyển dụng',
+      task_type: 'design', content: 'Poster tuyển dụng 5 vị trí khác nhau + Social Post.',
+      priority: 'normal', assigned_to: 'Vinh', status: 'completed', progress: 100,
+      internal_deadline: '2026-05-08 17:00', link_drive: 'https://drive.google.com/folder/poster-recruit',
+      preview_link: 'https://drive.google.com/preview-posters', final_link: 'https://drive.google.com/final-posters',
+      last_update: '2026-05-09 11:30', completed_at: '2026-05-09 11:30', created_at: '2026-05-04 16:00',
+      comments: []
+    },
+    { task_id: 'TASK-0008', order_id: 'MEDIA-2026-0011', project_name: 'TVC Sản phẩm Hè 30s',
+      task_type: 'video', content: 'TVC 30s + cutdown 15s, storytelling, có voice-over.',
+      priority: 'urgent', assigned_to: 'Vinh', status: 'inprogress', progress: 50,
+      internal_deadline: '2026-05-08 17:00', link_drive: 'https://drive.google.com/folder/tvc-summer',
+      preview_link: '', final_link: '', last_update: '2026-05-11 18:00', created_at: '2026-05-03 10:00',
+      comments: []
+    },
+    { task_id: 'TASK-0009', order_id: 'MEDIA-2026-0012', project_name: 'Email Template Newsletter Q2',
+      task_type: 'digital', content: 'Email template responsive, 600px width. Brand CB, dùng được trên dark/light.',
+      priority: 'normal', assigned_to: 'Duy', status: 'completed', progress: 100,
+      internal_deadline: '2026-05-11 17:00', preview_link: 'https://drive.google.com/preview-email',
+      final_link: 'https://drive.google.com/final-email-template', link_drive: '',
+      last_update: '2026-05-11 16:30', completed_at: '2026-05-11 16:30', created_at: '2026-05-02 15:00',
+      comments: []
+    },
+    { task_id: 'TASK-0010', order_id: 'MEDIA-2026-0013', project_name: 'Quay Lễ Khai Giảng Cơ sở',
+      task_type: 'shoot', content: 'Quay phóng sự lễ khai giảng tại CB Hưng Phú. Tổng cảnh + cận + phỏng vấn.',
+      priority: 'urgent', assigned_to: 'Linh Chi', status: 'received', progress: 30,
+      internal_deadline: '2026-05-15 12:00', link_drive: 'https://drive.google.com/folder/shoot-opening',
+      preview_link: '', final_link: '', last_update: '2026-05-12 09:30', created_at: '2026-05-01 11:30',
+      comments: []
+    },
+    { task_id: 'TASK-0011', order_id: 'MEDIA-2026-0004', project_name: 'Bộ KV Sự kiện Q3 — Social Cuts',
+      task_type: 'design', content: 'Cutdown social post 1:1 + 9:16 từ KV chính.',
+      priority: 'urgent', assigned_to: 'Vinh', status: 'pending', progress: 20,
+      internal_deadline: '2026-05-22 17:00', link_drive: '', preview_link: '', final_link: '',
+      last_update: '2026-05-12 11:42', created_at: '2026-05-10 12:00',
+      comments: []
+    },
+    { task_id: 'TASK-0012', order_id: 'MEDIA-2026-0014', project_name: 'Voucher Ưu đãi Tháng 5',
+      task_type: 'design', content: '3 mệnh giá voucher 15x7cm, in + digital.',
+      priority: 'normal', assigned_to: 'Duy', status: 'completed', progress: 100,
+      internal_deadline: '2026-05-04 17:00', preview_link: 'https://drive.google.com/preview-vouchers',
+      final_link: 'https://drive.google.com/final-vouchers', link_drive: 'https://drive.google.com/folder/voucher-may',
+      last_update: '2026-05-05 11:00', completed_at: '2026-05-05 11:00', created_at: '2026-04-30 09:00',
+      comments: []
+    },
+    { task_id: 'TASK-0013', order_id: 'MEDIA-2026-0016', project_name: 'Facebook Ads Copy Tháng 5',
+      task_type: 'ads', content: '10 angle Facebook ad copy, mỗi angle 2 variations.',
+      priority: 'urgent', assigned_to: 'Mai Phương', status: 'inprogress', progress: 50,
+      internal_deadline: '2026-05-01 17:00', preview_link: '', final_link: '', link_drive: '',
+      last_update: '2026-05-10 13:20', created_at: '2026-04-29 11:00',
+      comments: [
+        { author: 'Hậu', text: 'Cần thêm 2 angle về USP học phí.', time: '2026-05-10 13:20', type: 'revision' }
+      ]
+    },
+    { task_id: 'TASK-0014', order_id: 'MEDIA-2026-0005', project_name: 'Photoshoot Cơ sở Mới — Retouch',
+      task_type: 'photo', content: 'Retouch 50 ảnh đã chọn từ shoot ngày 11/5.',
+      priority: 'normal', assigned_to: 'Linh Chi', status: 'revision', progress: 75,
+      internal_deadline: '2026-05-16 17:00', link_drive: 'https://drive.google.com/folder/retouch',
+      preview_link: 'https://drive.google.com/preview-retouch-v1', final_link: '',
+      last_update: '2026-05-12 14:00', created_at: '2026-05-11 17:00',
+      comments: [
+        { author: 'Đức Anh', text: 'Ảnh #12, #18: tăng độ sáng, làm rõ chi tiết.', time: '2026-05-12 14:00', type: 'revision' }
+      ]
+    },
+    { task_id: 'TASK-0015', order_id: 'MEDIA-2026-0008', project_name: 'Motion Logo — Variant 9:16',
+      task_type: 'motion', content: 'Adapt motion logo sang tỉ lệ 9:16 cho TikTok / Story.',
+      priority: 'normal', assigned_to: 'Vinh', status: 'pending', progress: 20,
+      internal_deadline: '2026-05-22 17:00', link_drive: '', preview_link: '', final_link: '',
+      last_update: '2026-05-12 09:00', created_at: '2026-05-12 09:00',
+      comments: []
+    },
+    { task_id: 'TASK-0016', order_id: 'MEDIA-2026-0013', project_name: 'Recap Lễ Khai Giảng — Editing',
+      task_type: 'video', content: 'Dựng recap 2 phút từ footage quay khai giảng.',
+      priority: 'urgent', assigned_to: 'Vinh', status: 'received', progress: 30,
+      internal_deadline: '2026-05-17 17:00', link_drive: '', preview_link: '', final_link: '',
+      last_update: '2026-05-12 10:00', created_at: '2026-05-12 09:30',
+      comments: []
+    }
+  ];
+
+  /* ---------- State ---------- */
+  const state = {
+    view: ['design', 'editor'].includes(user.role) ? 'mytasks' : 'table',
+    search: '', status: '', priority: '', type: '', pic: '',
+    quick: null // summary card quick-filter
+  };
+
+  /* ---------- Scoping by role ---------- */
+  function visibleTasks() {
+    if (user.role === 'design' || user.role === 'editor') {
+      // assigned_to matches user.name OR first-name match for demo
+      return TASKS.filter((t) => {
+        const name = user.name || '';
+        return t.assigned_to === name || t.assigned_to === name.split(' ').pop();
+      });
+    }
+    return TASKS;
+  }
+
+  function applyFilters(arr) {
+    return arr.filter((t) => {
+      if (state.search) {
+        const q = state.search.toLowerCase();
+        const hay = [t.task_id, t.order_id, t.project_name, t.task_type, t.content, t.assigned_to].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (state.status && t.status !== state.status) return false;
+      if (state.priority && t.priority !== state.priority) return false;
+      if (state.type && t.task_type !== state.type) return false;
+      if (state.pic && t.assigned_to !== state.pic) return false;
+      if (state.quick) {
+        switch (state.quick) {
+          case 'my': if (t.assigned_to !== user.name && t.assigned_to !== (user.name || '').split(' ').pop()) return false; break;
+          case 'soon': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 2 && t.status !== 'completed')) return false; break; }
+          case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
+          case 'review': if (t.status !== 'review') return false; break;
+          case 'ready': if (t.status !== 'ready') return false; break;
+        }
+      }
+      return true;
+    });
+  }
+
+  /* ---------- Render: summary ---------- */
+  function renderSummary() {
+    const scope = visibleTasks();
+    const my = scope.filter((t) => (t.assigned_to === user.name || t.assigned_to === (user.name || '').split(' ').pop()) && t.status !== 'completed');
+    const overdue = scope.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d < 0 && t.status !== 'completed'; });
+    const soon = scope.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && t.status !== 'completed'; });
+    const review = scope.filter((t) => t.status === 'review');
+    const ready = scope.filter((t) => t.status === 'ready');
+    document.getElementById('sm-total').textContent = scope.length;
+    document.getElementById('sm-my').textContent = my.length;
+    document.getElementById('sm-soon').textContent = soon.length;
+    document.getElementById('sm-overdue').textContent = overdue.length;
+    document.getElementById('sm-review').textContent = review.length;
+    document.getElementById('sm-ready').textContent = ready.length;
+    // sidebar badge
+    const nb = document.getElementById('nav-mytask');
+    if (nb) nb.textContent = my.length;
+  }
+
+  /* ---------- Render: table ---------- */
+  const tbody = document.getElementById('tasks-tbody');
+  function renderTable() {
+    const filtered = applyFilters(visibleTasks());
+    document.getElementById('tv-visible').textContent = filtered.length;
+    document.getElementById('tv-total').textContent = visibleTasks().length;
+    document.getElementById('vt-table').textContent = filtered.length;
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="13"><div class="empty-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+        <h3>Không có task phù hợp</h3>
+      </div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filtered.map((t) => {
+      const days = diffDays(t.internal_deadline);
+      const dlCls = days !== null && t.status !== 'completed' ? (days < 0 ? 'is-overdue' : (days <= 2 ? 'is-soon' : '')) : '';
+      const overdueRow = (days !== null && days < 0 && t.status !== 'completed') ? 'is-overdue' : '';
+      const dl = parseDate(t.internal_deadline);
+      const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}` : '—';
+      const picAlt = t.assigned_to && ['Hậu','Linh Chi','Vinh'].indexOf(t.assigned_to) % 2 === 0 ? 'has-red' : '';
+      const picInit = t.assigned_to ? t.assigned_to.substring(0, 2).toUpperCase() : '';
+      const links = [];
+      if (t.preview_link) links.push('<span class="kc-flag has-preview">P</span>');
+      if (t.final_link)   links.push('<span class="kc-flag has-final">F</span>');
+      if (t.link_drive)   links.push('<span class="kc-flag">D</span>');
+      const contentShort = t.content.length > 60 ? t.content.substring(0, 60) + '…' : t.content;
+      return `
+        <tr data-id="${t.task_id}" class="${overdueRow}">
+          <td><span class="order-id">${t.task_id}</span></td>
+          <td><span class="mono text-xs muted">${t.order_id}</span></td>
+          <td class="project-cell"><b>${escapeHtml(t.project_name)}</b></td>
+          <td><span class="text-xs">${TYPE_LABEL[t.task_type] || t.task_type}</span></td>
+          <td><span class="text-xs muted" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:200px">${escapeHtml(contentShort)}</span></td>
+          <td><span class="priority-pill p--${t.priority}"><span class="dot"></span>${PRIORITY_LABEL[t.priority]}</span></td>
+          <td><div class="pic-cell ${picAlt}"><span class="pic-avatar">${picInit}</span><span class="pic-name">${escapeHtml(t.assigned_to || '—')}</span></div></td>
+          <td><span class="tb-status s--${t.status}"><span class="dot"></span>${STATUS_LABEL[t.status]}</span></td>
+          <td><div class="progress-mini"><div class="bar"><i style="width:${t.progress}%"></i></div><b>${t.progress}%</b></div></td>
+          <td><div class="deadline-cell ${dlCls}"><span class="date">${dl_fmt}</span><span class="relative">${fmtRelative(t.internal_deadline)}</span></div></td>
+          <td><div class="kc-flags">${links.join('') || '<span class="text-xs muted">—</span>'}</div></td>
+          <td><span class="mono text-xs muted">${t.last_update.split(' ')[0]}</span></td>
+          <td><button class="icon-btn" data-action="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg></button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ---------- Render: kanban ---------- */
+  function renderKanban() {
+    const filtered = applyFilters(visibleTasks());
+    document.getElementById('vt-kanban').textContent = filtered.length;
+    const cols = document.querySelectorAll('#kanban-board .kanban-col');
+    cols.forEach((col) => {
+      const status = col.getAttribute('data-status');
+      const list = filtered.filter((t) => t.status === status);
+      col.querySelector('.col-count').textContent = list.length;
+      const body = col.querySelector('.kanban-col-body');
+      if (list.length === 0) {
+        body.innerHTML = `<div class="text-xs muted" style="text-align:center; padding:var(--space-3) 0; font-style:italic">Trống</div>`;
+        return;
+      }
+      body.innerHTML = list.map((t) => {
+        const days = diffDays(t.internal_deadline);
+        const dlCls = days !== null && t.status !== 'completed' ? (days < 0 ? 'is-overdue' : (days <= 2 ? 'is-soon' : '')) : '';
+        const overdue = days !== null && days < 0 && t.status !== 'completed' ? 'is-overdue' : '';
+        const dl = parseDate(t.internal_deadline);
+        const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}` : '—';
+        const picAlt = t.assigned_to && ['Hậu','Linh Chi','Vinh'].indexOf(t.assigned_to) % 2 === 0 ? 'has-red' : '';
+        const picInit = t.assigned_to ? t.assigned_to.substring(0, 2).toUpperCase() : '?';
+        const flags = [];
+        if (t.preview_link) flags.push('<span class="kc-flag has-preview">P</span>');
+        if (t.final_link)   flags.push('<span class="kc-flag has-final">F</span>');
+        if (t.comments && t.comments.length) flags.push(`<span class="kc-flag has-comments">${t.comments.length}c</span>`);
+        return `
+          <div class="kanban-card ${overdue}" draggable="true" data-id="${t.task_id}">
+            <div class="kc-head">
+              <span class="kc-id">${t.task_id}</span>
+              <span class="priority-pill p--${t.priority} kc-priority"><span class="dot"></span>${PRIORITY_LABEL[t.priority][0]}</span>
+            </div>
+            <div class="kc-title">${escapeHtml(t.project_name)}</div>
+            <div class="kc-flags">${flags.join('')}</div>
+            <div class="kc-meta">
+              <span class="kc-pic"><span class="pic-avatar ${picAlt ? '' : ''}" style="${picAlt ? 'background:var(--grad-red)' : ''}">${picInit}</span> ${escapeHtml(t.assigned_to || '—')}</span>
+              <span class="kc-deadline ${dlCls}">${dl_fmt} · ${fmtRelative(t.internal_deadline)}</span>
+            </div>
+            <div class="kc-progress"><i style="width:${t.progress}%"></i></div>
+          </div>
+        `;
+      }).join('');
+    });
+    wireDragDrop();
+  }
+
+  /* ---------- Render: my tasks ---------- */
+  function renderMyTasks() {
+    const scope = visibleTasks();
+    const userTasks = scope.filter((t) => t.assigned_to === user.name || t.assigned_to === (user.name || '').split(' ').pop());
+    const groups = {
+      new: userTasks.filter((t) => ['pending', 'received'].includes(t.status)),
+      progress: userTasks.filter((t) => ['inprogress', 'review'].includes(t.status)),
+      revision: userTasks.filter((t) => ['revision', 'feedback_fix'].includes(t.status)),
+      soon: userTasks.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && t.status !== 'completed'; }),
+      done: userTasks.filter((t) => ['ready', 'completed', 'delivered'].includes(t.status)).slice(0, 5)
+    };
+    document.getElementById('vt-mytasks').textContent = userTasks.length;
+    function fill(id, list) {
+      const group = document.getElementById(id);
+      group.querySelector('.count').textContent = list.length;
+      const body = group.querySelector('.mt-list');
+      if (list.length === 0) { body.innerHTML = ''; return; }
+      body.innerHTML = list.map((t) => {
+        const days = diffDays(t.internal_deadline);
+        const cls = days !== null && t.status !== 'completed' ? (days < 0 ? 'is-overdue' : (days <= 2 ? 'is-soon' : '')) : '';
+        return `
+          <div class="mt-task ${cls}" data-id="${t.task_id}">
+            <div class="mt-info">
+              <b>${escapeHtml(t.project_name)}</b>
+              <div class="mt-meta"><span class="mono">${t.task_id}</span> · ${TYPE_LABEL[t.task_type]} · <span class="tb-status s--${t.status}" style="font-size:9px; padding:1px 6px"><span class="dot"></span>${STATUS_LABEL[t.status]}</span></div>
+            </div>
+            <div class="mt-action">${fmtRelative(t.internal_deadline) || '—'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+    fill('mtg-new', groups.new);
+    fill('mtg-progress', groups.progress);
+    fill('mtg-revision', groups.revision);
+    fill('mtg-soon', groups.soon);
+    fill('mtg-done', groups.done);
+  }
+
+  /* ---------- Render coordinator ---------- */
+  function render() {
+    renderSummary();
+    if (state.view === 'table') renderTable();
+    else if (state.view === 'kanban') renderKanban();
+    else renderMyTasks();
+  }
+
+  /* ---------- View switch ---------- */
+  function setView(v) {
+    state.view = v;
+    document.querySelectorAll('.view-tab').forEach((t) => t.classList.toggle('is-active', t.getAttribute('data-view') === v));
+    document.getElementById('view-table').style.display = v === 'table' ? '' : 'none';
+    document.getElementById('view-kanban').style.display = v === 'kanban' ? '' : 'none';
+    document.getElementById('view-mytasks').style.display = v === 'mytasks' ? '' : 'none';
+    render();
+  }
+  document.getElementById('view-tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-tab');
+    if (!btn) return;
+    setView(btn.getAttribute('data-view'));
+  });
+
+  // Subtitle per role
+  const subtitle = document.getElementById('page-subtitle');
+  if (subtitle) {
+    const text = {
+      admin: 'Quản lý toàn bộ task sản xuất — Kanban / Table / My Tasks.',
+      account: 'Theo dõi task của order bạn phụ trách + duyệt nội bộ.',
+      design: 'Task được giao cho bạn — cập nhật status, upload preview/final.',
+      editor: 'Task được giao cho bạn — cập nhật status, upload preview/final.'
+    };
+    subtitle.textContent = text[user.role] || text.admin;
+  }
+
+  /* ---------- Toolbar ---------- */
+  let searchTimer;
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.search = e.target.value.trim(); render(); }, 180);
+  });
+  ['filter-status', 'filter-priority', 'filter-type', 'filter-pic'].forEach((id) => {
+    const key = id.replace('filter-', '');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', (e) => { state[key] = e.target.value; render(); });
+  });
+
+  // Summary quick filters
+  document.querySelectorAll('.pb-stat').forEach((card) => {
+    card.addEventListener('click', () => {
+      const q = card.getAttribute('data-quick');
+      if (state.quick === q || q === 'all') { state.quick = null; }
+      else state.quick = q;
+      document.querySelectorAll('.pb-stat').forEach((c) => c.classList.remove('is-active'));
+      if (state.quick) card.classList.add('is-active');
+      render();
+    });
+  });
+
+  /* ---------- Drag & drop kanban ---------- */
+  let draggedId = null;
+  let colsWired = false;
+  function wireDragDrop() {
+    const canDrag = ['admin', 'account', 'design', 'editor'].includes(user.role);
+    // Cards re-rendered each time → wire fresh
+    document.querySelectorAll('.kanban-card').forEach((card) => {
+      card.setAttribute('draggable', canDrag ? 'true' : 'false');
+      card.addEventListener('dragstart', (e) => {
+        draggedId = card.getAttribute('data-id');
+        card.classList.add('is-dragging');
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('is-dragging');
+        document.querySelectorAll('.kanban-col').forEach((c) => c.classList.remove('is-dragover'));
+        draggedId = null;
+      });
+    });
+    // Columns wired once (they persist between renders)
+    if (colsWired) return;
+    colsWired = true;
+    document.querySelectorAll('.kanban-col').forEach((col) => {
+      col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('is-dragover'); });
+      col.addEventListener('dragleave', () => col.classList.remove('is-dragover'));
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        col.classList.remove('is-dragover');
+        if (!draggedId) return;
+        const newStatus = col.getAttribute('data-status');
+        const task = TASKS.find((t) => t.task_id === draggedId);
+        if (!task || task.status === newStatus) return;
+        if (!canTransition(task, newStatus)) {
+          window.MH.toast({ type: 'warning', title: 'Không thể chuyển', message: getTransitionError(task, newStatus) });
+          return;
+        }
+        updateStatus(task, newStatus);
+      });
+    });
+  }
+
+  /* ---------- Status transitions ---------- */
+  function canTransition(task, newStatus) {
+    // PIC (design/editor) cannot directly move to completed or ready
+    if (['design', 'editor'].includes(user.role)) {
+      if (newStatus === 'completed') return false;
+      if (newStatus === 'ready' && task.status !== 'review') return false;
+    }
+    // Ready for delivery requires preview or final link
+    if (newStatus === 'ready' && !task.preview_link && !task.final_link) return false;
+    // Account/Admin can do anything else
+    return true;
+  }
+  function getTransitionError(task, newStatus) {
+    if (['design', 'editor'].includes(user.role) && newStatus === 'completed') return 'P.I.C không thể tự đóng task. Account/Admin sẽ chuyển sau bàn giao.';
+    if (newStatus === 'ready' && !task.preview_link && !task.final_link) return 'Cần upload Preview hoặc Final link trước.';
+    if (['design', 'editor'].includes(user.role) && newStatus === 'ready' && task.status !== 'review') return 'Task cần qua bước "Chờ duyệt nội bộ" trước.';
+    return 'Transition không hợp lệ.';
+  }
+  function updateStatus(task, newStatus) {
+    const old = task.status;
+    task.status = newStatus;
+    task.progress = STATUS_PROGRESS[newStatus] ?? task.progress;
+    task.last_update = fmtDT();
+    if (newStatus === 'completed') task.completed_at = task.last_update;
+    task.comments = task.comments || [];
+    task.comments.push({ author: user.name, text: `Status: ${STATUS_LABEL[old]} → ${STATUS_LABEL[newStatus]}`, time: task.last_update, type: 'internal' });
+    window.MH.toast({ type: 'success', title: 'Đã cập nhật status', message: `${task.task_id}: ${STATUS_LABEL[newStatus]} · ${task.progress}%` });
+    render();
+    if (currentTask && currentTask.task_id === task.task_id) openDrawer(task);
+  }
+
+  /* ---------- Drawer ---------- */
+  const drawer = document.getElementById('task-drawer');
+  const drawerBd = document.getElementById('drawer-backdrop');
+  const drawerBody = document.getElementById('drawer-body');
+  let currentTask = null;
+
+  function buildStatusActions(t) {
+    const role = user.role;
+    const actions = [];
+    if (t.status === 'pending') actions.push({ id: 'received', label: 'Nhận task', desc: 'Xác nhận bắt đầu', cls: '' });
+    if (t.status === 'received') actions.push({ id: 'inprogress', label: 'Bắt đầu sản xuất', desc: 'Chuyển → Đang thực hiện', cls: '' });
+    if (t.status === 'inprogress') actions.push({ id: 'review', label: 'Gửi duyệt nội bộ', desc: 'Đã có preview / final', cls: 'sa--success' });
+    if (t.status === 'review') {
+      if (['admin', 'account'].includes(role)) {
+        actions.push({ id: 'revision', label: 'Yêu cầu chỉnh sửa', desc: 'Quay lại P.I.C', cls: 'sa--warn' });
+        actions.push({ id: 'ready', label: 'Đạt — Sẵn sàng bàn giao', desc: 'Push → Delivery Log', cls: 'sa--success', disabled: !t.preview_link && !t.final_link });
+      }
+    }
+    if (t.status === 'revision') actions.push({ id: 'review', label: 'Đã chỉnh xong → Review lại', desc: 'Account duyệt lại', cls: '' });
+    if (t.status === 'ready') {
+      if (['admin', 'account'].includes(role)) actions.push({ id: 'completed', label: 'Đóng task — Hoàn thành', desc: 'Sau khi đã bàn giao client', cls: 'sa--success' });
+    }
+    // Always allow pause/cancel for admin/account
+    if (['admin', 'account'].includes(role) && !['completed', 'cancelled'].includes(t.status)) {
+      actions.push({ id: 'paused', label: 'Tạm dừng', desc: 'Thiếu thông tin / quyết định', cls: 'sa--warn' });
+      actions.push({ id: 'cancelled', label: 'Hủy task', desc: 'Không triển khai', cls: 'sa--danger' });
+    }
+    return actions;
+  }
+
+  function openDrawer(t) {
+    currentTask = t;
+    document.getElementById('d-task-id').textContent = t.task_id;
+    document.getElementById('d-order-id').textContent = t.order_id;
+    document.getElementById('d-project').textContent = t.project_name;
+    const s = document.getElementById('d-status');
+    s.className = 'tb-status s--' + t.status;
+    s.innerHTML = '<span class="dot"></span>' + STATUS_LABEL[t.status];
+    const p = document.getElementById('d-priority');
+    p.className = 'priority-pill p--' + t.priority;
+    p.innerHTML = '<span class="dot"></span>' + PRIORITY_LABEL[t.priority];
+    document.getElementById('d-type').textContent = TYPE_LABEL[t.task_type] || t.task_type;
+    document.getElementById('d-copy').setAttribute('data-copy', t.task_id);
+
+    const days = diffDays(t.internal_deadline);
+    const dlCls = days !== null && t.status !== 'completed' ? (days < 0 ? 'is-overdue' : (days <= 2 ? 'is-soon' : '')) : '';
+    const dl = parseDate(t.internal_deadline);
+    const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}/${dl.getFullYear()} ${String(dl.getHours()).padStart(2,'0')}:${String(dl.getMinutes()).padStart(2,'0')}` : '—';
+    const v = (x) => x ? escapeHtml(x) : '<em class="muted">—</em>';
+    const link = (u) => u ? `<a class="link" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(u)}</a>` : '<em class="muted">Chưa có</em>';
+
+    const actions = buildStatusActions(t);
+    const actionsHtml = actions.length === 0 ? '<p class="text-xs muted">Không có action khả dụng ở status hiện tại.</p>'
+      : `<div class="status-actions">${actions.map((a) => `
+        <button class="status-action-btn ${a.cls || ''}" data-status="${a.id}" ${a.disabled ? 'disabled' : ''}>
+          <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="sa-text"><b>${a.label}</b><span>${a.desc}</span></span>
+        </button>
+      `).join('')}</div>`;
+
+    const canEditLinks = user.role !== 'client' && (t.assigned_to === user.name || t.assigned_to === (user.name || '').split(' ').pop() || ['admin', 'account'].includes(user.role));
+
+    const linkInput = (id, value, placeholder) => canEditLinks
+      ? `<input class="input" id="${id}" type="url" value="${escapeHtml(value || '')}" placeholder="${placeholder}" />`
+      : `<span class="text-xs">${value ? `<a href="${escapeHtml(value)}" target="_blank" class="link">${escapeHtml(value)}</a>` : '<em class="muted">Chưa có</em>'}</span>`;
+
+    drawerBody.innerHTML = `
+      <div class="task-summary-grid">
+        <div class="task-summary-tile"><label>P.I.C</label><b>${v(t.assigned_to)}</b></div>
+        <div class="task-summary-tile"><label>Progress</label><b>${t.progress}%</b></div>
+        <div class="task-summary-tile"><label>Internal Deadline</label><b class="deadline-cell ${dlCls}" style="background:none; padding:0">${dl_fmt}</b></div>
+      </div>
+
+      <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">📋</span><h4>Brief Information</h4></div>
+        <dl>
+          <dt>Content</dt><dd>${v(t.content)}</dd>
+          <dt>Type</dt><dd>${TYPE_LABEL[t.task_type]}</dd>
+          <dt>Order ID</dt><dd><a class="link" href="database-orders.html">${t.order_id}</a> <span class="muted text-xs">(mở Database Orders để xem brief đầy đủ)</span></dd>
+        </dl>
+      </section>
+
+      <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Files &amp; Links</h4></div>
+
+        <div class="link-row ${t.link_drive ? 'has-link' : ''}">
+          <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+          <div class="l-info"><b>Source / Working Drive</b>${canEditLinks ? '' : `<span>${t.link_drive ? `<a href="${escapeHtml(t.link_drive)}" target="_blank" class="link">${escapeHtml(t.link_drive)}</a>` : 'Chưa có'}</span>`}</div>
+          ${canEditLinks ? linkInput('link-drive-in', t.link_drive, 'https://drive.google.com/...') : ''}
+        </div>
+
+        <div class="link-row ${t.preview_link ? 'has-link' : ''}">
+          <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <div class="l-info"><b>Preview Link</b>${canEditLinks ? '' : `<span>${t.preview_link ? `<a href="${escapeHtml(t.preview_link)}" target="_blank" class="link">${escapeHtml(t.preview_link)}</a>` : 'Chưa có'}</span>`}</div>
+          ${canEditLinks ? linkInput('preview-in', t.preview_link, 'https://drive.google.com/preview...') : ''}
+        </div>
+
+        <div class="link-row ${t.final_link ? 'has-link' : ''}">
+          <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <div class="l-info"><b>Final Link</b>${canEditLinks ? '' : `<span>${t.final_link ? `<a href="${escapeHtml(t.final_link)}" target="_blank" class="link">${escapeHtml(t.final_link)}</a>` : 'Chưa có'}</span>`}</div>
+          ${canEditLinks ? linkInput('final-in', t.final_link, 'https://drive.google.com/final...') : ''}
+        </div>
+
+        ${canEditLinks ? `<div class="row" style="justify-content:flex-end; margin-top:8px"><button class="btn btn-secondary btn-sm" id="save-links">Lưu links</button></div>` : ''}
+      </section>
+
+      <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">⚡</span><h4>Status &amp; Actions</h4></div>
+        ${actionsHtml}
+        ${['admin', 'account'].includes(user.role) ? `
+        <div class="edit-row mt-4">
+          <label>P.I.C</label>
+          <select class="select" id="edit-pic">
+            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${t.assigned_to === p ? 'selected' : ''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        <div class="edit-row">
+          <label>Internal Deadline</label>
+          <input class="input" id="edit-deadline" type="datetime-local" value="${t.internal_deadline ? t.internal_deadline.replace(' ', 'T') : ''}" />
+        </div>
+        <div class="edit-row">
+          <label>Priority</label>
+          <select class="select" id="edit-priority">
+            ${Object.entries(PRIORITY_LABEL).map(([k, l]) => `<option value="${k}" ${t.priority === k ? 'selected' : ''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div class="row" style="justify-content:flex-end; margin-top:8px"><button class="btn btn-secondary btn-sm" id="save-meta">Lưu thay đổi</button></div>
+        ` : ''}
+      </section>
+
+      <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">💬</span><h4>Comments &amp; Activity (${(t.comments || []).length})</h4></div>
+        <div class="comments-thread">
+          ${(t.comments && t.comments.length) ? t.comments.map((c) => `
+            <div class="comment-item">
+              <span class="ca">${(c.author || '').substring(0, 2).toUpperCase()}</span>
+              <div class="c-bubble">
+                <div class="c-head">
+                  <span><b>${escapeHtml(c.author)}</b><span class="c-type t--${c.type || 'internal'}">${(c.type || 'internal').toUpperCase()}</span></span>
+                  <time>${c.time}</time>
+                </div>
+                <div>${escapeHtml(c.text)}</div>
+              </div>
+            </div>
+          `).join('') : '<p class="text-xs muted">Chưa có comment.</p>'}
+        </div>
+
+        <div class="comment-composer">
+          <textarea class="textarea" id="comment-input" placeholder="Viết comment..."></textarea>
+          <div class="row">
+            <div class="composer-type">
+              <label for="comment-type">Loại:</label>
+              <select class="select" id="comment-type">
+                <option value="internal">Internal</option>
+                <option value="revision">Revision</option>
+                <option value="feedback">Client Feedback</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" id="add-comment">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Gửi
+            </button>
+          </div>
+        </div>
+      </section>
+    `;
+
+    // Wire status action buttons
+    drawerBody.querySelectorAll('.status-action-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        const newStatus = btn.getAttribute('data-status');
+        if (!canTransition(currentTask, newStatus)) {
+          window.MH.toast({ type: 'warning', title: 'Không thể chuyển', message: getTransitionError(currentTask, newStatus) });
+          return;
+        }
+        updateStatus(currentTask, newStatus);
+      });
+    });
+
+    // Save links
+    const saveLinksBtn = document.getElementById('save-links');
+    if (saveLinksBtn) {
+      saveLinksBtn.addEventListener('click', () => {
+        currentTask.link_drive = document.getElementById('link-drive-in').value.trim();
+        currentTask.preview_link = document.getElementById('preview-in').value.trim();
+        currentTask.final_link = document.getElementById('final-in').value.trim();
+        currentTask.last_update = fmtDT();
+        currentTask.comments = currentTask.comments || [];
+        currentTask.comments.push({ author: user.name, text: 'Cập nhật links', time: currentTask.last_update, type: 'internal' });
+        window.MH.toast({ type: 'success', title: 'Đã lưu links', message: currentTask.task_id });
+        render(); openDrawer(currentTask);
+      });
+    }
+
+    // Save meta
+    const saveMetaBtn = document.getElementById('save-meta');
+    if (saveMetaBtn) {
+      saveMetaBtn.addEventListener('click', () => {
+        currentTask.assigned_to = document.getElementById('edit-pic').value;
+        currentTask.internal_deadline = document.getElementById('edit-deadline').value.replace('T', ' ');
+        currentTask.priority = document.getElementById('edit-priority').value;
+        currentTask.last_update = fmtDT();
+        currentTask.comments = currentTask.comments || [];
+        currentTask.comments.push({ author: user.name, text: `Đã cập nhật: PIC=${currentTask.assigned_to} · deadline=${currentTask.internal_deadline} · priority=${PRIORITY_LABEL[currentTask.priority]}`, time: currentTask.last_update, type: 'internal' });
+        window.MH.toast({ type: 'success', title: 'Đã lưu thay đổi', message: currentTask.task_id });
+        render(); openDrawer(currentTask);
+      });
+    }
+
+    // Add comment
+    document.getElementById('add-comment').addEventListener('click', () => {
+      const text = document.getElementById('comment-input').value.trim();
+      if (!text) return;
+      const type = document.getElementById('comment-type').value;
+      currentTask.comments = currentTask.comments || [];
+      currentTask.comments.push({ author: user.name, text, time: fmtDT(), type });
+      currentTask.last_update = fmtDT();
+      window.MH.toast({ type: 'success', message: 'Đã gửi comment' });
+      render(); openDrawer(currentTask);
+    });
+
+    drawer.classList.add('is-open');
+    drawer.setAttribute('aria-hidden', 'false');
+    drawerBd.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('is-open');
+    drawer.setAttribute('aria-hidden', 'true');
+    drawerBd.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+  drawerBd.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.classList.contains('is-open')) closeDrawer(); });
+
+  /* ---------- Click handlers ---------- */
+  function openByEvent(e) {
+    const row = e.target.closest('[data-id]');
+    if (!row) return;
+    const id = row.getAttribute('data-id');
+    const task = TASKS.find((t) => t.task_id === id);
+    if (task) openDrawer(task);
+  }
+  tbody.addEventListener('click', openByEvent);
+  document.getElementById('view-kanban').addEventListener('click', openByEvent);
+  document.getElementById('view-mytasks').addEventListener('click', openByEvent);
+
+  /* ---------- Init ---------- */
+  setView(state.view);
+})();
