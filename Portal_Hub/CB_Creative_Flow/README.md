@@ -112,7 +112,7 @@ Build hiện tại: **15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset
 
 ## Spec Sources
 
-Spec gốc nằm tại [`../Brief Wflow/`](../Brief%20Wflow/):
+Spec gốc nằm tại [`../Brief_Wflow/`](../Brief_Wflow/):
 
 - `media-hub-page-module-spec.md`
 - `media-hub-api-flow-spec.md`
@@ -136,7 +136,7 @@ Project có sẵn `package.json` và `railway.json` để deploy lên [Railway](
 ```text
 1. Commit + push code lên GitHub remote (jettdsgn95/HiasMaster).
 2. Tại Railway dashboard: New Project → Deploy from GitHub repo → chọn HiasMaster.
-3. Vào Settings của service → "Root Directory" → set thành: Portal Hub/CB_Creative_Flow
+3. Vào Settings của service → "Root Directory" → set thành: Portal_Hub/CB_Creative_Flow
 4. Save → Railway tự install + start.
 5. Generate public domain ở tab Networking để có URL test.
 ```
@@ -144,7 +144,7 @@ Project có sẵn `package.json` và `railway.json` để deploy lên [Railway](
 Local dev:
 
 ```bash
-cd "Portal Hub/CB_Creative_Flow"
+cd Portal_Hub/CB_Creative_Flow
 npm install
 npm run dev          # http://localhost:3000
 ```

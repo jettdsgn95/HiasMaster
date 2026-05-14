@@ -212,7 +212,8 @@ Build total: 15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset.
 | 2026-05-14 | Auth/Profile | Added editable Profile modal in `app.js` (Hồ sơ menu): edit name/initials/title, auto-avatar, persists to `mh-user`, refreshes profile chip live across all internal pages |
 | 2026-05-14 | Auth/Profile | Extended Profile modal: avatar image upload (auto-resize 256px, JPEG 85%), phone/department/bio fields, role select gated to Admin only, chip avatar img sync on page load |
 | 2026-05-14 | Dashboard | KPI cards click-through drilldown: 12 cards mapped to Orders/Production/Delivery via `?dl=<card_key>` URL; target modules apply view/quick filter on load, show drilldown banner with count + Xóa filter, scroll to table. Spec: `Master_dashboard_clickthrough_drilldown.md` (Option B MVP) |
-| 2026-05-14 | Deploy | Added `package.json` + `railway.json` for Railway deploy via Nixpacks + `serve` package. Root Directory phải set = `Portal Hub/CB_Creative_Flow` trong Railway dashboard |
+| 2026-05-14 | Deploy | Added `package.json` + `railway.json` for Railway deploy via Nixpacks + `serve` package. Root Directory phải set = `Portal_Hub/CB_Creative_Flow` trong Railway dashboard |
+| 2026-05-14 | Repo layout | Rename top folders to remove spaces: `Portal Hub` → `Portal_Hub`, `Brief Wflow` → `Brief_Wflow`, `Source data` → `Source`. Path-safe cho Railway, CI, scripts |
 
 ---
 
