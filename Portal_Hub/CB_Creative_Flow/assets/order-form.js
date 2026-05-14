@@ -13,7 +13,10 @@
 
   const DRAFT_KEY = 'mh-order-draft-v2';
 
-  /* ---------- Chip groups (radio + checkbox) ---------- */
+  /* ---------- Chip groups (radio + checkbox) ----------
+     Mỗi `.chip` là một <label> wrap <input hidden>. Browser tự toggle input
+     khi click label, nên KHÔNG được toggle thủ công nữa (gây double-toggle
+     làm checkbox luôn về false). Chỉ cần lắng nghe `change` để sync class. */
   function syncChips(group) {
     group.querySelectorAll('.chip').forEach((c) => {
       const input = c.querySelector('input');
@@ -21,20 +24,11 @@
     });
   }
   document.querySelectorAll('.chips').forEach((group) => {
-    group.querySelectorAll('.chip').forEach((c) => {
-      c.addEventListener('click', (e) => {
-        if (e.target.tagName === 'INPUT') return;
-        const input = c.querySelector('input');
-        if (!input) return;
-        if (input.type === 'radio') {
-          group.querySelectorAll('input').forEach((i) => (i.checked = false));
-          input.checked = true;
-        } else {
-          input.checked = !input.checked;
-        }
-        syncChips(group);
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      });
+    group.addEventListener('change', (e) => {
+      if (!e.target || e.target.tagName !== 'INPUT') return;
+      // For radios sharing a `name`, change only fires on the newly-checked one;
+      // syncChips re-evaluates the whole group so the previously-active chip is cleared.
+      syncChips(group);
     });
     syncChips(group);
   });
