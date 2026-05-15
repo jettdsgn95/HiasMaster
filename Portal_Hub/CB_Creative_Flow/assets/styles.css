@@ -668,8 +668,8 @@ h4 { font-size: 1.125rem; }
   animation-delay: 0.6s;
 }
 .hero-floating-icon.icon-image {
-  width: 88px;
-  top: 200px; right: 18px;
+  width: 92px;
+  top: 130px; right: 28px;
   animation: heroFloatImage 4s ease-in-out infinite alternate;
   animation-delay: 1.2s;
 }
@@ -698,7 +698,7 @@ h4 { font-size: 1.125rem; }
   .hero-character { max-width: 400px; }
   .hero-floating-icon.icon-bell           { width: 74px; }
   .hero-floating-icon.icon-document-pencil { width: 102px; }
-  .hero-floating-icon.icon-image          { width: 78px; top: 180px; }
+  .hero-floating-icon.icon-image          { width: 80px; top: 110px; right: 20px; }
 }
 
 /* Mobile (≤ 960px): khi hero-content xếp 1 cột, đưa visual xuống dưới */
@@ -708,7 +708,7 @@ h4 { font-size: 1.125rem; }
   .hero-character { max-width: 320px; right: 8px; }
   .hero-floating-icon.icon-bell           { width: 64px; top: 4px; left: 24px; }
   .hero-floating-icon.icon-document-pencil { width: 84px; bottom: 56px; left: -4px; }
-  .hero-floating-icon.icon-image          { width: 68px; top: 150px; right: 0; }
+  .hero-floating-icon.icon-image          { width: 70px; top: 90px; right: 4px; }
 }
 
 @media (max-width: 480px) {
