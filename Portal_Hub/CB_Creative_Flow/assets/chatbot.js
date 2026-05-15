@@ -168,17 +168,30 @@
     surface.prompts.innerHTML = rolePrompts().map((p) => `<button class="chat-prompt" type="button" data-prompt="${esc(p)}">${esc(p)}</button>`).join('');
   }
 
+  // Hide action items the current user can't actually use (e.g. Order Form for design/editor).
+  function filterActions(actions) {
+    if (!actions || !actions.length) return actions;
+    const role = user && user.role;
+    return actions.filter((a) => {
+      if (a.url === 'request.html' && ['design', 'editor'].includes(role)) return false;
+      return true;
+    });
+  }
+
   function renderHistory(surface) {
     const history = readJSON(HISTORY_KEY, []);
-    surface.thread.innerHTML = history.map((msg) => `
+    surface.thread.innerHTML = history.map((msg) => {
+      const visibleActions = filterActions(msg.actions);
+      return `
       <article class="chat-msg chat-msg--${msg.role}">
         <div class="chat-avatar">${msg.role === 'bot' ? 'CB' : esc((user && user.initials) || 'U')}</div>
         <div class="chat-bubble">
           <div class="chat-text">${formatText(msg.content)}</div>
-          ${msg.actions && msg.actions.length ? `<div class="chat-actions">${msg.actions.map((a) => `<a class="btn btn-sm btn-ghost" href="${esc(a.url)}">${esc(a.label)}</a>`).join('')}</div>` : ''}
+          ${visibleActions && visibleActions.length ? `<div class="chat-actions">${visibleActions.map((a) => `<a class="btn btn-sm btn-ghost" href="${esc(a.url)}">${esc(a.label)}</a>`).join('')}</div>` : ''}
           ${msg.role === 'bot' ? `<div class="chat-feedback"><button type="button" data-chat-feedback="good" data-mid="${esc(msg.id)}">Good</button><button type="button" data-chat-feedback="bad" data-mid="${esc(msg.id)}">Bad</button></div>` : ''}
         </div>
-      </article>`).join('');
+      </article>`;
+    }).join('');
     surface.thread.querySelectorAll('[data-chat-feedback]').forEach((btn) => {
       btn.addEventListener('click', () => saveFeedback(btn.dataset.mid, btn.dataset.chatFeedback));
     });
