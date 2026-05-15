@@ -654,30 +654,40 @@ h4 { font-size: 1.125rem; }
   z-index: 3;
   height: auto; object-fit: contain;
   filter: drop-shadow(0 14px 22px rgba(15, 23, 42, 0.14));
-  animation: heroFloatIcon 5s ease-in-out infinite alternate;
   will-change: transform;
 }
 .hero-floating-icon.icon-bell {
-  width: 84px;
-  top: 20px;  left: 60px;
-  animation-delay: 0s;
+  width: 86px;
+  top: 8px;  left: 40px;
+  animation: heroFloatBell 3.6s ease-in-out infinite alternate;
 }
 .hero-floating-icon.icon-document-pencil {
-  width: 116px;
-  bottom: 96px; left: 0;
-  animation-duration: 6s;
-  animation-delay: 0.8s;
+  width: 118px;
+  bottom: 88px; left: -8px;
+  animation: heroFloatDoc 4.4s ease-in-out infinite alternate;
+  animation-delay: 0.6s;
 }
 .hero-floating-icon.icon-image {
-  width: 96px;
-  top: 88px; right: 4px;
-  animation-duration: 4.5s;
-  animation-delay: 1.4s;
+  width: 88px;
+  top: 200px; right: 18px;
+  animation: heroFloatImage 4s ease-in-out infinite alternate;
+  animation-delay: 1.2s;
 }
-@keyframes heroFloatIcon {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-10px); }
+
+/* Mỗi icon có pattern chuyển động khác nhau để dễ thấy + tự nhiên hơn */
+@keyframes heroFloatBell {
+  from { transform: translateY(0) rotate(-3deg); }
+  to   { transform: translateY(-16px) rotate(3deg); }
 }
+@keyframes heroFloatDoc {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to   { transform: translate(4px, -14px) rotate(-2deg); }
+}
+@keyframes heroFloatImage {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(-6px, -18px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-floating-icon { animation: none; }
 }
@@ -686,9 +696,9 @@ h4 { font-size: 1.125rem; }
 @media (max-width: 1100px) and (min-width: 961px) {
   .hero-graphic-wrap { width: min(480px, 100%); height: 420px; }
   .hero-character { max-width: 400px; }
-  .hero-floating-icon.icon-bell           { width: 72px; }
-  .hero-floating-icon.icon-document-pencil { width: 100px; }
-  .hero-floating-icon.icon-image          { width: 84px; }
+  .hero-floating-icon.icon-bell           { width: 74px; }
+  .hero-floating-icon.icon-document-pencil { width: 102px; }
+  .hero-floating-icon.icon-image          { width: 78px; top: 180px; }
 }
 
 /* Mobile (≤ 960px): khi hero-content xếp 1 cột, đưa visual xuống dưới */
@@ -696,9 +706,9 @@ h4 { font-size: 1.125rem; }
   .hero-visual { min-height: 360px; order: 2; }
   .hero-graphic-wrap { width: min(420px, 92vw); height: 360px; margin-inline: auto; }
   .hero-character { max-width: 320px; right: 8px; }
-  .hero-floating-icon.icon-bell           { width: 64px; top: 12px; left: 24px; }
+  .hero-floating-icon.icon-bell           { width: 64px; top: 4px; left: 24px; }
   .hero-floating-icon.icon-document-pencil { width: 84px; bottom: 56px; left: -4px; }
-  .hero-floating-icon.icon-image          { width: 76px; top: 56px; right: -4px; }
+  .hero-floating-icon.icon-image          { width: 68px; top: 150px; right: 0; }
 }
 
 @media (max-width: 480px) {
