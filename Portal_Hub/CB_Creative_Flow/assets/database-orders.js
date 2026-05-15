@@ -847,4 +847,15 @@
     injectDrilldownBanner(drilldownCfg);
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Auto-open drawer cho record cụ thể nếu ?id=MEDIA-* được pass từ Dashboard Alert Center.
+  const focusId = new URLSearchParams(location.search).get('id');
+  if (focusId) {
+    const order = ORDERS.find((o) => o.order_id === focusId);
+    if (order) {
+      setTimeout(() => openDrawer(order), 80);
+    } else {
+      window.MH.toast({ type: 'warning', title: 'Không tìm thấy order', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
+    }
+  }
 })();

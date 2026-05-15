@@ -767,4 +767,15 @@
     injectDrilldownBanner(drilldownCfg);
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Auto-open delivery drawer khi ?id=MEDIA-*, ?id=DLV-* hoặc ?id=TASK-* được pass từ Dashboard Alert Center.
+  const focusId = new URLSearchParams(location.search).get('id');
+  if (focusId) {
+    const delivery = DELIVERIES.find((d) => d.delivery_id === focusId || d.order_id === focusId || d.task_id === focusId);
+    if (delivery) {
+      setTimeout(() => openDrawer(delivery), 80);
+    } else {
+      window.MH.toast({ type: 'warning', title: 'Không tìm thấy delivery', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
+    }
+  }
 })();

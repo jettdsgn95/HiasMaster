@@ -850,4 +850,15 @@
     injectDrilldownBanner(drilldownCfg);
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Auto-open task drawer khi ?id=MEDIA-* hoặc ?id=TASK-* được pass từ Dashboard Alert Center.
+  const focusId = new URLSearchParams(location.search).get('id');
+  if (focusId) {
+    const task = TASKS.find((t) => t.task_id === focusId || t.order_id === focusId);
+    if (task) {
+      setTimeout(() => openDrawer(task), 80);
+    } else {
+      window.MH.toast({ type: 'warning', title: 'Không tìm thấy task', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
+    }
+  }
 })();

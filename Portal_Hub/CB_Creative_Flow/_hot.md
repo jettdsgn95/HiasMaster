@@ -353,6 +353,8 @@ ready_for_delivery / average_rating / rating_coverage → delivery-log.html
 
 Target page reads `?dl=...` → set `state.view` / `state.quick` → render → inject `.drilldown-banner` (label + count + "Xóa filter") trước `.table-card` → smooth-scroll vào table.
 
+Dashboard **Alert Center** dùng cùng cơ chế nhưng kèm `&id=MEDIA-*`: 6 button "Xem" → link tới module + drilldown filter + record ID. Destination module sau khi render thử `find(record matches id)` → `openDrawer` nếu có, toast warning nếu là placeholder demo không tồn tại trong mock data.
+
 ---
 
 ## 9. Known Decisions

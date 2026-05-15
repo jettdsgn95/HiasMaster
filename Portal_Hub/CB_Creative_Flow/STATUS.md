@@ -239,6 +239,7 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 | 2026-05-15 | Shared JS | `app.js` updated: `refreshHeaderChip()`, header chip toggle handler, profile modal close handles both chip selectors |
 | 2026-05-15 | Docs | Removed `deliveries.html` from all docs (file never existed in codebase) |
 | 2026-05-15 | Handoff docs | Synced README, `_hot.md`, `STATUS.md` to reflect 11/11 modules, current file inventory, Client Portal, new layout conventions |
+| 2026-05-15 | Dashboard | Fix Alert Center: 6 "Xem" buttons không click được → đổi thành `<a class="btn">` link tới module phù hợp với `?dl=<key>&id=<order_id>`. Orders/Production/Delivery JS đọc `?id`, auto-open drawer nếu record tồn tại, toast warning nếu placeholder demo không có trong mock |
 
 ---
 
