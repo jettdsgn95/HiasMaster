@@ -175,38 +175,38 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 
 | File | KB |
 |---|---:|
-| `assets/styles.css` | 198.6 |
+| `assets/styles.css` | 199.0 |
 | `request.html` | 64.3 |
-| `assets/database-orders.js` | 54.2 |
-| `assets/delivery-log.js` | 53.2 |
-| `dashboard.html` | 51.8 |
-| `assets/production-board.js` | 49.2 |
+| `assets/production-board.js` | 60.7 |
+| `assets/database-orders.js` | 54.7 |
+| `assets/delivery-log.js` | 53.8 |
+| `dashboard.html` | 52.2 |
 | `settings.html` | 49.1 |
 | `assets/user-management.js` | 42.8 |
 | `assets/client-dashboard.js` | 36.5 |
-| `assets/ai-tools.js` | 30.5 |
 | `client-dashboard.html` | 30.6 |
+| `assets/ai-tools.js` | 30.5 |
 | `assets/reports.js` | 27.7 |
 | `reports.html` | 26.4 |
-| `assets/order-form.js` | 25.7 |
+| `assets/order-form.js` | 26.3 |
 | `user-management.html` | 25.0 |
 | `assets/app.js` | 24.3 |
 | `assets/settings.js` | 23.3 |
 | `production-board.html` | 21.6 |
 | `tracking.html` | 21.0 |
-| `assets/chatbot.js` | 20.6 |
+| `assets/chatbot.js` | 21.0 |
+| `database-orders.html` | 18.8 |
 | `index.html` | 17.8 |
-| `assets/hero/cb_character_cutout.png` | 178.7 |
-| `assets/hero/icon-document-pencil.png` | 29.3 |
-| `assets/hero/icon-image.png` | 10.3 |
-| `assets/hero/icon-bell.png` | 9.0 |
-| `database-orders.html` | 18.7 |
-| `delivery-log.html` | 17.3 |
+| `delivery-log.html` | 17.4 |
 | `ai-tools.html` | 15.7 |
 | `help.html` | 14.9 |
 | `login.html` | 14.8 |
 | `assets/logo.png` | 13.0 |
-| `chatbot.html` | 10.8 |
+| `chatbot.html` | 10.9 |
+| `assets/hero/cb_character_cutout.png` | 178.7 |
+| `assets/hero/icon-document-pencil.png` | 29.3 |
+| `assets/hero/icon-image.png` | 10.3 |
+| `assets/hero/icon-bell.png` | 9.0 |
 
 ---
 
@@ -249,6 +249,7 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 | 2026-05-15 | Auth/Order | Restrict Order Form sang admin/account/client only. Thêm `data-show-roles="admin,account"` cho sidebar Order Form `<li>` ở 9 internal pages (client giữ access qua client-dashboard sidebar). Header "+ Tạo Order" button (dashboard, database-orders) cũng gated. `order-form.js` thêm role guard: design/editor → toast warning + redirect dashboard. CSS thêm rule `.btn[data-show-roles*="..."]` display: inline-flex để giữ button layout |
 | 2026-05-15 | Auth/Order | Chatbot: ẩn "Open Order Form" cho design/editor. Static link trong `chatbot.html` `data-show-roles="admin,account"`. `chatbot.js` thêm `filterActions(actions)` filter URL `request.html` khỏi message actions khi role design/editor |
 | 2026-05-15 | Public/Hero | Rewrite Hero Section visual ở `index.html`: thay khối dashboard mockup cũ (`.hero-mock` + 2 `.hero-floating`) bằng cụm CB character 3D + 3 floating icons (bell, document-pencil, image). Asset đặt tại `assets/hero/` (copy từ `Source/`). Icons có animation translateY 6–10px ease-in-out infinite alternate với delay khác nhau, tôn trọng `prefers-reduced-motion`. Responsive tablet/mobile, icon document-pencil ẩn ở ≤480px |
+| 2026-05-15 | Public/Hero | Refinement: tách 3 keyframe riêng (`heroFloatBell`/`heroFloatDoc`/`heroFloatImage`) — biên độ 14-18px + rotate ±3° để chuyển động dễ thấy. Reposition `icon-image` upper-right (top:130, right:28, w:46px sau scale 50%) ngang mặt character thay vì giữa torso, tránh chồng camera baked-in của cutout |
 
 ---
 
