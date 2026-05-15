@@ -1340,6 +1340,10 @@ body[data-user-role="admin"]   .dash-section[data-show-roles*="admin"],
 body[data-user-role="account"] .dash-section[data-show-roles*="account"],
 body[data-user-role="design"]  .dash-section[data-show-roles*="design"],
 body[data-user-role="editor"]  .dash-section[data-show-roles*="editor"] { display: block; }
+body[data-user-role="admin"]   .hpm-item[data-show-roles*="admin"],
+body[data-user-role="account"] .hpm-item[data-show-roles*="account"],
+body[data-user-role="design"]  .hpm-item[data-show-roles*="design"],
+body[data-user-role="editor"]  .hpm-item[data-show-roles*="editor"] { display: flex; }
 
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }

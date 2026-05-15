@@ -280,7 +280,7 @@ Header Profile Chip (DOM):
   <svg class="header-pc-chevron">...</svg>
   <div class="header-profile-menu" id="header-profile-menu">
     <a href="#" class="hpm-item" id="hpm-profile">Hồ sơ cá nhân</a>
-    <a href="settings.html" class="hpm-item">Cài đặt</a>
+    <a href="settings.html" class="hpm-item" data-show-roles="admin">Cài đặt</a>
     <div class="hpm-divider"></div>
     <button class="hpm-item hpm-danger" id="logout-btn">Đăng xuất</button>
   </div>
