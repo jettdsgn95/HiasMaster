@@ -1344,6 +1344,10 @@ body[data-user-role="admin"]   .hpm-item[data-show-roles*="admin"],
 body[data-user-role="account"] .hpm-item[data-show-roles*="account"],
 body[data-user-role="design"]  .hpm-item[data-show-roles*="design"],
 body[data-user-role="editor"]  .hpm-item[data-show-roles*="editor"] { display: flex; }
+body[data-user-role="admin"]   .btn[data-show-roles*="admin"],
+body[data-user-role="account"] .btn[data-show-roles*="account"],
+body[data-user-role="design"]  .btn[data-show-roles*="design"],
+body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline-flex; }
 
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }

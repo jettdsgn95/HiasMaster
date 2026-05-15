@@ -176,7 +176,7 @@ const AUTH_USER = (() => { try { return JSON.parse(localStorage.getItem('mh-user
 ```text
 Vận hành
 ├── Dashboard
-├── Order Form
+├── Order Form          admin/account (design/editor blocked)
 ├── Database Orders     admin/account
 ├── Production Board
 ├── Delivery Log        admin/account

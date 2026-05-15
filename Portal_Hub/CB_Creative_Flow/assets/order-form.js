@@ -19,6 +19,21 @@
     try { return JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { return null; }
   })();
 
+  // Block design/editor: production roles không có quyền tạo order.
+  // Admin/Account/Client + guest (sẽ được redirect login khi submit) thì OK.
+  if (AUTH_USER && ['design', 'editor'].includes(AUTH_USER.role)) {
+    if (window.MH && window.MH.toast) {
+      window.MH.toast({
+        type: 'warning',
+        title: 'Không đủ quyền',
+        message: 'Role ' + AUTH_USER.role + ' không tạo được order. Liên hệ Account để được hỗ trợ.',
+        duration: 4500
+      });
+    }
+    setTimeout(() => location.replace('dashboard.html'), 800);
+    return;
+  }
+
   function autofillRequester() {
     if (!AUTH_USER) return;
     const fill = (id, val) => {
