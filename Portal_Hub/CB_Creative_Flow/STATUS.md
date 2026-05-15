@@ -175,7 +175,7 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 
 | File | KB |
 |---|---:|
-| `assets/styles.css` | 194.1 |
+| `assets/styles.css` | 198.6 |
 | `request.html` | 64.3 |
 | `assets/database-orders.js` | 54.2 |
 | `assets/delivery-log.js` | 53.2 |
@@ -195,7 +195,11 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 | `production-board.html` | 21.6 |
 | `tracking.html` | 21.0 |
 | `assets/chatbot.js` | 20.6 |
-| `index.html` | 19.4 |
+| `index.html` | 17.8 |
+| `assets/hero/cb_character_cutout.png` | 178.7 |
+| `assets/hero/icon-document-pencil.png` | 29.3 |
+| `assets/hero/icon-image.png` | 10.3 |
+| `assets/hero/icon-bell.png` | 9.0 |
 | `database-orders.html` | 18.7 |
 | `delivery-log.html` | 17.3 |
 | `ai-tools.html` | 15.7 |
@@ -244,6 +248,7 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 | 2026-05-15 | Production Board | Comments: thêm @mention autocomplete (gõ `@` → dropdown 6 team members + current user, filter realtime, ArrowUp/Down/Enter/Tab/Esc nav) và Reply (button per comment → banner "Đang reply @Author" → save với `reply_to` → replies indent dưới parent, click reply-indicator scroll tới parent). Comment object thêm `id`, `mentions[]`, `reply_to`, `reply_to_author`. @Name rendered as `.mention` chip trong text |
 | 2026-05-15 | Auth/Order | Restrict Order Form sang admin/account/client only. Thêm `data-show-roles="admin,account"` cho sidebar Order Form `<li>` ở 9 internal pages (client giữ access qua client-dashboard sidebar). Header "+ Tạo Order" button (dashboard, database-orders) cũng gated. `order-form.js` thêm role guard: design/editor → toast warning + redirect dashboard. CSS thêm rule `.btn[data-show-roles*="..."]` display: inline-flex để giữ button layout |
 | 2026-05-15 | Auth/Order | Chatbot: ẩn "Open Order Form" cho design/editor. Static link trong `chatbot.html` `data-show-roles="admin,account"`. `chatbot.js` thêm `filterActions(actions)` filter URL `request.html` khỏi message actions khi role design/editor |
+| 2026-05-15 | Public/Hero | Rewrite Hero Section visual ở `index.html`: thay khối dashboard mockup cũ (`.hero-mock` + 2 `.hero-floating`) bằng cụm CB character 3D + 3 floating icons (bell, document-pencil, image). Asset đặt tại `assets/hero/` (copy từ `Source/`). Icons có animation translateY 6–10px ease-in-out infinite alternate với delay khác nhau, tôn trọng `prefers-reduced-motion`. Responsive tablet/mobile, icon document-pencil ẩn ở ≤480px |
 
 ---
 
