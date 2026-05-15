@@ -241,6 +241,7 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 | 2026-05-15 | Handoff docs | Synced README, `_hot.md`, `STATUS.md` to reflect 11/11 modules, current file inventory, Client Portal, new layout conventions |
 | 2026-05-15 | Dashboard | Fix Alert Center: 6 "Xem" buttons không click được → đổi thành `<a class="btn">` link tới module phù hợp với `?dl=<key>&id=<order_id>`. Orders/Production/Delivery JS đọc `?id`, auto-open drawer nếu record tồn tại, toast warning nếu placeholder demo không có trong mock |
 | 2026-05-15 | Auth/UX | "Cài đặt" trong header profile menu giới hạn admin: `<a href="settings.html" class="hpm-item" data-show-roles="admin">` ở 10 HTML files. Thêm CSS rule `.hpm-item[data-show-roles*="..."]` display: flex (admin/account/design/editor variants) để giữ layout đúng |
+| 2026-05-15 | Production Board | Comments: thêm @mention autocomplete (gõ `@` → dropdown 6 team members + current user, filter realtime, ArrowUp/Down/Enter/Tab/Esc nav) và Reply (button per comment → banner "Đang reply @Author" → save với `reply_to` → replies indent dưới parent, click reply-indicator scroll tới parent). Comment object thêm `id`, `mentions[]`, `reply_to`, `reply_to_author`. @Name rendered as `.mention` chip trong text |
 
 ---
 

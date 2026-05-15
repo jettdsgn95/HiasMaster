@@ -81,6 +81,113 @@
   }
   function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+  /* ---------- Team members for @mention autocomplete ---------- */
+  const TEAM_MEMBERS = [
+    { name: 'Mai Phương',  role: 'admin'   },
+    { name: 'Hậu',         role: 'account' },
+    { name: 'Đức Anh',     role: 'account' },
+    { name: 'Duy',         role: 'design'  },
+    { name: 'Vinh',        role: 'design'  },
+    { name: 'Linh Chi',    role: 'editor'  }
+  ];
+  function teamMembersForUser(currentUserName) {
+    const seen = new Set();
+    const list = [];
+    if (currentUserName && !seen.has(currentUserName)) {
+      list.push({ name: currentUserName, role: '', is_self: true });
+      seen.add(currentUserName);
+    }
+    TEAM_MEMBERS.forEach((m) => { if (!seen.has(m.name)) { list.push(m); seen.add(m.name); } });
+    return list;
+  }
+  function initials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  /* ---------- Comment helpers: id, mentions, reply parent ---------- */
+  function genCommentId() {
+    return 'c-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+  function ensureCommentIds(task) {
+    (task.comments || []).forEach((c) => { if (!c.id) c.id = genCommentId(); });
+  }
+  function parseMentions(text) {
+    if (!text) return [];
+    const names = TEAM_MEMBERS.map((m) => m.name);
+    const found = [];
+    names.forEach((n) => {
+      const re = new RegExp('@' + n.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&') + '(?=\\b|$|\\s)', 'i');
+      if (re.test(text) && !found.includes(n)) found.push(n);
+    });
+    return found;
+  }
+  function renderCommentText(text) {
+    if (!text) return '';
+    let html = escapeHtml(text);
+    // Sort by length desc to avoid matching "Linh" inside "Linh Chi" first
+    const names = [...TEAM_MEMBERS.map((m) => m.name)].sort((a, b) => b.length - a.length);
+    names.forEach((n) => {
+      const safe = n.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const re = new RegExp('@' + safe + '(?=\\b|$|\\s|[.,;:!?])', 'g');
+      html = html.replace(re, '<span class="mention">@' + escapeHtml(n) + '</span>');
+    });
+    return html.replace(/\n/g, '<br>');
+  }
+  function findCommentById(task, id) {
+    return (task.comments || []).find((c) => c.id === id) || null;
+  }
+
+  function renderCommentItem(c, isReply, task) {
+    const replyParent = c.reply_to ? findCommentById(task, c.reply_to) : null;
+    const replyBadge = replyParent ? `
+      <div class="reply-indicator" data-scroll-to="${replyParent.id}" title="Cuộn tới comment gốc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+        Reply tới <b>@${escapeHtml(replyParent.author)}</b>
+      </div>` : '';
+    return `
+      <div class="comment-item ${isReply ? 'is-reply' : ''}" id="cm-${c.id}" data-comment-id="${c.id}">
+        <span class="ca">${initials(c.author)}</span>
+        <div class="c-bubble">
+          <div class="c-head">
+            <span><b>${escapeHtml(c.author)}</b><span class="c-type t--${c.type || 'internal'}">${(c.type || 'internal').toUpperCase()}</span></span>
+            <time>${c.time}</time>
+          </div>
+          ${replyBadge}
+          <div>${renderCommentText(c.text)}</div>
+          <div class="comment-actions">
+            <button type="button" data-reply="${c.id}" title="Trả lời">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+              Reply
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Group: top-level chronological, replies indented immediately under their parent.
+  function renderCommentsThread(task) {
+    ensureCommentIds(task);
+    const comments = task.comments || [];
+    if (!comments.length) return '<p class="text-xs muted">Chưa có comment.</p>';
+    const topLevel = comments.filter((c) => !c.reply_to);
+    const repliesByParent = {};
+    comments.filter((c) => c.reply_to).forEach((c) => {
+      (repliesByParent[c.reply_to] = repliesByParent[c.reply_to] || []).push(c);
+    });
+    // Orphan replies (parent deleted) → render at top-level
+    const orphanReplies = comments.filter((c) => c.reply_to && !findCommentById(task, c.reply_to));
+    return [
+      ...topLevel.map((c) => renderCommentItem(c, false, task) + (repliesByParent[c.id] || []).map((r) => renderCommentItem(r, true, task)).join('')),
+      ...orphanReplies.map((c) => renderCommentItem(c, false, task))
+    ].join('');
+  }
+
+  // Reply state — single instance per drawer session
+  let replyingToId = null;
+
   const TASKS = [
     { task_id: 'TASK-0001', order_id: 'MEDIA-2026-0004', project_name: 'Bộ Key Visual Sự kiện Q3',
       task_type: 'design', content: 'Bộ KV cho sự kiện ra mắt khóa Q3 — Backdrop + Standee + Poster + Social Post + Banner. Tone chuyên nghiệp, hiện đại.',
@@ -574,6 +681,7 @@
 
   function openDrawer(t) {
     currentTask = t;
+    replyingToId = null;
     document.getElementById('d-task-id').textContent = t.task_id;
     document.getElementById('d-order-id').textContent = t.order_id;
     document.getElementById('d-project').textContent = t.project_name;
@@ -674,23 +782,21 @@
 
       <section class="drawer-block">
         <div class="drawer-block-head"><span class="block-letter">💬</span><h4>Comments &amp; Activity (${(t.comments || []).length})</h4></div>
-        <div class="comments-thread">
-          ${(t.comments && t.comments.length) ? t.comments.map((c) => `
-            <div class="comment-item">
-              <span class="ca">${(c.author || '').substring(0, 2).toUpperCase()}</span>
-              <div class="c-bubble">
-                <div class="c-head">
-                  <span><b>${escapeHtml(c.author)}</b><span class="c-type t--${c.type || 'internal'}">${(c.type || 'internal').toUpperCase()}</span></span>
-                  <time>${c.time}</time>
-                </div>
-                <div>${escapeHtml(c.text)}</div>
-              </div>
-            </div>
-          `).join('') : '<p class="text-xs muted">Chưa có comment.</p>'}
+        <div class="comments-thread" id="comments-thread">
+          ${renderCommentsThread(t)}
         </div>
 
         <div class="comment-composer">
-          <textarea class="textarea" id="comment-input" placeholder="Viết comment..."></textarea>
+          <div class="composer-reply-banner" id="reply-banner" style="display:none;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+            <span class="reply-target">Đang reply <b id="reply-target-name"></b></span>
+            <span class="reply-snip" id="reply-snip"></span>
+            <button type="button" class="close-reply" id="cancel-reply" aria-label="Hủy reply">×</button>
+          </div>
+          <div class="comment-composer-wrap">
+            <textarea class="textarea" id="comment-input" placeholder="Viết comment... gõ @ để mention"></textarea>
+            <div class="mention-dropdown" id="mention-dropdown"></div>
+          </div>
           <div class="row">
             <div class="composer-type">
               <label for="comment-type">Loại:</label>
@@ -752,15 +858,161 @@
       });
     }
 
-    // Add comment
+    // ============ Comments: add / reply / @mention autocomplete ============
+    const commentInput = document.getElementById('comment-input');
+    const replyBanner = document.getElementById('reply-banner');
+    const replyTargetName = document.getElementById('reply-target-name');
+    const replySnip = document.getElementById('reply-snip');
+    const mentionDropdown = document.getElementById('mention-dropdown');
+
+    function setReplyTarget(commentId) {
+      replyingToId = commentId;
+      const target = commentId ? findCommentById(currentTask, commentId) : null;
+      if (target) {
+        replyTargetName.textContent = '@' + target.author;
+        const snip = (target.text || '').replace(/\s+/g, ' ').slice(0, 60);
+        replySnip.textContent = '— ' + snip + (target.text.length > 60 ? '…' : '');
+        replyBanner.style.display = 'flex';
+        commentInput.focus();
+      } else {
+        replyingToId = null;
+        replyBanner.style.display = 'none';
+      }
+    }
+
+    // Reply button on each comment
+    drawerBody.querySelectorAll('button[data-reply]').forEach((btn) => {
+      btn.addEventListener('click', () => setReplyTarget(btn.getAttribute('data-reply')));
+    });
+
+    // Scroll to parent comment when clicking reply indicator
+    drawerBody.querySelectorAll('.reply-indicator[data-scroll-to]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const target = drawerBody.querySelector('#cm-' + el.getAttribute('data-scroll-to'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.style.outline = '2px solid var(--primary)';
+          setTimeout(() => { target.style.outline = ''; }, 1400);
+        }
+      });
+    });
+
+    // Cancel reply
+    document.getElementById('cancel-reply').addEventListener('click', () => setReplyTarget(null));
+
+    // @mention autocomplete on textarea
+    const teamForUser = teamMembersForUser(user.name);
+    let mentionActiveIndex = 0;
+    let mentionQueryStart = -1; // index in input where '@' was typed
+
+    function closeMentionDropdown() {
+      mentionDropdown.classList.remove('is-open');
+      mentionDropdown.innerHTML = '';
+      mentionQueryStart = -1;
+    }
+
+    function renderMentionDropdown(query) {
+      const q = (query || '').toLowerCase();
+      const matches = teamForUser.filter((m) => m.name.toLowerCase().includes(q));
+      if (!matches.length) {
+        mentionDropdown.innerHTML = '<div class="empty">Không tìm thấy thành viên</div>';
+      } else {
+        mentionDropdown.innerHTML = matches.map((m, i) => `
+          <div class="mention-option ${i === mentionActiveIndex ? 'is-active' : ''}" data-name="${escapeHtml(m.name)}" data-index="${i}">
+            <span class="ca-mini ${(['Hậu','Linh Chi','Vinh'].indexOf(m.name) % 2 === 0 && m.name) ? 'has-red' : ''}">${initials(m.name)}</span>
+            <span>${escapeHtml(m.name)}${m.is_self ? ' <small style="color:var(--text-muted)">(bạn)</small>' : ''}</span>
+          </div>
+        `).join('');
+      }
+      mentionDropdown.classList.add('is-open');
+      // Bind option click
+      mentionDropdown.querySelectorAll('.mention-option').forEach((opt) => {
+        opt.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // keep focus on textarea
+          insertMention(opt.getAttribute('data-name'));
+        });
+      });
+    }
+
+    function insertMention(name) {
+      if (mentionQueryStart < 0) return;
+      const val = commentInput.value;
+      const before = val.slice(0, mentionQueryStart);
+      const after = val.slice(commentInput.selectionStart);
+      const mention = '@' + name + ' ';
+      commentInput.value = before + mention + after;
+      const newPos = (before + mention).length;
+      commentInput.setSelectionRange(newPos, newPos);
+      closeMentionDropdown();
+    }
+
+    commentInput.addEventListener('input', () => {
+      const val = commentInput.value;
+      const caret = commentInput.selectionStart;
+      // Look back from caret for '@' (no whitespace between @ and caret)
+      const lookback = val.slice(0, caret);
+      const atMatch = lookback.match(/@([^\s@]*)$/);
+      if (atMatch) {
+        mentionQueryStart = caret - atMatch[0].length;
+        mentionActiveIndex = 0;
+        renderMentionDropdown(atMatch[1]);
+      } else {
+        closeMentionDropdown();
+      }
+    });
+
+    commentInput.addEventListener('keydown', (e) => {
+      if (!mentionDropdown.classList.contains('is-open')) return;
+      const options = mentionDropdown.querySelectorAll('.mention-option');
+      if (!options.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        mentionActiveIndex = (mentionActiveIndex + 1) % options.length;
+        options.forEach((o, i) => o.classList.toggle('is-active', i === mentionActiveIndex));
+        options[mentionActiveIndex]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        mentionActiveIndex = (mentionActiveIndex - 1 + options.length) % options.length;
+        options.forEach((o, i) => o.classList.toggle('is-active', i === mentionActiveIndex));
+        options[mentionActiveIndex]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertMention(options[mentionActiveIndex].getAttribute('data-name'));
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMentionDropdown();
+      }
+    });
+
+    commentInput.addEventListener('blur', () => {
+      // Delay so option mousedown can register before close
+      setTimeout(() => closeMentionDropdown(), 120);
+    });
+
+    // Submit comment
     document.getElementById('add-comment').addEventListener('click', () => {
-      const text = document.getElementById('comment-input').value.trim();
+      const text = commentInput.value.trim();
       if (!text) return;
       const type = document.getElementById('comment-type').value;
+      const mentions = parseMentions(text);
+      const replyParent = replyingToId ? findCommentById(currentTask, replyingToId) : null;
       currentTask.comments = currentTask.comments || [];
-      currentTask.comments.push({ author: user.name, text, time: fmtDT(), type });
+      currentTask.comments.push({
+        id: genCommentId(),
+        author: user.name,
+        text,
+        time: fmtDT(),
+        type,
+        mentions,
+        reply_to: replyParent ? replyParent.id : null,
+        reply_to_author: replyParent ? replyParent.author : null
+      });
       currentTask.last_update = fmtDT();
-      window.MH.toast({ type: 'success', message: 'Đã gửi comment' });
+      const toastMsg = replyParent
+        ? `Đã reply @${replyParent.author}`
+        : (mentions.length ? `Đã gửi · mention ${mentions.length}` : 'Đã gửi comment');
+      window.MH.toast({ type: 'success', message: toastMsg });
+      replyingToId = null;
       render(); openDrawer(currentTask);
     });
 

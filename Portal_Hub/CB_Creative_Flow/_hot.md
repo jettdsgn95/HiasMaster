@@ -355,6 +355,16 @@ Target page reads `?dl=...` → set `state.view` / `state.quick` → render → 
 
 Dashboard **Alert Center** dùng cùng cơ chế nhưng kèm `&id=MEDIA-*`: 6 button "Xem" → link tới module + drilldown filter + record ID. Destination module sau khi render thử `find(record matches id)` → `openDrawer` nếu có, toast warning nếu là placeholder demo không tồn tại trong mock data.
 
+## 8c. Comment system (Production Board)
+
+Task drawer comment thread hỗ trợ @mention + Reply:
+
+- **@mention**: gõ `@` trong textarea → dropdown filter realtime 6 team members + current user. Keyboard nav (↑/↓/Enter/Tab/Esc). Tên có chip `.mention` style khi render. `parseMentions(text)` → array of names. Names có dấu cách (Mai Phương, Linh Chi, Đức Anh) chỉ pick từ dropdown — không gõ tay được.
+- **Reply**: button "Reply" mỗi comment (hidden cho đến khi hover) → set `replyingToId` → banner trên composer hiển thị "@Author — snippet" + nút × cancel. Submit → comment có `reply_to` (parent id), render indented (`.is-reply` class).
+- **Comment object shape** (`task.comments[]`): `{ id, author, text, time, type, mentions[], reply_to, reply_to_author }`. Existing comments backfill id qua `ensureCommentIds` khi mở drawer.
+- **Reply indicator**: comment con có badge "Reply tới @Author" — click scroll smooth tới parent + outline glow 1.4s.
+- Data lưu in-memory trong `TASKS[].comments`. Reload mất.
+
 ---
 
 ## 9. Known Decisions

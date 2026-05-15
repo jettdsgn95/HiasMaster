@@ -3094,6 +3094,99 @@ body[data-user-role="editor"]  .hpm-item[data-show-roles*="editor"] { display: f
   width: auto; min-width: 130px; min-height: 30px; padding-block: 4px; font-size: 11px;
 }
 
+/* @mention chip rendered in comment text */
+.mention {
+  display: inline-block; padding: 1px 6px;
+  background: var(--primary-soft); color: var(--primary);
+  border-radius: 4px; font-weight: 600;
+}
+
+/* Reply badge above comment text linking to parent */
+.reply-indicator {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-bottom: 6px; padding: 2px 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  font-size: 10px; color: var(--text-muted);
+  cursor: pointer; transition: background var(--dur) var(--ease-out);
+}
+.reply-indicator:hover { background: var(--surface-2); }
+.reply-indicator b { color: var(--primary); font-weight: 600; }
+.reply-indicator svg { width: 11px; height: 11px; }
+
+/* Reply / mention buttons on each comment */
+.comment-actions {
+  display: flex; gap: 4px; margin-top: 6px; opacity: 0;
+  transition: opacity var(--dur) var(--ease-out);
+}
+.comment-item:hover .comment-actions, .comment-item:focus-within .comment-actions { opacity: 1; }
+.comment-actions button {
+  font-size: 11px; padding: 2px 8px; line-height: 1.4;
+  background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.comment-actions button:hover { background: var(--surface-2); color: var(--text); }
+.comment-actions button svg { width: 11px; height: 11px; }
+
+/* Replies are indented under parent + bubble shifted to brand colour */
+.comment-item.is-reply { padding-left: 36px; }
+.comment-item.is-reply .c-bubble {
+  background: var(--surface); border-color: var(--brand-200);
+  border-radius: 8px 8px 8px 4px;
+}
+.comment-item.is-reply .ca {
+  width: 26px; height: 26px; font-size: 10px;
+}
+
+/* Composer reply banner */
+.composer-reply-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; margin-bottom: 8px;
+  background: var(--primary-soft); border-left: 3px solid var(--primary);
+  border-radius: var(--radius-sm); font-size: 11px;
+}
+.composer-reply-banner .reply-target b { color: var(--primary); }
+.composer-reply-banner .reply-snip {
+  color: var(--text-muted); font-style: italic;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 240px;
+}
+.composer-reply-banner .close-reply {
+  margin-left: auto;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 16px; line-height: 1;
+  padding: 0; width: 20px; height: 20px;
+  display: grid; place-items: center; border-radius: 4px;
+}
+.composer-reply-banner .close-reply:hover { color: var(--danger); background: var(--surface); }
+
+/* @mention dropdown anchored under textarea */
+.comment-composer-wrap { position: relative; }
+.mention-dropdown {
+  position: absolute; left: 0; right: 0; top: 100%;
+  margin-top: 4px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md);
+  padding: 4px; z-index: var(--z-dropdown);
+  max-height: 220px; overflow-y: auto;
+  display: none;
+}
+.mention-dropdown.is-open { display: block; }
+.mention-dropdown .empty { padding: 8px 10px; font-size: 11px; color: var(--text-muted); text-align: center; }
+.mention-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: var(--text-sm);
+}
+.mention-option:hover, .mention-option.is-active { background: var(--surface-2); }
+.mention-option .ca-mini {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--grad-navy); color: #fff;
+  display: grid; place-items: center; font-size: 10px; font-weight: 700;
+  flex-shrink: 0;
+}
+.mention-option .ca-mini.has-red { background: var(--grad-red); }
+
 /* =====================================================================
    DATABASE ORDERS — internal table & detail drawer
    ===================================================================== */
