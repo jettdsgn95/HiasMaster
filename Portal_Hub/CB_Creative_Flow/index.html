@@ -27,20 +27,18 @@
       <a href="index.html">Trang chủ</a>
       <a href="request.html">Gửi yêu cầu</a>
       <a href="tracking.html">Tra cứu</a>
-      <a href="deliveries.html">Sản phẩm</a>
+
       <a href="help.html">Hướng dẫn</a>
     </nav>
 
     <div class="header-actions">
-      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối" aria-pressed="false">
-        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <span class="theme-toggle-thumb">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
       </button>
-      <a class="btn btn-ghost btn-sm" href="login.html">Đăng nhập</a>
-      <a class="btn btn-primary btn-sm" href="request.html">
-        Gửi yêu cầu
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
+      <a class="btn-login-pill" href="login.html">Đăng nhập</a>
       <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Mở menu" aria-expanded="false" aria-controls="site-nav">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -58,10 +56,10 @@
         <span class="badge badge-primary fade-up">
           <span class="dot"></span> Hệ thống đang hoạt động ổn định
         </span>
-        <h1 class="fade-up delay-1">Cổng dịch vụ <span class="accent">sáng tạo</span> — gửi yêu cầu &amp; theo dõi <span class="accent-blue">minh bạch</span>.</h1>
+        <h1 class="fade-up delay-1">Yêu cầu <span class="serif-italic serif-italic--red">sáng tạo</span><br>của bạn cần được<br><span class="accent-blue">xử lý ngay</span></h1>
         <p class="lead fade-up delay-2">CB Media Hub giúp khách hàng tạo yêu cầu thiết kế / video, theo dõi tiến độ theo thời gian thực và nhận sản phẩm bàn giao trong cùng một nơi — không còn email rời rạc, không còn câu hỏi "đến đâu rồi?"</p>
         <div class="hero-cta fade-up delay-3">
-          <a class="btn btn-primary btn-lg" href="request.html">
+          <a class="btn btn-primary btn-lg btn-hero" href="request.html">
             Gửi yêu cầu ngay
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </a>
@@ -150,17 +148,17 @@
         <p>Nhập mã đơn hàng để xem trạng thái, % hoàn thành và bước tiếp theo — không cần hỏi qua chat.</p>
         <span class="quick-link">Tra cứu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
-      <a class="card card--lift quick-card" href="deliveries.html">
-        <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-        <h3>Xem sản phẩm</h3>
-        <p>Truy cập toàn bộ file preview, file final cùng lịch sử phiên bản theo từng dự án của bạn.</p>
-        <span class="quick-link">Xem ngay <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </a>
       <a class="card card--lift quick-card" href="help.html">
         <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
         <h3>Hướng dẫn &amp; FAQ</h3>
         <p>Câu hỏi thường gặp, nguyên tắc xử lý và quy trình bàn giao — sẵn sàng cho mọi người mới.</p>
         <span class="quick-link">Đọc hướng dẫn <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </a>
+      <a class="card card--lift quick-card" href="client-dashboard.html">
+        <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
+        <h3>Yêu cầu của tôi</h3>
+        <p>Xem lại toàn bộ yêu cầu sáng tạo đã gửi, trạng thái xử lý, người phụ trách và thời gian bàn giao.</p>
+        <span class="quick-link">Xem yêu cầu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
     </div>
   </div>
@@ -219,70 +217,6 @@
   </div>
 </section>
 
-<!-- ===== Deliveries Preview ===== -->
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="eyebrow">Bàn giao gần đây</span>
-        <h2>Sản phẩm mới được gửi tới khách hàng</h2>
-      </div>
-      <div class="right">
-        <a class="btn btn-outline btn-sm" href="deliveries.html">
-          Xem tất cả
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
-      </div>
-    </div>
-
-    <div class="del-grid">
-      <article class="card card--lift del-card">
-        <div class="del-thumb alt-3"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></span></div>
-        <div class="del-body">
-          <div class="del-meta">
-            <span class="badge badge-info"><span class="dot"></span> Preview v1</span>
-            <span class="mono text-xs muted">CB-2026-028</span>
-          </div>
-          <h4>Video Recap Sự kiện Launch</h4>
-          <div class="del-info">
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> 1:24 phút</span>
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Cập nhật 2 giờ trước</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="card card--lift del-card">
-        <div class="del-thumb alt-4"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg></span></div>
-        <div class="del-body">
-          <div class="del-meta">
-            <span class="badge badge-success"><span class="dot"></span> Final</span>
-            <span class="mono text-xs muted">CB-2026-027</span>
-          </div>
-          <h4>Bộ Key Visual Sự kiện Q3</h4>
-          <div class="del-info">
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> 8 file PSD</span>
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Cập nhật hôm qua</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="card card--lift del-card">
-        <div class="del-thumb alt-5"><span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></span></div>
-        <div class="del-body">
-          <div class="del-meta">
-            <span class="badge badge-warning"><span class="dot"></span> Đang xử lý</span>
-            <span class="mono text-xs muted">CB-2026-031</span>
-          </div>
-          <h4>Motion Logo Sản phẩm Mới</h4>
-          <div class="del-info">
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Còn 3 ngày</span>
-            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 12/05/2026</span>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
-</section>
 
 <!-- ===== FAQ Preview ===== -->
 <section class="section section--tight">
@@ -351,7 +285,6 @@
         <h5>Dịch vụ</h5>
         <a href="request.html">Gửi yêu cầu</a>
         <a href="tracking.html">Tra cứu tiến độ</a>
-        <a href="deliveries.html">Sản phẩm bàn giao</a>
       </div>
       <div class="footer-col">
         <h5>Hỗ trợ</h5>

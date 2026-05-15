@@ -1,5 +1,6 @@
 /* =====================================================================
    CB Media Hub — Order Form module logic
+   - Auth guard: block submit if not logged in, auto-fill requester info
    - Chip / checkbox toggle states
    - Conditional deliverable groups + sub-forms per request_type
    - Section progress + scroll-spy
@@ -12,6 +13,88 @@
   'use strict';
 
   const DRAFT_KEY = 'mh-order-draft-v2';
+
+  /* ===== AUTH ===== */
+  const AUTH_USER = (() => {
+    try { return JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { return null; }
+  })();
+
+  function autofillRequester() {
+    if (!AUTH_USER) return;
+    const fill = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && !el.value && val) el.value = val;
+    };
+    fill('requester_name', AUTH_USER.name || '');
+    fill('requester_email', AUTH_USER.email || '');
+    fill('requester_contact', AUTH_USER.phone || '');
+
+    // Department/branch match
+    const dept = document.getElementById('department');
+    if (dept) {
+      const val = AUTH_USER.department || AUTH_USER.team || '';
+      const opt = [...dept.options].find(o => o.value === val || o.textContent.trim() === val);
+      if (opt) dept.value = opt.value;
+    }
+
+    // Role note mapping
+    const roleNote = document.getElementById('requester_role_note');
+    if (roleNote && AUTH_USER.role) {
+      const roleMap = { client: 'Chi nhánh', account: 'HO', admin: 'HO', design: 'HO', editor: 'HO' };
+      const mapped = roleMap[AUTH_USER.role];
+      if (mapped) {
+        const opt = [...roleNote.options].find(o => o.value === mapped);
+        if (opt) roleNote.value = opt.value;
+      }
+    }
+
+    // Lock email to account (cannot submit with different email)
+    const emailEl = document.getElementById('requester_email');
+    if (emailEl) {
+      emailEl.readOnly = true;
+      emailEl.style.cssText += ';background:var(--surface-2);cursor:not-allowed;';
+      emailEl.title = 'Email lấy từ tài khoản đăng nhập, không thể thay đổi.';
+    }
+  }
+
+  function renderAuthBar() {
+    const bar = document.getElementById('auth-gate-bar');
+    if (!bar) return;
+    if (AUTH_USER) {
+      bar.innerHTML = `
+        <span class="auth-ok-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Đang gửi với tài khoản: <b>${AUTH_USER.email}</b>
+        </span>`;
+    } else {
+      bar.innerHTML = `
+        <span class="auth-warn-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Bạn cần đăng nhập để gửi yêu cầu.
+        </span>
+        <a class="btn btn-primary btn-sm" id="login-to-submit-btn" href="login.html?redirect=request.html">Đăng nhập ngay</a>`;
+      document.getElementById('login-to-submit-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        // Save draft before leaving
+        try {
+          const payload = { data: snapshotForm(), savedAt: Date.now() };
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+        } catch (_) {}
+        location.href = 'login.html?redirect=request.html';
+      });
+    }
+  }
+
+  // Update header login button if logged in
+  function updateHeaderAuth() {
+    const loginBtn = document.getElementById('header-login-btn');
+    if (!loginBtn) return;
+    if (AUTH_USER) {
+      loginBtn.textContent = AUTH_USER.name || AUTH_USER.email;
+      loginBtn.href = AUTH_USER.role === 'client' ? 'client-dashboard.html' : 'dashboard.html';
+      loginBtn.title = 'Vào Dashboard';
+    }
+  }
 
   /* ---------- Chip groups (radio + checkbox) ----------
      Mỗi `.chip` là một <label> wrap <input hidden>. Browser tự toggle input
@@ -233,6 +316,13 @@
     if (e) e.style.display = 'block';
   }
   function validate() {
+    // Auth check — must be first guard
+    if (!AUTH_USER) {
+      window.MH.toast({ type: 'error', title: 'Chưa đăng nhập', message: 'Vui lòng đăng nhập để gửi yêu cầu.' });
+      const bar = document.getElementById('auth-gate-bar');
+      if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
     clearErrors();
     let firstInvalid = null;
     function fail(el) { markErrorField(el); if (!firstInvalid) firstInvalid = el; }
@@ -381,6 +471,11 @@
 
   /* ---------- Submit ---------- */
   function doSubmit() {
+    // Final auth guard (API layer equivalent for static site)
+    if (!AUTH_USER) {
+      window.MH.toast({ type: 'error', title: '401 Unauthorized', message: 'Authentication required to submit request.' });
+      return;
+    }
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.classList.add('is-loading');
     submitBtn.textContent = 'Đang gửi...';
@@ -388,6 +483,24 @@
       const year = new Date().getFullYear();
       const num = String(Math.floor(Math.random() * 9000) + 1000);
       const code = 'MEDIA-' + year + '-' + num;
+
+      // Build order payload with requester identity
+      const orderPayload = Object.assign(snapshotForm(), {
+        order_id:         code,
+        requester_id:     AUTH_USER.email,
+        requester_email:  AUTH_USER.email,
+        requester_name:   AUTH_USER.name || '',
+        department_id:    AUTH_USER.department || AUTH_USER.team || '',
+        created_by:       AUTH_USER.email,
+        submitted_at:     new Date().toISOString(),
+      });
+      // Persist to localStorage (replaces API call in static demo)
+      try {
+        const orders = JSON.parse(localStorage.getItem('mh-submitted-orders') || '[]');
+        orders.unshift(orderPayload);
+        localStorage.setItem('mh-submitted-orders', JSON.stringify(orders.slice(0, 50)));
+      } catch (_) {}
+
       document.getElementById('order-code').textContent = code;
       const trackLink = document.getElementById('track-link');
       if (trackLink) trackLink.href = 'tracking.html?code=' + code;
@@ -396,7 +509,6 @@
       document.getElementById('success-view').classList.remove('hidden');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       window.MH.toast({ type: 'success', title: 'Gửi thành công', message: 'Order ID: ' + code });
-      // Clear draft after successful submit
       localStorage.removeItem(DRAFT_KEY);
     }, 700);
   }
@@ -433,8 +545,12 @@
   /* ---------- Init ---------- */
   updateConditional();
   refreshProgress();
+  renderAuthBar();
+  updateHeaderAuth();
   if (restoreDraft()) {
     refreshProgress();
     window.MH.toast({ type: 'info', title: 'Bản nháp được khôi phục', message: 'Tiếp tục từ chỗ bạn dừng. Bấm "Lưu nháp" để cập nhật.' });
   }
+  // Auto-fill after draft restore so account fields override blank draft fields
+  autofillRequester();
 })();

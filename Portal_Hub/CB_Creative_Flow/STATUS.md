@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-14*
+> *Last updated: 2026-05-15 · Project state: MVP demo · 11/11 modules done*
 
 ---
 
@@ -10,20 +10,20 @@
 
 | # | Module | Status | Files | Spec |
 |---|---|:---:|---|---|
-| 0 | Public site | Done | `index`, `request`, `tracking`, `deliveries`, `help`, `login` | [page spec](../Brief%20Wflow/media-hub-page-module-spec.md) |
-| 1 | Master Dashboard | Done | `dashboard.html` | [01](../Brief%20Wflow/CB_Creative_Flow_Master_Dashboard_Module.md) |
-| 2 | Order Form | Done | `request.html`, `order-form.js` | [02](../Brief%20Wflow/CB_Creative_Flow_02_Order_Form_Module.md) |
-| 3 | Database Orders | Done | `database-orders.html`, `database-orders.js` | [03](../Brief%20Wflow/CB_Creative_Flow_03_database_orders_module.md) |
-| 4 | Production Board | Done | `production-board.html`, `production-board.js` | [04](../Brief%20Wflow/CB_Creative_Flow_04_production_board_module.md) |
-| 5 | Delivery Log | Done | `delivery-log.html`, `delivery-log.js` | [05](../Brief%20Wflow/CB_Creative_Flow_05_delivery_log_module.md) |
-| 6 | Reports | Done | `reports.html`, `reports.js` | [06](../Brief%20Wflow/CB_Creative_Flow_06_reports_module.md) |
-| 7 | User Management | Done | `user-management.html`, `user-management.js` | [07](../Brief%20Wflow/CB_Creative_Flow_07_user_management_module.md) |
-| 8 | Settings | Done | `settings.html`, `settings.js` | [08](../Brief%20Wflow/CB_Creative_Flow_08_settings_module.md) |
-| 9 | AI Tools | Done | `ai-tools.html`, `ai-tools.js` | [09](../Brief%20Wflow/CB_Creative_Flow_09_ai_tools_module.md) |
-| 10 | Chatbot | Done | `chatbot.html`, `chatbot.js` | [10](../Brief%20Wflow/CB_Creative_Flow_10_chatbot_module.md) |
-| 11 | API Flow docs page | Removed | — | [api flow](../Brief%20Wflow/media-hub-api-flow-spec.md) |
+| 0 | Public site | Done | `index`, `request`, `tracking`, `help`, `login` | [page spec](../Brief_Wflow/media-hub-page-module-spec.md) |
+| 1 | Master Dashboard | Done | `dashboard.html` | [01](../Brief_Wflow/CB_Creative_Flow_Master_Dashboard_Module.md) |
+| 2 | Order Form | Done | `request.html`, `order-form.js` | [02](../Brief_Wflow/CB_Creative_Flow_02_Order_Form_Module.md) |
+| 3 | Database Orders | Done | `database-orders.html`, `database-orders.js` | [03](../Brief_Wflow/CB_Creative_Flow_03_database_orders_module.md) |
+| 4 | Production Board | Done | `production-board.html`, `production-board.js` | [04](../Brief_Wflow/CB_Creative_Flow_04_production_board_module.md) |
+| 5 | Delivery Log | Done | `delivery-log.html`, `delivery-log.js` | [05](../Brief_Wflow/CB_Creative_Flow_05_delivery_log_module.md) |
+| 6 | Reports | Done | `reports.html`, `reports.js` | [06](../Brief_Wflow/CB_Creative_Flow_06_reports_module.md) |
+| 7 | User Management | Done | `user-management.html`, `user-management.js` | [07](../Brief_Wflow/CB_Creative_Flow_07_user_management_module.md) |
+| 8 | Settings | Done | `settings.html`, `settings.js` | [08](../Brief_Wflow/CB_Creative_Flow_08_settings_module.md) |
+| 9 | AI Tools | Done | `ai-tools.html`, `ai-tools.js` | [09](../Brief_Wflow/CB_Creative_Flow_09_ai_tools_module.md) |
+| 10 | Chatbot | Done | `chatbot.html`, `chatbot.js` | [10](../Brief_Wflow/CB_Creative_Flow_10_chatbot_module.md) |
+| 11 | Client Portal | Done | `client-dashboard.html`, `client-dashboard.js` | [11](../Brief_Wflow/CB_Creative_Flow_11_Client_Portal_YeuCauSangTao_module.md) |
 
-**Overall**: 10/10 internal modules done · 6/6 public pages done · 0 module pending.
+**Overall**: 11/11 internal modules done · 5/5 public pages done · 0 module pending.
 
 ---
 
@@ -33,41 +33,42 @@
 
 Status: Done
 
-- `index.html`: hero, quick actions, workflow, tracking lookup, deliveries preview, FAQ, support strip.
-- `login.html`: 5 demo account tiles, click-to-login, password show/hide, internal users redirect Dashboard, Client redirects public tracking.
-- `request.html`: 7-section order form, conditional service sub-forms, autosave, preview, success state.
-- `tracking.html`: search by `MEDIA-2026-*` code, client-scope guard, mock order timeline, progress, feedback modal.
-- `deliveries.html`: deliverables grid/list, filters, 9 mock items.
+- `index.html`: hero, quick actions, workflow overview, tracking lookup, FAQ preview, support strip.
+- `login.html`: 5 demo account tiles (click-to-fill credentials), password show/hide, role-based redirect after login, `?redirect=` param support to return to original page after auth.
+- `request.html`: 7-section order form (requester → brief → type → content → assets → deadline → confirm), conditional service sub-forms, autosave draft, preview, success state. Auth-gated: blocks submit if not logged in, auto-fills requester info from session, redirects to `login.html?redirect=request.html` preserving draft.
+- `tracking.html`: search by `MEDIA-*` code, client-scope guard, mock order timeline, progress, feedback modal.
 - `help.html`: FAQ sections, search, scroll-spy, contact card.
+
+> Note: `deliveries.html` was listed in earlier docs but never existed in the codebase. Removed from all references.
 
 ### 1. Master Dashboard
 
 Status: Done
 
-- Role-aware sidebar/nav/profile.
-- 12 KPI cards, filters, refresh, role-based visibility.
+- Role-aware sidebar, header chip, KPI cards with drilldown.
+- 12 KPI cards with `?dl=<card_key>` click-through: maps to Orders/Production/Delivery modules, target applies view/filter on load, shows drilldown banner, scrolls to table.
 - Workflow health, alert center, workload, production status, SLA gauge, delivery funnel, recent activity.
-- Quick Actions panel with role filters.
+- Quick Actions panel with role-based visibility.
 
 ### 2. Order Form
 
 Status: Done
 
-- 7 sections A-G: requester, brief, request type, content, assets, deadline, confirm.
+- 7 sections A–G: requester, brief, request type, content, assets, deadline, confirm.
 - Sticky stepper and submit bar.
-- Service tiles and deliverables by type.
-- Video/Quay/Photo/Ads conditional sections.
+- Service tiles and deliverables by type (Video/Quay/Photo/Ads conditional sections).
 - Upload simulation with max-size validation.
 - Priority logic, wording warning, autosave to `mh-order-draft-v2`, preview modal.
+- Auth guard: inject requester identity into order payload, lock email field, preserve draft on redirect.
 
 ### 3. Database Orders
 
 Status: Done
 
 - Saved views, search, filters, sortable table, pagination.
-- Detail drawer with request, brief, internal management, delivery summary, push validation, activity log.
+- Detail drawer: request info, brief, internal management, delivery summary, push validation, activity log.
 - Drawer actions: Check, Need Info, Confirm, Push to Production, Cancel.
-- Push validation: confirmed brief, PIC, deadline, active status, deliverable.
+- Push validation: confirmed brief + PIC + internal deadline + deliverable + active status.
 - 18 mock orders.
 
 ### 4. Production Board
@@ -75,10 +76,10 @@ Status: Done
 Status: Done
 
 - Views: Table, Kanban, My Tasks.
-- Default view by role: admin/account table; design/editor task-focused.
-- Summary cards, filters, table columns, drag-drop Kanban.
-- Drag/status validation, link requirements for Ready.
-- Task drawer with files, links, actions, metadata and comments.
+- Default view by role: admin/account → table; design/editor → task-focused.
+- Summary cards, filters, sortable table, drag-drop Kanban.
+- Drag/status validation, link requirement for Ready/Delivered transitions.
+- Task drawer: files, links, actions, metadata, comments.
 - 16 mock tasks.
 
 ### 5. Delivery Log
@@ -86,17 +87,17 @@ Status: Done
 Status: Done
 
 - Summary cards, toolbar filters, delivery table.
-- Detail drawer A-F: order/task, files/links, delivery control, feedback/rating, checklist, activity log.
+- Detail drawer A–F: order/task, files/links, delivery control, feedback/rating, checklist, activity log.
 - Action modals: Send Preview, Send Final, Request Revision, Submit Rating.
-- Send Final requires checklist 8/8 and final link.
-- Reopen flow and 10 mock deliveries.
+- Send Final requires checklist 8/8 and final link present.
+- Reopen flow. 10 mock deliveries.
 
 ### 6. Reports
 
 Status: Done
 
-- 12 KPI cards and 5 report filters.
-- 6 custom charts: trend, distribution donut, role bars, PIC stacked bars, heatmap, quality grid.
+- 12 KPI cards and 5 report filters (period, type, status, PIC, branch).
+- 6 custom charts: trend line, distribution donut, role bar, PIC stacked bar, heatmap, quality grid.
 - Delivery funnel, rating distribution, SLA gauge.
 - PIC KPI table, overdue risk table, feedback table.
 - CSV export and browser print PDF.
@@ -108,15 +109,15 @@ Status: Done
 - Summary cards, filters, user table.
 - Detail drawer: profile, role/permission, module access, assigned work, activity, security.
 - Create/Edit modal with validation and permission preview.
-- Safeguards: unique email, cannot deactivate only admin, warns on open tasks.
-- 14 mock users and CSV export.
+- Safeguards: unique email, cannot deactivate the only admin, warns on open tasks.
+- 14 mock users. CSV export.
 
 ### 8. Settings
 
 Status: Done
 
 - 12 panels: General, Workflow Status, SLA, Notifications, Brand, AI Tools, Chatbot, Files & Drive, Departments, Client Portal, Reports & Export, Security.
-- Per-panel Save/Cancel, localStorage persistence.
+- Per-panel Save/Cancel, localStorage persistence to `mh-settings`.
 - Test connection mocks, reset defaults, export JSON.
 - Settings Activity Log in `mh-settings-activity`.
 
@@ -124,67 +125,84 @@ Status: Done
 
 Status: Done
 
-- Built from `CB_Creative_Flow_09_ai_tools_module.md`.
-- `ai-tools.html` provides category tabs, search, tool cards, workspace form, brand preset, output panel and usage log.
-- `assets/ai-tools.js` includes 12 mini apps: Post Generator, Ads Copy, Caption Builder, Brief Optimizer, Missing Info Checker, Visual Prompt, Video Concept, Slide Outline, Campaign Idea, Hashtag/CTA, Tone Adjuster, Summarizer.
-- Role permission by tool for admin/account/design/editor; client access is blocked in this static demo.
-- Mock generation with CB guardrails, copy, regenerate, export markdown, feedback, save-to-order/task demo.
+- Built from spec 09.
+- Category tabs, search, tool cards, workspace form, CB brand preset, output panel, usage log.
+- 12 mini apps: Post Generator, Ads Copy, Caption Builder, Brief Optimizer, Missing Info Checker, Visual Prompt, Video Concept, Slide Outline, Campaign Idea, Hashtag/CTA, Tone Adjuster, Summarizer.
+- Role permission: admin/account/design/editor; client blocked.
+- Mock generation with CB guardrails, copy, regenerate, export markdown, feedback, save demo.
 - Demo persistence: `mh-ai-usage-log`, `mh-ai-saved-outputs`.
-- Sidebar AI Tools links now point to `ai-tools.html` across internal pages.
 
 ### 10. Chatbot
 
 Status: Done
 
-- Built from `CB_Creative_Flow_10_chatbot_module.md`.
-- `chatbot.html` provides dedicated assistant page with suggested prompts, context panel, chat thread, safe actions, feedback and history clear.
-- `assets/chatbot.js` injects floating CB Assistant widget on internal/public pages when a user session exists.
-- Supports process guidance, order/task status lookup demo, brief missing-info guidance, content-generation handoff to AI Tools, report summary and navigation help.
-- Permission checks are simulated by role for admin/account/design/editor/client.
+- Built from spec 10.
+- Dedicated page: suggested prompts by role, context panel, chat thread, safe actions, feedback, history clear.
+- Floating CB Assistant widget injected on internal/public pages when user session exists.
+- Supports process guidance, order/task status lookup demo, brief missing-info, content-gen handoff to AI Tools, navigation help.
+- Role permission simulated for admin/account/design/editor/client.
 - Demo persistence: `mh-chatbot-history`, `mh-chatbot-feedback`.
-- Sidebar Chatbot links now point to `chatbot.html` across internal pages.
+
+### 11. Client Portal
+
+Status: Done
+
+- Built from spec 11.
+- `client-dashboard.html` + `assets/client-dashboard.js`.
+- Auth guard: `role === 'client'` only; admin/staff redirected to `dashboard.html`.
+- Sections: greeting strip, order status summary cards, order list table, order detail drawer, notification panel, profile view.
+- Order detail drawer: order info, status timeline, deliverables, feedback.
+- Profile tab: view/edit name, initials, title, avatar, phone, department, bio — persists to `mh-user`.
+- Demo account: `client@cb.vn` / `cb2026` → redirect to `client-dashboard.html`.
 
 ---
 
 ## Pending Modules
 
-No pending MVP modules. Remaining work is production integration: backend APIs, real auth, real data scope, storage/upload, AI provider and notification workflows.
+No pending MVP modules. Remaining work is production integration:
+
+- Replace mock data with backend APIs (orders, tasks, deliveries, users).
+- Implement real auth and password validation.
+- Implement real upload/storage (avatar, assets, deliverables).
+- Replace simulated notification, test-connection, and AI generation flows.
+- Replace `window.print()` PDF export if server-side export is needed.
 
 ---
 
 ## File Inventory
 
-Build total: 15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset.
+Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 
 | File | KB |
 |---|---:|
-| `assets/styles.css` | 187.9 |
-| `request.html` | 63.7 |
+| `assets/styles.css` | 194.1 |
+| `request.html` | 64.3 |
 | `assets/database-orders.js` | 54.2 |
 | `assets/delivery-log.js` | 53.2 |
 | `dashboard.html` | 51.8 |
 | `assets/production-board.js` | 49.2 |
-| `settings.html` | 47.4 |
-| `assets/user-management.js` | 43.5 |
+| `settings.html` | 49.1 |
+| `assets/user-management.js` | 42.8 |
+| `assets/client-dashboard.js` | 36.5 |
 | `assets/ai-tools.js` | 30.5 |
-| `assets/reports.js` | 28.4 |
-| `reports.html` | 24.8 |
-| `index.html` | 24.1 |
-| `assets/settings.js` | 24.0 |
-| `user-management.html` | 23.4 |
-| `assets/order-form.js` | 20.7 |
+| `client-dashboard.html` | 30.6 |
+| `assets/reports.js` | 27.7 |
+| `reports.html` | 26.4 |
+| `assets/order-form.js` | 25.7 |
+| `user-management.html` | 25.0 |
+| `assets/app.js` | 24.3 |
+| `assets/settings.js` | 23.3 |
+| `production-board.html` | 21.6 |
+| `tracking.html` | 21.0 |
 | `assets/chatbot.js` | 20.6 |
-| `production-board.html` | 20.0 |
-| `tracking.html` | 21.5 |
-| `database-orders.html` | 17.5 |
-| `delivery-log.html` | 15.8 |
-| `help.html` | 15.0 |
-| `ai-tools.html` | 14.1 |
-| `login.html` | 14.7 |
-| `deliveries.html` | 13.3 |
+| `index.html` | 19.4 |
+| `database-orders.html` | 18.7 |
+| `delivery-log.html` | 17.3 |
+| `ai-tools.html` | 15.7 |
+| `help.html` | 14.9 |
+| `login.html` | 14.8 |
 | `assets/logo.png` | 13.0 |
-| `chatbot.html` | 9.1 |
-| `assets/app.js` | 23.0 |
+| `chatbot.html` | 10.8 |
 
 ---
 
@@ -192,7 +210,7 @@ Build total: 15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset.
 
 | Date | Module | Action |
 |---|---|---|
-| 2026-05-12 | Public site | Built initial 6 pages and brand setup |
+| 2026-05-12 | Public site | Built initial 5 pages and brand setup |
 | 2026-05-13 | Public site | Rebrand to navy `#191970` + red `#BA110F`, pill buttons, serif accents |
 | 2026-05-13 | Dashboard/Auth | Built dashboard, demo accounts, role-based UI |
 | 2026-05-14 | Order Form | Rebuilt to 7-section v2 spec |
@@ -202,18 +220,25 @@ Build total: 15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset.
 | 2026-05-14 | Reports | Added KPI, custom charts, tables, export |
 | 2026-05-14 | User Management | Added user CRUD UI, permissions, validation |
 | 2026-05-14 | Settings | Added 12 settings panels, workflow editor, activity log |
-| 2026-05-14 | AI Tools | Built module 09 MVP with 12 mini apps, mock generation, usage log |
-| 2026-05-14 | Chatbot | Built module 10 MVP with dedicated page, floating widget, lookup, history |
+| 2026-05-14 | AI Tools | Built module 09 MVP: 12 mini apps, mock generation, usage log |
+| 2026-05-14 | Chatbot | Built module 10 MVP: dedicated page, floating widget, lookup, history |
 | 2026-05-14 | Auth | Added Client demo account and client-role redirect/guard |
-| 2026-05-14 | Tracking | Synced public tracking demo with `MEDIA-*` Order Data codes and client scope |
-| 2026-05-14 | Handoff docs | Created README, `_hot.md`, `STATUS.md` |
-| 2026-05-14 | Handoff docs | Optimized README, `_hot.md`, `STATUS.md` for clarity and maintainability |
-| 2026-05-14 | Handoff docs | `check_update`: synced JS count 12→10, `tracking.html` 19.0→21.5 KB, `chatbot.js` 20.5→20.6 KB |
-| 2026-05-14 | Auth/Profile | Added editable Profile modal in `app.js` (Hồ sơ menu): edit name/initials/title, auto-avatar, persists to `mh-user`, refreshes profile chip live across all internal pages |
-| 2026-05-14 | Auth/Profile | Extended Profile modal: avatar image upload (auto-resize 256px, JPEG 85%), phone/department/bio fields, role select gated to Admin only, chip avatar img sync on page load |
-| 2026-05-14 | Dashboard | KPI cards click-through drilldown: 12 cards mapped to Orders/Production/Delivery via `?dl=<card_key>` URL; target modules apply view/quick filter on load, show drilldown banner with count + Xóa filter, scroll to table. Spec: `Master_dashboard_clickthrough_drilldown.md` (Option B MVP) |
-| 2026-05-14 | Deploy | Added `package.json` + `railway.json` for Railway deploy via Nixpacks + `serve` package. Root Directory phải set = `Portal_Hub/CB_Creative_Flow` trong Railway dashboard |
-| 2026-05-14 | Repo layout | Rename top folders to remove spaces: `Portal Hub` → `Portal_Hub`, `Brief Wflow` → `Brief_Wflow`, `Source data` → `Source`. Path-safe cho Railway, CI, scripts |
+| 2026-05-14 | Tracking | Synced public tracking demo with `MEDIA-*` codes and client scope |
+| 2026-05-14 | Auth/Profile | Added editable Profile modal in `app.js`: edit name/initials/title, avatar upload (256px JPEG), phone/department/bio, role select gated to Admin; persists to `mh-user` and refreshes chip live |
+| 2026-05-14 | Dashboard | KPI drilldown: 12 cards map to Orders/Production/Delivery via `?dl=<key>`; target applies filter, shows banner, scrolls to table |
+| 2026-05-14 | Deploy | Added `package.json` + `railway.json` for Railway deploy via Nixpacks + `serve` |
+| 2026-05-14 | Repo layout | Rename folders to remove spaces: `Portal Hub` → `Portal_Hub`, `Brief Wflow` → `Brief_Wflow` |
+| 2026-05-14 | Handoff docs | Created and optimized README, `_hot.md`, `STATUS.md` |
+| 2026-05-15 | Client Portal | Built module 11: `client-dashboard.html` + `client-dashboard.js` — order status, order detail drawer, notification panel, profile tab; auth guard client-only |
+| 2026-05-15 | Order Form | Added auth guard to `request.html`: blocks submit if not logged in, auto-fills requester info, preserves draft on redirect to `login.html?redirect=request.html` |
+| 2026-05-15 | Layout/UX | Moved User Profile from sidebar to header right: `#header-profile-chip` (avatar + name + role badge + dropdown) replaces sidebar profile card across all 10 internal pages |
+| 2026-05-15 | Layout/UX | Sidebar bottom: replaced profile card with minimal App version block (CB Creative Flow · v1.0) |
+| 2026-05-15 | Layout/UX | Removed "+ Tạo Order" button from `dashboard.html` and `database-orders.html` header-actions (button retained in page content) |
+| 2026-05-15 | Layout/UX | Reduced role badge font size to 9px on header profile chip |
+| 2026-05-15 | Public header | Removed "Gửi yêu cầu" CTA pill; login button restyled to `.btn-login-pill` (red gradient, `border-radius: 9999px`) |
+| 2026-05-15 | Shared JS | `app.js` updated: `refreshHeaderChip()`, header chip toggle handler, profile modal close handles both chip selectors |
+| 2026-05-15 | Docs | Removed `deliveries.html` from all docs (file never existed in codebase) |
+| 2026-05-15 | Handoff docs | Synced README, `_hot.md`, `STATUS.md` to reflect 11/11 modules, current file inventory, Client Portal, new layout conventions |
 
 ---
 
@@ -221,12 +246,24 @@ Build total: 15 HTML pages · 10 JS files · 1 CSS file · 1 logo asset.
 
 When user types `check_update`:
 
-1. Verify root/assets file map and file sizes.
-2. Check `localStorage` keys in JS against `_hot.md`.
-3. Check auth guards and role visibility assumptions.
-4. Confirm whether AI Tools/Chatbot specs or files now exist.
+1. Verify root/assets file map and file sizes against File Inventory.
+2. Check `localStorage` keys in JS against `_hot.md` Section 8.
+3. Check auth guards and role visibility assumptions in page JS files.
+4. Confirm no new modules or files exist that aren't documented.
 5. Update `Last updated` in `_hot.md` and `STATUS.md`.
-6. Report the sync summary clearly.
+6. Report sync summary in 1–2 lines.
+
+---
+
+## sync_task Protocol
+
+When user types `sync_task`:
+
+1. Update `STATUS.md`: Completed Modules (nếu thay đổi feature), File Inventory (KB sizes), Changelog (entry ngày hôm nay).
+2. Update `_hot.md`: convention, token, role, file map, known decisions nếu có thay đổi.
+3. Update `README.md`: file mới, role mới, deploy/stack thay đổi.
+4. Cập nhật `Last updated` trong cả 3 file.
+5. Báo tóm tắt 1–2 dòng.
 
 ---
 

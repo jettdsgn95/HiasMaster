@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-14 · Project state: MVP demo · 10/10 internal modules done*
+> *Last updated: 2026-05-15 · Project state: MVP demo · 11/11 modules done*
 
 ---
 
@@ -10,11 +10,11 @@
 
 **CB Media Hub / CB Creative Flow** là Creative Service Portal cho **CB Centres**.
 
-- Static multi-page site: 15 HTML pages, 10 JS files, 1 shared CSS, zero build.
+- Static multi-page site: 15 HTML pages, 11 JS files, 1 shared CSS, zero build.
+- **2 khu vực riêng biệt**: Internal Dashboard (admin/account/design/editor) và Client Portal (client).
 - Workflow chính: Order Form → Database Orders → Production Board → Delivery Log → Reports.
 - Brand: navy `#191970` + red `#BA110F`, Inter / Plus Jakarta Sans + Playfair italic accent.
-- Done: 6 public pages + 10 internal modules, gồm AI Tools MVP và Chatbot MVP.
-- Pending: không còn pending module MVP; phần còn lại là backend/production integration.
+- Done: 5 public pages + 1 client portal + 10 internal modules, gồm AI Tools MVP và Chatbot MVP.
 - Data/auth/upload/API đều là demo/mock, chưa production-ready.
 
 ---
@@ -48,6 +48,8 @@ Interaction/style invariants:
 - Giữ focus visible, reduced motion, dark mode fallback.
 - Không dùng emoji làm structural icon trong UI; dùng inline SVG Lucide-style.
 - Content Vietnamese-first.
+- Avatar luôn hình tròn: `.avatar { border-radius: 9999px !important; overflow: hidden; }` — global trong `styles.css`.
+- Theme toggle là pill switch (`[data-theme-toggle].theme-toggle-switch`), CSS-driven qua `[data-theme="dark"]` selector. Không dùng inline style cho icons.
 
 ---
 
@@ -59,10 +61,19 @@ Interaction/style invariants:
 |---|---|---|
 | `index.html` | Homepage + hero + quick actions | inline |
 | `login.html` | Login + 5 demo account tiles | inline |
-| `request.html` | Order Form 7 sections | `order-form.js` |
+| `request.html` | Order Form 7 sections (auth-gated) | `order-form.js` |
 | `tracking.html` | Client tracking by `MEDIA-*` code | inline |
-| `deliveries.html` | Client deliverables view | inline |
 | `help.html` | FAQ + search + accordion | inline |
+
+> `deliveries.html` không tồn tại trong codebase — đã remove khỏi docs.
+
+### Client Portal
+
+| File | Roles | JS |
+|---|---|---|
+| `client-dashboard.html` | client only | `client-dashboard.js` |
+
+Client Portal gồm: xem orders của mình, order status tracking, tạo yêu cầu mới (link sang `request.html`), profile. Client bị redirect về đây sau login và bị block khỏi Internal Dashboard.
 
 ### Internal Pages
 
@@ -78,11 +89,11 @@ Interaction/style invariants:
 | `user-management.html` | admin | `user-management.js` |
 | `settings.html` | admin | `settings.js` |
 
-Shared assets:
+### Shared Assets
 
-- `assets/styles.css` — design tokens, components, page styles.
-- `assets/app.js` — theme toggle, mobile nav, toast, copy helpers, Profile editor modal (delegated on `.profile-menu a "Hồ sơ"`; updates `mh-user` + live-refreshes `#pc-name|avatar|role-badge|title`; avatar image upload + auto-resize; role select gated `user.role === 'admin'`).
-- `assets/logo.png` — resized brand logo, 256×256, ~13 KB.
+- `assets/styles.css` — Design tokens, components, page styles. Gồm `.header-profile-chip`, `.theme-toggle-switch`, `.sidebar-version-block`, `.btn-login-pill`, `.auth-gate-bar`.
+- `assets/app.js` — Theme toggle (CSS-driven pill switch), mobile nav, toast, copy helpers, Profile editor modal, **header profile chip** (`#header-profile-chip`) toggle + populate. Functions: `refreshProfileChip(user)`, `refreshHeaderChip(user)`, `syncChipFromUser()`, `openProfileModal()`. Profile modal: edit name/initials/title/avatar/phone/department/bio; avatar upload + resize 256px; role select gated to admin only; persists to `mh-user` + live-refreshes header chip.
+- `assets/logo.png` — Resized brand logo, 256×256, ~13 KB.
 
 ---
 
@@ -104,7 +115,7 @@ Session key: `localStorage['mh-user']`.
 }
 ```
 
-Optional profile fields (set via Profile modal trong sidebar):
+Profile fields (set via Profile modal từ header profile chip → Hồ sơ cá nhân):
 
 - `avatar`: data URL JPEG ≤ 256px, render qua `.avatar.has-img > img`. Trống = fallback initials.
 - `phone`, `department`, `bio`: free text (department có datalist 7 chi nhánh).
@@ -112,19 +123,22 @@ Optional profile fields (set via Profile modal trong sidebar):
 
 Demo accounts, password `cb2026`:
 
-| Email | Role | Tag |
+| Email | Role | Redirect sau login |
 |---|---|---|
-| `admin@cb.vn` | admin | Manager |
-| `account@cb.vn` | account | Account |
-| `design@cb.vn` | design | Design |
-| `editor@cb.vn` | editor | Editor |
-| `client@cb.vn` | client | Client |
+| `admin@cb.vn` | admin | `dashboard.html` |
+| `account@cb.vn` | account | `dashboard.html` |
+| `design@cb.vn` | design | `dashboard.html` |
+| `editor@cb.vn` | editor | `dashboard.html` |
+| `client@cb.vn` | client | `client-dashboard.html` |
 
-Important nuance: design/editor are stored as `role: "design"` and `role: "editor"` in `login.html`. Some specs call them "Staff", but code-level role filters should use `design,editor`, not `staff`.
+Important nuances:
 
-Client demo account redirects to `tracking.html`, is blocked from Dashboard/internal modules, and can test scoped codes `MEDIA-2026-0001` / `MEDIA-2026-0008`. Unknown valid email defaults to admin for demo convenience.
+- design/editor lưu là `role: "design"` và `role: "editor"`. Dùng `design,editor` không dùng `staff` trong filter.
+- Client bị block Internal Dashboard → redirect `client-dashboard.html`.
+- `login.html` hỗ trợ `?redirect=<page>` param: sau login sẽ redirect về trang gốc (dùng bởi `order-form.js` để bảo toàn draft).
+- Unknown valid email = admin để demo nhanh.
 
-Auth guard pattern:
+Auth guard pattern (internal pages):
 
 ```js
 let user;
@@ -134,13 +148,30 @@ document.body.setAttribute('data-user', user.email);
 document.body.setAttribute('data-user-role', user.role);
 ```
 
-Restricted pages add role checks and redirect to `dashboard.html` or public tracking for Client with a toast.
+Auth guard pattern (`request.html` — order form):
+
+```js
+const AUTH_USER = (() => { try { return JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch(e) { return null; } })();
+// validate() → blocks submit if !AUTH_USER
+// doSubmit() → injects requester_id/email/name/department vào order payload
+// redirect to login.html?redirect=request.html nếu chưa login + bảo toàn draft
+```
 
 ---
 
 ## 5. Navigation
 
-Internal sidebar groups:
+### Internal Header Layout
+
+```text
+[Hamburger] [Logo/Brand]    ←→    [Theme Toggle][Notification Bell][User Profile ▾]
+```
+
+- **Theme toggle**: pill switch `(.theme-toggle-switch[data-theme-toggle])`, CSS-driven.
+- **User Profile**: `#header-profile-chip` — avatar + name + role badge. Click → dropdown gồm: Hồ sơ cá nhân (→ openProfile modal), Cài đặt (→ `settings.html`), Đăng xuất.
+- **No "Tạo Order" button** trong header — đã remove. Button này chỉ còn trong page content.
+
+### Internal Sidebar
 
 ```text
 Vận hành
@@ -156,16 +187,29 @@ Hệ thống
 ├── Chatbot             all internal roles
 ├── User Management     admin
 └── Settings            admin
+
+[bottom]
+CB Creative Flow
+v1.0
 ```
 
-Role visibility uses `data-show-roles`. Keep the CSS specificity rule:
+Sidebar bottom: App version block (thay thế profile card cũ).
+
+### Public Header Layout
+
+```text
+[Logo/Brand]    [nav links]    [Theme Toggle][Đăng nhập (red pill)]
+```
+
+- Không còn "Gửi yêu cầu" CTA pill trong header public.
+- Login button: `.btn-login-pill` — gradient đỏ `#BA110F → #E53935`, `border-radius: 9999px`.
+
+Role visibility trong internal sidebar dùng `data-show-roles`:
 
 ```css
 body [data-show-roles] { display: none; }
 body[data-user-role="admin"] [data-show-roles*="admin"] { display: revert; }
 ```
-
-AI Tools sidebar links point to `ai-tools.html`. Chatbot sidebar links point to `chatbot.html`, and `assets/chatbot.js` injects a floating assistant on pages that load it when a user session exists.
 
 ---
 
@@ -198,8 +242,6 @@ Demo date anchor:
 - `database-orders.js`, `production-board.js`, `delivery-log.js`: `new Date('2026-05-13')`
 - `reports.js`: `today = new Date('2026-05-13')`
 
-Use this anchor for deterministic overdue/due-soon behavior.
-
 People/departments reused across modules:
 
 - PIC/account names: Duy, Vinh, Linh Chi, Hậu, Mai Phương, Đức Anh.
@@ -220,6 +262,33 @@ window.MH.toast({
 });
 ```
 
+Profile modal:
+
+```js
+window.MH.openProfile(); // mở profile editor modal
+```
+
+Header Profile Chip (DOM):
+
+```html
+<div class="header-profile-chip" id="header-profile-chip" tabindex="0">
+  <span class="avatar" id="hpc-avatar">MP</span>
+  <div class="header-pc-info">
+    <span class="header-pc-name" id="hpc-name">Mai Phương</span>
+    <span class="role-badge r--admin header-pc-role" id="hpc-role-badge">Admin</span>
+  </div>
+  <svg class="header-pc-chevron">...</svg>
+  <div class="header-profile-menu" id="header-profile-menu">
+    <a href="#" class="hpm-item" id="hpm-profile">Hồ sơ cá nhân</a>
+    <a href="settings.html" class="hpm-item">Cài đặt</a>
+    <div class="hpm-divider"></div>
+    <button class="hpm-item hpm-danger" id="logout-btn">Đăng xuất</button>
+  </div>
+</div>
+```
+
+`app.js` handles: toggle (`is-open` class), populate (`refreshHeaderChip(user)`), Hồ sơ link → `openProfileModal()`.
+
 Drawer pattern:
 
 ```html
@@ -231,23 +300,19 @@ Drawer pattern:
 </aside>
 ```
 
-Detail block:
+Detail row (drawer body — dùng div/span, không dùng dl/dt/dd vì browser default gây layout vỡ):
 
 ```html
-<section class="drawer-block">
-  <div class="drawer-block-head"><span class="block-letter">A</span><h4>Section name</h4></div>
-  <dl><dt>Label</dt><dd>Value</dd></dl>
-</section>
+<div class="detail-row">
+  <span class="detail-dt">Label</span>
+  <span class="detail-dd">Value</span>
+</div>
 ```
 
 Tables:
 
-- `.table-card`
-- `.table-head`
-- `.table-wrap`
-- `.data-table`
-- `.sortable[data-sort]`
-- `.pagination`
+- `.table-card`, `.table-head`, `.table-wrap`, `.data-table`
+- `.sortable[data-sort]`, `.pagination`
 
 Badges:
 
@@ -266,6 +331,7 @@ Badges:
 | `mh-theme` | Theme: `light` / `dark` |
 | `mh-user` | Current user session |
 | `mh-order-draft-v2` | Order Form autosave draft |
+| `mh-submitted-orders` | Orders submitted via request.html (demo, max 50) |
 | `mh-settings` | Settings panel state |
 | `mh-settings-activity` | Settings activity log, last 50 |
 | `mh-ai-usage-log` | AI Tools usage log demo, last 50 |
@@ -285,9 +351,9 @@ in_production / internal_review / due_soon / overdue / on_time_rate → producti
 ready_for_delivery / average_rating / rating_coverage → delivery-log.html
 ```
 
-Target page reads `?dl=...` → set `state.view` / `state.quick` → render → inject `.drilldown-banner` (label + count + "Xóa filter") trước `.table-card` → smooth-scroll vào table. Row click vẫn dùng existing drawer logic.
+Target page reads `?dl=...` → set `state.view` / `state.quick` → render → inject `.drilldown-banner` (label + count + "Xóa filter") trước `.table-card` → smooth-scroll vào table.
 
-New quick filter values: `production-board` thêm `inproduction` (received/inprogress/revision/feedback_fix) và `completed`; `delivery-log` thêm `ready_for_delivery` (waiting/ready) và `rated` (has score).
+---
 
 ## 9. Known Decisions
 
@@ -301,6 +367,10 @@ New quick filter values: `production-board` thêm `inproduction` (received/inpro
   - Production Board: PIC cannot directly complete/ready without required link.
   - Delivery Log: Send Final requires checklist 8/8 and final link.
   - Settings: do not delete statuses currently used by data.
+- `<dl>/<dt>/<dd>` trong drawer body gây layout vỡ (browser default CSS); thay bằng `<div>/<span class="detail-dt/detail-dd">`.
+- Profile chip đã được move từ sidebar bottom lên header right. Sidebar bottom dùng App version block đơn giản.
+- `#logout-btn` ID nằm trong `.header-profile-menu` và được xử lý bởi từng page JS riêng.
+- `app.js` handle toggle cho `#header-profile-chip`; page JS files không cần tự xử lý toggle nữa.
 
 ---
 
@@ -309,16 +379,20 @@ New quick filter values: `production-board` thêm `inproduction` (received/inpro
 AI Tools:
 
 - `ai-tools.html` + `assets/ai-tools.js` built from spec 09.
-- Includes 12 mini apps, category tabs/search, role permission, dynamic forms, CB brand preset, mock generation, copy/export/save demo and usage log.
-- Static MVP uses a local mock generator; real backend later should replace generate/save/log with `/api/ai-tools/*`.
+- 12 mini apps, category tabs/search, role permission, dynamic forms, CB brand preset, mock generation, copy/export/save demo and usage log.
 
 Chatbot:
 
 - `chatbot.html` + `assets/chatbot.js` built from spec 10.
-- Dedicated page includes suggested prompts by role, context panel, chat thread, safe action links, history clear and feedback.
-- Floating widget is injected on internal/public pages that load `assets/chatbot.js` when a user session exists.
-- Static MVP supports process FAQ, order/task lookup with role checks, missing brief guidance, content generation handoff to AI Tools, report summary for admin/account and navigation help.
-- Real backend later should replace mock order/task data and enforce record ownership/data scope.
+- Dedicated page: suggested prompts by role, context panel, chat thread, safe actions, feedback, history clear.
+- Floating widget injected on internal/public pages khi có user session.
+
+Client Portal:
+
+- `client-dashboard.html` + `assets/client-dashboard.js` built from spec 11.
+- Gồm: greeting, order status cards, order list, order detail drawer, notification panel, profile.
+- Auth guard: chỉ `role === 'client'`; admin/staff bị redirect sang `dashboard.html`.
+- Order Form (`request.html`) có auth guard: block submit nếu chưa login, auto-fill requester info, lock email, inject identity vào payload, lưu vào `mh-submitted-orders`, preserve draft trước khi redirect đăng nhập.
 
 Nice-to-have production work:
 
@@ -337,9 +411,21 @@ When user types `check_update`:
 1. Compare actual root/assets files with README and this file.
 2. Check `STATUS.md` file sizes and module statuses.
 3. Scan `localStorage` keys in JS and update section 8 if needed.
-4. Confirm whether AI Tools/Chatbot specs or files now exist.
+4. Confirm whether new modules/files exist that aren't documented.
 5. Update `Last updated` in `_hot.md` and `STATUS.md`.
 6. Report the sync summary in 1-2 lines.
+
+---
+
+## 12. `sync_task` Protocol
+
+When user types `sync_task`:
+
+1. Update `STATUS.md`: Completed Modules description (nếu thay đổi feature), File Inventory (KB), Changelog (thêm entry ngày hôm nay).
+2. Update `_hot.md`: bất kỳ section nào phản ánh thay đổi về convention, token, role, file map, known decisions.
+3. Update `README.md`: nếu có file mới, role mới, hoặc thay đổi về deploy/stack.
+4. Cập nhật `Last updated` trong cả 3 file.
+5. Báo tóm tắt 1–2 dòng: file nào đã cập nhật và nội dung thay đổi chính.
 
 ---
 

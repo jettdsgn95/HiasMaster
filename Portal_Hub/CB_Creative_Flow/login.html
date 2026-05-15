@@ -20,13 +20,14 @@
       <a href="index.html">Trang chủ</a>
       <a href="request.html">Gửi yêu cầu</a>
       <a href="tracking.html">Tra cứu</a>
-      <a href="deliveries.html">Sản phẩm</a>
       <a href="help.html">Hướng dẫn</a>
     </nav>
     <div class="header-actions">
-      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
-        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <span class="theme-toggle-thumb">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
       </button>
       <a class="btn btn-ghost btn-sm" href="help.html">Trợ giúp</a>
       <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
@@ -199,8 +200,10 @@
         title: 'Đăng nhập thành công',
         message: 'Chào ' + user.name + ' (' + user.role.toUpperCase() + ') — đang vào khu vực phù hợp...'
       });
-      const redirect = user.role === 'client' ? 'tracking.html' : 'dashboard.html';
-      setTimeout(() => location.href = redirect, 700);
+      const params = new URLSearchParams(location.search);
+      const redirectTo = params.get('redirect');
+      const defaultRedirect = user.role === 'client' ? 'client-dashboard.html' : 'dashboard.html';
+      setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
     }, 600);
   }
 

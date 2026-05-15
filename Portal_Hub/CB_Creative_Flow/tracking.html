@@ -20,16 +20,17 @@
       <a href="index.html">Trang chủ</a>
       <a href="request.html">Gửi yêu cầu</a>
       <a href="tracking.html">Tra cứu</a>
-      <a href="deliveries.html">Sản phẩm</a>
+
       <a href="help.html">Hướng dẫn</a>
     </nav>
     <div class="header-actions">
-      <button class="icon-btn" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
-        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <span class="theme-toggle-thumb">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
       </button>
-      <a class="btn btn-ghost btn-sm" href="login.html">Đăng nhập</a>
-      <a class="btn btn-primary btn-sm" href="request.html">Gửi yêu cầu</a>
+      <a class="btn-login-pill" href="login.html">Đăng nhập</a>
       <button class="icon-btn menu-toggle" data-menu-toggle aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
     </div>
   </div>
@@ -102,7 +103,6 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Sao chép mã
         </button>
-        <a class="btn btn-secondary btn-sm" href="deliveries.html">Xem sản phẩm</a>
       </div>
 
       <div class="meta-grid">
@@ -165,10 +165,6 @@
           <hr style="border:none; border-top:1px solid var(--border)" />
           <h4>Hành động</h4>
           <div class="stack-sm">
-            <a class="btn btn-primary btn-block" href="deliveries.html">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-              Xem sản phẩm
-            </a>
             <button class="btn btn-secondary btn-block" id="open-feedback">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Gửi phản hồi

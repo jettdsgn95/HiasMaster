@@ -22,15 +22,6 @@
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
 
-  // Profile chip
-  document.getElementById('pc-name').textContent = user.name || 'User';
-  document.getElementById('pc-avatar').textContent = user.initials || (user.name || 'U').substring(0, 2).toUpperCase();
-  const pcRole = document.getElementById('pc-role-badge');
-  pcRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-  pcRole.className = 'role-badge r--' + user.role;
-  const chip = document.getElementById('profile-chip');
-  chip.addEventListener('click', (e) => { if (e.target.closest('.profile-menu')) return; chip.classList.toggle('is-open'); });
-  document.addEventListener('click', (e) => { if (!chip.contains(e.target)) chip.classList.remove('is-open'); });
   document.getElementById('logout-btn').addEventListener('click', () => {
     localStorage.removeItem('mh-user'); window.MH.toast({ type: 'info', title: 'Đã đăng xuất' });
     setTimeout(() => location.href = 'login.html', 500);

@@ -17,6 +17,10 @@
     const btns = document.querySelectorAll('[data-theme-toggle]');
     btns.forEach((b) => {
       b.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      b.setAttribute('aria-label', theme === 'dark' ? 'Chuyển sang Light mode' : 'Chuyển sang Dark mode');
+      // Toggle switch: CSS handles icon visibility via [data-theme] selector — no inline override
+      if (b.classList.contains('theme-toggle-switch')) return;
+      // Legacy icon-btn fallback (if any remain)
       const sun = b.querySelector('.icon-sun');
       const moon = b.querySelector('.icon-moon');
       if (sun && moon) {
@@ -161,6 +165,18 @@
     }
     renderAvatarInto(document.getElementById('pc-avatar'), user);
     if (user.role) document.body.setAttribute('data-user-role', user.role);
+    refreshHeaderChip(user);
+  }
+
+  function refreshHeaderChip(user) {
+    const setText = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.textContent = val; };
+    setText('hpc-name', user.name);
+    const role = document.getElementById('hpc-role-badge');
+    if (role && user.role) {
+      role.textContent = roleLabel(user.role);
+      role.className = 'role-badge r--' + user.role + ' header-pc-role';
+    }
+    renderAvatarInto(document.getElementById('hpc-avatar'), user);
   }
 
   function injectProfileStyles() {
@@ -168,7 +184,7 @@
     const s = document.createElement('style');
     s.id = 'mh-profile-style';
     s.textContent = `
-      .avatar.has-img { padding: 0; background: var(--surface-2); overflow: hidden; }
+      .avatar.has-img { padding: 0; background: var(--surface-2); overflow: hidden; border-radius: 9999px; }
       .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
       #mh-profile-modal .pf-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
       #mh-profile-modal .pf-field { display: grid; gap: 6px; }
@@ -178,7 +194,7 @@
         display: flex; gap: 16px; align-items: center;
         padding: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);
       }
-      #mh-profile-modal .pf-avatar-block .avatar { width: 72px; height: 72px; font-size: 22px; flex-shrink: 0; }
+      #mh-profile-modal .pf-avatar-block .avatar { width: 72px; height: 72px; font-size: 22px; flex-shrink: 0; border-radius: 9999px; overflow: hidden; }
       #mh-profile-modal .pf-avatar-actions { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
       #mh-profile-modal .pf-avatar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
       #mh-profile-modal .pf-mini-btn { font-size: 12px; padding: 6px 12px; border-radius: var(--radius-pill); }
@@ -407,7 +423,7 @@
   function openProfileModal() {
     const user = getUser();
     if (!user) { toast({ type: 'warning', message: 'Vui lòng đăng nhập trước.' }); return; }
-    document.querySelectorAll('.profile-chip.is-open').forEach((c) => c.classList.remove('is-open'));
+    document.querySelectorAll('.profile-chip.is-open, .header-profile-chip.is-open').forEach((c) => c.classList.remove('is-open'));
     if (!profileModalEl) profileModalEl = buildProfileModal();
 
     pendingAvatar = null;
@@ -450,7 +466,7 @@
   }
 
   document.addEventListener('click', (e) => {
-    const link = e.target.closest('.profile-menu a');
+    const link = e.target.closest('.profile-menu a, .header-profile-menu a');
     if (!link) return;
     const txt = (link.textContent || '').trim().replace(/\s+/g, ' ');
     if (txt === 'Hồ sơ' || txt.startsWith('Hồ sơ ')) {
@@ -459,14 +475,25 @@
     }
   });
 
+  // Header profile chip toggle
+  document.addEventListener('click', (e) => {
+    const chip = document.getElementById('header-profile-chip');
+    if (!chip) return;
+    const menu = document.getElementById('header-profile-menu');
+    if (chip.contains(e.target) && menu && !menu.contains(e.target)) {
+      chip.classList.toggle('is-open');
+      return;
+    }
+    if (!chip.contains(e.target)) chip.classList.remove('is-open');
+  });
+
   window.MH.openProfile = openProfileModal;
 
   // After page scripts finish initializing the chip, re-apply avatar image / role if needed.
   function syncChipFromUser() {
     const user = getUser();
     if (!user) return;
-    renderAvatarInto(document.getElementById('pc-avatar'), user);
-    if (user.role) document.body.setAttribute('data-user-role', user.role);
+    refreshProfileChip(user);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => setTimeout(syncChipFromUser, 0));
