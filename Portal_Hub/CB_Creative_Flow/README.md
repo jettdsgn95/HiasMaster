@@ -167,6 +167,6 @@ Sau mỗi task hoàn thành:
 
 ---
 
-Brand: **CB Centres** · Project owner: `jett.dsgn95@gmail.com`
+Brand: **CB Centres** · Project owner: CB Centres Media Team
 
 *Last updated: 2026-05-15*
