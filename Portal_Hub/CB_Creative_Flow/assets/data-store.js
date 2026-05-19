@@ -80,6 +80,8 @@
         if (filters && filters.priority)          q = q.eq('priority', filters.priority);
         if (filters && filters.department)        q = q.eq('department', filters.department);
         if (filters && filters.production_pic)    q = q.eq('production_pic', filters.production_pic);
+        if (filters && filters.requester_id)      q = q.eq('requester_id', filters.requester_id);
+        if (filters && filters.requester_email)   q = q.eq('requester_email', filters.requester_email);
         const { data, error } = await q;
         if (error) console.warn('[store.orders.list]', error);
         return data || [];

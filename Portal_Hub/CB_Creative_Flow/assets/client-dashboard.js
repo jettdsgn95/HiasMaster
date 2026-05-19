@@ -80,6 +80,61 @@ const state = {
 ORDERS.forEach(o => { if (o.rating) state.ratings[o.id] = { score: o.rating, comment: o.rating_comment }; });
 NOTIFS.filter(n => n.read).forEach(n => state.notifRead.add(n.id));
 
+// Phase 1: expose mock array để cross-page reference (Master Dashboard funnel...)
+window.MH_MOCK_CLIENT_ORDERS = ORDERS;
+
+/* ===== Phase 1 — Load orders thật của client từ Supabase ===== */
+async function loadClientOrdersFromStore() {
+  if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !user) return null;
+  try {
+    await window.MH.supabaseReady;
+    // Lọc theo requester_id (uuid) trước, fallback requester_email
+    let remote = [];
+    if (user.id) {
+      remote = await window.MH.store.orders.list({ requester_id: user.id });
+    }
+    if ((!remote || remote.length === 0) && user.email) {
+      remote = await window.MH.store.orders.list({ requester_email: user.email });
+    }
+    if (!Array.isArray(remote) || remote.length === 0) return 0;
+
+    const TYPE_LABEL = { design: 'Thiết kế', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };
+    function fmtDate(s) {
+      if (!s) return '—';
+      const d = new Date(s.replace ? s.replace(' ', 'T') : s);
+      if (isNaN(d.getTime())) return s;
+      return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+    }
+    // Adapter map Supabase order shape → client-dashboard.ORDERS shape
+    const mapped = remote.map(function (o) {
+      const effStatus = (o.production_status && o.production_status !== 'unassigned') ? o.production_status : o.account_status;
+      return {
+        id: o.order_id,
+        name: o.project_name || '—',
+        type: TYPE_LABEL[o.request_type] || o.request_type || '—',
+        category: (o.deliverable_type && o.deliverable_type[0]) || (TYPE_LABEL[o.request_type] || '—'),
+        date: fmtDate(o.created_at),
+        deadline: fmtDate(o.requested_deadline),
+        status: effStatus || 'pending',
+        pic: o.production_pic || o.account_pic || '',
+        preview_link: o.preview_link || '',
+        final_link: o.final_delivery_link || '',
+        rating: o.satisfaction_score || null,
+        rating_comment: o.client_feedback || '',
+        need_info: o.account_status === 'needinfo' ? (o.internal_note || 'Vui lòng bổ sung brief — liên hệ Account team.') : '',
+        __raw: o
+      };
+    });
+    // Replace ORDERS content (giữ reference cho code khác)
+    ORDERS.length = 0;
+    mapped.forEach(function (m) { ORDERS.push(m); });
+    // Re-seed state.ratings từ data thật
+    state.ratings = {};
+    ORDERS.forEach(function (o) { if (o.rating) state.ratings[o.id] = { score: o.rating, comment: o.rating_comment }; });
+    return mapped.length;
+  } catch (e) { console.warn('[client-dashboard] load remote failed:', e); return null; }
+}
+
 /* ===== HELPERS ===== */
 function pubStatus(o) { return PUB_STATUS[o.status] || { label: o.status, cls: '' }; }
 function pubProgress(o) { return PUB_PROGRESS[o.status] ?? 0; }
@@ -614,3 +669,11 @@ function renderAll() {
 initProfile();
 initSidebar();
 renderAll();
+
+// Phase 1: swap dataset từ Supabase nếu enabled, re-render khi xong.
+loadClientOrdersFromStore().then(function (n) {
+  if (typeof n === 'number') {
+    console.log('[client-dashboard] swapped ' + n + ' orders từ Supabase (theo requester của ' + (user && user.email) + ')');
+    renderAll();
+  }
+});

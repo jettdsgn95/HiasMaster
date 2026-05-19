@@ -300,11 +300,34 @@
   let user = null;
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
 
-  // Auth guard: phải đăng nhập mới tra cứu được. Preserve return URL qua ?redirect=
-  if (!user || !user.role) {
-    const here = encodeURIComponent('tracking.html' + location.search);
-    location.replace('login.html?redirect=' + here);
-    return;
+  // Auth: chưa login → cho phép xem trang nhưng KHÔNG cho lookup. Khi user bấm Tra cứu,
+  // hiển thị modal yêu cầu đăng nhập + giữ mã đã nhập qua ?redirect= sau khi login xong.
+  function requireLoginModal(pendingCode) {
+    if (document.getElementById('mh-login-required')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'mh-login-required';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px);';
+    const here = 'tracking.html' + (pendingCode ? '?code=' + encodeURIComponent(pendingCode) : '');
+    overlay.innerHTML = `
+      <div style="background:var(--surface,#fff);color:var(--text,#000);max-width:420px;width:92%;padding:28px;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);text-align:center;">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--brand-50,#e0e7ff);color:var(--brand-600,#191970);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3 style="margin:0 0 8px;font-size:1.2rem">Yêu cầu đăng nhập</h3>
+        <p style="margin:0 0 18px;color:var(--text-muted,#666);font-size:.95rem;line-height:1.5">
+          Để tra cứu trạng thái đơn hàng, vui lòng đăng nhập bằng tài khoản đã được cấp.
+          Client chỉ thấy đơn của mình; Account/Admin thấy mọi đơn.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost" id="mh-lr-cancel" style="padding:10px 18px;border-radius:9999px">Hủy</button>
+          <a class="btn btn-primary" id="mh-lr-login" href="login.html?redirect=${encodeURIComponent(here)}" style="padding:10px 22px;border-radius:9999px;text-decoration:none">Đăng nhập</a>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+    document.getElementById('mh-lr-cancel').addEventListener('click', () => overlay.remove());
   }
     empty.classList.toggle('hidden', state !== 'empty');
     notFound.classList.toggle('hidden', state !== 'notfound');
@@ -423,6 +446,12 @@
   async function lookup(code) {
     code = (code || '').trim().toUpperCase();
     if (!code) { show('empty'); return; }
+
+    // Phase 1: bắt buộc đăng nhập mới tra cứu (UX mềm — modal thay vì redirect).
+    if (!user || !user.role) {
+      requireLoginModal(code);
+      return;
+    }
 
     // Source priority: Supabase → localStorage (anh vừa submit) → hardcoded demo DB
     let data = await lookupSupabase(code);
