@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-15 · Project state: MVP demo · 11/11 modules done*
+> *Last updated: 2026-05-18 · Project state: MVP demo · 11/11 modules done + Task Tracker formalization + Dashboard split*
 
 ---
 
@@ -11,10 +11,10 @@
 | # | Module | Status | Files | Spec |
 |---|---|:---:|---|---|
 | 0 | Public site | Done | `index`, `request`, `tracking`, `help`, `login` | [page spec](../Brief_Wflow/media-hub-page-module-spec.md) |
-| 1 | Master Dashboard | Done | `dashboard.html` | [01](../Brief_Wflow/CB_Creative_Flow_Master_Dashboard_Module.md) |
+| 1 | Master Dashboard | Done | `dashboard.html` · `order-dashboard.html` · `task-dashboard.html` | [01](../Brief_Wflow/CB_Creative_Flow_Master_Dashboard_Module.md) |
 | 2 | Order Form | Done | `request.html`, `order-form.js` | [02](../Brief_Wflow/CB_Creative_Flow_02_Order_Form_Module.md) |
 | 3 | Database Orders | Done | `database-orders.html`, `database-orders.js` | [03](../Brief_Wflow/CB_Creative_Flow_03_database_orders_module.md) |
-| 4 | Production Board | Done | `production-board.html`, `production-board.js` | [04](../Brief_Wflow/CB_Creative_Flow_04_production_board_module.md) |
+| 4 | Task Tracker (Production Board) | Done | `production-board.html`, `production-board.js` | [04](../Brief_Wflow/CB_Creative_Flow_04_production_board_module.md) |
 | 5 | Delivery Log | Done | `delivery-log.html`, `delivery-log.js` | [05](../Brief_Wflow/CB_Creative_Flow_05_delivery_log_module.md) |
 | 6 | Reports | Done | `reports.html`, `reports.js` | [06](../Brief_Wflow/CB_Creative_Flow_06_reports_module.md) |
 | 7 | User Management | Done | `user-management.html`, `user-management.js` | [07](../Brief_Wflow/CB_Creative_Flow_07_user_management_module.md) |
@@ -41,14 +41,14 @@ Status: Done
 
 > Note: `deliveries.html` was listed in earlier docs but never existed in the codebase. Removed from all references.
 
-### 1. Master Dashboard
+### 1. Master Dashboard + Order Dashboard + Task Dashboard
 
 Status: Done
 
-- Role-aware sidebar, header chip, KPI cards with drilldown.
-- 12 KPI cards with `?dl=<card_key>` click-through: maps to Orders/Production/Delivery modules, target applies view/filter on load, shows drilldown banner, scrolls to table.
-- Workflow health, alert center, workload, production status, SLA gauge, delivery funnel, recent activity.
-- Quick Actions panel with role-based visibility.
+- **Master Dashboard** (`dashboard.html`): unchanged. Role-aware sidebar, header chip, 12 KPI cards with `?dl=<card_key>` drilldown sang Orders/Production/Delivery. Workflow health, alert center, workload, production status, SLA gauge, delivery funnel, recent activity. Quick Actions panel với role-based visibility.
+- **Order Dashboard** (`order-dashboard.html`): KPI cấp Order — Total / Pending / Need Info / Checking / Confirmed / Completed. Funnel theo `account_status`. Phân bố theo chi nhánh + theo loại request. Mỗi KPI click-through tới `database-orders.html?dl=<key>`.
+- **Task Dashboard** (`task-dashboard.html`): KPI nội bộ team — Total Tasks / In Production / Internal Review / Due Soon / Overdue / On-time Rate. Workload theo P.I.C, phân bố loại task, Linked vs Standalone. KPI click-through tới `production-board.html?dl=<key>`.
+- Cả 3 page dùng chung sidebar (Master / Order / Task Dashboard tách thành 3 entries dưới group "Vận hành").
 
 ### 2. Order Form
 
@@ -66,21 +66,26 @@ Status: Done
 Status: Done
 
 - Saved views, search, filters, sortable table, pagination.
-- Detail drawer: request info, brief, internal management, delivery summary, push validation, activity log.
+- Detail drawer: request info, brief, internal management, **Related Tasks**, delivery summary, push validation, activity log.
+- **Related Tasks block (T)**: list mọi task gắn với order (`order_id` match) — gộp từ in-memory built-in TASKS snapshot + `localStorage['mh-extra-tasks']`. Mỗi item click → mở Task Tracker với `?id=<task_id>` auto-open drawer.
+- **Create Task from this Order** button: chỉ enable khi `account_status === 'confirmed'`. Redirect `production-board.html?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...` → auto-mở Create Task modal có prefill.
 - Drawer actions: Check, Need Info, Confirm, Push to Production, Cancel.
 - Push validation: confirmed brief + PIC + internal deadline + deliverable + active status.
 - 18 mock orders.
 
-### 4. Production Board
+### 4. Task Tracker (Production Board)
 
 Status: Done
 
-- Views: Table, Kanban, My Tasks.
-- Default view by role: admin/account → table; design/editor → task-focused.
-- Summary cards, filters, sortable table, drag-drop Kanban.
-- Drag/status validation, link requirement for Ready/Delivered transitions.
-- Task drawer: files, links, actions, metadata, comments.
-- 16 mock tasks.
+- Views: Table, Kanban, My Tasks. Default view per role: admin/account → table; design/editor → My Tasks.
+- Sidebar label rename: **Production Board → Task Tracker**. Page H1 dual-labeled: "Task Tracker / Production Board". File path unchanged (`production-board.html`).
+- Page-head `[+ Tạo Task]` button → opens Create Task modal in-page.
+- Create / Edit Task modal: supports `is_standalone` checkbox (ẩn order_id row khi bật), prefill từ URL params, save mới push vào TASKS + `localStorage['mh-extra-tasks']`. Edit Task button injected dynamically vào drawer head cho admin/account/P.I.C.
+- Quick filter chip row (`#quick-filter-chips`): Tất cả · Due Today · Due This Week · Overdue · Unassigned · My Tasks · Standalone. Tách biệt với summary card quick-filter (giữ nguyên).
+- Linked Order block trong task drawer: hiển thị order_id + project name + button "Mở Order" → `database-orders.html?id=<order_id>`. Task `is_standalone` hiển thị note thay vì link.
+- Summary cards, filters, sortable table, drag-drop Kanban giữ nguyên.
+- Drag/status validation, link requirement cho Ready/Delivered transitions.
+- 16 mock tasks + cross-page tasks từ `mh-extra-tasks` (created via modal hoặc "Create Task from Order").
 
 ### 5. Delivery Log
 
@@ -127,7 +132,8 @@ Status: Done
 
 - Built from spec 09.
 - Category tabs, search, tool cards, workspace form, CB brand preset, output panel, usage log.
-- 12 mini apps: Post Generator, Ads Copy, Caption Builder, Brief Optimizer, Missing Info Checker, Visual Prompt, Video Concept, Slide Outline, Campaign Idea, Hashtag/CTA, Tone Adjuster, Summarizer.
+- 13 mini apps: Post Generator, Ads Copy, Caption Builder, Brief Optimizer, Missing Info Checker, Visual Prompt, Video Concept, Slide Outline, Campaign Idea, Hashtag/CTA, Tone Adjuster, Summarizer, **AI Voice (Supertonic)**.
+- **AI Voice tool** (new): on-device TTS — engine target `Supertonic` (github.com/supertone-inc/supertonic, ONNX runtime, ~99M params, 44.1kHz). Demo runtime dùng Web Speech API. UI clone preset M1-M5/F1-F5, 16 ngôn ngữ, expression tags `[laugh]/[breath]/[sigh]/...`, quality steps. Có audio player (Play/Pause/Stop), waveform animation, export SSML, link repo.
 - Role permission: admin/account/design/editor; client blocked.
 - Mock generation with CB guardrails, copy, regenerate, export markdown, feedback, save demo.
 - Demo persistence: `mh-ai-usage-log`, `mh-ai-saved-outputs`.
@@ -171,7 +177,11 @@ No pending MVP modules. Remaining work is production integration:
 
 ## File Inventory
 
-Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
+Build total: **17 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
+
+New files added 2026-05-18:
+- `order-dashboard.html` — Order-level KPI dashboard
+- `task-dashboard.html` — Task-level / internal production KPI dashboard
 
 | File | KB |
 |---|---:|
@@ -250,6 +260,19 @@ Build total: **15 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
 | 2026-05-15 | Auth/Order | Chatbot: ẩn "Open Order Form" cho design/editor. Static link trong `chatbot.html` `data-show-roles="admin,account"`. `chatbot.js` thêm `filterActions(actions)` filter URL `request.html` khỏi message actions khi role design/editor |
 | 2026-05-15 | Public/Hero | Rewrite Hero Section visual ở `index.html`: thay khối dashboard mockup cũ (`.hero-mock` + 2 `.hero-floating`) bằng cụm CB character 3D + 3 floating icons (bell, document-pencil, image). Asset đặt tại `assets/hero/` (copy từ `Source/`). Icons có animation translateY 6–10px ease-in-out infinite alternate với delay khác nhau, tôn trọng `prefers-reduced-motion`. Responsive tablet/mobile, icon document-pencil ẩn ở ≤480px |
 | 2026-05-15 | Public/Hero | Refinement: tách 3 keyframe riêng (`heroFloatBell`/`heroFloatDoc`/`heroFloatImage`) — biên độ 14-18px + rotate ±3° để chuyển động dễ thấy. Reposition `icon-image` upper-right (top:130, right:28, w:46px sau scale 50%) ngang mặt character thay vì giữa torso, tránh chồng camera baked-in của cutout |
+| 2026-05-18 | Nav/UX | Sidebar rename "Production Board" → "Task Tracker" trên 9 internal pages. Thêm 2 nav entries dưới Master Dashboard: `Order Dashboard` (admin/account), `Task Dashboard` (all internal). Rename "Dashboard" → "Master Dashboard" để chuẩn hóa labels |
+| 2026-05-18 | Dashboard | Tạo `order-dashboard.html` (KPI cấp Order: funnel theo `account_status`, branch breakdown, type breakdown — drilldown sang `database-orders.html?dl=<key>`) và `task-dashboard.html` (KPI nội bộ: total/in-prod/review/due-soon/overdue/on-time, workload PIC, task-type distribution, Linked vs Standalone — drilldown sang `production-board.html?dl=<key>`). Master Dashboard giữ nguyên drilldown 12 KPI |
+| 2026-05-18 | Task Tracker | Production Board được formalize làm Task Tracker. Page H1: "Task Tracker / Production Board". Page head thêm `[+ Tạo Task]` button mở Create Task modal in-page. Quick filter chip row trên toolbar: Tất cả/Due Today/Due This Week/Overdue/Unassigned/My Tasks/Standalone (`state.quickChip`, tách với summary card `state.quick`) |
+| 2026-05-18 | Task Tracker | Create/Edit Task modal (`#task-modal`): hỗ trợ `is_standalone` checkbox (ẩn order_id row), prefill từ URL params (`?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...`), auto-generate `TASK-NNNN` ID, push vào TASKS + persist localStorage `mh-extra-tasks`. Edit mode mở qua dynamic "Sửa Task" button trong drawer head cho admin/account/PIC |
+| 2026-05-18 | Task Tracker | Drawer thêm "Linked Order" block: hiển thị order_id + project name + "Mở Order" button → `database-orders.html?id=<order_id>`. Task `is_standalone` hoặc no `order_id` → hiển thị note thay vì link. Cũ "Order ID" line trong Brief Information bỏ |
+| 2026-05-18 | Database Orders | Drawer thêm block "Related Tasks (T)": list mọi task gắn order — gộp từ `BUILT_IN_TASKS` snapshot mirror dataset Task Tracker + `mh-extra-tasks`. Mỗi item click → mở Task Tracker với `?id=<task_id>` auto-open task drawer. Button "Create Task from this Order" enable khi `account_status === 'confirmed'`, redirect Task Tracker với prefill query params |
+| 2026-05-18 | Architecture | Cross-page task storage `localStorage['mh-extra-tasks']` (max 100 entries): tasks tạo mới từ Task Tracker hoặc "Create Task from Order" persist ở đây, cả `production-board.js` và `database-orders.js` đều đọc để hiển thị lẫn nhau. Mock dataset built-in vẫn giữ in-memory, không bị duplicate |
+| 2026-05-18 | Production | **Phase 0 hardening**: Thêm `robots.txt` chặn crawler (demo), `.env.example` scaffold env vars cho Phase 0/1/2, `assets/config.js` runtime config (Sentry DSN + ENV + RELEASE + feature flags), Sentry browser SDK lazy-load qua CDN trong `app.js` (skip nếu DSN trống, tag user role + email). Wire `<script src="assets/config.js">` TRƯỚC `<script src="assets/app.js">` trên 17/17 HTML pages |
+| 2026-05-18 | Phase 1 + 2 | **Phase 1 close + Phase 2 storage**: Tạo `supabase/rls.sql` idempotent — helper functions `current_user_role()`/`is_staff()`/`is_admin_or_account()`/`is_admin()` SECURITY DEFINER + 11 bảng policies (users self+staff+admin, orders client-scoped + staff-write, tasks staff-only, task_comments cascade, deliveries admin/account write + client read qua order, ai_usage self+admin, chatbot per-user strict, settings admin-only, activity staff-read, order_drafts self). Tạo `supabase/storage.sql` — 3 buckets (`avatars` public + 2MB + image mimes; `brief-files` private + 50MB; `deliverables` private + 500MB) với storage.objects policies (self-folder write avatar, staff read deliverables, requester via order_id qua split_part path). `assets/data-store.js` thêm namespace `files` với upload/getPublicUrl/signedUrl/list/remove (data URL fallback avatar). `assets/app.js` Profile modal save → fetch data URL → blob → upload Supabase Storage → publicUrl + persist `public.users` metadata. `assets/order-form.js` doSubmit (async) → upload brief files lên `brief-files/{order_id}/...` → INSERT `public.orders` qua `MH.store.orders.create()`. localStorage fallback giữ nguyên |
+| 2026-05-18 | Full Phase 1 | **Phase 1 module migration (turn 3 — complete)**: Migrate xong các module còn lại theo cùng pattern Auth+Orders. 1) `production-board.js`: expose `MH_MOCK_TASKS`, `loadTasksFromStore` + `persistTask` + `persistTaskComment` cho updateStatus, save links/meta, comment add (kèm @mention + reply), Create/Edit Task modal (insert + update). Re-build `ORDER_INDEX` sau khi swap dataset. 2) `delivery-log.js`: expose `MH_MOCK_DELIVERIES`, `snapshotDelivery()` extract 8 field thuộc schema, `persistCurDelivery(cur)` hook vào 7 mutation sites qua sed. 3) `user-management.js`: expose `MH_MOCK_USERS`, `loadUsersFromStore` adapter map `name → full_name`, `persistUser(id, patch)` qua raw supabase client (data-store chưa có users.update method). Persist status toggle + edit user (chỉ name/phone/department/role/status — các field thuộc public.users). 4) `ai-tools.js`: `addUsage()` + `saveOutput()` write-through qua `MH.store.aiUsage.log()` + `saveOutput()`. 5) `data-store.js`: thêm namespace `chatbot` với `append()`, `history(sessionId, limit)`, `feedback(messageId, val)` — fallback localStorage `mh-chatbot-history` + `mh-chatbot-feedback`. 6) `chatbot.js`: `pushMessage()` + `saveFeedback()` write-through. **Tất cả module giữ optimistic UI + localStorage fallback**, demo flow zero-breakage khi Supabase chưa cấu hình |
+| 2026-05-18 | Auth + Orders | **Phase 1 module migration (turn 2)**: 1) `login.html` migrate sang Supabase Auth-first: nếu `window.MH.supabaseEnabled` thì gọi `MH.store.auth.signIn()`, chờ `onAuthStateChange` mirror session → `mh-user`, redirect dashboard/client-dashboard. Lỗi auth hoặc Supabase chưa cấu hình → fallback `loginAsDemo()` giữ nguyên hành vi cũ (demo accounts + password `cb2026`). 2) `database-orders.js` migrate: expose `window.MH_MOCK_ORDERS = ORDERS` cho cross-page reuse. Thêm `loadOrdersFromStore()` fire-and-forget khi init — Supabase enabled = swap dataset từ `MH.store.orders.list()` + re-render + re-open drawer nếu đang mở. Mutations (`updateStatus`, `pushToProduction`, `save-internal` button) gọi `persistOrder()` write-through (optimistic UI + write Supabase nếu enabled, toast warning nếu sync fail). Khi Supabase chưa cấu hình → hành vi y nguyên hiện tại |
+| 2026-05-18 | DB Foundation | **Phase 1 foundation**: Thêm `supabase/schema.sql` (12 bảng: users, orders, tasks, task_comments, deliveries, ai_usage_log, ai_saved_outputs, chatbot_messages, settings, activity_log, order_drafts; trigger touch timestamps + auto-create public.users từ auth.users; views tasks_with_order + orders_with_task_count; RLS policies commented sẵn). `supabase/seed.sql` UPDATE role/name cho 5 demo user + seed 5 orders + 4 tasks + 2 comments. `assets/supabase-client.js` dynamic import @supabase/supabase-js@2 từ esm.sh CDN (zero-build maintained), expose window.MH.supabase + mirror session sang `mh-user`. `assets/data-store.js` abstraction layer (`window.MH.store` với 8 namespaces) — Supabase enabled = query thật, else fallback localStorage. Update `assets/config.js` thêm SUPABASE_URL + SUPABASE_ANON_KEY + FEATURES.SUPABASE_DB. Wire `supabase-client.js + data-store.js` TRƯỚC `app.js` trên 17/17 HTML pages. **Static demo flow KHÔNG bị phá** — chưa fill config thì y nguyên hiện tại |
+| 2026-05-18 | AI Tools | Thêm tool **AI Voice (Supertonic)** — category `voice` mới. UI clone preset Supertonic M1-M5/F1-F5, 16 ngôn ngữ, expression tags, quality steps. Engine plan: Supertonic ONNX (github.com/supertone-inc/supertonic). Demo runtime: Web Speech API (`window.speechSynthesis`) — on-device, real audio output, no bundling. Voice Player panel có waveform animation, Play/Pause/Stop, export SSML cho production handoff. Generate output trả markdown gồm Script preview · Voice settings · SSML draft · Production handoff note. SSML preserve expression tags để khi swap backend Supertonic giữ nguyên format |
 
 ---
 

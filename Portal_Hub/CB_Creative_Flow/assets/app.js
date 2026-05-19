@@ -4,6 +4,57 @@
 (function () {
   'use strict';
 
+  /* ---------- Sentry error tracking (lazy-loaded from CDN) ----------
+     Skip nếu MH_CONFIG.SENTRY_DSN trống → không network call, không overhead.
+     DSN public-safe theo design Sentry. */
+  (function initSentry() {
+    var cfg = window.MH_CONFIG || {};
+    if (!cfg.SENTRY_DSN) return;
+    if (window.Sentry) {
+      // Đã load (page navigate cũ) — chỉ init lại
+      try {
+        window.Sentry.init({
+          dsn: cfg.SENTRY_DSN,
+          environment: cfg.SENTRY_ENV || 'production',
+          release: cfg.SENTRY_RELEASE,
+          tracesSampleRate: 0.1,
+          replaysSessionSampleRate: 0,
+          replaysOnErrorSampleRate: 0
+        });
+      } catch (e) { /* swallow */ }
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = 'https://browser.sentry-cdn.com/7.119.0/bundle.tracing.min.js';
+    s.crossOrigin = 'anonymous';
+    s.async = true;
+    s.onload = function () {
+      try {
+        window.Sentry.init({
+          dsn: cfg.SENTRY_DSN,
+          environment: cfg.SENTRY_ENV || 'production',
+          release: cfg.SENTRY_RELEASE,
+          tracesSampleRate: 0.1,
+          beforeSend: function (event) {
+            // Tag user role nếu có session để filter trong Sentry UI
+            try {
+              var u = JSON.parse(localStorage.getItem('mh-user') || 'null');
+              if (u) {
+                event.user = event.user || {};
+                event.user.email = u.email;
+                event.tags = event.tags || {};
+                event.tags.role = u.role;
+              }
+            } catch (e) {}
+            return event;
+          }
+        });
+      } catch (e) { /* swallow init failure to avoid breaking app */ }
+    };
+    s.onerror = function () { /* CDN unreachable — silently disable */ };
+    document.head.appendChild(s);
+  })();
+
   /* ---------- Theme (light / dark / system) ---------- */
   const THEME_KEY = 'mh-theme';
   const root = document.documentElement;
@@ -389,7 +440,7 @@
       previewAvatar();
     });
 
-    el.querySelector('#mh-pf-save').addEventListener('click', () => {
+    el.querySelector('#mh-pf-save').addEventListener('click', async () => {
       const u = getUser();
       if (!u) { toast({ type: 'error', message: 'Phiên đăng nhập không hợp lệ.' }); return; }
       const name = nameInput.value.trim();
@@ -404,13 +455,44 @@
       const bio = bioInput.value.trim();
       const isAdmin = u.role === 'admin';
       const nextRole = isAdmin ? roleSelect.value : u.role;
+
+      // Phase 2: nếu Supabase Storage enabled VÀ pendingAvatar là data URL mới
+      // (string bắt đầu bằng `data:`) → upload sang bucket `avatars`, replace
+      // bằng publicUrl trước khi save. Khi chưa cấu hình → giữ data URL (Phase 0/1 flow).
+      let finalAvatar = pendingAvatar === null ? (u.avatar || '') : pendingAvatar;
+      if (
+        finalAvatar && typeof finalAvatar === 'string' && finalAvatar.startsWith('data:')
+        && window.MH && window.MH.store && window.MH.supabaseEnabled && u.id
+      ) {
+        try {
+          const blob = await (await fetch(finalAvatar)).blob();
+          const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+          const path = u.id + '/avatar-' + Date.now() + '.' + ext;
+          const { publicUrl } = await window.MH.store.files.upload('avatars', path, blob, { contentType: blob.type });
+          if (publicUrl) finalAvatar = publicUrl;
+        } catch (e) {
+          console.warn('[profile] avatar upload failed, giữ data URL:', e);
+          toast({ type: 'warning', title: 'Upload avatar lỗi', message: 'Avatar sẽ chỉ lưu local cho phiên này.' });
+        }
+      }
+
       const updated = Object.assign({}, u, {
         name, initials, title, phone, department, bio,
         role: nextRole,
-        avatar: pendingAvatar === null ? (u.avatar || '') : pendingAvatar
+        avatar: finalAvatar
       });
       saveUser(updated);
       refreshProfileChip(updated);
+
+      // Phase 2: persist profile changes sang public.users nếu Supabase enabled.
+      if (window.MH && window.MH.supabase && window.MH.supabaseEnabled && u.id) {
+        const patch = { name: name, initials: initials, title: title, phone: phone || null, department: department || null, bio: bio || null, avatar_url: typeof finalAvatar === 'string' && finalAvatar.startsWith('http') ? finalAvatar : null };
+        if (isAdmin && nextRole !== u.role) patch.role = nextRole;
+        window.MH.supabase.from('users').update(patch).eq('id', u.id).then(function (res) {
+          if (res.error) console.warn('[profile] persist profile failed:', res.error);
+        });
+      }
+
       const roleChanged = nextRole !== u.role;
       toast({ type: 'success', title: 'Đã cập nhật hồ sơ', message: roleChanged ? `Vai trò mới: ${roleLabel(nextRole)} — tải lại trang để áp dụng đầy đủ.` : name });
       pendingAvatar = null;

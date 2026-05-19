@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Order Dashboard — CB Media Hub</title>
+<meta name="description" content="Order Dashboard — KPI và phân tích cấp Order: nguồn brief, trạng thái xác nhận, hiệu suất Account, chi nhánh." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-3)">
+      <button class="icon-btn sidebar-toggle" id="sb-toggle" aria-label="Mở menu" aria-controls="dash-sb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <span class="theme-toggle-thumb">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+      </button>
+      <button class="icon-btn" aria-label="Thông báo" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--red-600); border:2px solid var(--surface)"></span>
+      </button>
+      <div class="header-profile-chip" id="header-profile-chip" tabindex="0">
+        <span class="avatar" id="hpc-avatar">MP</span>
+        <div class="header-pc-info">
+          <span class="header-pc-name" id="hpc-name">Mai Phương</span>
+          <span class="role-badge r--admin header-pc-role" id="hpc-role-badge">Admin</span>
+        </div>
+        <svg class="header-pc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="header-profile-menu" id="header-profile-menu">
+          <a href="#" class="hpm-item" id="hpm-profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Hồ sơ cá nhân
+          </a>
+          <a href="settings.html" class="hpm-item" data-show-roles="admin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg>
+            Cài đặt
+          </a>
+          <div class="hpm-divider"></div>
+          <button type="button" class="hpm-item hpm-danger" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop"></div>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar" id="dash-sb">
+    <h6>Vận hành</h6>
+    <ul class="dash-nav">
+      <li><a href="dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span><span>Master Dashboard</span></a></li>
+      <li data-show-roles="admin,account"><a href="order-dashboard.html" class="is-active"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span><span>Order Dashboard</span></a></li>
+      <li><a href="task-dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Task Dashboard</span></a></li>
+      <li data-show-roles="admin,account"><a href="request.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span>Order Form</span></a></li>
+      <li data-show-roles="admin,account"><a href="database-orders.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span>Database Orders</span></a></li>
+      <li><a href="production-board.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Task Tracker</span></a></li>
+      <li data-show-roles="admin,account"><a href="delivery-log.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4z"/></svg></span><span>Delivery Log</span></a></li>
+      <li data-show-roles="admin,account"><a href="reports.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span>Reports</span></a></li>
+    </ul>
+
+    <h6>Hệ thống</h6>
+    <ul class="dash-nav">
+      <li><a href="ai-tools.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span><span>AI Tools</span></a></li>
+      <li><a href="chatbot.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Chatbot</span></a></li>
+      <li data-show-roles="admin"><a href="user-management.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>User Management</span></a></li>
+      <li data-show-roles="admin"><a href="settings.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/></svg></span><span>Settings</span></a></li>
+    </ul>
+
+    <div class="dash-sidebar-foot">
+      <div class="sidebar-version-block">
+        <div class="svb-name">CB Creative Flow</div>
+        <div class="svb-ver">v1.0</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+
+    <div class="dash-page-head">
+      <div>
+        <h1><span class="serif-italic">Order</span> Dashboard</h1>
+        <p>KPI cấp Order — nguồn brief, trạng thái xác nhận, hiệu suất Account, chi nhánh.</p>
+        <div class="meta-row">
+          <span>Last updated: <b id="last-updated">13/05/2026 10:00</b></span>
+          <a class="refresh-btn" href="dashboard.html" style="text-decoration:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Master Dashboard
+          </a>
+        </div>
+      </div>
+      <div class="row" style="gap:var(--space-2)">
+        <a class="btn btn-secondary btn-sm" href="database-orders.html">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Database Orders
+        </a>
+        <a class="btn btn-primary btn-sm" href="request.html" data-show-roles="admin,account">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tạo Order
+        </a>
+      </div>
+    </div>
+
+    <div class="dash-filters">
+      <select class="select">
+        <option>Tháng này</option>
+        <option>Hôm nay</option>
+        <option>7 ngày qua</option>
+        <option>30 ngày qua</option>
+        <option>Quý này</option>
+      </select>
+      <select class="select">
+        <option>Tất cả chi nhánh</option>
+        <option>HO Marketing</option>
+        <option>Academic</option>
+        <option>Sales</option>
+        <option>CB Mekong</option>
+        <option>CB Hưng Phú</option>
+        <option>CB Cần Thơ</option>
+        <option>CB Tiên Thủy</option>
+      </select>
+      <select class="select">
+        <option>Tất cả Account PIC</option>
+        <option>Hậu</option>
+        <option>Mai Phương</option>
+        <option>Đức Anh</option>
+      </select>
+      <div class="grow"></div>
+      <span class="text-xs muted">Hiển thị <b style="color:var(--text)">18</b> orders trong dataset demo</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi kpi--brand kpi--hero" data-card-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Total Orders">
+        <div class="kpi-head"><span class="kpi-label">Total Orders</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+        </div>
+        <span class="kpi-value">18</span>
+        <span class="kpi-trend up"><b>+4</b> so tuần trước</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </div>
+      <div class="kpi kpi--red kpi--attention" data-card-key="new_requests" tabindex="0" role="link" aria-label="Drilldown: New Requests">
+        <div class="kpi-head"><span class="kpi-label">Chờ xác nhận</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+        </div>
+        <span class="kpi-value">3</span>
+        <span class="kpi-trend">Account cần xử lý ngay</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </div>
+      <div class="kpi kpi--warn" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Brief Need Info">
+        <div class="kpi-head"><span class="kpi-label">Cần bổ sung brief</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg></span>
+        </div>
+        <span class="kpi-value">1</span>
+        <span class="kpi-trend">Đang block Account</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </div>
+      <div class="kpi" data-card-key="checking">
+        <div class="kpi-head"><span class="kpi-label">Đang kiểm tra</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        </div>
+        <span class="kpi-value">2</span>
+        <span class="kpi-trend">Account đang review brief</span>
+      </div>
+      <div class="kpi kpi--ok" data-card-key="confirmed">
+        <div class="kpi-head"><span class="kpi-label">Đã xác nhận</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </div>
+        <span class="kpi-value">11</span>
+        <span class="kpi-trend up">Đã đẩy sang Task Tracker</span>
+      </div>
+      <div class="kpi kpi--ok" data-card-key="completed" tabindex="0" role="link" aria-label="Drilldown: Completed Orders">
+        <div class="kpi-head"><span class="kpi-label">Đã hoàn thành</span>
+          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+        </div>
+        <span class="kpi-value">3</span>
+        <span class="kpi-trend up">Có rating client</span>
+        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+      </div>
+    </div>
+
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Order</span> Funnel</h2>
+          <p>Tỉ lệ chuyển trạng thái từ nhận yêu cầu → bàn giao.</p>
+        </div>
+      </div>
+      <div class="pipeline">
+        <div class="pipe-stage"><span class="pipe-count">3</span><span class="pipe-label">Pending</span></div>
+        <div class="pipe-stage"><span class="pipe-count">2</span><span class="pipe-label">Checking</span></div>
+        <div class="pipe-stage"><span class="pipe-count">1</span><span class="pipe-label">Need Info</span></div>
+        <div class="pipe-stage"><span class="pipe-count">11</span><span class="pipe-label">Confirmed</span></div>
+        <div class="pipe-stage"><span class="pipe-count">3</span><span class="pipe-label">Delivered</span></div>
+        <div class="pipe-stage"><span class="pipe-count">1</span><span class="pipe-label">Cancelled</span></div>
+      </div>
+    </section>
+
+    <div class="row-2">
+      <section class="dash-card">
+        <div class="row between">
+          <div><h3>Phân bố theo chi nhánh</h3><p class="desc">Source brief 30 ngày gần nhất.</p></div>
+        </div>
+        <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+          <div class="bar-row"><span style="width:120px">HO Marketing</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:80%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">4</b></div>
+          <div class="bar-row"><span style="width:120px">Academic</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:60%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">3</b></div>
+          <div class="bar-row"><span style="width:120px">Sales</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:40%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">2</b></div>
+          <div class="bar-row"><span style="width:120px">CB Mekong</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:60%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">3</b></div>
+          <div class="bar-row"><span style="width:120px">CB Hưng Phú</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:40%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">2</b></div>
+          <div class="bar-row"><span style="width:120px">CB Cần Thơ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:60%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">3</b></div>
+          <div class="bar-row"><span style="width:120px">CB Tiên Thủy</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:20%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">1</b></div>
+        </div>
+      </section>
+
+      <section class="dash-card">
+        <div class="row between">
+          <div><h3>Theo loại request</h3><p class="desc">Tỉ lệ Design / Video / Photo / Motion ...</p></div>
+        </div>
+        <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+          <div class="bar-row"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:78%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">7</b></div>
+          <div class="bar-row"><span style="width:120px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:33%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">3</b></div>
+          <div class="bar-row"><span style="width:120px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:22%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">2</b></div>
+          <div class="bar-row"><span style="width:120px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:22%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">2</b></div>
+          <div class="bar-row"><span style="width:120px">Digital</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:22%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">2</b></div>
+          <div class="bar-row"><span style="width:120px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:22%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">2</b></div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/data-store.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  'use strict';
+  let user;
+  try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
+  if (!user || !user.role) { location.replace('login.html'); return; }
+  if (user.role === 'client') { location.replace('client-dashboard.html'); return; }
+  document.body.setAttribute('data-user', user.email || user.role);
+  document.body.setAttribute('data-user-role', user.role);
+
+  const sb = document.getElementById('dash-sb');
+  const sbd = document.getElementById('sb-backdrop');
+  const sbt = document.getElementById('sb-toggle');
+  if (sbt) sbt.addEventListener('click', () => { sb.classList.add('is-open'); sbd.classList.add('is-open'); });
+  if (sbd) sbd.addEventListener('click', () => { sb.classList.remove('is-open'); sbd.classList.remove('is-open'); });
+
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('mh-user');
+    if (window.MH) window.MH.toast({ type: 'info', title: 'Đã đăng xuất' });
+    setTimeout(() => location.href = 'login.html', 400);
+  });
+
+  // KPI drilldown → database-orders
+  const DRILL = {
+    total_orders: 'all',
+    new_requests: 'pending',
+    brief_need_info: 'needinfo',
+    completed: 'completed'
+  };
+  document.querySelectorAll('.kpi[data-card-key]').forEach((card) => {
+    const key = card.getAttribute('data-card-key');
+    if (!DRILL[key]) return;
+    card.addEventListener('click', () => { location.href = 'database-orders.html?dl=' + key; });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.href = 'database-orders.html?dl=' + key; } });
+  });
+})();
+</script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

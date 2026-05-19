@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Production Board — CB Media Hub</title>
-<meta name="description" content="Production Board — Design / Editor / P.I.C nhận task, theo dõi brief, cập nhật tiến độ và upload preview/final." />
+<title>Task Tracker / Production Board — CB Media Hub</title>
+<meta name="description" content="Task Tracker (Production Board) — Design / Editor / P.I.C nhận task, theo dõi brief, cập nhật tiến độ và upload preview/final." />
 <meta name="theme-color" content="#191970" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -68,7 +68,15 @@
     <ul class="dash-nav">
       <li><a href="dashboard.html">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
-        <span>Dashboard</span>
+        <span>Master Dashboard</span>
+      </a></li>
+      <li data-show-roles="admin,account"><a href="order-dashboard.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span>
+        <span>Order Dashboard</span>
+      </a></li>
+      <li><a href="task-dashboard.html">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+        <span>Task Dashboard</span>
       </a></li>
       <li data-show-roles="admin,account"><a href="request.html">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
@@ -80,7 +88,7 @@
       </a></li>
       <li><a href="production-board.html" class="is-active">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
-        <span>Production Board</span>
+        <span>Task Tracker</span>
         <span class="nav-badge" id="nav-mytask">—</span>
       </a></li>
       <li data-show-roles="admin,account"><a href="delivery-log.html">
@@ -127,10 +135,14 @@
     <!-- Page head -->
     <div class="dash-page-head">
       <div>
-        <h1><span class="serif-italic">Production</span> Board</h1>
+        <h1><span class="serif-italic">Task</span> Tracker <span class="text-xs muted" style="font-weight:500; font-size:0.55em; vertical-align:middle; margin-left:8px">/ Production Board</span></h1>
         <p id="page-subtitle">Theo dõi task sản xuất từ brief đến bàn giao.</p>
       </div>
       <div class="row" style="gap:var(--space-2)">
+        <button class="btn btn-primary btn-sm" id="btn-create-task">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tạo Task
+        </button>
         <div class="view-tabs" id="view-tabs">
           <button class="view-tab" data-view="table">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -159,6 +171,17 @@
       <div class="pb-stat is-danger" data-quick="overdue"><span class="pb-label">Overdue</span><div class="pb-value" id="sm-overdue">0</div></div>
       <div class="pb-stat" data-quick="review"><span class="pb-label">Internal Review</span><div class="pb-value" id="sm-review">0</div></div>
       <div class="pb-stat is-ok" data-quick="ready"><span class="pb-label">Ready</span><div class="pb-value" id="sm-ready">0</div></div>
+    </div>
+
+    <!-- Quick filter chips -->
+    <div class="saved-views" id="quick-filter-chips" style="margin-bottom:var(--space-3)">
+      <button class="saved-view-chip is-active" data-quick-filter="">Tất cả</button>
+      <button class="saved-view-chip" data-quick-filter="due_today">Due Today</button>
+      <button class="saved-view-chip" data-quick-filter="due_week">Due This Week</button>
+      <button class="saved-view-chip" data-quick-filter="overdue">Overdue</button>
+      <button class="saved-view-chip" data-quick-filter="unassigned">Unassigned</button>
+      <button class="saved-view-chip" data-quick-filter="mine">My Tasks</button>
+      <button class="saved-view-chip" data-quick-filter="standalone">Standalone</button>
     </div>
 
     <!-- Toolbar -->
@@ -340,6 +363,115 @@
   <div class="drawer-body" id="drawer-body"></div>
 </aside>
 
+<!-- ============ CREATE / EDIT TASK MODAL ============ -->
+<div class="drawer-backdrop" id="task-modal-backdrop"></div>
+<div class="task-modal" id="task-modal" aria-hidden="true" role="dialog" aria-labelledby="task-modal-title">
+  <div class="task-modal-head">
+    <h3 id="task-modal-title">Tạo Task mới</h3>
+    <button class="icon-btn" id="task-modal-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <form class="task-modal-body" id="task-modal-form" autocomplete="off">
+    <div class="edit-row" style="grid-template-columns:1fr">
+      <label>
+        <input type="checkbox" id="tm-standalone" />
+        <span style="margin-left:6px">Task nội bộ độc lập (không gắn Order)</span>
+      </label>
+    </div>
+    <div class="edit-row" id="tm-order-row">
+      <label>Order ID</label>
+      <input class="input" id="tm-order-id" type="text" placeholder="MEDIA-2026-XXXX" />
+    </div>
+    <div class="edit-row" style="grid-template-columns:1fr">
+      <label>Project name <span style="color:var(--red-600)">*</span></label>
+      <input class="input" id="tm-project" type="text" required placeholder="Tên dự án / task" />
+    </div>
+    <div class="edit-row" style="grid-template-columns:1fr">
+      <label>Nội dung / Brief tóm tắt</label>
+      <textarea class="textarea" id="tm-content" placeholder="Mô tả ngắn nội dung task..." style="min-height:80px"></textarea>
+    </div>
+    <div class="edit-row">
+      <label>Loại task</label>
+      <select class="select" id="tm-type">
+        <option value="design">Design / POSM</option>
+        <option value="digital">Digital Design</option>
+        <option value="video">Video Editing</option>
+        <option value="motion">Motion Graphic</option>
+        <option value="shoot">Quay</option>
+        <option value="photo">Chụp ảnh</option>
+        <option value="ads">Ads / Post</option>
+        <option value="slide">Slide</option>
+      </select>
+    </div>
+    <div class="edit-row">
+      <label>Priority</label>
+      <select class="select" id="tm-priority">
+        <option value="normal">Bình thường</option>
+        <option value="urgent">Gấp</option>
+        <option value="critical">Rất gấp</option>
+      </select>
+    </div>
+    <div class="edit-row">
+      <label>P.I.C</label>
+      <select class="select" id="tm-pic">
+        <option value="">— Chưa gán —</option>
+        <option>Duy</option>
+        <option>Vinh</option>
+        <option>Linh Chi</option>
+        <option>Mai Phương</option>
+      </select>
+    </div>
+    <div class="edit-row">
+      <label>Internal Deadline</label>
+      <input class="input" id="tm-deadline" type="datetime-local" />
+    </div>
+    <div class="edit-row">
+      <label>Status</label>
+      <select class="select" id="tm-status">
+        <option value="pending">Chưa nhận task</option>
+        <option value="received">Nhận task</option>
+        <option value="inprogress">Đang thực hiện</option>
+      </select>
+    </div>
+  </form>
+  <div class="task-modal-foot">
+    <button class="btn btn-secondary btn-sm" id="task-modal-cancel" type="button">Hủy</button>
+    <button class="btn btn-primary btn-sm" id="task-modal-save" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Lưu Task
+    </button>
+  </div>
+</div>
+
+<style>
+  .task-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.96); width: min(560px, 92vw); max-height: 90vh; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 16px); box-shadow: 0 24px 80px rgba(0,0,0,0.28); z-index: 1100; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; }
+  .task-modal.is-open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+  .task-modal-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4); border-bottom: 1px solid var(--border); }
+  .task-modal-head h3 { margin: 0; font-size: var(--text-lg); }
+  .task-modal-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+  .task-modal-foot { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: var(--space-2); }
+  #task-modal-backdrop { z-index: 1099; }
+  .saved-views { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .saved-view-chip { padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: var(--text-sm); cursor: pointer; transition: all 0.15s; }
+  .saved-view-chip:hover { border-color: var(--brand-600); }
+  .saved-view-chip.is-active { background: var(--grad-brand); color: #fff; border-color: transparent; }
+  /* Related tasks list (Database Orders drawer) */
+  .related-tasks-list { display: flex; flex-direction: column; gap: var(--space-2); }
+  .related-task-item { display: flex; align-items: center; gap: var(--space-2); padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md, 12px); background: var(--surface-2); cursor: pointer; transition: border-color 0.15s; }
+  .related-task-item:hover { border-color: var(--brand-600); }
+  .related-task-item .rt-id { font-family: var(--font-mono, monospace); font-size: var(--text-xs); color: var(--text-muted); }
+  .related-task-item .rt-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: var(--text-sm); }
+  .related-task-item .rt-meta { display: flex; gap: 6px; align-items: center; }
+  /* Linked-order block in task drawer */
+  .linked-order-card { padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md, 12px); display: flex; align-items: center; gap: var(--space-2); }
+  .linked-order-card .lo-id { font-family: var(--font-mono, monospace); font-size: var(--text-xs); color: var(--text-muted); }
+  .linked-order-card .lo-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+</style>
+
+<script src="assets/config.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/data-store.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/production-board.js"></script>
 <script src="assets/chatbot.js"></script>

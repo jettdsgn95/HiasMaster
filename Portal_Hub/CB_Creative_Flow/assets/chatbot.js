@@ -207,15 +207,25 @@
   }
 
   function pushMessage(role, content, intent, actions) {
+    const msg = { id: 'MSG-' + String(Date.now()).slice(-7), role, content, intent, actions: actions || [], created_at: nowStamp() };
+    // localStorage fallback (giữ demo flow)
     const history = readJSON(HISTORY_KEY, []);
-    history.push({ id: 'MSG-' + String(Date.now()).slice(-7), role, content, intent, actions: actions || [], created_at: nowStamp() });
+    history.push(msg);
     writeJSON(HISTORY_KEY, history.slice(-80));
+    // Phase 1: persist sang Supabase nếu enabled
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      window.MH.store.chatbot.append({ role: role, content: content }, 'main').catch(function (e) { console.warn('[chatbot] persist message:', e); });
+    }
   }
 
   function saveFeedback(messageId, feedback) {
     const list = readJSON(FEEDBACK_KEY, []);
     list.unshift({ feedback_id: 'FB-' + String(Date.now()).slice(-6), message_id: messageId, user_id: (user && user.email) || 'guest', feedback, created_at: nowStamp() });
     writeJSON(FEEDBACK_KEY, list.slice(0, 50));
+    // Phase 1: persist sang Supabase nếu enabled
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      window.MH.store.chatbot.feedback(messageId, feedback).catch(function (e) { console.warn('[chatbot] persist feedback:', e); });
+    }
     if (window.MH && window.MH.toast) window.MH.toast({ type: 'success', title: 'Đã ghi feedback', message: feedback === 'good' ? 'Cảm ơn anh.' : 'Đã ghi nhận để cải thiện.' });
   }
 

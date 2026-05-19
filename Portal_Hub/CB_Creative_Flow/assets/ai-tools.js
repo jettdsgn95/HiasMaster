@@ -26,8 +26,47 @@
     { key: 'brief', label: 'Brief' },
     { key: 'visual', label: 'Visual' },
     { key: 'video', label: 'Video' },
+    { key: 'voice', label: 'Voice' },
     { key: 'slide', label: 'Slide' },
     { key: 'campaign', label: 'Campaign' }
+  ];
+
+  /* Supertonic voice presets (M1-M5 male, F1-F5 female) — mirror github.com/supertone-inc/supertonic web preset naming. */
+  const SUPERTONIC_VOICES = [
+    { id: 'F1', label: 'F1 — Female, warm narrator', gender: 'female' },
+    { id: 'F2', label: 'F2 — Female, energetic ads', gender: 'female' },
+    { id: 'F3', label: 'F3 — Female, premium brand', gender: 'female' },
+    { id: 'F4', label: 'F4 — Female, friendly explainer', gender: 'female' },
+    { id: 'F5', label: 'F5 — Female, young & playful', gender: 'female' },
+    { id: 'M1', label: 'M1 — Male, professional', gender: 'male' },
+    { id: 'M2', label: 'M2 — Male, friendly host', gender: 'male' },
+    { id: 'M3', label: 'M3 — Male, deep narrator', gender: 'male' },
+    { id: 'M4', label: 'M4 — Male, cinematic trailer', gender: 'male' },
+    { id: 'M5', label: 'M5 — Male, energetic sport', gender: 'male' }
+  ];
+  /* Supertonic 31-language list — abbreviated set chosen cho thị trường CB Centres + global. */
+  const SUPERTONIC_LANGUAGES = [
+    { code: 'vi-VN', label: 'Tiếng Việt (vi)' },
+    { code: 'en-US', label: 'English — US (en-US)' },
+    { code: 'en-GB', label: 'English — UK (en-GB)' },
+    { code: 'ja-JP', label: 'Japanese (ja)' },
+    { code: 'ko-KR', label: 'Korean (ko)' },
+    { code: 'zh-CN', label: 'Chinese — Mandarin (zh)' },
+    { code: 'th-TH', label: 'Thai (th)' },
+    { code: 'id-ID', label: 'Indonesian (id)' },
+    { code: 'ms-MY', label: 'Malay (ms)' },
+    { code: 'fil-PH', label: 'Filipino (fil)' },
+    { code: 'fr-FR', label: 'French (fr)' },
+    { code: 'es-ES', label: 'Spanish (es)' },
+    { code: 'de-DE', label: 'German (de)' },
+    { code: 'it-IT', label: 'Italian (it)' },
+    { code: 'pt-BR', label: 'Portuguese — BR (pt)' },
+    { code: 'auto', label: 'Auto / Language-agnostic' }
+  ];
+  /* Supertonic expression tags. Web Speech API không hỗ trợ inline expression, nhưng giữ trong script + log để khi swap sang Supertonic ONNX backend giữ nguyên format. */
+  const EXPRESSION_TAGS = [
+    '(none)', '[laugh]', '[breath]', '[sigh]', '[whisper]',
+    '[excited]', '[soft]', '[gasp]', '[chuckle]', '[ahem]', '[smile]'
   ];
   const ROLE_LABEL = { admin: 'Admin', account: 'Account', design: 'Design', editor: 'Editor', client: 'Client' };
   const BRAND_PRESET = [
@@ -199,10 +238,32 @@
         f('length', 'Length', 'select', false, '', ['Ngắn', 'Vừa', 'Chi tiết'])
       ],
       sections: ['Summary', 'Key action items', 'Missing context', 'Recommended next step']
+    },
+    {
+      /* AI Voice — on-device TTS. Engine plan: Supertonic ONNX (github.com/supertone-inc/supertonic).
+         Demo runtime: Web Speech API (window.speechSynthesis) — real audio output, no bundling.
+         When backend swaps sang Supertonic, voice IDs (M1-M5/F1-F5) + expression tags đã match preset naming sẵn. */
+      key: 'ai_voice', name: 'AI Voice (Supertonic)', category: 'voice',
+      desc: 'On-device Text-to-Speech: voice-over cho video, recap, ads. 10 voice preset · 16 ngôn ngữ · expression tags.',
+      roles: ['admin', 'account', 'design', 'editor'],
+      fields: [
+        f('script', 'Script / Voice-over text', 'textarea', true, 'Chào mừng bạn đến với CB Centres — nơi học tiếng Anh trở thành hành trình hứng khởi.'),
+        f('voice', 'Voice preset', 'select', true, '', SUPERTONIC_VOICES.map((v) => v.label)),
+        f('language', 'Language', 'select', true, '', SUPERTONIC_LANGUAGES.map((l) => l.label)),
+        f('speed', 'Speech rate', 'select', false, '', ['0.8x — chậm', '1.0x — bình thường', '1.2x — nhanh', '1.4x — rất nhanh']),
+        f('pitch', 'Pitch', 'select', false, '', ['Low', 'Normal', 'High']),
+        f('quality', 'Quality (total steps)', 'select', false, '', ['Fast (4 steps)', 'Balanced (8 steps)', 'High (16 steps)']),
+        f('expression', 'Expression tag', 'select', false, '', EXPRESSION_TAGS),
+        f('purpose', 'Use case', 'select', false, '', ['Video voice-over', 'Reel/TikTok narration', 'Recap event', 'Ads radio spot', 'Internal training', 'Slide voice'])
+      ],
+      sections: ['Script preview', 'Voice settings', 'SSML draft', 'Production handoff note']
     }
   ];
 
-  const state = { category: 'all', search: '', active: tools[0], output: '', lastUsageId: '' };
+  const state = {
+    category: 'all', search: '', active: tools[0], output: '', lastUsageId: '',
+    voice: { utterance: null, lastScript: '', lastVoiceId: '', lastLang: '', isSpeaking: false, isPaused: false, supported: 'speechSynthesis' in window }
+  };
 
   function f(key, label, type, required, placeholder, options) {
     return { key, label, type, required, placeholder: placeholder || '', options: options || [] };
@@ -246,7 +307,16 @@
     saveModal: document.getElementById('save-modal'),
     saveClose: document.getElementById('save-close'),
     saveCancel: document.getElementById('save-cancel'),
-    saveConfirm: document.getElementById('save-confirm')
+    saveConfirm: document.getElementById('save-confirm'),
+    /* AI Voice Player */
+    voiceCard: document.getElementById('ai-voice-card'),
+    voiceWave: document.getElementById('voice-waveform'),
+    voiceId: document.getElementById('voice-id'),
+    voiceStatus: document.getElementById('voice-status'),
+    voicePlay: document.getElementById('voice-play'),
+    voicePause: document.getElementById('voice-pause'),
+    voiceStop: document.getElementById('voice-stop'),
+    voiceDownloadSsml: document.getElementById('voice-download-ssml')
   };
 
   function setupChrome() {
@@ -314,6 +384,26 @@
       els.output.textContent = 'Bạn không có quyền dùng tool này trong demo hiện tại.';
       els.outputMeta.textContent = 'Permission blocked.';
       setOutputActions(false);
+    }
+    // Toggle AI Voice Player visibility based on active tool category
+    if (els.voiceCard) {
+      const isVoice = tool.category === 'voice';
+      els.voiceCard.style.display = isVoice ? '' : 'none';
+      if (!isVoice) {
+        stopVoice();
+      } else {
+        // Reset player state when switching to / re-entering the voice tool
+        stopVoice();
+        state.voice.utterance = null;
+        if (els.voicePlay) els.voicePlay.disabled = true;
+        if (els.voicePause) els.voicePause.disabled = true;
+        if (els.voiceStop) els.voiceStop.disabled = true;
+        if (els.voiceDownloadSsml) els.voiceDownloadSsml.disabled = true;
+        if (els.voiceId) els.voiceId.textContent = '— · — · —';
+        if (els.voiceStatus) els.voiceStatus.textContent = state.voice.supported
+          ? 'Sẵn sàng. Nhập script và bấm Generate để tạo voice-over.'
+          : 'Browser không hỗ trợ Web Speech API. Production runtime sẽ dùng Supertonic ONNX trực tiếp.';
+      }
     }
   }
 
@@ -393,10 +483,11 @@
     els.output.textContent = 'Generating output...';
     els.outputMeta.textContent = 'Đang tạo bản nháp demo.';
     setTimeout(() => {
-      state.output = generateOutput(data);
+      state.output = (state.active.category === 'voice') ? generateVoiceOutput(data) : generateOutput(data);
       state.lastUsageId = 'AI-USE-' + String(Date.now()).slice(-6);
       els.output.textContent = state.output;
       els.outputMeta.textContent = `${state.lastUsageId} · ${state.active.name} · ${nowStamp()}`;
+      if (state.active.category === 'voice') prepareVoice(data);
       btn.classList.remove('is-loading');
       btn.disabled = false;
       setOutputActions(true);
@@ -410,21 +501,28 @@
   }
 
   function addUsage(input) {
-    const logs = readJSON(LOG_KEY, []);
-    logs.unshift({
+    const entry = {
       usage_id: state.lastUsageId,
       user_id: user.email || user.role,
       tool_key: state.active.key,
       tool_name: state.active.name,
       input_summary: Object.values(input).filter(Boolean).slice(0, 2).join(' · '),
       output_summary: state.output.split('\n').slice(0, 3).join(' '),
+      output_full: state.output,
       model: 'demo-static-generator',
       tokens_used: Math.floor(420 + Math.random() * 620),
       created_at: nowStamp(),
       feedback: ''
-    });
+    };
+    // localStorage fallback (giữ demo flow)
+    const logs = readJSON(LOG_KEY, []);
+    logs.unshift(entry);
     writeJSON(LOG_KEY, logs.slice(0, 50));
     renderLog();
+    // Phase 1: persist sang Supabase nếu enabled
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      window.MH.store.aiUsage.log(entry).catch(function (e) { console.warn('[ai-tools] persist usage:', e); });
+    }
   }
 
   function renderLog() {
@@ -449,20 +547,26 @@
     const target = document.getElementById('save-target').value;
     const order = document.getElementById('save-order').value.trim();
     const task = document.getElementById('save-task').value.trim();
-    const saved = readJSON(SAVED_KEY, []);
-    saved.unshift({
+    const entry = {
       saved_id: 'AI-SAVE-' + String(Date.now()).slice(-6),
       usage_id: state.lastUsageId,
-      order_id: order,
-      task_id: task,
+      order_id: order || null,
+      task_id: task || null,
       save_to: target,
       content: state.output,
       created_by: user.email || user.role,
       created_at: nowStamp()
-    });
+    };
+    // localStorage fallback
+    const saved = readJSON(SAVED_KEY, []);
+    saved.unshift(entry);
     writeJSON(SAVED_KEY, saved.slice(0, 50));
     closeSaveModal();
     window.MH.toast({ type: 'success', title: 'Đã lưu demo', message: 'Output đã được lưu vào localStorage.' });
+    // Phase 1: persist sang Supabase nếu enabled
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      window.MH.store.aiUsage.saveOutput(entry).catch(function (e) { console.warn('[ai-tools] persist saved output:', e); });
+    }
   }
 
   function openSaveModal() { els.saveModal.classList.add('is-open'); els.saveModal.setAttribute('aria-hidden', 'false'); }
@@ -477,9 +581,162 @@
       visual: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
       video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
       slide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>',
-      campaign: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11v3a2 2 0 0 0 2 2h2l4 4v-4h5l5 3V6l-5 3H5a2 2 0 0 0-2 2z"/></svg>'
+      campaign: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11v3a2 2 0 0 0 2 2h2l4 4v-4h5l5 3V6l-5 3H5a2 2 0 0 0-2 2z"/></svg>',
+      voice: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>'
     };
     return icons[key] || icons.content;
+  }
+
+  /* ---------- AI Voice (Supertonic) — Web Speech API demo runtime ---------- */
+  function findVoiceByLabel(label) {
+    return SUPERTONIC_VOICES.find((v) => v.label === label) || SUPERTONIC_VOICES[0];
+  }
+  function findLangByLabel(label) {
+    return SUPERTONIC_LANGUAGES.find((l) => l.label === label) || SUPERTONIC_LANGUAGES[0];
+  }
+  function speedToRate(label) {
+    if (!label) return 1.0;
+    const m = /([0-9.]+)x/.exec(label);
+    return m ? parseFloat(m[1]) : 1.0;
+  }
+  function pitchToValue(label) {
+    if (label === 'Low') return 0.7;
+    if (label === 'High') return 1.4;
+    return 1.0;
+  }
+  function stripExpressionTags(text) {
+    // Web Speech API can't render expression tags inline. Strip for actual speech but keep in SSML/log.
+    return (text || '').replace(/\[(laugh|breath|sigh|whisper|excited|soft|gasp|chuckle|ahem|smile)\]/gi, '');
+  }
+  function generateVoiceOutput(data) {
+    const voice = findVoiceByLabel(data.voice);
+    const lang = findLangByLabel(data.language);
+    const expr = data.expression && data.expression !== '(none)' ? data.expression : '';
+    const script = (expr ? expr + ' ' : '') + (data.script || '');
+    const lines = [
+      `# AI Voice (Supertonic) — generated draft`,
+      '',
+      `## Script preview`,
+      script,
+      '',
+      `## Voice settings`,
+      `- Voice preset: ${voice.id} · ${voice.label}`,
+      `- Language: ${lang.code} · ${lang.label}`,
+      `- Speech rate: ${data.speed || '1.0x — bình thường'}`,
+      `- Pitch: ${data.pitch || 'Normal'}`,
+      `- Quality: ${data.quality || 'Balanced (8 steps)'}`,
+      `- Expression: ${data.expression || '(none)'}`,
+      `- Use case: ${data.purpose || '—'}`,
+      '',
+      `## SSML draft`,
+      `<speak xml:lang="${lang.code}">`,
+      `  <voice name="${voice.id}">`,
+      `    <prosody rate="${data.speed || '1.0x'}" pitch="${data.pitch || 'normal'}">`,
+      `      ${esc(script)}`,
+      `    </prosody>`,
+      `  </voice>`,
+      `</speak>`,
+      '',
+      `## Production handoff note`,
+      `Demo runtime: Web Speech API (browser built-in).`,
+      `Production target: Supertonic ONNX runtime — github.com/supertone-inc/supertonic`,
+      `- Model: ~99M params · 44.1kHz 16-bit output · WebGPU/WASM fallback`,
+      `- Voice preset IDs (M1-M5/F1-F5) đã match spec — chỉ cần swap backend.`,
+      `- Expression tags được preserve trong SSML để Supertonic render inline.`
+    ];
+    return lines.join('\n');
+  }
+
+  function prepareVoice(data) {
+    if (!els.voiceCard) return;
+    if (!state.voice.supported) {
+      els.voiceStatus.textContent = 'Browser không hỗ trợ Web Speech API.';
+      return;
+    }
+    stopVoice();
+    const voice = findVoiceByLabel(data.voice);
+    const lang = findLangByLabel(data.language);
+    const langCode = lang.code === 'auto' ? '' : lang.code;
+    const cleanScript = stripExpressionTags(data.script);
+
+    els.voiceId.textContent = `${voice.id} · ${lang.code} · ${data.quality || 'Balanced'}`;
+    els.voiceStatus.textContent = 'Sẵn sàng phát. Nhấn Play để nghe demo on-device.';
+    els.voicePlay.disabled = false;
+    els.voicePause.disabled = true;
+    els.voiceStop.disabled = true;
+    els.voiceDownloadSsml.disabled = false;
+
+    // Match browser voice to gender + language (best-effort — depends on OS voice availability)
+    const utter = new SpeechSynthesisUtterance(cleanScript);
+    if (langCode) utter.lang = langCode;
+    utter.rate = speedToRate(data.speed);
+    utter.pitch = pitchToValue(data.pitch);
+    utter.volume = 1;
+    // Try to bind a matching system voice
+    const sysVoices = window.speechSynthesis.getVoices();
+    if (sysVoices && sysVoices.length) {
+      const candidates = sysVoices.filter((v) => !langCode || v.lang.toLowerCase().startsWith(langCode.slice(0, 2).toLowerCase()));
+      const genderHinted = candidates.find((v) => {
+        const n = (v.name || '').toLowerCase();
+        if (voice.gender === 'female') return /female|woman|f$|f-|girl/.test(n);
+        return /male|man|m$|m-|guy/.test(n);
+      });
+      utter.voice = genderHinted || candidates[0] || sysVoices[0];
+    }
+    utter.onstart = () => { state.voice.isSpeaking = true; els.voiceWave.classList.add('is-active'); els.voiceStatus.textContent = 'Đang phát...'; els.voicePause.disabled = false; els.voiceStop.disabled = false; els.voicePlay.disabled = true; };
+    utter.onend = () => { state.voice.isSpeaking = false; state.voice.isPaused = false; els.voiceWave.classList.remove('is-active'); els.voiceStatus.textContent = 'Đã phát xong. Nhấn Play để phát lại.'; els.voicePlay.disabled = false; els.voicePause.disabled = true; els.voiceStop.disabled = true; };
+    utter.onerror = (ev) => { state.voice.isSpeaking = false; els.voiceWave.classList.remove('is-active'); els.voiceStatus.textContent = 'Lỗi phát: ' + (ev.error || 'unknown'); els.voicePlay.disabled = false; els.voicePause.disabled = true; els.voiceStop.disabled = true; };
+    state.voice.utterance = utter;
+    state.voice.lastScript = cleanScript;
+    state.voice.lastVoiceId = voice.id;
+    state.voice.lastLang = lang.code;
+  }
+  function playVoice() {
+    if (!state.voice.supported) return;
+    if (state.voice.isPaused) {
+      window.speechSynthesis.resume();
+      state.voice.isPaused = false;
+      els.voiceWave.classList.add('is-active');
+      els.voiceStatus.textContent = 'Đang phát (resume)...';
+      els.voicePause.disabled = false;
+      els.voicePlay.disabled = true;
+      return;
+    }
+    if (!state.voice.utterance) return;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(state.voice.utterance);
+  }
+  function pauseVoice() {
+    if (!state.voice.supported || !state.voice.isSpeaking) return;
+    window.speechSynthesis.pause();
+    state.voice.isPaused = true;
+    els.voiceWave.classList.remove('is-active');
+    els.voiceStatus.textContent = 'Tạm dừng.';
+    els.voicePause.disabled = true;
+    els.voicePlay.disabled = false;
+  }
+  function stopVoice() {
+    if (!state.voice.supported) return;
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    state.voice.isSpeaking = false;
+    state.voice.isPaused = false;
+    if (els.voiceWave) els.voiceWave.classList.remove('is-active');
+    if (els.voicePause) els.voicePause.disabled = true;
+    if (els.voiceStop) els.voiceStop.disabled = true;
+    if (els.voicePlay && state.voice.utterance) els.voicePlay.disabled = false;
+  }
+  function downloadSsml() {
+    if (!state.voice.lastScript) return;
+    // Output SSML matches the `## SSML draft` section from generateVoiceOutput — safe for Supertonic backend.
+    const ssml = state.output.match(/<speak[\s\S]*?<\/speak>/);
+    const text = ssml ? ssml[0] : `<speak xml:lang="${state.voice.lastLang}"><voice name="${state.voice.lastVoiceId}">${esc(state.voice.lastScript)}</voice></speak>`;
+    const blob = new Blob([text], { type: 'application/ssml+xml;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `cb-voice-${state.voice.lastVoiceId}-${new Date().toISOString().slice(0, 10)}.ssml`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    window.MH.toast({ type: 'success', title: 'Đã export SSML', message: 'SSML sẵn sàng cho Supertonic backend.' });
   }
 
   function wireEvents() {
@@ -536,6 +793,17 @@
         window.MH.toast({ type: 'success', title: 'Đã ghi feedback', message: btn.dataset.feedback === 'good' ? 'Cảm ơn feedback tốt.' : 'Đã ghi nhận để cải thiện prompt.' });
       });
     });
+    /* AI Voice Player buttons */
+    if (els.voicePlay) els.voicePlay.addEventListener('click', playVoice);
+    if (els.voicePause) els.voicePause.addEventListener('click', pauseVoice);
+    if (els.voiceStop) els.voiceStop.addEventListener('click', stopVoice);
+    if (els.voiceDownloadSsml) els.voiceDownloadSsml.addEventListener('click', downloadSsml);
+    // Pre-warm voice list (Chrome lazy-loads system voices)
+    if (state.voice.supported && typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+      window.speechSynthesis.onvoiceschanged = () => { /* triggers refresh of getVoices() */ };
+    }
+    // Stop synthesis when switching tools or leaving page
+    window.addEventListener('beforeunload', stopVoice);
   }
 
   setupChrome();

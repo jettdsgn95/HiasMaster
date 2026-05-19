@@ -254,6 +254,45 @@
     }
   ];
 
+  // Phase 1: expose để các module/page khác (Master Dashboard funnel, Reports) đọc.
+  window.MH_MOCK_DELIVERIES = DELIVERIES;
+
+  /* ---------- Phase 1 helpers ---------- */
+  async function loadDeliveriesFromStore(localArr) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
+    try {
+      const remote = await window.MH.store.deliveries.list();
+      if (Array.isArray(remote) && remote.length > 0) {
+        localArr.length = 0;
+        remote.forEach(function (r) { localArr.push(r); });
+        return remote.length;
+      }
+    } catch (e) { console.warn('[delivery-log] remote load failed:', e); }
+    return null;
+  }
+  function persistDelivery(deliveryId, patch) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    window.MH.store.deliveries.upsert(Object.assign({ delivery_id: deliveryId }, patch)).catch(function (err) {
+      console.warn('[delivery-log] persist failed:', err);
+    });
+  }
+  function snapshotDelivery(d) {
+    function toIso(s) { return s ? new Date(s.replace(' ', 'T')).toISOString() : null; }
+    return {
+      delivery_status: d.delivery_status,
+      preview_link: d.preview_link || null,
+      final_link: d.final_link || null,
+      client_rating: d.satisfaction_score || null,
+      client_feedback: d.client_feedback || null,
+      checklist: d.checklist || {},
+      account_pic: d.account_pic || null,
+      production_pic: d.production_pic || null,
+      send_preview_at: toIso(d.delivery_date),
+      send_final_at: d.delivery_status === 'final' ? toIso(d.delivery_date) : null
+    };
+  }
+  function persistCurDelivery(d) { if (d && d.delivery_id) persistDelivery(d.delivery_id, snapshotDelivery(d)); }
+
   /* ---------- State ---------- */
   const state = { search: '', status: '', account: '', pic: '', rating: '', quick: null };
 
@@ -576,7 +615,7 @@
         cur.delivery_status = ck === 8 ? 'ready' : cur.delivery_status;
         if (ck === 8) logActivity('account_checked', 'Checklist hoàn tất — chuyển sang Sẵn sàng bàn giao');
         window.MH.toast({ type: ck === 8 ? 'success' : 'info', title: ck === 8 ? '✓ Sẵn sàng bàn giao' : 'Checklist', message: `${ck}/8 mục đã tick` });
-        render(); openDrawer(cur);
+        persistCurDelivery(cur); render(); openDrawer(cur);
         break;
       }
 
@@ -591,7 +630,7 @@
           cur.delivery_note = text;
           logActivity('internal_revision_requested', 'Yêu cầu chỉnh sửa: ' + text);
           window.MH.toast({ type: 'success', title: 'Đã yêu cầu chỉnh sửa', message: 'Task quay lại Production Board cho ' + cur.production_pic });
-          closeModal(); render(); openDrawer(cur);
+          closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         break;
 
@@ -616,7 +655,7 @@
           cur.delivered_to = cur.requester_email;
           logActivity('preview_sent', `Gửi preview qua ${CHANNEL_LABEL[channel]}`);
           window.MH.toast({ type: 'success', title: 'Đã gửi Preview', message: cur.delivery_id });
-          closeModal(); render(); openDrawer(cur);
+          closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         break;
 
@@ -643,7 +682,7 @@
           cur.client_approval_status = 'Approved';
           logActivity('final_sent', `Gửi final qua ${CHANNEL_LABEL[cur.delivery_channel]}`);
           window.MH.toast({ type: 'success', title: '✓ Đã gửi Final', message: cur.delivery_id });
-          closeModal(); render(); openDrawer(cur);
+          closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         break;
 
@@ -671,7 +710,7 @@
           cur.delivery_status = 'rated';
           logActivity('rating_submitted', `Client rating ${score}/5${cur.client_feedback ? ' · "' + cur.client_feedback + '"' : ''}`);
           window.MH.toast({ type: 'success', title: `★ Rating ${score}/5 ghi nhận`, message: cur.delivery_id });
-          closeModal(); render(); openDrawer(cur);
+          closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         // Wire star input
         setTimeout(() => {
@@ -690,7 +729,7 @@
         cur.closed_at = fmtDT();
         logActivity('delivery_completed', 'Đóng delivery — hoàn tất');
         window.MH.toast({ type: 'success', title: '✓ Đã đóng delivery', message: cur.delivery_id });
-        render(); openDrawer(cur);
+        persistCurDelivery(cur); render(); openDrawer(cur);
         break;
 
       case 'reopen':
@@ -705,7 +744,7 @@
           cur.closed_at = null;
           logActivity('delivery_reopened', 'Mở lại: ' + reason);
           window.MH.toast({ type: 'warning', title: '↻ Đã mở lại delivery', message: cur.delivery_id });
-          closeModal(); render(); openDrawer(cur);
+          closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         break;
     }
@@ -778,4 +817,16 @@
       window.MH.toast({ type: 'warning', title: 'Không tìm thấy delivery', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
     }
   }
+
+  // Phase 1: swap dataset từ Supabase nếu enabled.
+  loadDeliveriesFromStore(DELIVERIES).then(function (n) {
+    if (typeof n === 'number') {
+      console.log('[delivery-log] swapped ' + n + ' deliveries từ Supabase');
+      render();
+      if (cur) {
+        const updated = DELIVERIES.find(function (d) { return d.delivery_id === cur.delivery_id; });
+        if (updated) openDrawer(updated);
+      }
+    }
+  });
 })();

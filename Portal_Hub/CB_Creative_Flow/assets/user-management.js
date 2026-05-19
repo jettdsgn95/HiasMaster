@@ -291,6 +291,40 @@
     }
   ];
 
+  // Phase 1: expose array để các module/page khác đọc khi cần.
+  window.MH_MOCK_USERS = USERS;
+
+  /* ---------- Phase 1 helpers ---------- */
+  async function loadUsersFromStore(localArr) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
+    try {
+      const remote = await window.MH.store.users.list();
+      if (Array.isArray(remote) && remote.length > 0) {
+        // Adapter: map Supabase column names → mock shape (`full_name`, ...)
+        localArr.length = 0;
+        remote.forEach(function (r) {
+          localArr.push(Object.assign({}, r, {
+            full_name: r.name,
+            // Giữ default mock fields nếu Supabase row chưa có
+            work_stats: r.work_stats || { assigned_tasks: 0, open_tasks: 0, overdue_tasks: 0, completed_tasks: 0, avg_progress: 0 },
+            activity: r.activity || []
+          }));
+        });
+        return remote.length;
+      }
+    } catch (e) { console.warn('[user-management] remote load failed:', e); }
+    return null;
+  }
+  function persistUser(userId, patch) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !userId) return;
+    // Direct table update via supabase client (data-store.js chưa có users.update — gọi raw)
+    if (window.MH.supabase) {
+      window.MH.supabase.from('users').update(patch).eq('id', userId).then(function (res) {
+        if (res.error) console.warn('[user-management] persist failed:', res.error);
+      });
+    }
+  }
+
   /* ---------- Helpers ---------- */
   function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function initials(name) { return (name || '').split(' ').map((s) => s[0]).filter(Boolean).slice(-2).join('').toUpperCase() || '?'; }
@@ -622,6 +656,8 @@
     }
     curUser.status = newStatus;
     curUser.activity.push({ time: fmtDT(), actor: user.name, action: actionType, desc: `${desc}: ${STATUS_LABEL[oldStatus]} → ${STATUS_LABEL[newStatus]}` });
+    // Phase 1: persist sang Supabase nếu enabled (curUser.id là uuid từ auth)
+    persistUser(curUser.id, { status: newStatus });
     window.MH.toast({ type: 'success', title: '✓ Đã cập nhật status', message: `${curUser.full_name}: ${STATUS_LABEL[newStatus]}` });
     render(); openDrawer(curUser);
   });
@@ -793,6 +829,14 @@
       if (changes.length) {
         editingUser.activity.push({ time: fmtDT(), actor: user.name, action: 'user_updated', desc: changes.join(' · ') });
       }
+      // Phase 1: persist update sang Supabase (chỉ những field nằm trong public.users schema)
+      persistUser(editingUser.id, {
+        name: name,
+        phone: phone || null,
+        department: dept || null,
+        role: role,
+        status: status
+      });
       window.MH.toast({ type: 'success', title: '✓ Đã cập nhật user', message: name });
       if (curUser && curUser.user_id === editingUser.user_id) openDrawer(editingUser);
     }
@@ -826,4 +870,12 @@
 
   /* ---------- Init ---------- */
   render();
+
+  // Phase 1: swap dataset từ Supabase nếu enabled.
+  loadUsersFromStore(USERS).then(function (n) {
+    if (typeof n === 'number') {
+      console.log('[user-management] swapped ' + n + ' users từ Supabase');
+      render();
+    }
+  });
 })();

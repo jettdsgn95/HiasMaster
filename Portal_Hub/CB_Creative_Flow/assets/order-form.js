@@ -485,7 +485,7 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && previewModal.classList.contains('is-open')) closePreview(); });
 
   /* ---------- Submit ---------- */
-  function doSubmit() {
+  async function doSubmit() {
     // Final auth guard (API layer equivalent for static site)
     if (!AUTH_USER) {
       window.MH.toast({ type: 'error', title: '401 Unauthorized', message: 'Authentication required to submit request.' });
@@ -494,38 +494,108 @@
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.classList.add('is-loading');
     submitBtn.textContent = 'Đang gửi...';
-    setTimeout(() => {
-      const year = new Date().getFullYear();
-      const num = String(Math.floor(Math.random() * 9000) + 1000);
-      const code = 'MEDIA-' + year + '-' + num;
 
-      // Build order payload with requester identity
-      const orderPayload = Object.assign(snapshotForm(), {
-        order_id:         code,
-        requester_id:     AUTH_USER.email,
-        requester_email:  AUTH_USER.email,
-        requester_name:   AUTH_USER.name || '',
-        department_id:    AUTH_USER.department || AUTH_USER.team || '',
-        created_by:       AUTH_USER.email,
-        submitted_at:     new Date().toISOString(),
-      });
-      // Persist to localStorage (replaces API call in static demo)
+    const year = new Date().getFullYear();
+    const num = String(Math.floor(Math.random() * 9000) + 1000);
+    const code = 'MEDIA-' + year + '-' + num;
+
+    // Phase 2: upload attached brief files lên Supabase Storage `brief-files` bucket
+    // nếu enabled. Trả về array {name, path, size} để lưu vào order payload.
+    const briefFiles = [];
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled && files && files.size > 0) {
+      submitBtn.textContent = 'Đang upload files...';
+      let i = 0;
+      for (const f of files.values()) {
+        try {
+          const ts = Date.now() + '-' + (i++);
+          const safe = (f.name || 'brief').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+          const path = code + '/brief-' + ts + '-' + safe;
+          await window.MH.store.files.upload('brief-files', path, f, { contentType: f.type || 'application/octet-stream' });
+          briefFiles.push({ name: f.name, path: path, size: f.size, type: f.type });
+        } catch (e) {
+          console.warn('[order-form] upload file failed:', e);
+          window.MH.toast({ type: 'warning', title: 'Upload file lỗi', message: f.name + ' — bỏ qua, tiếp tục gửi order.' });
+        }
+      }
+    }
+
+    // Build order payload with requester identity
+    const orderPayload = Object.assign(snapshotForm(), {
+      order_id:         code,
+      requester_id:     (AUTH_USER && AUTH_USER.id) || AUTH_USER.email,
+      requester_email:  AUTH_USER.email,
+      requester_name:   AUTH_USER.name || '',
+      department:       AUTH_USER.department || AUTH_USER.team || '',
+      created_by:       AUTH_USER.email,
+      submitted_at:     new Date().toISOString(),
+      brief_files:      briefFiles,
+      file_brief_url:   briefFiles.length ? briefFiles[0].path : null
+    });
+
+    // Phase 1: persist sang Supabase `orders` nếu enabled
+    let dbPersisted = false;
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      submitBtn.textContent = 'Đang lưu order...';
       try {
-        const orders = JSON.parse(localStorage.getItem('mh-submitted-orders') || '[]');
-        orders.unshift(orderPayload);
-        localStorage.setItem('mh-submitted-orders', JSON.stringify(orders.slice(0, 50)));
-      } catch (_) {}
+        // Map payload sang schema columns. Bỏ field không có trong public.orders.
+        const row = {
+          order_id: code,
+          requester_id: (AUTH_USER && AUTH_USER.id) ? AUTH_USER.id : null,
+          requester_name: orderPayload.requester_name,
+          requester_email: orderPayload.requester_email,
+          requester_contact: orderPayload.requester_contact || orderPayload.phone || null,
+          department: orderPayload.department,
+          project_name: orderPayload.project_name || orderPayload.title || 'Untitled',
+          project_purpose: orderPayload.project_purpose || orderPayload.purpose || null,
+          request_type: orderPayload.request_type || 'design',
+          deliverable_type: orderPayload.deliverable_type || [],
+          target_audience: orderPayload.target_audience || [],
+          usage_channels: orderPayload.usage_channels || [],
+          size_ratio: orderPayload.size_ratio || null,
+          content_brief: orderPayload.content_brief || null,
+          creative_direction: orderPayload.creative_direction || null,
+          wording_required: !!orderPayload.wording_required,
+          source_link: orderPayload.source_link || null,
+          file_brief_url: orderPayload.file_brief_url,
+          priority: orderPayload.priority || 'normal',
+          requested_deadline: orderPayload.requested_deadline || null,
+          actual_use_date: orderPayload.actual_use_date || null,
+          urgent_reason: orderPayload.urgent_reason || null,
+          account_status: 'pending',
+          production_status: 'unassigned',
+          progress: 5,
+          content_responsibility_confirmed: !!orderPayload.content_responsibility_confirmed,
+          created_at: new Date().toISOString(),
+          last_updated: new Date().toISOString()
+        };
+        await window.MH.store.orders.create(row);
+        dbPersisted = true;
+      } catch (e) {
+        console.warn('[order-form] create order in Supabase failed:', e);
+        window.MH.toast({ type: 'warning', title: 'Sync DB lỗi', message: 'Order lưu local. Liên hệ admin để re-submit.' });
+      }
+    }
 
-      document.getElementById('order-code').textContent = code;
-      const trackLink = document.getElementById('track-link');
-      if (trackLink) trackLink.href = 'tracking.html?code=' + code;
-      document.getElementById('form-view').classList.add('hidden');
-      document.getElementById('form-section').classList.add('hidden');
-      document.getElementById('success-view').classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      window.MH.toast({ type: 'success', title: 'Gửi thành công', message: 'Order ID: ' + code });
-      localStorage.removeItem(DRAFT_KEY);
-    }, 700);
+    // Always also persist to localStorage (demo fallback + offline cache)
+    try {
+      const orders = JSON.parse(localStorage.getItem('mh-submitted-orders') || '[]');
+      orders.unshift(orderPayload);
+      localStorage.setItem('mh-submitted-orders', JSON.stringify(orders.slice(0, 50)));
+    } catch (_) {}
+
+    document.getElementById('order-code').textContent = code;
+    const trackLink = document.getElementById('track-link');
+    if (trackLink) trackLink.href = 'tracking.html?code=' + code;
+    document.getElementById('form-view').classList.add('hidden');
+    document.getElementById('form-section').classList.add('hidden');
+    document.getElementById('success-view').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.MH.toast({
+      type: 'success',
+      title: 'Gửi thành công',
+      message: 'Order ID: ' + code + (dbPersisted ? ' · Đã lưu DB' : ' · Demo local')
+    });
+    localStorage.removeItem(DRAFT_KEY);
   }
   form.addEventListener('submit', (e) => {
     e.preventDefault();

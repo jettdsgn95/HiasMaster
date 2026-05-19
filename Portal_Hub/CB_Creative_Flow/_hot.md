@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-15 · Project state: MVP demo · 11/11 modules done*
+> *Last updated: 2026-05-18 · Project state: MVP demo · 11/11 modules done · Task Tracker formalization + Dashboard split*
 
 ---
 
@@ -10,7 +10,7 @@
 
 **CB Media Hub / CB Creative Flow** là Creative Service Portal cho **CB Centres**.
 
-- Static multi-page site: 15 HTML pages, 11 JS files, 1 shared CSS, zero build.
+- Static multi-page site: 17 HTML pages, 11 JS files, 1 shared CSS, zero build.
 - **2 khu vực riêng biệt**: Internal Dashboard (admin/account/design/editor) và Client Portal (client).
 - Workflow chính: Order Form → Database Orders → Production Board → Delivery Log → Reports.
 - Brand: navy `#191970` + red `#BA110F`, Inter / Plus Jakarta Sans + Playfair italic accent.
@@ -79,9 +79,11 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 
 | File | Roles | JS |
 |---|---|---|
-| `dashboard.html` | admin, account, design, editor | inline |
+| `dashboard.html` | admin, account, design, editor | inline (Master Dashboard) |
+| `order-dashboard.html` | admin, account | inline (Order-level KPI) |
+| `task-dashboard.html` | admin, account, design, editor | inline (Task-level / Production KPI) |
 | `database-orders.html` | admin, account | `database-orders.js` |
-| `production-board.html` | admin, account, design, editor | `production-board.js` |
+| `production-board.html` | admin, account, design, editor | `production-board.js` — Task Tracker / Production Board |
 | `delivery-log.html` | admin, account | `delivery-log.js` |
 | `reports.html` | admin, account | `reports.js` |
 | `ai-tools.html` | admin, account, design, editor | `ai-tools.js` |
@@ -92,7 +94,35 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 ### Shared Assets
 
 - `assets/styles.css` — Design tokens, components, page styles. Gồm `.header-profile-chip`, `.theme-toggle-switch`, `.sidebar-version-block`, `.btn-login-pill`, `.auth-gate-bar`.
-- `assets/app.js` — Theme toggle (CSS-driven pill switch), mobile nav, toast, copy helpers, Profile editor modal, **header profile chip** (`#header-profile-chip`) toggle + populate. Functions: `refreshProfileChip(user)`, `refreshHeaderChip(user)`, `syncChipFromUser()`, `openProfileModal()`. Profile modal: edit name/initials/title/avatar/phone/department/bio; avatar upload + resize 256px; role select gated to admin only; persists to `mh-user` + live-refreshes header chip.
+- `assets/config.js` — **Runtime config**, load TRƯỚC `app.js` trên 17/17 page. Expose `window.MH_CONFIG` với `SENTRY_DSN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SENTRY_ENV` (auto-detect localhost vs production), `SENTRY_RELEASE`, `APP_VERSION`, `FEATURES` flags (gồm `SUPABASE_DB`). Để trống các key = disable feature tương ứng. File commit kèm repo, fill tay khi sẵn sàng bật.
+- `assets/supabase-client.js` — **Supabase SDK loader (Phase 1)**, dynamic import @supabase/supabase-js@2.45.4 từ `esm.sh` CDN (giữ zero-build). Expose `window.MH.supabase`, `window.MH.supabaseReady` (Promise), `window.MH.supabaseEnabled`. Auth state change handler mirror Supabase session sang `localStorage['mh-user']` cho compat code hiện tại. Khi config trống → stub null, không network call.
+- `assets/data-store.js` — **Data abstraction (Phase 1)**, expose `window.MH.store` với namespaces: `users`, `orders`, `tasks`, `taskComments`, `deliveries`, `aiUsage`, `auth`, `activity`. Mọi method trả Promise — nếu Supabase enabled → query qua SDK, else fallback `window.MH_MOCK_*` arrays + localStorage keys cũ. Consumer code dùng `await MH.store.tasks.get(id)` thay vì `TASKS.find(...)` — không branch theo backend.
+
+**Module migration progress (Phase 1):**
+- ✅ `login.html` — Supabase Auth-first via `MH.store.auth.signIn()`, fallback `loginAsDemo()`.
+- ✅ `database-orders.js` — `MH_MOCK_ORDERS`, async `loadOrdersFromStore`, mutations via `persistOrder` (status, push-to-prod, save-internal).
+- ✅ `production-board.js` — `MH_MOCK_TASKS`, `loadTasksFromStore`, `persistTask` + `persistTaskComment` cho status transitions, save links/meta, comment add, Create/Edit task modal.
+- ✅ `delivery-log.js` — `MH_MOCK_DELIVERIES`, `loadDeliveriesFromStore`, `persistCurDelivery` hook vào 7 mutation sites (check, request_rev, send_preview, send_final, rate, close, reopen).
+- ✅ `user-management.js` — `MH_MOCK_USERS`, `loadUsersFromStore` (adapter Supabase row → mock shape), `persistUser` cho status toggle + edit user (chỉ field nằm trong public.users schema).
+- ✅ `ai-tools.js` — `addUsage()` + `saveOutput()` write-through via `MH.store.aiUsage.log()` + `saveOutput()`.
+- ✅ `chatbot.js` — `pushMessage()` + `saveFeedback()` write-through via `MH.store.chatbot.append()` + `feedback()`. Cần thêm namespace `chatbot` vào data-store.js.
+- ✅ Enable RLS policies — `supabase/rls.sql` idempotent (DROP + CREATE), helper functions `current_user_role()` / `is_staff()` / `is_admin_or_account()` / `is_admin()`, policies cho 11 bảng. Run trong Supabase SQL Editor sau khi verify migration.
+
+**Phase 2 — File Storage:**
+- ✅ `supabase/storage.sql` — 3 buckets (`avatars` public, `brief-files` + `deliverables` private) với mime/size limits + storage.objects policies dùng helper functions từ rls.sql.
+- ✅ `assets/data-store.js` thêm namespace `files`: `upload(bucket, path, file, opts)`, `getPublicUrl()`, `signedUrl(bucket, path, expiresIn)`, `list()`, `remove()`. Fallback avatar → data URL inline; bucket private throw nếu chưa cấu hình.
+- ✅ `assets/app.js` Profile modal save: nếu Supabase Storage enabled VÀ pendingAvatar là data URL → fetch → blob → upload `avatars/{user.id}/avatar-{ts}.{ext}` → publicUrl thay thế data URL. Persist profile metadata (name/initials/title/phone/department/bio/avatar_url/role) sang `public.users` qua raw client.
+- ✅ `assets/order-form.js` doSubmit (async): trước khi tạo order, upload mỗi file trong `files` Map lên `brief-files/{order_id}/brief-{ts}-{filename}` với contentType. Lưu array `briefFiles` vào payload, INSERT row vào `public.orders` qua `MH.store.orders.create()`. localStorage fallback giữ nguyên.
+- ⬜ Delivery preview/final file upload — chưa migrate (current dùng Drive URL inputs, không có upload native).
+
+**Migration pattern thống nhất:**
+```text
+1. Expose mock: window.MH_MOCK_X = X_ARRAY
+2. Async swap: loadXFromStore(localArr) — Promise<number|null>, swap content + re-render
+3. Optimistic mutation: mutate local trước, persistX(id, patch) fire-and-forget Supabase
+4. Khi supabaseEnabled === false → tất cả persist là no-op, demo flow KHÔNG đổi
+```
+- `assets/app.js` — **Sentry lazy-loader top-of-IIFE** (load CDN bundle nếu DSN có, init kèm beforeSend tag user role/email từ `mh-user`, skip nếu DSN trống → 0 network call). Theme toggle (CSS-driven pill switch), mobile nav, toast, copy helpers, Profile editor modal, **header profile chip** (`#header-profile-chip`) toggle + populate. Functions: `refreshProfileChip(user)`, `refreshHeaderChip(user)`, `syncChipFromUser()`, `openProfileModal()`.
 - `assets/logo.png` — Resized brand logo, 256×256, ~13 KB.
 
 ---
@@ -175,10 +205,12 @@ const AUTH_USER = (() => { try { return JSON.parse(localStorage.getItem('mh-user
 
 ```text
 Vận hành
-├── Dashboard
+├── Master Dashboard
+├── Order Dashboard     admin/account
+├── Task Dashboard
 ├── Order Form          admin/account (design/editor blocked)
 ├── Database Orders     admin/account
-├── Production Board
+├── Task Tracker        (sidebar label; page H1: "Task Tracker / Production Board")
 ├── Delivery Log        admin/account
 └── Reports             admin/account
 
@@ -338,6 +370,7 @@ Badges:
 | `mh-ai-saved-outputs` | AI output save demo, last 50 |
 | `mh-chatbot-history` | Chatbot message history demo, last 80 |
 | `mh-chatbot-feedback` | Chatbot Good/Bad feedback demo, last 50 |
+| `mh-extra-tasks` | Tasks tạo mới qua Task Tracker hoặc "Create Task from Order" (cross-page demo, last 100). Mỗi entry có shape giống TASKS[] trong production-board.js, gồm `is_standalone: bool` + optional `order_id`. |
 
 ---
 
@@ -354,6 +387,32 @@ ready_for_delivery / average_rating / rating_coverage → delivery-log.html
 Target page reads `?dl=...` → set `state.view` / `state.quick` → render → inject `.drilldown-banner` (label + count + "Xóa filter") trước `.table-card` → smooth-scroll vào table.
 
 Dashboard **Alert Center** dùng cùng cơ chế nhưng kèm `&id=MEDIA-*`: 6 button "Xem" → link tới module + drilldown filter + record ID. Destination module sau khi render thử `find(record matches id)` → `openDrawer` nếu có, toast warning nếu là placeholder demo không tồn tại trong mock data.
+
+## 8d. Order ↔ Task ↔ Delivery relationship
+
+```text
+Order  (client/branch submits brief — lives in Database Orders)
+  └── Task[]  (internal work item — Task Tracker / Production Board)
+        └── Delivery (preview/final — Delivery Log)
+```
+
+- Order = client/branch request (`MEDIA-YYYY-NNNN`).
+- Task = internal work assigned to Media team (`TASK-NNNN`). One Order → many Tasks.
+- Task linkage:
+  - `order_id`: nếu task gắn order, ID dạng `MEDIA-*`.
+  - `is_standalone: true`: task nội bộ độc lập, không gắn order. Vẫn xuất hiện trong Task Tracker; quick-filter "Standalone".
+- Client never sees Tasks; Task Tracker và Task Dashboard chỉ có role admin/account/design/editor.
+- Cross-page bridge: tasks tạo mới qua Task Tracker hoặc "Create Task from Order" lưu vào `localStorage['mh-extra-tasks']`. Cả `production-board.js` và `database-orders.js` đều đọc storage này để hiển thị lẫn nhau.
+- "Create Task from this Order" trong Database Orders drawer → redirect `production-board.html?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...` → auto-mở Create Task modal có prefill.
+
+## 8e. Task Tracker (Production Board) formalization
+
+- Page H1 hiển thị: `Task Tracker / Production Board`. Sidebar label: `Task Tracker`. File path vẫn `production-board.html` (không rename file ở task này).
+- Page head có button `[+ Tạo Task]` (gắn `#btn-create-task`). Mở Create Task modal trong cùng page.
+- Quick filter chips hàng trên toolbar (`#quick-filter-chips`): Tất cả · Due Today · Due This Week · Overdue · Unassigned · My Tasks · Standalone. Lưu trong `state.quickChip`. Khác với summary card `data-quick` (giữ nguyên).
+- Create Task modal (`#task-modal`): hỗ trợ standalone checkbox (ẩn order_id row), prefill order_id/project/type/priority/deadline/pic/content/status. Save mới tạo `TASK-NNNN` (auto-increment dựa trên max TASK ID), push vào TASKS + `mh-extra-tasks`.
+- Edit Task: drawer head sẽ chèn dynamic `[Sửa Task]` button cho admin/account hoặc P.I.C của task. Mở modal trong edit mode.
+- Linked Order block trong drawer: hiển thị order_id + project_name + button "Mở Order" → `database-orders.html?id=<order_id>`. Nếu task `is_standalone`, hiển thị note "Standalone internal task — không gắn Order".
 
 ## 8c. Comment system (Production Board)
 
@@ -391,7 +450,8 @@ Task drawer comment thread hỗ trợ @mention + Reply:
 AI Tools:
 
 - `ai-tools.html` + `assets/ai-tools.js` built from spec 09.
-- 12 mini apps, category tabs/search, role permission, dynamic forms, CB brand preset, mock generation, copy/export/save demo and usage log.
+- 13 mini apps, category tabs/search, role permission, dynamic forms, CB brand preset, mock generation, copy/export/save demo and usage log.
+- **AI Voice (Supertonic)** — category `voice`. Engine: github.com/supertone-inc/supertonic (ONNX, ~99M params, 44.1kHz). Demo runtime: Web Speech API (`window.speechSynthesis`). Preset M1-M5/F1-F5, 16 ngôn ngữ, expression tags. Voice Player UI có waveform animation + Play/Pause/Stop + Export SSML. Production handoff: SSML preserve expression tags để swap backend giữ format.
 
 Chatbot:
 

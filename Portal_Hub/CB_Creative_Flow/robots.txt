@@ -1,0 +1,8 @@
+# CB Media Hub — Creative Service Portal
+# Demo / staging deploy. Block all crawlers until public launch.
+# When ready for production, remove Disallow: / and add a sitemap line.
+
+User-agent: *
+Disallow: /
+
+# Sitemap: https://your-production-domain.com/sitemap.xml

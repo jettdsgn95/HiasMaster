@@ -225,6 +225,35 @@
     }
   ];
 
+  // Phase 1: expose array để các module/page khác (Order Dashboard, Reports, Master Dashboard)
+  // có thể đọc cùng dataset. Khi Supabase enabled, hàm loadOrdersFromStore() sẽ swap nội dung.
+  window.MH_MOCK_ORDERS = ORDERS;
+
+  /* ---------- Phase 1 data layer hook ----------
+     Expose ORDERS làm fallback cho các page khác (database-orders, reports, dashboards).
+     Sau khi định nghĩa ORDERS bên dưới, IIFE sẽ gọi loadOrdersFromStore() để swap
+     dataset nếu Supabase enabled. Mutations dùng persistOrder() để write-through.
+     Nếu store chưa sẵn sàng → fire-and-forget, in-memory ORDERS vẫn được mutate. */
+  async function loadOrdersFromStore(localOrders) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
+    try {
+      const remote = await window.MH.store.orders.list();
+      if (Array.isArray(remote) && remote.length > 0) {
+        localOrders.length = 0;
+        remote.forEach(function (r) { localOrders.push(r); });
+        return remote.length;
+      }
+    } catch (e) { console.warn('[database-orders] remote load failed:', e); }
+    return null;
+  }
+  function persistOrder(orderId, patch) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    window.MH.store.orders.update(orderId, patch).catch(function (err) {
+      console.warn('[database-orders] persist failed:', err);
+      window.MH.toast({ type: 'warning', title: 'Sync lỗi', message: 'Thay đổi mới chỉ lưu local. Reload trang sẽ thử sync lại.' });
+    });
+  }
+
   /* ---------- Helpers ---------- */
   const ACCOUNT_STATUS_LABEL = {
     pending: 'Chờ xác nhận', checking: 'Đang kiểm tra', needinfo: 'Cần bổ sung',
@@ -235,6 +264,48 @@
     review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ', ready: 'Sẵn sàng bàn giao',
     delivered: 'Đã bàn giao', completed: 'Hoàn thành', cancelled: 'Hủy'
   };
+  const TASK_STATUS_LABEL = {
+    pending: 'Chưa nhận task', received: 'Nhận task', inprogress: 'Đang thực hiện',
+    review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ',
+    feedback_wait: 'Chờ client phản hồi', feedback_fix: 'Chỉnh sửa theo feedback',
+    ready: 'Sẵn sàng bàn giao', delivered: 'Đã bàn giao', completed: 'Hoàn thành',
+    paused: 'Tạm dừng', cancelled: 'Hủy'
+  };
+
+  /* ---------- Task Tracker / Production Board task snapshots (mirror production-board.js) ----------
+     Mapping order_id → [{task_id, project_name, task_type, priority, assigned_to, status, internal_deadline}, ...]
+     Kept in sync với TASKS dataset trong production-board.js. Standalone tasks (no order_id) live ONLY in localStorage.
+  */
+  const BUILT_IN_TASKS = [
+    { task_id: 'TASK-0001', order_id: 'MEDIA-2026-0004', project_name: 'Bộ Key Visual Sự kiện Q3', task_type: 'design', priority: 'urgent', assigned_to: 'Duy', status: 'inprogress', internal_deadline: '2026-05-20 17:00' },
+    { task_id: 'TASK-0002', order_id: 'MEDIA-2026-0005', project_name: 'Photoshoot Cơ sở Mới', task_type: 'photo', priority: 'normal', assigned_to: 'Linh Chi', status: 'review', internal_deadline: '2026-05-15 17:00' },
+    { task_id: 'TASK-0003', order_id: 'MEDIA-2026-0006', project_name: 'Reel TikTok Tháng 5', task_type: 'video', priority: 'critical', assigned_to: 'Vinh', status: 'review', internal_deadline: '2026-05-12 17:00' },
+    { task_id: 'TASK-0004', order_id: 'MEDIA-2026-0007', project_name: 'Brochure Khóa AI Summer', task_type: 'design', priority: 'normal', assigned_to: 'Duy', status: 'inprogress', internal_deadline: '2026-05-06 17:00' },
+    { task_id: 'TASK-0005', order_id: 'MEDIA-2026-0008', project_name: 'Logo Motion Sản phẩm Mới', task_type: 'motion', priority: 'normal', assigned_to: 'Linh Chi', status: 'inprogress', internal_deadline: '2026-05-18 17:00' },
+    { task_id: 'TASK-0006', order_id: 'MEDIA-2026-0009', project_name: 'Slide Proposal Đối tác Trường', task_type: 'slide', priority: 'normal', assigned_to: 'Duy', status: 'ready', internal_deadline: '2026-05-13 17:00' },
+    { task_id: 'TASK-0007', order_id: 'MEDIA-2026-0010', project_name: 'Bộ Poster Tuyển dụng', task_type: 'design', priority: 'normal', assigned_to: 'Vinh', status: 'completed', internal_deadline: '2026-05-08 17:00' },
+    { task_id: 'TASK-0008', order_id: 'MEDIA-2026-0011', project_name: 'TVC Sản phẩm Hè 30s', task_type: 'video', priority: 'urgent', assigned_to: 'Vinh', status: 'inprogress', internal_deadline: '2026-05-08 17:00' },
+    { task_id: 'TASK-0009', order_id: 'MEDIA-2026-0012', project_name: 'Email Template Newsletter Q2', task_type: 'digital', priority: 'normal', assigned_to: 'Duy', status: 'completed', internal_deadline: '2026-05-11 17:00' },
+    { task_id: 'TASK-0010', order_id: 'MEDIA-2026-0013', project_name: 'Quay Lễ Khai Giảng Cơ sở', task_type: 'shoot', priority: 'urgent', assigned_to: 'Linh Chi', status: 'received', internal_deadline: '2026-05-15 12:00' },
+    { task_id: 'TASK-0011', order_id: 'MEDIA-2026-0004', project_name: 'Bộ KV Sự kiện Q3 — Social Cuts', task_type: 'design', priority: 'urgent', assigned_to: 'Vinh', status: 'pending', internal_deadline: '2026-05-22 17:00' },
+    { task_id: 'TASK-0012', order_id: 'MEDIA-2026-0014', project_name: 'Voucher Ưu đãi Tháng 5', task_type: 'design', priority: 'normal', assigned_to: 'Duy', status: 'completed', internal_deadline: '2026-05-04 17:00' },
+    { task_id: 'TASK-0013', order_id: 'MEDIA-2026-0016', project_name: 'Facebook Ads Copy Tháng 5', task_type: 'ads', priority: 'urgent', assigned_to: 'Mai Phương', status: 'inprogress', internal_deadline: '2026-05-01 17:00' },
+    { task_id: 'TASK-0014', order_id: 'MEDIA-2026-0005', project_name: 'Photoshoot Cơ sở Mới — Retouch', task_type: 'photo', priority: 'normal', assigned_to: 'Linh Chi', status: 'revision', internal_deadline: '2026-05-16 17:00' },
+    { task_id: 'TASK-0015', order_id: 'MEDIA-2026-0008', project_name: 'Motion Logo — Variant 9:16', task_type: 'motion', priority: 'normal', assigned_to: 'Vinh', status: 'pending', internal_deadline: '2026-05-22 17:00' },
+    { task_id: 'TASK-0016', order_id: 'MEDIA-2026-0013', project_name: 'Recap Lễ Khai Giảng — Editing', task_type: 'video', priority: 'urgent', assigned_to: 'Vinh', status: 'received', internal_deadline: '2026-05-17 17:00' }
+  ];
+  function loadExtraTasks() {
+    try { return JSON.parse(localStorage.getItem('mh-extra-tasks') || '[]') || []; } catch (e) { return []; }
+  }
+  function tasksForOrder(order_id) {
+    if (!order_id) return [];
+    const extras = loadExtraTasks();
+    const fromExtras = extras.filter((t) => t && t.order_id === order_id);
+    const fromBuiltIn = BUILT_IN_TASKS.filter((t) => t.order_id === order_id);
+    const merged = [...fromBuiltIn];
+    fromExtras.forEach((t) => { if (!merged.find((m) => m.task_id === t.task_id)) merged.push(t); });
+    return merged;
+  }
   const TODAY = new Date('2026-05-13'); // demo: anchored to "now"
   function parseDate(s) { return s ? new Date(s.replace(' ', 'T')) : null; }
   function diffDays(target) {
@@ -658,6 +729,40 @@
       </section>
 
       <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">T</span><h4>Related Tasks</h4></div>
+        ${(function () {
+          const tasks = tasksForOrder(o.order_id);
+          const list = tasks.length
+            ? `<div class="related-tasks-list">${tasks.map((t) => `
+                <a class="related-task-item" href="production-board.html?id=${escapeHtml(t.task_id)}">
+                  <span class="rt-id">${escapeHtml(t.task_id)}</span>
+                  <span class="rt-title">${escapeHtml(t.project_name || '—')}</span>
+                  <span class="rt-meta">
+                    <span class="priority-pill p--${t.priority}"><span class="dot"></span>${PRIORITY_LABEL[t.priority] || t.priority}</span>
+                    <span class="tb-status s--${t.status}"><span class="dot"></span>${TASK_STATUS_LABEL[t.status] || t.status}</span>
+                    <span class="text-xs muted">${t.assigned_to ? escapeHtml(t.assigned_to) : '— chưa gán —'}</span>
+                  </span>
+                </a>`).join('')}</div>`
+            : `<p class="text-xs muted" style="margin:0">Chưa có task nào gắn với order này.</p>`;
+          const disabled = !(o.account_status === 'confirmed') ? 'disabled' : '';
+          const disabledNote = disabled ? `<p class="text-xs muted" style="margin:6px 0 0">Cần xác nhận brief trước khi tạo task.</p>` : '';
+          return list + `
+            <div class="row" style="justify-content:flex-end; margin-top:var(--space-3); gap:var(--space-2)">
+              <a class="btn btn-secondary btn-sm" href="production-board.html${o.order_id ? '?dl=in_production' : ''}">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Mở Task Tracker
+              </a>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-create-task-from-order" ${disabled}>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Task from this Order
+              </button>
+            </div>
+            ${disabledNote}
+          `;
+        })()}
+      </section>
+
+      <section class="drawer-block">
         <div class="drawer-block-head"><span class="block-letter">D</span><h4>Delivery Summary</h4></div>
         <dl>
           <dt>Preview Link</dt><dd>${link(o.preview_link)}</dd>
@@ -680,6 +785,27 @@
       </section>
     `;
 
+    // Wire "Create Task from this Order"
+    const createTaskBtn = document.getElementById('btn-create-task-from-order');
+    if (createTaskBtn) {
+      createTaskBtn.addEventListener('click', () => {
+        if (currentOrder.account_status !== 'confirmed') {
+          window.MH.toast({ type: 'warning', title: 'Brief chưa xác nhận', message: 'Cần xác nhận brief trước khi tạo task.' });
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set('createTask', '1');
+        params.set('order_id', currentOrder.order_id || '');
+        params.set('project_name', currentOrder.project_name || '');
+        params.set('task_type', currentOrder.request_type || 'design');
+        params.set('priority', currentOrder.priority || 'normal');
+        if (currentOrder.internal_deadline) params.set('internal_deadline', currentOrder.internal_deadline);
+        if (currentOrder.production_pic) params.set('production_pic', currentOrder.production_pic);
+        if (currentOrder.content_brief) params.set('content', currentOrder.content_brief);
+        location.href = 'production-board.html?' + params.toString();
+      });
+    }
+
     // Wire save button
     document.getElementById('save-internal').addEventListener('click', () => {
       const newStatus = document.getElementById('edit-account-status').value;
@@ -699,6 +825,17 @@
         production_status: newProdStatus,
         internal_note: newNote,
         last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      });
+      // Phase 1: write-through Supabase
+      persistOrder(currentOrder.order_id, {
+        account_status: newStatus,
+        account_pic: newAcctPic,
+        production_pic: newProdPic,
+        priority: newPriority,
+        internal_deadline: newDeadline ? new Date(newDeadline.replace(' ', 'T')).toISOString() : null,
+        production_status: newProdStatus,
+        internal_note: newNote,
+        last_updated: new Date().toISOString()
       });
       window.MH.toast({ type: 'success', title: 'Đã lưu', message: 'Cập nhật Internal Management cho ' + currentOrder.order_id });
       render();
@@ -734,6 +871,12 @@
     o.account_status = newStatus;
     if (newStatus === 'rejected') o.production_status = 'cancelled';
     o.last_updated = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    // Phase 1: persist sang Supabase nếu enabled
+    persistOrder(o.order_id, {
+      account_status: o.account_status,
+      production_status: o.production_status,
+      last_updated: new Date().toISOString()
+    });
     window.MH.toast({ type: 'success', title: msg, message: o.order_id });
     render();
     openDrawer(o);
@@ -762,6 +905,11 @@
     o.production_status = 'received';
     o.progress = 20;
     o.last_updated = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    persistOrder(o.order_id, {
+      production_status: 'received',
+      progress: 20,
+      last_updated: new Date().toISOString()
+    });
     window.MH.toast({ type: 'success', title: '✓ Đã chuyển Production Board', message: o.order_id + ' · Task được tạo với status "Nhận task" · Progress 20%' });
     render();
     openDrawer(o);
@@ -847,6 +995,20 @@
     injectDrilldownBanner(drilldownCfg);
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
+  // Chạy fire-and-forget — không block initial paint với mock.
+  loadOrdersFromStore(ORDERS).then(function (n) {
+    if (typeof n === 'number') {
+      console.log('[database-orders] swapped ' + n + ' orders từ Supabase');
+      render();
+      // Re-open drawer nếu đang có currentOrder
+      if (currentOrder) {
+        const updated = ORDERS.find(function (o) { return o.order_id === currentOrder.order_id; });
+        if (updated) openDrawer(updated);
+      }
+    }
+  });
 
   // Auto-open drawer cho record cụ thể nếu ?id=MEDIA-* được pass từ Dashboard Alert Center.
   const focusId = new URLSearchParams(location.search).get('id');

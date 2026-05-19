@@ -149,6 +149,9 @@
 
 </main>
 
+<script src="assets/config.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/data-store.js"></script>
 <script src="assets/app.js"></script>
 <script>
 (function(){
@@ -186,25 +189,57 @@
   function clearErr(){ form.querySelectorAll('.has-error').forEach(f => f.classList.remove('has-error')); }
   function mark(el){ el.closest('.field').classList.add('has-error'); }
 
-  function loginAs(emailVal, pwdVal) {
+  function finishLogin(user) {
+    window.MH.toast({
+      type: 'success',
+      title: 'Đăng nhập thành công',
+      message: 'Chào ' + user.name + ' (' + (user.role || '').toUpperCase() + ') — đang vào khu vực phù hợp...'
+    });
+    const params = new URLSearchParams(location.search);
+    const redirectTo = params.get('redirect');
+    const defaultRedirect = user.role === 'client' ? 'client-dashboard.html' : 'dashboard.html';
+    setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
+  }
+
+  // Demo-account fallback: dùng khi Supabase chưa cấu hình HOẶC Supabase auth thất bại.
+  // Giữ nguyên hành vi cũ để demo flow không gãy.
+  function loginAsDemo(emailVal) {
+    const acct = ACCOUNTS[emailVal.toLowerCase()];
+    const user = acct ? { ...acct, email: emailVal.toLowerCase() }
+                      : { role: 'admin', name: 'Mai Phương', initials: 'MP', title: 'Admin', email: emailVal.toLowerCase() };
+    localStorage.setItem('mh-user', JSON.stringify(user));
+    finishLogin(user);
+  }
+
+  async function loginAs(emailVal, pwdVal) {
     btn.classList.add('is-loading');
     btn.textContent = 'Đang đăng nhập...';
-    setTimeout(() => {
-      const acct = ACCOUNTS[emailVal.toLowerCase()];
-      // If known demo account, use its profile; otherwise default to admin (any well-formed credential)
-      const user = acct ? { ...acct, email: emailVal.toLowerCase() }
-                        : { role: 'admin', name: 'Mai Phương', initials: 'MP', title: 'Admin', email: emailVal.toLowerCase() };
-      localStorage.setItem('mh-user', JSON.stringify(user));
-      window.MH.toast({
-        type: 'success',
-        title: 'Đăng nhập thành công',
-        message: 'Chào ' + user.name + ' (' + user.role.toUpperCase() + ') — đang vào khu vực phù hợp...'
-      });
-      const params = new URLSearchParams(location.search);
-      const redirectTo = params.get('redirect');
-      const defaultRedirect = user.role === 'client' ? 'client-dashboard.html' : 'dashboard.html';
-      setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
-    }, 600);
+
+    // 1) Supabase Auth path: chỉ chạy nếu config đã fill (SUPABASE_URL + SUPABASE_ANON_KEY + FEATURES.SUPABASE_DB)
+    if (window.MH && window.MH.supabaseEnabled) {
+      try {
+        await window.MH.supabaseReady;
+        const { error } = await window.MH.store.auth.signIn(emailVal, pwdVal);
+        if (!error) {
+          // onAuthStateChange handler trong supabase-client.js đã mirror session → localStorage['mh-user']
+          // Cho vài chục ms để fetch public.users row xong rồi mới redirect.
+          let user = null;
+          for (let i = 0; i < 20 && !user; i++) {
+            await new Promise(function (r) { setTimeout(r, 50); });
+            try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) {}
+          }
+          if (user) { finishLogin(user); return; }
+        }
+        // Lỗi auth Supabase → toast cụ thể rồi fallback demo
+        console.warn('[login] Supabase auth failed:', error);
+        window.MH.toast({ type: 'warning', title: 'Supabase auth lỗi', message: 'Đang thử demo fallback...', duration: 2000 });
+      } catch (e) {
+        console.warn('[login] Supabase auth threw:', e);
+      }
+    }
+
+    // 2) Demo fallback (giữ static MVP flow)
+    setTimeout(() => { loginAsDemo(emailVal); }, 400);
   }
 
   form.addEventListener('submit', (e) => {

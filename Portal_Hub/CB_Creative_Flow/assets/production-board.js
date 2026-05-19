@@ -47,6 +47,38 @@
   if (sbt) sbt.addEventListener('click', () => { sb.classList.add('is-open'); sbd.classList.add('is-open'); });
   if (sbd) sbd.addEventListener('click', () => { sb.classList.remove('is-open'); sbd.classList.remove('is-open'); });
 
+  /* ---------- Phase 1 data layer hooks ----------
+     Expose TASKS làm fallback cho cross-page (Database Orders Related Tasks block,
+     Task Dashboard). Khi Supabase enabled, async swap dataset. Mutations dùng
+     persistTask() write-through (optimistic UI + Supabase update fire-and-forget). */
+  async function loadTasksFromStore(localTasks) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
+    try {
+      const remote = await window.MH.store.tasks.list();
+      if (Array.isArray(remote) && remote.length > 0) {
+        localTasks.length = 0;
+        remote.forEach(function (r) {
+          r.comments = r.comments || [];
+          localTasks.push(r);
+        });
+        return remote.length;
+      }
+    } catch (e) { console.warn('[production-board] remote load failed:', e); }
+    return null;
+  }
+  function persistTask(taskId, patch) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    window.MH.store.tasks.upsert(Object.assign({ task_id: taskId }, patch)).catch(function (err) {
+      console.warn('[production-board] persist failed:', err);
+    });
+  }
+  function persistTaskComment(taskId, comment) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    window.MH.store.taskComments.add(taskId, comment).catch(function (err) {
+      console.warn('[production-board] comment persist failed:', err);
+    });
+  }
+
   /* ---------- Status & progress maps ---------- */
   const STATUS_LABEL = {
     pending: 'Chưa nhận task', received: 'Nhận task', inprogress: 'Đang thực hiện',
@@ -322,11 +354,55 @@
     }
   ];
 
+  /* ---------- Persisted extra tasks (created via Task Tracker / Order drawer) ----------
+     Tasks live in localStorage `mh-extra-tasks` so they survive page reloads + cross-page (Database Orders → Task Tracker).
+     Each entry has the same shape as TASKS items above. `is_standalone: true` means no gắn order.
+  */
+  const EXTRA_TASKS_KEY = 'mh-extra-tasks';
+  function loadExtraTasks() {
+    try { return JSON.parse(localStorage.getItem(EXTRA_TASKS_KEY) || '[]') || []; } catch (e) { return []; }
+  }
+  function saveExtraTasks(arr) {
+    try { localStorage.setItem(EXTRA_TASKS_KEY, JSON.stringify(arr || [])); } catch (e) {}
+  }
+  function appendExtraTask(task) {
+    const arr = loadExtraTasks();
+    arr.push(task);
+    if (arr.length > 100) arr.shift();
+    saveExtraTasks(arr);
+  }
+  // Merge persisted extras into in-memory TASKS, dedupe by task_id
+  loadExtraTasks().forEach((t) => {
+    if (t && t.task_id && !TASKS.find((x) => x.task_id === t.task_id)) {
+      t.comments = t.comments || [];
+      TASKS.push(t);
+    }
+  });
+  function nextTaskId() {
+    let max = 0;
+    TASKS.forEach((t) => {
+      const m = /TASK-(\d+)/.exec(t.task_id || '');
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+    return 'TASK-' + String(max + 1).padStart(4, '0');
+  }
+
+  /* ---------- ORDER_INDEX: derive order_id → project_name from existing TASKS for cross-page lookups ---------- */
+  const ORDER_INDEX = {};
+  TASKS.forEach((t) => {
+    if (t.order_id && !ORDER_INDEX[t.order_id]) ORDER_INDEX[t.order_id] = { project_name: t.project_name };
+  });
+
+  // Phase 1: expose array để các module/page khác (Database Orders Related Tasks,
+  // Task Dashboard, Reports) đọc cùng dataset.
+  window.MH_MOCK_TASKS = TASKS;
+
   /* ---------- State ---------- */
   const state = {
     view: ['design', 'editor'].includes(user.role) ? 'mytasks' : 'table',
     search: '', status: '', priority: '', type: '', pic: '',
-    quick: null // summary card quick-filter
+    quick: null,     // summary card quick-filter
+    quickChip: ''    // chip filter row above toolbar
   };
 
   /* ---------- Scoping by role ---------- */
@@ -361,6 +437,16 @@
           case 'ready': if (t.status !== 'ready') return false; break;
           case 'inproduction': if (!['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)) return false; break;
           case 'completed': if (t.status !== 'completed') return false; break;
+        }
+      }
+      if (state.quickChip) {
+        switch (state.quickChip) {
+          case 'due_today': { const d = diffDays(t.internal_deadline); if (!(d === 0 && t.status !== 'completed')) return false; break; }
+          case 'due_week': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 7 && t.status !== 'completed')) return false; break; }
+          case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
+          case 'unassigned': if (t.assigned_to) return false; break;
+          case 'mine': if (t.assigned_to !== user.name && t.assigned_to !== (user.name || '').split(' ').pop()) return false; break;
+          case 'standalone': if (!(t.is_standalone || !t.order_id)) return false; break;
         }
       }
       return true;
@@ -643,7 +729,16 @@
     task.last_update = fmtDT();
     if (newStatus === 'completed') task.completed_at = task.last_update;
     task.comments = task.comments || [];
-    task.comments.push({ author: user.name, text: `Status: ${STATUS_LABEL[old]} → ${STATUS_LABEL[newStatus]}`, time: task.last_update, type: 'internal' });
+    const transitionComment = { author: user.name, text: `Status: ${STATUS_LABEL[old]} → ${STATUS_LABEL[newStatus]}`, time: task.last_update, type: 'internal' };
+    task.comments.push(transitionComment);
+    // Phase 1: persist sang Supabase nếu enabled
+    persistTask(task.task_id, {
+      status: newStatus,
+      progress: task.progress,
+      last_update: new Date().toISOString(),
+      completed_at: newStatus === 'completed' ? new Date().toISOString() : null
+    });
+    persistTaskComment(task.task_id, transitionComment);
     window.MH.toast({ type: 'success', title: 'Đã cập nhật status', message: `${task.task_id}: ${STATUS_LABEL[newStatus]} · ${task.progress}%` });
     render();
     if (currentTask && currentTask.task_id === task.task_id) openDrawer(task);
@@ -724,11 +819,24 @@
       </div>
 
       <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Linked Order</h4></div>
+        ${(t.order_id && !t.is_standalone) ? `
+          <div class="linked-order-card">
+            <span class="lo-id">${escapeHtml(t.order_id)}</span>
+            <span class="lo-title">${escapeHtml((ORDER_INDEX[t.order_id] && ORDER_INDEX[t.order_id].project_name) || t.project_name || '—')}</span>
+            <a class="btn btn-secondary btn-sm" href="database-orders.html?id=${escapeHtml(t.order_id)}">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              Mở Order
+            </a>
+          </div>
+        ` : `<p class="text-xs muted" style="margin:0"><b>Standalone internal task</b> — không gắn Order. Đây là task nội bộ do team Media tự khởi tạo.</p>`}
+      </section>
+
+      <section class="drawer-block">
         <div class="drawer-block-head"><span class="block-letter">📋</span><h4>Brief Information</h4></div>
         <dl>
           <dt>Content</dt><dd>${v(t.content)}</dd>
           <dt>Type</dt><dd>${TYPE_LABEL[t.task_type]}</dd>
-          <dt>Order ID</dt><dd><a class="link" href="database-orders.html">${t.order_id}</a> <span class="muted text-xs">(mở Database Orders để xem brief đầy đủ)</span></dd>
         </dl>
       </section>
 
@@ -837,7 +945,15 @@
         currentTask.final_link = document.getElementById('final-in').value.trim();
         currentTask.last_update = fmtDT();
         currentTask.comments = currentTask.comments || [];
-        currentTask.comments.push({ author: user.name, text: 'Cập nhật links', time: currentTask.last_update, type: 'internal' });
+        const linksComment = { author: user.name, text: 'Cập nhật links', time: currentTask.last_update, type: 'internal' };
+        currentTask.comments.push(linksComment);
+        persistTask(currentTask.task_id, {
+          link_drive: currentTask.link_drive,
+          preview_link: currentTask.preview_link,
+          final_link: currentTask.final_link,
+          last_update: new Date().toISOString()
+        });
+        persistTaskComment(currentTask.task_id, linksComment);
         window.MH.toast({ type: 'success', title: 'Đã lưu links', message: currentTask.task_id });
         render(); openDrawer(currentTask);
       });
@@ -852,7 +968,15 @@
         currentTask.priority = document.getElementById('edit-priority').value;
         currentTask.last_update = fmtDT();
         currentTask.comments = currentTask.comments || [];
-        currentTask.comments.push({ author: user.name, text: `Đã cập nhật: PIC=${currentTask.assigned_to} · deadline=${currentTask.internal_deadline} · priority=${PRIORITY_LABEL[currentTask.priority]}`, time: currentTask.last_update, type: 'internal' });
+        const metaComment = { author: user.name, text: `Đã cập nhật: PIC=${currentTask.assigned_to} · deadline=${currentTask.internal_deadline} · priority=${PRIORITY_LABEL[currentTask.priority]}`, time: currentTask.last_update, type: 'internal' };
+        currentTask.comments.push(metaComment);
+        persistTask(currentTask.task_id, {
+          assigned_to: currentTask.assigned_to,
+          internal_deadline: currentTask.internal_deadline ? new Date(currentTask.internal_deadline.replace(' ', 'T')).toISOString() : null,
+          priority: currentTask.priority,
+          last_update: new Date().toISOString()
+        });
+        persistTaskComment(currentTask.task_id, metaComment);
         window.MH.toast({ type: 'success', title: 'Đã lưu thay đổi', message: currentTask.task_id });
         render(); openDrawer(currentTask);
       });
@@ -997,7 +1121,7 @@
       const mentions = parseMentions(text);
       const replyParent = replyingToId ? findCommentById(currentTask, replyingToId) : null;
       currentTask.comments = currentTask.comments || [];
-      currentTask.comments.push({
+      const newComment = {
         id: genCommentId(),
         author: user.name,
         text,
@@ -1006,8 +1130,11 @@
         mentions,
         reply_to: replyParent ? replyParent.id : null,
         reply_to_author: replyParent ? replyParent.author : null
-      });
+      };
+      currentTask.comments.push(newComment);
       currentTask.last_update = fmtDT();
+      persistTaskComment(currentTask.task_id, newComment);
+      persistTask(currentTask.task_id, { last_update: new Date().toISOString() });
       const toastMsg = replyParent
         ? `Đã reply @${replyParent.author}`
         : (mentions.length ? `Đã gửi · mention ${mentions.length}` : 'Đã gửi comment');
@@ -1113,4 +1240,250 @@
       window.MH.toast({ type: 'warning', title: 'Không tìm thấy task', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
     }
   }
+
+  // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
+  loadTasksFromStore(TASKS).then(function (n) {
+    if (typeof n === 'number') {
+      console.log('[production-board] swapped ' + n + ' tasks từ Supabase');
+      // Re-build ORDER_INDEX với dataset mới
+      Object.keys(ORDER_INDEX).forEach(function (k) { delete ORDER_INDEX[k]; });
+      TASKS.forEach(function (t) {
+        if (t.order_id && !ORDER_INDEX[t.order_id]) ORDER_INDEX[t.order_id] = { project_name: t.project_name };
+      });
+      render();
+      if (currentTask) {
+        const updated = TASKS.find(function (t) { return t.task_id === currentTask.task_id; });
+        if (updated) openDrawer(updated);
+      }
+    }
+  });
+
+  /* ---------- Quick filter chips ---------- */
+  const chipsRow = document.getElementById('quick-filter-chips');
+  if (chipsRow) {
+    chipsRow.addEventListener('click', (e) => {
+      const btn = e.target.closest('.saved-view-chip');
+      if (!btn) return;
+      const f = btn.getAttribute('data-quick-filter') || '';
+      state.quickChip = f;
+      chipsRow.querySelectorAll('.saved-view-chip').forEach((c) => c.classList.toggle('is-active', c === btn));
+      render();
+    });
+  }
+
+  /* ---------- Create / Edit Task modal ---------- */
+  const modal = document.getElementById('task-modal');
+  const modalBd = document.getElementById('task-modal-backdrop');
+  const tmStandalone = document.getElementById('tm-standalone');
+  const tmOrderRow = document.getElementById('tm-order-row');
+  const tmOrderId = document.getElementById('tm-order-id');
+  const tmProject = document.getElementById('tm-project');
+  const tmContent = document.getElementById('tm-content');
+  const tmType = document.getElementById('tm-type');
+  const tmPriority = document.getElementById('tm-priority');
+  const tmPic = document.getElementById('tm-pic');
+  const tmDeadline = document.getElementById('tm-deadline');
+  const tmStatus = document.getElementById('tm-status');
+  const modalTitle = document.getElementById('task-modal-title');
+  let editingTaskId = null;
+
+  function openTaskModal(prefill, editId) {
+    editingTaskId = editId || null;
+    modalTitle.textContent = editId ? 'Sửa Task' : 'Tạo Task mới';
+    const p = prefill || {};
+    tmStandalone.checked = !!p.is_standalone || (!p.order_id && !!editId === false ? false : (editId ? !!p.is_standalone : false));
+    tmOrderRow.style.display = tmStandalone.checked ? 'none' : '';
+    tmOrderId.value = p.order_id || '';
+    tmProject.value = p.project_name || '';
+    tmContent.value = p.content || '';
+    tmType.value = p.task_type || 'design';
+    tmPriority.value = p.priority || 'normal';
+    tmPic.value = p.assigned_to || '';
+    if (p.internal_deadline) {
+      tmDeadline.value = String(p.internal_deadline).replace(' ', 'T');
+    } else {
+      tmDeadline.value = '';
+    }
+    tmStatus.value = p.status || 'pending';
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    modalBd.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => tmProject.focus(), 60);
+  }
+  function closeTaskModal() {
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    modalBd.classList.remove('is-open');
+    document.body.style.overflow = '';
+    editingTaskId = null;
+  }
+  tmStandalone.addEventListener('change', () => {
+    tmOrderRow.style.display = tmStandalone.checked ? 'none' : '';
+    if (tmStandalone.checked) tmOrderId.value = '';
+  });
+  document.getElementById('btn-create-task').addEventListener('click', () => {
+    if (user.role === 'client') return;
+    openTaskModal({ assigned_to: user.name && ['Duy','Vinh','Linh Chi','Mai Phương'].includes(user.name) ? user.name : '' });
+  });
+  document.getElementById('task-modal-close').addEventListener('click', closeTaskModal);
+  document.getElementById('task-modal-cancel').addEventListener('click', closeTaskModal);
+  modalBd.addEventListener('click', () => { if (modal.classList.contains('is-open')) closeTaskModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeTaskModal(); });
+
+  document.getElementById('task-modal-save').addEventListener('click', () => {
+    const project = tmProject.value.trim();
+    if (!project) {
+      window.MH.toast({ type: 'warning', title: 'Thiếu project name', message: 'Vui lòng nhập tên project / task.' });
+      tmProject.focus();
+      return;
+    }
+    const isStandalone = !!tmStandalone.checked;
+    const orderId = isStandalone ? '' : (tmOrderId.value || '').trim();
+    const deadlineRaw = tmDeadline.value ? tmDeadline.value.replace('T', ' ') : '';
+    const status = tmStatus.value || 'pending';
+
+    if (editingTaskId) {
+      const t = TASKS.find((x) => x.task_id === editingTaskId);
+      if (!t) { closeTaskModal(); return; }
+      t.project_name = project;
+      t.content = tmContent.value.trim();
+      t.task_type = tmType.value;
+      t.priority = tmPriority.value;
+      t.assigned_to = tmPic.value || null;
+      t.internal_deadline = deadlineRaw || null;
+      t.status = status;
+      t.progress = STATUS_PROGRESS[status] ?? t.progress;
+      t.is_standalone = isStandalone;
+      t.order_id = isStandalone ? '' : orderId;
+      t.last_update = fmtDT();
+      t.comments = t.comments || [];
+      const editComment = { id: genCommentId(), author: user.name, text: 'Đã cập nhật task (Edit modal).', time: t.last_update, type: 'internal' };
+      t.comments.push(editComment);
+      // Persist updated extras (localStorage fallback)
+      const extras = loadExtraTasks();
+      const idx = extras.findIndex((x) => x.task_id === t.task_id);
+      if (idx >= 0) { extras[idx] = t; saveExtraTasks(extras); }
+      // Phase 1: persist sang Supabase nếu enabled
+      persistTask(t.task_id, {
+        project_name: t.project_name,
+        content: t.content,
+        task_type: t.task_type,
+        priority: t.priority,
+        assigned_to: t.assigned_to,
+        internal_deadline: t.internal_deadline ? new Date(t.internal_deadline.replace(' ', 'T')).toISOString() : null,
+        status: t.status,
+        progress: t.progress,
+        is_standalone: t.is_standalone,
+        order_id: t.is_standalone ? null : t.order_id,
+        last_update: new Date().toISOString()
+      });
+      persistTaskComment(t.task_id, editComment);
+      window.MH.toast({ type: 'success', title: 'Đã lưu task', message: t.task_id });
+      closeTaskModal();
+      render();
+      if (currentTask && currentTask.task_id === t.task_id) openDrawer(t);
+      return;
+    }
+
+    const newTask = {
+      task_id: nextTaskId(),
+      order_id: orderId,
+      is_standalone: isStandalone,
+      project_name: project,
+      task_type: tmType.value,
+      content: tmContent.value.trim(),
+      priority: tmPriority.value,
+      assigned_to: tmPic.value || null,
+      status: status,
+      progress: STATUS_PROGRESS[status] ?? 20,
+      internal_deadline: deadlineRaw || null,
+      link_drive: '', preview_link: '', final_link: '',
+      created_at: fmtDT(),
+      last_update: fmtDT(),
+      comments: [{ id: genCommentId(), author: user.name, text: orderId ? `Task được tạo từ Order ${orderId}.` : 'Standalone task được tạo.', time: fmtDT(), type: 'internal' }]
+    };
+    TASKS.push(newTask);
+    appendExtraTask(newTask);
+    if (newTask.order_id && !ORDER_INDEX[newTask.order_id]) ORDER_INDEX[newTask.order_id] = { project_name: newTask.project_name };
+    // Phase 1: persist sang Supabase (full row insert via upsert)
+    persistTask(newTask.task_id, {
+      order_id: newTask.order_id || null,
+      is_standalone: newTask.is_standalone,
+      project_name: newTask.project_name,
+      task_type: newTask.task_type,
+      content: newTask.content,
+      priority: newTask.priority,
+      assigned_to: newTask.assigned_to,
+      status: newTask.status,
+      progress: newTask.progress,
+      internal_deadline: newTask.internal_deadline ? new Date(newTask.internal_deadline.replace(' ', 'T')).toISOString() : null,
+      link_drive: newTask.link_drive,
+      preview_link: newTask.preview_link,
+      final_link: newTask.final_link,
+      created_at: new Date().toISOString(),
+      last_update: new Date().toISOString()
+    });
+    if (newTask.comments && newTask.comments.length) {
+      persistTaskComment(newTask.task_id, newTask.comments[0]);
+    }
+    window.MH.toast({ type: 'success', title: '✓ Đã tạo task', message: `${newTask.task_id} · ${newTask.project_name}` });
+    closeTaskModal();
+    render();
+    openDrawer(newTask);
+  });
+
+  /* ---------- Auto-open Create Task modal khi ?createTask=1 (prefill from query) ---------- */
+  (function handleCreateFromURL() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('createTask') !== '1') return;
+    if (user.role === 'client') return;
+    const prefill = {
+      order_id: params.get('order_id') || '',
+      project_name: params.get('project_name') || '',
+      task_type: params.get('task_type') || params.get('request_type') || 'design',
+      priority: params.get('priority') || 'normal',
+      internal_deadline: params.get('internal_deadline') || '',
+      assigned_to: params.get('production_pic') || params.get('assigned_to') || '',
+      content: params.get('content') || '',
+      is_standalone: params.get('standalone') === '1'
+    };
+    setTimeout(() => openTaskModal(prefill), 120);
+    // Clean URL so refresh doesn't re-open modal
+    const url = new URL(location.href);
+    ['createTask','order_id','project_name','task_type','request_type','priority','internal_deadline','production_pic','assigned_to','content','standalone'].forEach((k) => url.searchParams.delete(k));
+    history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+  })();
+
+  /* ---------- Expose "Edit Task" via drawer (admin/account/PIC) — hook the drawer-head Edit pencil ---------- */
+  function attachDrawerEditButton() {
+    const head = document.querySelector('#task-drawer .drawer-head > div');
+    if (!head || head.querySelector('.btn-edit-task')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-secondary btn-sm btn-edit-task';
+    btn.style.marginTop = '8px';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Sửa Task';
+    btn.addEventListener('click', () => {
+      if (!currentTask) return;
+      openTaskModal({
+        order_id: currentTask.order_id,
+        is_standalone: !!currentTask.is_standalone || !currentTask.order_id,
+        project_name: currentTask.project_name,
+        task_type: currentTask.task_type,
+        content: currentTask.content,
+        priority: currentTask.priority,
+        assigned_to: currentTask.assigned_to,
+        status: currentTask.status,
+        internal_deadline: currentTask.internal_deadline
+      }, currentTask.task_id);
+    });
+    head.appendChild(btn);
+  }
+  // Patch openDrawer so we attach the Edit button each time
+  const _origOpenDrawer = openDrawer;
+  openDrawer = function (t) {
+    _origOpenDrawer(t);
+    if (['admin', 'account'].includes(user.role) || t.assigned_to === user.name) attachDrawerEditButton();
+  };
 })();
