@@ -316,7 +316,7 @@
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
     try {
       const remote = await window.MH.store.users.list();
-      if (Array.isArray(remote) && remote.length > 0) {
+      if (Array.isArray(remote)) {  // Always replace khi Supabase enabled
         // Adapter: map Supabase column names → mock shape + default field UI cần.
         localArr.length = 0;
         remote.forEach(function (r) {

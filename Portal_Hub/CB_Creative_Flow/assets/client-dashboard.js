@@ -96,7 +96,8 @@ async function loadClientOrdersFromStore() {
     if ((!remote || remote.length === 0) && user.email) {
       remote = await window.MH.store.orders.list({ requester_email: user.email });
     }
-    if (!Array.isArray(remote) || remote.length === 0) return 0;
+    if (!Array.isArray(remote)) remote = [];
+    // Always replace khi Supabase enabled (kể cả empty) — DB là source of truth.
 
     const TYPE_LABEL = { design: 'Thiết kế', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };
     function fmtDate(s) {

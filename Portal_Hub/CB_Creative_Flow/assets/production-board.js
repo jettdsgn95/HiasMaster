@@ -55,7 +55,8 @@
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
     try {
       const remote = await window.MH.store.tasks.list();
-      if (Array.isArray(remote) && remote.length > 0) {
+      if (Array.isArray(remote)) {
+        // Always replace khi Supabase enabled (kể cả empty)
         localTasks.length = 0;
         remote.forEach(function (r) {
           r.comments = r.comments || [];

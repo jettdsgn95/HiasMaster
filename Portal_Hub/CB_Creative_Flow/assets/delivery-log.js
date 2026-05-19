@@ -262,7 +262,8 @@
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
     try {
       const remote = await window.MH.store.deliveries.list();
-      if (Array.isArray(remote) && remote.length > 0) {
+      if (Array.isArray(remote)) {
+        // Always replace khi Supabase enabled (kể cả empty)
         localArr.length = 0;
         remote.forEach(function (r) { localArr.push(r); });
         return remote.length;

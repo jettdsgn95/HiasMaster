@@ -454,9 +454,10 @@
     }
 
     // Source priority: Supabase → localStorage (anh vừa submit) → hardcoded demo DB
+    // Hardcoded DB chỉ fallback khi Supabase chưa cấu hình (local demo flow).
     let data = await lookupSupabase(code);
     if (!data) data = lookupLocalSubmitted(code);
-    if (!data) data = DB[code];
+    if (!data && !(window.MH && window.MH.supabaseEnabled)) data = DB[code];
 
     if (!data) {
       notFoundMsg.textContent = 'Mã đơn không tồn tại trong hệ thống. Kiểm tra lại hoặc liên hệ Account team.';

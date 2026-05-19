@@ -238,7 +238,9 @@
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
     try {
       const remote = await window.MH.store.orders.list();
-      if (Array.isArray(remote) && remote.length > 0) {
+      if (Array.isArray(remote)) {
+        // Always replace khi Supabase enabled (kể cả empty) — DB là source of truth,
+        // không fallback về mock array nữa.
         localOrders.length = 0;
         remote.forEach(function (r) { localOrders.push(r); });
         return remote.length;
