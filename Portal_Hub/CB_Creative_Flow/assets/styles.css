@@ -3504,6 +3504,71 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 }
 .drawer-actions .btn-sm { font-size: 11px; padding-inline: var(--space-4); }
 
+/* Account workflow step buttons — gradient nhạt → đậm (1→4)
+   Mỗi step có nền đặc trưng (KHÔNG outline) để user nhận biết tiến trình. */
+.drawer-actions .act-step {
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.drawer-actions .act-step:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+.drawer-actions .act-step:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Step 1 — Kiểm tra brief: info xanh nhạt nhất (neutral start) */
+.drawer-actions .act-step--1 {
+  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%);
+}
+/* Step 2 — Yêu cầu bổ sung: amber warning (cần action từ client) */
+.drawer-actions .act-step--2 {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+/* Step 3 — Xác nhận brief: brand navy CB (chính thức) */
+.drawer-actions .act-step--3 {
+  background: linear-gradient(135deg, #4338ca 0%, var(--brand-600) 100%);
+}
+/* Step 4 — Push → Production: red CB đậm nhất (critical final action) */
+.drawer-actions .act-step--4 {
+  background: linear-gradient(135deg, #d62a28 0%, var(--red-600) 60%, var(--red-700) 100%);
+}
+
+/* Hủy đơn: nền đỏ đậm khác hẳn (danger destructive) */
+.drawer-actions .act-cancel {
+  background: var(--red-700);
+  color: #fff;
+  border: 1px solid var(--red-800);
+  margin-left: auto;
+  box-shadow: 0 1px 3px rgba(186, 17, 15, 0.25);
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.drawer-actions .act-cancel:hover:not(:disabled) {
+  background: var(--red-800);
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+/* Dark mode tinh chỉnh độ tương phản */
+[data-theme="dark"] .drawer-actions .act-step--1 {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+[data-theme="dark"] .drawer-actions .act-step--2 {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+[data-theme="dark"] .drawer-actions .act-step--3 {
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-800) 100%);
+}
+[data-theme="dark"] .drawer-actions .act-step--4 {
+  background: linear-gradient(135deg, var(--red-600) 0%, var(--red-800) 100%);
+}
+
 .drawer-body {
   flex: 1; overflow-y: auto;
   padding: var(--space-6);
