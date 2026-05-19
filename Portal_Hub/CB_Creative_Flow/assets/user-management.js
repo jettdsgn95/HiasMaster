@@ -33,7 +33,12 @@
   if (sbd) sbd.addEventListener('click', () => { sb.classList.remove('is-open'); sbd.classList.remove('is-open'); });
 
   /* ---------- Constants ---------- */
-  const ROLE_LABEL = { admin: 'Admin', manager: 'Manager', account: 'Account', staff: 'Staff', client: 'Client' };
+  // ROLE_LABEL mở rộng để khớp schema Supabase (admin/account/design/editor/client).
+  // Giữ manager/staff cho mock cũ tương thích ngược.
+  const ROLE_LABEL = {
+    admin: 'Admin', manager: 'Manager', account: 'Account',
+    design: 'Design', editor: 'Editor', staff: 'Staff', client: 'Client'
+  };
   const STATUS_LABEL = { pending: 'Pending Invite', active: 'Active', inactive: 'Inactive', suspended: 'Suspended', archived: 'Archived' };
   const PERM_LABEL = {
     full: 'Full Access', manager_view: 'Manager View', order_mgmt: 'Order Management',
@@ -295,17 +300,40 @@
   window.MH_MOCK_USERS = USERS;
 
   /* ---------- Phase 1 helpers ---------- */
+  // Default permission_group + data_scope dựa trên role (cho user import từ Supabase
+  // chưa có các field này — schema public.users chưa có cột tương ứng).
+  function defaultPermByRole(role) {
+    switch (role) {
+      case 'admin':   return { tag: 'manager', permission_group: 'full',         data_scope: 'all' };
+      case 'account': return { tag: 'account', permission_group: 'order_mgmt',   data_scope: 'all' };
+      case 'design':  return { tag: 'staff',   permission_group: 'production_only', data_scope: 'assigned' };
+      case 'editor':  return { tag: 'staff',   permission_group: 'production_only', data_scope: 'assigned' };
+      case 'client':  return { tag: 'client',  permission_group: 'client_only', data_scope: 'client_own' };
+      default:        return { tag: 'client',  permission_group: 'client_only', data_scope: 'client_own' };
+    }
+  }
   async function loadUsersFromStore(localArr) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
     try {
       const remote = await window.MH.store.users.list();
       if (Array.isArray(remote) && remote.length > 0) {
-        // Adapter: map Supabase column names → mock shape (`full_name`, ...)
+        // Adapter: map Supabase column names → mock shape + default field UI cần.
         localArr.length = 0;
         remote.forEach(function (r) {
+          const role = r.role || 'client';                // null → client (spec yêu cầu)
+          const perm = defaultPermByRole(role);
           localArr.push(Object.assign({}, r, {
-            full_name: r.name,
-            // Giữ default mock fields nếu Supabase row chưa có
+            user_id: r.id,                                // UI legacy dùng user_id; Supabase dùng id
+            full_name: r.name || (r.email || '').split('@')[0],
+            role: role,
+            tag: r.tag || perm.tag,
+            permission_group: r.permission_group || perm.permission_group,
+            data_scope: r.data_scope || perm.data_scope,
+            status: r.status || 'active',
+            phone: r.phone || '',
+            department: r.department || '',
+            created_at: r.created_at,
+            last_login_at: r.last_login_at,
             work_stats: r.work_stats || { assigned_tasks: 0, open_tasks: 0, overdue_tasks: 0, completed_tasks: 0, avg_progress: 0 },
             activity: r.activity || []
           }));
