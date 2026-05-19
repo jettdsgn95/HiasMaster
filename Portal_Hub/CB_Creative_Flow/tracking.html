@@ -300,7 +300,12 @@
   let user = null;
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
 
-  function show(state) {
+  // Auth guard: phải đăng nhập mới tra cứu được. Preserve return URL qua ?redirect=
+  if (!user || !user.role) {
+    const here = encodeURIComponent('tracking.html' + location.search);
+    location.replace('login.html?redirect=' + here);
+    return;
+  }
     empty.classList.toggle('hidden', state !== 'empty');
     notFound.classList.toggle('hidden', state !== 'notfound');
     result.classList.toggle('hidden', state !== 'result');
@@ -393,7 +398,8 @@
       statusLabel: meta.label,
       stage: meta.stage,
       assignee: picName ? 'Production — ' + picName : (o.account_pic ? 'Account — ' + o.account_pic : 'Đang phân công'),
-      avatar: picName ? picName.substring(0, 2).toUpperCase() : 'CB'
+      avatar: picName ? picName.substring(0, 2).toUpperCase() : 'CB',
+      __rawOrder: o   // giữ raw để scope check biết requester_email / requester_id
     };
   }
 
@@ -428,11 +434,24 @@
       show('notfound');
       return;
     }
-    // Client scope check (legacy demo accounts có client_scope) — bỏ qua nếu user Supabase
-    if (user && user.role === 'client' && Array.isArray(user.client_scope) && !user.client_scope.includes(code)) {
-      notFoundMsg.textContent = 'Bạn đang đăng nhập vai trò Client và không có quyền xem mã đơn này. Vui lòng dùng mã thuộc phạm vi của client demo hoặc liên hệ Account phụ trách.';
-      show('notfound');
-      return;
+    // Client scope: chỉ cho client xem đơn của mình (match requester_email / requester_id / legacy client_scope)
+    if (user && user.role === 'client') {
+      const rawOrder = data.__rawOrder; // được mapOrderToTracking gắn vào (Supabase/localStorage)
+      const legacyScope = Array.isArray(user.client_scope) ? user.client_scope : null;
+      let allowed = false;
+      if (legacyScope && legacyScope.includes(code)) allowed = true;
+      if (!allowed && rawOrder) {
+        const matchEmail = rawOrder.requester_email && user.email && rawOrder.requester_email.toLowerCase() === user.email.toLowerCase();
+        const matchId    = rawOrder.requester_id && user.id && rawOrder.requester_id === user.id;
+        if (matchEmail || matchId) allowed = true;
+      }
+      // Hardcoded demo orders (không có rawOrder) — fallback client_scope cũ nếu có
+      if (!allowed && !rawOrder && legacyScope && legacyScope.includes(code)) allowed = true;
+      if (!allowed) {
+        notFoundMsg.textContent = 'Bạn không có quyền xem mã đơn này. Chỉ Client tạo đơn mới tra cứu được; vui lòng liên hệ Account team nếu cần.';
+        show('notfound');
+        return;
+      }
     }
     notFoundMsg.textContent = 'Kiểm tra lại mã đơn hàng hoặc liên hệ account team nếu bạn cho rằng có nhầm lẫn.';
     render(code, data);
