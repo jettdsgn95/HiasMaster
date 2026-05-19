@@ -86,38 +86,6 @@
       </form>
 
       <p class="auth-foot">Chưa có tài khoản? <a href="help.html#contact">Liên hệ admin để được cấp quyền</a></p>
-
-      <!-- Demo accounts -->
-      <div class="demo-accounts">
-        <h5>
-          Demo accounts
-          <span class="demo-badge">Test mode</span>
-        </h5>
-        <p class="text-xs muted" style="margin-bottom: var(--space-3)">Click một role để đăng nhập nhanh và kiểm tra giao diện theo quyền truy cập.</p>
-        <div class="demo-grid">
-          <button type="button" class="demo-tile t--admin" data-demo="admin">
-            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span>
-            <div class="role-info"><b>Admin</b><span>admin@cb.vn</span></div>
-          </button>
-          <button type="button" class="demo-tile t--account" data-demo="account">
-            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>
-            <div class="role-info"><b>Account</b><span>account@cb.vn</span></div>
-          </button>
-          <button type="button" class="demo-tile t--design" data-demo="design">
-            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 0-4h-2a4 4 0 1 1 0-8h7a4 4 0 0 0 0-8H12z"/></svg></span>
-            <div class="role-info"><b>Design</b><span>design@cb.vn</span></div>
-          </button>
-          <button type="button" class="demo-tile t--editor" data-demo="editor">
-            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
-            <div class="role-info"><b>Editor</b><span>editor@cb.vn</span></div>
-          </button>
-          <button type="button" class="demo-tile t--client" data-demo="client">
-            <span class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 11h-4"/><path d="M20 9v4"/></svg></span>
-            <div class="role-info"><b>Client</b><span>client@cb.vn</span></div>
-          </button>
-        </div>
-        <p class="text-xs muted" style="margin-top: var(--space-3)">Mật khẩu mặc định: <code class="mono" style="padding:2px 6px; background:var(--surface-2); border:1px solid var(--border); border-radius:4px">cb2026</code></p>
-      </div>
     </div>
   </section>
 
@@ -155,32 +123,6 @@
 <script src="assets/app.js"></script>
 <script>
 (function(){
-  // Demo accounts directory (shared with dashboard via localStorage)
-  const ACCOUNTS = {
-    'admin@cb.vn': {
-      role: 'admin', name: 'Mai Phương', initials: 'MP',
-      title: 'Admin · Account Lead', team: 'CB Centres HCM'
-    },
-    'account@cb.vn': {
-      role: 'account', name: 'Hậu Nguyễn', initials: 'HN',
-      title: 'Account Manager', team: 'CB Centres HCM'
-    },
-    'design@cb.vn': {
-      role: 'design', name: 'Duy Trần', initials: 'DT',
-      title: 'Senior Designer', team: 'Creative Team'
-    },
-    'editor@cb.vn': {
-      role: 'editor', name: 'Linh Chi', initials: 'LC',
-      title: 'Video Editor', team: 'Creative Team'
-    },
-    'client@cb.vn': {
-      role: 'client', name: 'Lan Anh', initials: 'LA',
-      title: 'Client · CB Mekong', team: 'CB Mekong',
-      client_scope: ['MEDIA-2026-0001', 'MEDIA-2026-0008']
-    }
-  };
-  const DEMO_PWD = 'cb2026';
-
   const form = document.getElementById('login-form');
   const email = document.getElementById('email');
   const password = document.getElementById('password');
@@ -193,7 +135,7 @@
     window.MH.toast({
       type: 'success',
       title: 'Đăng nhập thành công',
-      message: 'Chào ' + user.name + ' (' + (user.role || '').toUpperCase() + ') — đang vào khu vực phù hợp...'
+      message: 'Chào ' + (user.name || user.email) + ' (' + (user.role || '').toUpperCase() + ') — đang vào khu vực phù hợp...'
     });
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get('redirect');
@@ -201,45 +143,40 @@
     setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
   }
 
-  // Demo-account fallback: dùng khi Supabase chưa cấu hình HOẶC Supabase auth thất bại.
-  // Giữ nguyên hành vi cũ để demo flow không gãy.
-  function loginAsDemo(emailVal) {
-    const acct = ACCOUNTS[emailVal.toLowerCase()];
-    const user = acct ? { ...acct, email: emailVal.toLowerCase() }
-                      : { role: 'admin', name: 'Mai Phương', initials: 'MP', title: 'Admin', email: emailVal.toLowerCase() };
-    localStorage.setItem('mh-user', JSON.stringify(user));
-    finishLogin(user);
+  function failLogin(msg) {
+    btn.classList.remove('is-loading');
+    btn.textContent = 'Đăng nhập';
+    mark(password);
+    window.MH.toast({ type: 'error', title: 'Đăng nhập thất bại', message: msg || 'Email hoặc mật khẩu không đúng.' });
   }
 
   async function loginAs(emailVal, pwdVal) {
     btn.classList.add('is-loading');
     btn.textContent = 'Đang đăng nhập...';
 
-    // 1) Supabase Auth path: chỉ chạy nếu config đã fill (SUPABASE_URL + SUPABASE_ANON_KEY + FEATURES.SUPABASE_DB)
-    if (window.MH && window.MH.supabaseEnabled) {
-      try {
-        await window.MH.supabaseReady;
-        const { error } = await window.MH.store.auth.signIn(emailVal, pwdVal);
-        if (!error) {
-          // onAuthStateChange handler trong supabase-client.js đã mirror session → localStorage['mh-user']
-          // Cho vài chục ms để fetch public.users row xong rồi mới redirect.
-          let user = null;
-          for (let i = 0; i < 20 && !user; i++) {
-            await new Promise(function (r) { setTimeout(r, 50); });
-            try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) {}
-          }
-          if (user) { finishLogin(user); return; }
-        }
-        // Lỗi auth Supabase → toast cụ thể rồi fallback demo
-        console.warn('[login] Supabase auth failed:', error);
-        window.MH.toast({ type: 'warning', title: 'Supabase auth lỗi', message: 'Đang thử demo fallback...', duration: 2000 });
-      } catch (e) {
-        console.warn('[login] Supabase auth threw:', e);
-      }
+    if (!window.MH || !window.MH.supabaseEnabled) {
+      failLogin('Hệ thống xác thực chưa khởi tạo. Vui lòng tải lại trang.');
+      return;
     }
 
-    // 2) Demo fallback (giữ static MVP flow)
-    setTimeout(() => { loginAsDemo(emailVal); }, 400);
+    try {
+      await window.MH.supabaseReady;
+      const { error } = await window.MH.store.auth.signIn(emailVal, pwdVal);
+      if (error) { failLogin(error.message || 'Email hoặc mật khẩu không đúng.'); return; }
+
+      // onAuthStateChange (supabase-client.js) mirror session → localStorage['mh-user'].
+      // Cho ~1s để fetch public.users row populate xong rồi mới redirect.
+      let user = null;
+      for (let i = 0; i < 20 && !user; i++) {
+        await new Promise(function (r) { setTimeout(r, 50); });
+        try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) {}
+      }
+      if (!user) { failLogin('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
+      finishLogin(user);
+    } catch (e) {
+      console.warn('[login] Supabase auth threw:', e);
+      failLogin(e && e.message ? e.message : 'Lỗi kết nối đến máy chủ.');
+    }
   }
 
   form.addEventListener('submit', (e) => {
@@ -252,25 +189,7 @@
       window.MH.toast({ type: 'error', title: 'Thông tin chưa hợp lệ', message: 'Vui lòng kiểm tra lại email và mật khẩu.' });
       return;
     }
-    // If using known demo account, enforce demo password
-    const known = ACCOUNTS[email.value.trim().toLowerCase()];
-    if (known && password.value !== DEMO_PWD) {
-      mark(password);
-      window.MH.toast({ type: 'error', title: 'Sai mật khẩu', message: 'Mật khẩu demo cho các account là ' + DEMO_PWD });
-      return;
-    }
     loginAs(email.value.trim(), password.value);
-  });
-
-  // Demo tiles — one-click login
-  document.querySelectorAll('[data-demo]').forEach((tile) => {
-    tile.addEventListener('click', () => {
-      const role = tile.getAttribute('data-demo');
-      const emailVal = role + '@cb.vn';
-      email.value = emailVal;
-      password.value = DEMO_PWD;
-      loginAs(emailVal, DEMO_PWD);
-    });
   });
 
   // Password toggle
