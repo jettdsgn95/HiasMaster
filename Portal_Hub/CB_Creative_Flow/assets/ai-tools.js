@@ -11,7 +11,7 @@
   if (!user || !user.role) { location.replace('login.html'); return; }
   if (user.role === 'client') {
     window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'AI Tools nội bộ chưa mở cho client trong demo này.' });
-    setTimeout(() => location.replace('tracking.html'), 1200);
+    setTimeout(() => location.replace('client-dashboard.html'), 1200);
     return;
   }
   document.body.setAttribute('data-user', user.email || user.role);

@@ -341,15 +341,94 @@
     }
   }
 
-  function lookup(code) {
+  // Map Supabase/localStorage order shape → tracking display shape.
+  function mapOrderToTracking(o) {
+    if (!o) return null;
+    function fmtDate(s) {
+      if (!s) return '—';
+      try {
+        const d = new Date(s.replace ? s.replace(' ', 'T') : s);
+        if (isNaN(d.getTime())) return s;
+        return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+      } catch (e) { return s; }
+    }
+    function fmtDateTime(s) {
+      if (!s) return '—';
+      try {
+        const d = new Date(s.replace ? s.replace(' ', 'T') : s);
+        if (isNaN(d.getTime())) return s;
+        return fmtDate(s) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      } catch (e) { return s; }
+    }
+    const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide / Proposal' };
+    const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
+    const STATUS_PUB = {
+      pending:    { key: 'received', label: 'Đã tiếp nhận',          stage: 'Account đang kiểm tra brief và chờ xác nhận scope', pct: 10 },
+      checking:   { key: 'received', label: 'Đang kiểm tra brief',   stage: 'Account đang review brief',                          pct: 15 },
+      needinfo:   { key: 'received', label: 'Cần bổ sung brief',     stage: 'Account đã yêu cầu bổ sung thêm thông tin',         pct: 15 },
+      confirmed:  { key: 'received', label: 'Đã xác nhận brief',     stage: 'Brief OK, đang điều phối sang Production',          pct: 25 },
+      unassigned: { key: 'progress', label: 'Đang phân công',        stage: 'Account đang gán PIC sản xuất',                     pct: 30 },
+      received:   { key: 'progress', label: 'Đang xử lý',            stage: 'PIC đã nhận task và đang sản xuất',                 pct: 40 },
+      inprogress: { key: 'progress', label: 'Đang sản xuất',         stage: 'Production đang thực hiện và chuẩn bị preview',     pct: 55 },
+      revision:   { key: 'progress', label: 'Đang chỉnh sửa nội bộ', stage: 'Production đang chỉnh theo feedback nội bộ',        pct: 70 },
+      review:     { key: 'preview',  label: 'Đang kiểm tra nội bộ',  stage: 'Account đang duyệt trước khi gửi client',           pct: 78 },
+      ready:      { key: 'preview',  label: 'Sắp bàn giao',          stage: 'File sẵn sàng, đang lên lịch bàn giao',             pct: 85 },
+      delivered:  { key: 'preview',  label: 'Đã bàn giao',           stage: 'Final đã bàn giao, chờ xác nhận/rating',            pct: 95 },
+      completed:  { key: 'completed',label: 'Hoàn thành',            stage: 'Order hoàn tất',                                    pct: 100 },
+      cancelled:  { key: 'received', label: 'Đã hủy',                stage: 'Order đã hủy',                                      pct: 0 }
+    };
+    // Production status ưu tiên hơn account status nếu đã push sản xuất.
+    const effStatus = (o.production_status && o.production_status !== 'unassigned') ? o.production_status : o.account_status;
+    const meta = STATUS_PUB[effStatus] || STATUS_PUB.pending;
+    const picName = o.production_pic || o.account_pic || null;
+    return {
+      project: o.project_name || '—',
+      service: TYPE_LABEL[o.request_type] || o.request_type || '—',
+      deadline: fmtDate(o.requested_deadline),
+      priority: PRIORITY_LABEL[o.priority] || o.priority || '—',
+      created: fmtDate(o.created_at),
+      updated: fmtDateTime(o.last_updated || o.created_at),
+      percent: typeof o.progress === 'number' ? o.progress : meta.pct,
+      statusKey: meta.key,
+      statusLabel: meta.label,
+      stage: meta.stage,
+      assignee: picName ? 'Production — ' + picName : (o.account_pic ? 'Account — ' + o.account_pic : 'Đang phân công'),
+      avatar: picName ? picName.substring(0, 2).toUpperCase() : 'CB'
+    };
+  }
+
+  async function lookupSupabase(code) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
+    try {
+      await window.MH.supabaseReady;
+      const order = await window.MH.store.orders.get(code);
+      return order ? mapOrderToTracking(order) : null;
+    } catch (e) { console.warn('[tracking] supabase lookup failed:', e); return null; }
+  }
+
+  function lookupLocalSubmitted(code) {
+    try {
+      const arr = JSON.parse(localStorage.getItem('mh-submitted-orders') || '[]');
+      const o = arr.find((x) => (x.order_id || '').toUpperCase() === code);
+      return o ? mapOrderToTracking(o) : null;
+    } catch (e) { return null; }
+  }
+
+  async function lookup(code) {
     code = (code || '').trim().toUpperCase();
     if (!code) { show('empty'); return; }
-    const data = DB[code];
+
+    // Source priority: Supabase → localStorage (anh vừa submit) → hardcoded demo DB
+    let data = await lookupSupabase(code);
+    if (!data) data = lookupLocalSubmitted(code);
+    if (!data) data = DB[code];
+
     if (!data) {
-      notFoundMsg.textContent = 'Mã này chưa có trong dữ liệu tracking public demo. Hiện tracking đã hỗ trợ các mã MEDIA trong ví dụ phía trên.';
+      notFoundMsg.textContent = 'Mã đơn không tồn tại trong hệ thống. Kiểm tra lại hoặc liên hệ Account team.';
       show('notfound');
       return;
     }
+    // Client scope check (legacy demo accounts có client_scope) — bỏ qua nếu user Supabase
     if (user && user.role === 'client' && Array.isArray(user.client_scope) && !user.client_scope.includes(code)) {
       notFoundMsg.textContent = 'Bạn đang đăng nhập vai trò Client và không có quyền xem mã đơn này. Vui lòng dùng mã thuộc phạm vi của client demo hoặc liên hệ Account phụ trách.';
       show('notfound');

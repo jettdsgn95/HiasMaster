@@ -649,8 +649,7 @@
     return;
   }
   if (user.role === 'client') {
-    window.MH.toast({ type: 'info', title: 'Client portal', message: 'Client được chuyển về khu vực tra cứu public.' });
-    setTimeout(() => location.replace('tracking.html'), 500);
+    location.replace('client-dashboard.html');
     return;
   }
 

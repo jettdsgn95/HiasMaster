@@ -16,7 +16,7 @@
   if (!user || !user.role) { location.replace('login.html'); return; }
   if (user.role === 'client') {
     window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Production Board chỉ dành cho team nội bộ.' });
-    setTimeout(() => location.replace('tracking.html'), 1200);
+    setTimeout(() => location.replace('client-dashboard.html'), 1200);
     return;
   }
   document.body.setAttribute('data-user', user.email || user.role);
