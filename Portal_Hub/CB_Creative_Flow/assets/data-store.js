@@ -404,6 +404,66 @@
     }
   };
 
+  /* ---------- NOTIFICATIONS (Phase 1.5) ---------- */
+  const notifications = {
+    async listUnread(limit) {
+      const s = await sb();
+      if (!s) return [];
+      const me = await users.me();
+      if (!me) return [];
+      const { data, error } = await s.from('notifications')
+        .select('*')
+        .eq('user_id', me.id)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(limit || 20);
+      if (error) console.warn('[store.notifications.listUnread]', error);
+      return data || [];
+    },
+    async listAll(limit) {
+      const s = await sb();
+      if (!s) return [];
+      const me = await users.me();
+      if (!me) return [];
+      const { data, error } = await s.from('notifications')
+        .select('*')
+        .eq('user_id', me.id)
+        .order('created_at', { ascending: false })
+        .limit(limit || 30);
+      if (error) console.warn('[store.notifications.listAll]', error);
+      return data || [];
+    },
+    async create(payload) {
+      const s = await sb();
+      if (!s) return null;
+      const { data, error } = await s.from('notifications').insert(payload).select().maybeSingle();
+      if (error) console.warn('[store.notifications.create]', error);
+      return data;
+    },
+    async markRead(id) {
+      const s = await sb();
+      if (!s) return;
+      const { error } = await s.from('notifications').update({ is_read: true }).eq('id', id);
+      if (error) console.warn('[store.notifications.markRead]', error);
+    },
+    async markAllRead() {
+      const s = await sb();
+      if (!s) return;
+      const me = await users.me();
+      if (!me) return;
+      const { error } = await s.from('notifications').update({ is_read: true }).eq('user_id', me.id).eq('is_read', false);
+      if (error) console.warn('[store.notifications.markAllRead]', error);
+    },
+    // Helper: lookup user_id qua name (production_pic là text 'Linh Chi', cần convert sang uuid)
+    async findUserIdByName(name) {
+      const s = await sb();
+      if (!s || !name) return null;
+      const { data, error } = await s.from('users').select('id').eq('name', name).maybeSingle();
+      if (error || !data) { console.warn('[store.notifications.findUserIdByName]', name, error); return null; }
+      return data.id;
+    }
+  };
+
   /* ---------- AUTH ---------- */
   const auth = {
     async signIn(email, password) {
@@ -455,7 +515,7 @@
 
   /* ---------- Expose ---------- */
   window.MH.store = {
-    users, orders, tasks, taskComments, deliveries, aiUsage, chatbot, files, auth, activity,
+    users, orders, tasks, taskComments, deliveries, aiUsage, chatbot, files, notifications, auth, activity,
     isRemote: function () { return !!window.MH.supabaseEnabled; }
   };
 })();

@@ -844,10 +844,119 @@
       openDrawer(currentOrder); // refresh drawer view
     });
 
+    // Update stepper state theo account_status + production_status
+    updateStepperState(o);
+
     drawer.classList.add('is-open');
     drawer.setAttribute('aria-hidden', 'false');
     drawerBd.classList.add('is-open');
     document.body.style.overflow = 'hidden';
+  }
+
+  /* ---------- Stepper state update (Issue 2 fix) ----------
+     Map order status → visual state cho 4 step + hint text + button enable/disable. */
+  function updateStepperState(o) {
+    if (!o) return;
+    const steps = document.querySelectorAll('#wf-stepper .wf-step');
+    const lines = document.querySelectorAll('#wf-stepper .wf-line');
+    const hint  = document.getElementById('wf-hint');
+    const btnCheck   = document.getElementById('act-checking');
+    const btnNeed    = document.getElementById('act-needinfo');
+    const btnConfirm = document.getElementById('act-confirm');
+    const btnPush    = document.getElementById('act-push');
+    const btnCancel  = document.getElementById('act-cancel');
+
+    // Reset
+    steps.forEach((s) => s.classList.remove('is-done', 'is-current', 'is-needinfo', 'is-cancelled'));
+    lines.forEach((l) => l.classList.remove('is-done'));
+    [btnCheck, btnNeed, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = false; });
+
+    const isCancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
+    const isPushed    = o.production_status && o.production_status !== 'unassigned' && !isCancelled;
+    const isConfirmed = o.account_status === 'confirmed';
+    const isNeedinfo  = o.account_status === 'needinfo';
+    const isChecking  = o.account_status === 'checking';
+    const hasPic      = !!o.production_pic;
+    const hasDeadline = !!o.internal_deadline;
+    const hasDeliv    = o.deliverable_type && o.deliverable_type.length > 0;
+    const readyToPush = isConfirmed && hasPic && hasDeadline && hasDeliv && !isCancelled;
+
+    // Cancelled state — mọi step về cancelled, hide hint
+    if (isCancelled) {
+      steps.forEach((s) => s.classList.add('is-cancelled'));
+      if (hint) { hint.className = 'wf-hint is-warn'; hint.textContent = 'Order đã hủy. Mọi action bị vô hiệu hóa.'; }
+      [btnCheck, btnNeed, btnConfirm, btnPush].forEach((b) => { if (b) b.disabled = true; });
+      if (btnCancel) btnCancel.disabled = true;
+      return;
+    }
+
+    // Step 1 — Kiểm tra brief
+    if (isChecking || isConfirmed || isPushed || isNeedinfo) {
+      steps[0].classList.add('is-done');
+      lines[0].classList.add('is-done');
+    } else {
+      steps[0].classList.add('is-current');
+    }
+
+    // Step 2 — Xác nhận brief (cũng dùng cho needinfo branch)
+    if (isNeedinfo) {
+      steps[1].classList.add('is-needinfo');
+    } else if (isConfirmed || isPushed) {
+      steps[1].classList.add('is-done');
+      lines[1].classList.add('is-done');
+    } else if (isChecking) {
+      steps[1].classList.add('is-current');
+    }
+
+    // Step 3 — Sẵn sàng push (đủ PIC + deadline + deliverable)
+    if (isPushed) {
+      steps[2].classList.add('is-done');
+      lines[2].classList.add('is-done');
+    } else if (readyToPush) {
+      steps[2].classList.add('is-current');
+    }
+
+    // Step 4 — Đã sản xuất (production_status != unassigned)
+    if (isPushed) {
+      steps[3].classList.add('is-done');
+    }
+
+    // Hint text + button disable theo state
+    if (hint) hint.className = 'wf-hint';
+    if (o.account_status === 'pending') {
+      if (hint) hint.textContent = 'Bước tiếp theo: bấm "Kiểm tra brief" để bắt đầu xử lý order.';
+      btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
+    } else if (isChecking) {
+      if (hint) hint.textContent = 'Đang kiểm tra brief. Nếu thiếu thông tin → "Yêu cầu bổ sung". Nếu OK → "Xác nhận brief".';
+      btnPush.disabled = true;
+    } else if (isNeedinfo) {
+      if (hint) {
+        hint.className = 'wf-hint is-warn';
+        hint.textContent = 'Đã gửi yêu cầu bổ sung cho client. Sau khi client cập nhật, bấm "Xác nhận brief".';
+      }
+      btnPush.disabled = true;
+    } else if (isConfirmed && !isPushed) {
+      if (!readyToPush) {
+        const missing = [];
+        if (!hasPic) missing.push('Production PIC');
+        if (!hasDeadline) missing.push('Internal Deadline');
+        if (!hasDeliv) missing.push('Hạng mục');
+        if (hint) {
+          hint.className = 'wf-hint is-warn';
+          hint.textContent = 'Brief đã xác nhận. Chưa thể push — thiếu: ' + missing.join(', ') + '. Fill ở "Internal Management" bên dưới.';
+        }
+        btnPush.disabled = true;
+      } else {
+        if (hint) hint.textContent = 'Đủ điều kiện push! Bấm "Push → Production" để tạo task cho ' + o.production_pic + '.';
+      }
+      btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true;
+    } else if (isPushed) {
+      if (hint) {
+        hint.className = 'wf-hint is-done';
+        hint.innerHTML = 'Đã push sang Task Tracker. PIC: <b>' + (o.production_pic || '—') + '</b>. <a href="production-board.html?dl=in_production" class="link">Xem task →</a>';
+      }
+      btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
+    }
   }
 
   function closeDrawer() {
@@ -884,7 +993,7 @@
     openDrawer(o);
   }
 
-  function pushToProduction(o) {
+  async function pushToProduction(o) {
     if (!o) return;
     const checks = {
       brief: o.account_status === 'confirmed',
@@ -904,6 +1013,77 @@
       window.MH.toast({ type: 'error', title: 'Không thể push', message: 'Thiếu: ' + missing.join(' · ') });
       return;
     }
+
+    // Idempotent check (option A): nếu order đã có task → KHÔNG tạo mới, toast warning.
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      try {
+        const existing = await window.MH.store.tasks.list({ order_id: o.order_id });
+        if (Array.isArray(existing) && existing.length > 0) {
+          window.MH.toast({
+            type: 'warning',
+            title: 'Order đã có task',
+            message: `Đã có ${existing.length} task trong Task Tracker (${existing.map(t => t.task_id).join(', ')}). Không tạo mới.`,
+            duration: 5000
+          });
+          // Update order status anyway (cho phép sync state nếu admin re-push)
+          o.production_status = 'received';
+          o.last_updated = new Date().toISOString().slice(0, 16).replace('T', ' ');
+          persistOrder(o.order_id, { production_status: 'received', last_updated: new Date().toISOString() });
+          render(); openDrawer(o);
+          return;
+        }
+      } catch (e) { console.warn('[push] idempotent check failed:', e); }
+    }
+
+    // Tạo task mới từ order
+    const taskId = await generateNextTaskId();
+    const taskPayload = {
+      task_id: taskId,
+      order_id: o.order_id,
+      is_standalone: false,
+      project_name: o.project_name || 'Untitled',
+      task_type: o.request_type || 'design',
+      content: o.content_brief || '',
+      priority: o.priority || 'normal',
+      assigned_to: o.production_pic,
+      status: 'received',
+      progress: 20,
+      internal_deadline: o.internal_deadline ? (typeof o.internal_deadline === 'string' ? new Date(o.internal_deadline.replace(' ', 'T')).toISOString() : new Date(o.internal_deadline).toISOString()) : null,
+      link_drive: o.source_link || '',
+      preview_link: '',
+      final_link: '',
+      created_at: new Date().toISOString(),
+      last_update: new Date().toISOString()
+    };
+
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      try {
+        // INSERT task
+        await window.MH.store.tasks.upsert(taskPayload);
+
+        // INSERT notification cho PIC (lookup user_id qua name)
+        const picUserId = await window.MH.store.notifications.findUserIdByName(o.production_pic);
+        if (picUserId) {
+          await window.MH.store.notifications.create({
+            user_id: picUserId,
+            type: 'task_assigned',
+            title: '🎯 Task mới được giao',
+            message: `${taskId} · ${taskPayload.project_name} · ${TYPE_LABEL[taskPayload.task_type] || taskPayload.task_type} · Deadline: ${o.internal_deadline || '—'}`,
+            link: 'production-board.html?id=' + taskId,
+            related_entity_type: 'tasks',
+            related_entity_id: taskId
+          });
+        } else {
+          console.warn('[push] không tìm thấy user_id cho PIC:', o.production_pic);
+        }
+      } catch (e) {
+        console.warn('[push] task creation failed:', e);
+        window.MH.toast({ type: 'error', title: 'Tạo task thất bại', message: 'DB không phản hồi. Thử lại hoặc liên hệ admin.' });
+        return;
+      }
+    }
+
+    // Update order
     o.production_status = 'received';
     o.progress = 20;
     o.last_updated = new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -912,9 +1092,29 @@
       progress: 20,
       last_updated: new Date().toISOString()
     });
-    window.MH.toast({ type: 'success', title: '✓ Đã chuyển Production Board', message: o.order_id + ' · Task được tạo với status "Nhận task" · Progress 20%' });
+
+    window.MH.toast({
+      type: 'success',
+      title: '✓ Đã chuyển Production Board',
+      message: o.order_id + ' → ' + taskId + ' · PIC: ' + o.production_pic + ' · Đã gửi notification',
+      duration: 4500
+    });
     render();
     openDrawer(o);
+  }
+
+  // Generate task_id incrementally (query max trong DB hoặc fallback timestamp)
+  async function generateNextTaskId() {
+    if (window.MH && window.MH.supabaseEnabled && window.MH.supabase) {
+      try {
+        const { data } = await window.MH.supabase.from('tasks').select('task_id').like('task_id', 'TASK-%').order('task_id', { ascending: false }).limit(1);
+        if (data && data.length) {
+          const m = /TASK-(\d+)/.exec(data[0].task_id);
+          if (m) return 'TASK-' + String(parseInt(m[1], 10) + 1).padStart(4, '0');
+        }
+      } catch (e) { console.warn('[push] next task id query failed:', e); }
+    }
+    return 'TASK-' + String(Date.now()).slice(-4);  // Fallback unique-ish
   }
 
   /* ---------- Action handler từ row menu ---------- */

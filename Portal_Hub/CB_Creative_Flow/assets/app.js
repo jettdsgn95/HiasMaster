@@ -604,4 +604,155 @@
 
   /* ---------- Year ---------- */
   document.querySelectorAll('[data-year]').forEach((el) => (el.textContent = new Date().getFullYear()));
+
+  /* ---------- Notification bell + dropdown (Phase 1.5) ----------
+     Tự gắn dropdown vào tất cả Bell icon (button[aria-label="Thông báo"]) trên mọi page.
+     Poll danh sách notifications mỗi 60s khi user đã login. Click bell → toggle dropdown. */
+  (function initNotificationBell() {
+    function bellButtons() { return document.querySelectorAll('button[aria-label="Thông báo"]'); }
+    if (!bellButtons().length) return;
+
+    function injectStyles() {
+      if (document.getElementById('mh-notif-styles')) return;
+      const css = document.createElement('style');
+      css.id = 'mh-notif-styles';
+      css.textContent = `
+        .mh-notif-wrap { position: relative; }
+        .mh-notif-badge { position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9999px; background: var(--red-600); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); pointer-events: none; }
+        .mh-notif-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 360px; max-height: 480px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 16px); box-shadow: 0 20px 50px rgba(0,0,0,0.18); z-index: 1000; display: none; overflow: hidden; flex-direction: column; }
+        .mh-notif-dropdown.is-open { display: flex; }
+        .mh-notif-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .mh-notif-head h4 { margin: 0; font-size: 14px; }
+        .mh-notif-head button { background: none; border: none; color: var(--brand-600); font-size: 12px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+        .mh-notif-head button:hover { background: var(--surface-2); }
+        .mh-notif-list { flex: 1; overflow-y: auto; padding: 4px; }
+        .mh-notif-empty { padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        .mh-notif-item { display: block; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.12s; border-left: 3px solid transparent; }
+        .mh-notif-item:hover { background: var(--surface-2); }
+        .mh-notif-item.is-unread { border-left-color: var(--brand-600); background: rgb(25 25 112 / 0.04); }
+        .mh-notif-item-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+        .mh-notif-item-msg { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px; }
+        .mh-notif-item-time { font-size: 11px; color: var(--text-muted); }
+        .mh-notif-foot { padding: 8px 12px; border-top: 1px solid var(--border); text-align: center; }
+        .mh-notif-foot a { font-size: 12px; color: var(--brand-600); text-decoration: none; }
+      `;
+      document.head.appendChild(css);
+    }
+
+    function fmtTime(iso) {
+      try {
+        const d = new Date(iso);
+        const diff = (Date.now() - d.getTime()) / 1000;
+        if (diff < 60) return 'vừa xong';
+        if (diff < 3600) return Math.floor(diff / 60) + ' phút trước';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' giờ trước';
+        if (diff < 604800) return Math.floor(diff / 86400) + ' ngày trước';
+        return d.toLocaleDateString('vi-VN');
+      } catch (e) { return ''; }
+    }
+    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    let dropdown = null;
+    let pollTimer = null;
+
+    function buildDropdown(bellBtn) {
+      if (bellBtn.parentElement.classList.contains('mh-notif-wrap')) return;
+      // Wrap bell trong container relative
+      const wrap = document.createElement('span');
+      wrap.className = 'mh-notif-wrap';
+      bellBtn.parentNode.insertBefore(wrap, bellBtn);
+      wrap.appendChild(bellBtn);
+
+      const badge = document.createElement('span');
+      badge.className = 'mh-notif-badge';
+      badge.style.display = 'none';
+      badge.dataset.role = 'notif-badge';
+      wrap.appendChild(badge);
+
+      dropdown = document.createElement('div');
+      dropdown.className = 'mh-notif-dropdown';
+      dropdown.innerHTML = `
+        <div class="mh-notif-head">
+          <h4>Thông báo</h4>
+          <button type="button" data-action="mark-all">Đánh dấu đã đọc</button>
+        </div>
+        <div class="mh-notif-list"><div class="mh-notif-empty">Đang tải...</div></div>
+      `;
+      wrap.appendChild(dropdown);
+
+      bellBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('is-open');
+        if (dropdown.classList.contains('is-open')) renderDropdown();
+      });
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) dropdown.classList.remove('is-open');
+      });
+      dropdown.querySelector('[data-action="mark-all"]').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!window.MH.store) return;
+        await window.MH.store.notifications.markAllRead();
+        await refreshBadge();
+        await renderDropdown();
+      });
+    }
+
+    async function refreshBadge() {
+      if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+      try {
+        const list = await window.MH.store.notifications.listUnread(50);
+        const count = list.length;
+        document.querySelectorAll('[data-role="notif-badge"]').forEach((b) => {
+          if (count > 0) { b.textContent = count > 99 ? '99+' : String(count); b.style.display = 'flex'; }
+          else { b.style.display = 'none'; }
+        });
+        return list;
+      } catch (e) { console.warn('[notif] refresh badge failed:', e); return []; }
+    }
+
+    async function renderDropdown() {
+      if (!dropdown || !window.MH.store) return;
+      const list = await window.MH.store.notifications.listAll(20);
+      const body = dropdown.querySelector('.mh-notif-list');
+      if (!list.length) {
+        body.innerHTML = '<div class="mh-notif-empty">Chưa có thông báo nào.</div>';
+        return;
+      }
+      body.innerHTML = list.map((n) => `
+        <a class="mh-notif-item ${n.is_read ? '' : 'is-unread'}" data-id="${n.id}" data-link="${escapeHtml(n.link || '#')}" data-read="${n.is_read}">
+          <div class="mh-notif-item-title">${escapeHtml(n.title)}</div>
+          ${n.message ? `<div class="mh-notif-item-msg">${escapeHtml(n.message)}</div>` : ''}
+          <div class="mh-notif-item-time">${fmtTime(n.created_at)}</div>
+        </a>
+      `).join('');
+      body.querySelectorAll('.mh-notif-item').forEach((el) => {
+        el.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const id = el.dataset.id;
+          const link = el.dataset.link;
+          const wasUnread = el.dataset.read === 'false';
+          if (wasUnread) { await window.MH.store.notifications.markRead(id); await refreshBadge(); }
+          if (link && link !== '#') window.location.href = link;
+        });
+      });
+    }
+
+    function start() {
+      // Chỉ bật notification khi user đã login + Supabase enabled
+      let user;
+      try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
+      if (!user || !user.role || !window.MH || !window.MH.supabaseEnabled) return;
+      injectStyles();
+      bellButtons().forEach(buildDropdown);
+      refreshBadge();
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(refreshBadge, 60000); // 1 phút poll
+    }
+    // Delay start để chờ supabase ready
+    if (window.MH && window.MH.supabaseReady) {
+      window.MH.supabaseReady.then(start).catch(() => {});
+    } else {
+      setTimeout(start, 1000);
+    }
+  })();
 })();

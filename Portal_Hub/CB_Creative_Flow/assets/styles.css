@@ -3500,9 +3500,110 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
   padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
-  display: flex; gap: var(--space-2); flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: var(--space-3);
 }
 .drawer-actions .btn-sm { font-size: 11px; padding-inline: var(--space-4); }
+
+/* Workflow stepper — 4 chấm + đường nối */
+.wf-stepper {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 4px;
+}
+.wf-step {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex: 0 0 auto; min-width: 70px;
+}
+.wf-dot {
+  position: relative;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.wf-dot .wf-num { display: inline-block; }
+.wf-dot .wf-check { display: none; width: 14px; height: 14px; }
+.wf-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  text-align: center; line-height: 1.3;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.wf-line {
+  flex: 1 1 auto; height: 2px;
+  background: var(--border);
+  margin: 0 -2px;
+  align-self: flex-start;
+  margin-top: 17px;
+  transition: background 0.3s;
+}
+
+/* State: done — đã hoàn thành */
+.wf-step.is-done .wf-dot {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+.wf-step.is-done .wf-dot .wf-num { display: none; }
+.wf-step.is-done .wf-dot .wf-check { display: inline-block; }
+.wf-step.is-done .wf-label { color: #16a34a; }
+.wf-line.is-done { background: #16a34a; }
+
+/* State: current — đang ở step */
+.wf-step.is-current .wf-dot {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgb(25 25 112 / 0.18);
+  animation: wfPulse 1.6s ease-in-out infinite;
+}
+.wf-step.is-current .wf-label { color: var(--brand-600); }
+@keyframes wfPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgb(25 25 112 / 0.18); }
+  50%      { box-shadow: 0 0 0 7px rgb(25 25 112 / 0.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-step.is-current .wf-dot { animation: none; }
+}
+
+/* State: error — needinfo (alternative branch) */
+.wf-step.is-needinfo .wf-dot {
+  background: #f59e0b; border-color: #f59e0b; color: #fff;
+  animation: wfPulse 1.6s ease-in-out infinite;
+}
+.wf-step.is-needinfo .wf-label { color: #b45309; }
+
+/* State: cancelled */
+.wf-step.is-cancelled .wf-dot {
+  background: var(--red-700); border-color: var(--red-700); color: #fff;
+}
+.wf-step.is-cancelled .wf-label { color: var(--red-700); }
+
+/* Hint text */
+.wf-hint {
+  margin: 0; padding: 8px 12px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md, 12px);
+  font-size: var(--text-sm);
+  color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.wf-hint::before {
+  content: '👉'; font-size: 14px; flex-shrink: 0;
+}
+.wf-hint.is-done::before { content: '✓'; color: #16a34a; }
+.wf-hint.is-warn::before { content: '⚠️'; }
+
+/* Action buttons row */
+.wf-actions {
+  display: flex; gap: var(--space-2); flex-wrap: wrap;
+}
 
 /* Account workflow step buttons — gradient nhạt → đậm (1→4)
    Mỗi step có nền đặc trưng (KHÔNG outline) để user nhận biết tiến trình. */
