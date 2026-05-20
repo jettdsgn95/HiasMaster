@@ -268,34 +268,15 @@
   </div>
 
   <div class="drawer-actions">
-    <!-- Stepper indicator: 4 chấm + đường nối, state cập nhật theo account_status + production_status -->
-    <div class="wf-stepper" id="wf-stepper" role="list" aria-label="Account workflow progress">
-      <div class="wf-step" data-step="1" role="listitem">
-        <span class="wf-dot"><span class="wf-num">1</span><svg class="wf-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        <span class="wf-label">Kiểm tra brief</span>
-      </div>
-      <div class="wf-line" data-after="1"></div>
-      <div class="wf-step" data-step="2" role="listitem">
-        <span class="wf-dot"><span class="wf-num">2</span><svg class="wf-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        <span class="wf-label">Xác nhận brief</span>
-      </div>
-      <div class="wf-line" data-after="2"></div>
-      <div class="wf-step" data-step="3" role="listitem">
-        <span class="wf-dot"><span class="wf-num">3</span><svg class="wf-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        <span class="wf-label">Sẵn sàng push</span>
-      </div>
-      <div class="wf-line" data-after="3"></div>
-      <div class="wf-step" data-step="4" role="listitem">
-        <span class="wf-dot"><span class="wf-num">4</span><svg class="wf-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        <span class="wf-label">Đã sản xuất</span>
-      </div>
-    </div>
+    <!-- Push status message: chỉ hiện khi order đã push sang Task Tracker -->
+    <p class="wf-hint" id="wf-hint" hidden>Đang tải...</p>
 
-    <!-- Hint text: bước tiếp theo cần làm -->
-    <p class="wf-hint" id="wf-hint">Đang tải...</p>
-
-    <!-- Action buttons row: primary (theo step) + alt (Yêu cầu bổ sung) + cancel -->
+    <!-- Action buttons row: [Hủy đơn] (trái) ⟷ [Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production] (phải) -->
     <div class="wf-actions">
+      <button class="btn btn-sm act-cancel" id="act-cancel">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        Hủy đơn
+      </button>
       <button class="btn btn-sm act-step act-step--1" id="act-checking">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Kiểm tra brief
@@ -312,10 +293,6 @@
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         Push → Production
       </button>
-      <button class="btn btn-sm act-cancel" id="act-cancel">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-        Hủy đơn
-      </button>
     </div>
   </div>
 
@@ -323,6 +300,56 @@
     <!-- Filled by JS -->
   </div>
 </aside>
+
+<!-- ============ CANCEL ORDER MODAL ============ -->
+<div class="drawer-backdrop" id="cancel-modal-backdrop"></div>
+<div class="cancel-modal" id="cancel-modal" aria-hidden="true" role="dialog" aria-labelledby="cancel-modal-title">
+  <div class="cancel-modal-head">
+    <h3 id="cancel-modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Hủy yêu cầu
+    </h3>
+    <button class="icon-btn" id="cancel-modal-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="cancel-modal-body">
+    <div class="cancel-order-meta">
+      <div><span class="cm-label">Order ID</span><b id="cm-order-id" class="mono">—</b></div>
+      <div><span class="cm-label">Tên dự án</span><b id="cm-project">—</b></div>
+    </div>
+
+    <div class="cm-field">
+      <label for="cm-cause">Nguyên nhân chính <span class="muted">(tuỳ chọn)</span></label>
+      <select class="select" id="cm-cause">
+        <option value="">— Chọn nguyên nhân —</option>
+        <option value="brief_insufficient">Brief chưa đủ thông tin</option>
+        <option value="no_longer_needed">Không còn nhu cầu</option>
+        <option value="deadline_mismatch">Deadline không phù hợp</option>
+        <option value="duplicate_request">Trùng yêu cầu</option>
+        <option value="other">Khác</option>
+      </select>
+    </div>
+
+    <div class="cm-field">
+      <label for="cm-reason">Lý do hủy đơn <span class="cm-required">*</span></label>
+      <textarea class="textarea" id="cm-reason" rows="4" placeholder="Mô tả lý do hủy đơn để client hiểu rõ..." required></textarea>
+      <p class="cm-error" id="cm-error" hidden>Vui lòng nhập lý do hủy đơn trước khi xác nhận.</p>
+    </div>
+
+    <label class="cm-checkbox">
+      <input type="checkbox" id="cm-notify" checked />
+      <span>Gửi thông báo đến client</span>
+    </label>
+  </div>
+  <div class="cancel-modal-foot">
+    <button class="btn btn-secondary btn-sm" id="cancel-modal-dismiss" type="button">Đóng</button>
+    <button class="btn btn-sm cm-confirm" id="cancel-modal-confirm" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Xác nhận hủy & gửi client
+    </button>
+  </div>
+</div>
 
 <script src="assets/config.js"></script>
 <script src="assets/supabase-client.js"></script>

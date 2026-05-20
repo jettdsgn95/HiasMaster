@@ -101,7 +101,7 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **17 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 6 Supabase SQL migrations**.
+Build hiện tại: **17 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 7 Supabase SQL migrations**.
 
 Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN).
 
@@ -109,10 +109,11 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 1. [`schema.sql`](supabase/schema.sql) — 11 tables + 2 views + triggers
 2. [`seed.sql`](supabase/seed.sql) — initial 5 demo users metadata (optional, anh đã clear)
 3. [`add-notifications.sql`](supabase/add-notifications.sql) — notifications table + trigger
-4. [`rls.sql`](supabase/rls.sql) — Row-Level Security policies cho 11 bảng
-5. [`storage.sql`](supabase/storage.sql) — 3 buckets + storage.objects policies
-6. [`enable-realtime.sql`](supabase/enable-realtime.sql) — ADD TABLE notifications vào publication
-7. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
+4. [`add-cancel-fields.sql`](supabase/add-cancel-fields.sql) — orders.cancel_reason / cancel_cause / cancelled_by / cancelled_at + extend notifications.type CHECK
+5. [`rls.sql`](supabase/rls.sql) — Row-Level Security policies cho 11 bảng
+6. [`storage.sql`](supabase/storage.sql) — 3 buckets + storage.objects policies
+7. [`enable-realtime.sql`](supabase/enable-realtime.sql) — ADD TABLE notifications vào publication
+8. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
 
 ### Order ↔ Task ↔ Delivery relationship
 

@@ -619,7 +619,7 @@
       }</svg>
       <div>
         <b>${allOk ? 'Đủ điều kiện chuyển sang Production Board' : 'Thiếu điều kiện chuyển Production Board'}</b>
-        <ul>${checks.map((c) => `<li>${c.ok ? '✓' : '○'} ${c.label}</li>`).join('')}</ul>
+        <ul>${checks.map((c) => `<li class="${c.ok ? 'ok' : ''}">${c.label}</li>`).join('')}</ul>
       </div>
     </div>`;
   }
@@ -853,12 +853,12 @@
     document.body.style.overflow = 'hidden';
   }
 
-  /* ---------- Stepper state update (Issue 2 fix) ----------
-     Map order status → visual state cho 4 step + hint text + button enable/disable. */
+  /* ---------- Drawer state update ----------
+     Stepper UI lớn đã bỏ — function này giờ chỉ:
+       1. Toggle visibility của push-status message (chỉ hiện khi đã push).
+       2. Enable/disable các action button theo account_status + production_status. */
   function updateStepperState(o) {
     if (!o) return;
-    const steps = document.querySelectorAll('#wf-stepper .wf-step');
-    const lines = document.querySelectorAll('#wf-stepper .wf-line');
     const hint  = document.getElementById('wf-hint');
     const btnCheck   = document.getElementById('act-checking');
     const btnNeed    = document.getElementById('act-needinfo');
@@ -866,9 +866,7 @@
     const btnPush    = document.getElementById('act-push');
     const btnCancel  = document.getElementById('act-cancel');
 
-    // Reset
-    steps.forEach((s) => s.classList.remove('is-done', 'is-current', 'is-needinfo', 'is-cancelled'));
-    lines.forEach((l) => l.classList.remove('is-done'));
+    // Reset disabled state
     [btnCheck, btnNeed, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = false; });
 
     const isCancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
@@ -881,81 +879,37 @@
     const hasDeliv    = o.deliverable_type && o.deliverable_type.length > 0;
     const readyToPush = isConfirmed && hasPic && hasDeadline && hasDeliv && !isCancelled;
 
-    // Cancelled state — mọi step về cancelled, hide hint
+    // Cancelled state — disable mọi action, hide hint
     if (isCancelled) {
-      steps.forEach((s) => s.classList.add('is-cancelled'));
-      if (hint) { hint.className = 'wf-hint is-warn'; hint.textContent = 'Order đã hủy. Mọi action bị vô hiệu hóa.'; }
-      [btnCheck, btnNeed, btnConfirm, btnPush].forEach((b) => { if (b) b.disabled = true; });
-      if (btnCancel) btnCancel.disabled = true;
+      if (hint) hint.hidden = true;
+      [btnCheck, btnNeed, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = true; });
       return;
     }
 
-    // Step 1 — Kiểm tra brief
-    if (isChecking || isConfirmed || isPushed || isNeedinfo) {
-      steps[0].classList.add('is-done');
-      lines[0].classList.add('is-done');
-    } else {
-      steps[0].classList.add('is-current');
-    }
-
-    // Step 2 — Xác nhận brief (cũng dùng cho needinfo branch)
-    if (isNeedinfo) {
-      steps[1].classList.add('is-needinfo');
-    } else if (isConfirmed || isPushed) {
-      steps[1].classList.add('is-done');
-      lines[1].classList.add('is-done');
-    } else if (isChecking) {
-      steps[1].classList.add('is-current');
-    }
-
-    // Step 3 — Sẵn sàng push (đủ PIC + deadline + deliverable)
-    if (isPushed) {
-      steps[2].classList.add('is-done');
-      lines[2].classList.add('is-done');
-    } else if (readyToPush) {
-      steps[2].classList.add('is-current');
-    }
-
-    // Step 4 — Đã sản xuất (production_status != unassigned)
-    if (isPushed) {
-      steps[3].classList.add('is-done');
-    }
-
-    // Hint text + button disable theo state
-    if (hint) hint.className = 'wf-hint';
+    // Button enable/disable theo state
     if (o.account_status === 'pending') {
-      if (hint) hint.textContent = 'Bước tiếp theo: bấm "Kiểm tra brief" để bắt đầu xử lý order.';
       btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
     } else if (isChecking) {
-      if (hint) hint.textContent = 'Đang kiểm tra brief. Nếu thiếu thông tin → "Yêu cầu bổ sung". Nếu OK → "Xác nhận brief".';
       btnPush.disabled = true;
     } else if (isNeedinfo) {
-      if (hint) {
-        hint.className = 'wf-hint is-warn';
-        hint.textContent = 'Đã gửi yêu cầu bổ sung cho client. Sau khi client cập nhật, bấm "Xác nhận brief".';
-      }
       btnPush.disabled = true;
     } else if (isConfirmed && !isPushed) {
-      if (!readyToPush) {
-        const missing = [];
-        if (!hasPic) missing.push('Production PIC');
-        if (!hasDeadline) missing.push('Internal Deadline');
-        if (!hasDeliv) missing.push('Hạng mục');
-        if (hint) {
-          hint.className = 'wf-hint is-warn';
-          hint.textContent = 'Brief đã xác nhận. Chưa thể push — thiếu: ' + missing.join(', ') + '. Fill ở "Internal Management" bên dưới.';
-        }
-        btnPush.disabled = true;
-      } else {
-        if (hint) hint.textContent = 'Đủ điều kiện push! Bấm "Push → Production" để tạo task cho ' + o.production_pic + '.';
-      }
+      if (!readyToPush) btnPush.disabled = true;
       btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true;
     } else if (isPushed) {
-      if (hint) {
+      btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
+    }
+
+    // Push status message — chỉ hiện khi đã push
+    if (hint) {
+      if (isPushed) {
+        hint.hidden = false;
         hint.className = 'wf-hint is-done';
         hint.innerHTML = 'Đã push sang Task Tracker. PIC: <b>' + (o.production_pic || '—') + '</b>. <a href="production-board.html?dl=in_production" class="link">Xem task →</a>';
+      } else {
+        hint.hidden = true;
+        hint.innerHTML = '';
       }
-      btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
     }
   }
 
@@ -975,7 +929,154 @@
   document.getElementById('act-needinfo').addEventListener('click', () => updateStatus(currentOrder, 'needinfo', 'Yêu cầu bổ sung brief'));
   document.getElementById('act-confirm').addEventListener('click', () => updateStatus(currentOrder, 'confirmed', 'Đã xác nhận brief'));
   document.getElementById('act-push').addEventListener('click', () => pushToProduction(currentOrder));
-  document.getElementById('act-cancel').addEventListener('click', () => updateStatus(currentOrder, 'rejected', 'Đã hủy đơn'));
+  document.getElementById('act-cancel').addEventListener('click', () => openCancelModal(currentOrder));
+
+  /* ---------- Cancel Order modal ---------- */
+  const cancelModal     = document.getElementById('cancel-modal');
+  const cancelModalBd   = document.getElementById('cancel-modal-backdrop');
+  const cmOrderId       = document.getElementById('cm-order-id');
+  const cmProject       = document.getElementById('cm-project');
+  const cmCause         = document.getElementById('cm-cause');
+  const cmReason        = document.getElementById('cm-reason');
+  const cmNotify        = document.getElementById('cm-notify');
+  const cmError         = document.getElementById('cm-error');
+  const cmConfirm       = document.getElementById('cancel-modal-confirm');
+  let cancelTargetOrder = null;
+
+  const CAUSE_LABEL = {
+    brief_insufficient: 'Brief chưa đủ thông tin',
+    no_longer_needed:   'Không còn nhu cầu',
+    deadline_mismatch:  'Deadline không phù hợp',
+    duplicate_request:  'Trùng yêu cầu',
+    other:              'Khác'
+  };
+
+  function openCancelModal(order) {
+    if (!order) return;
+    if (order.account_status === 'rejected' || order.production_status === 'cancelled') {
+      window.MH.toast({ type: 'info', title: 'Order đã hủy', message: order.order_id + ' đã ở trạng thái hủy.' });
+      return;
+    }
+    cancelTargetOrder = order;
+    cmOrderId.textContent = order.order_id || '—';
+    cmProject.textContent = order.project_name || '—';
+    cmCause.value = '';
+    cmReason.value = '';
+    cmNotify.checked = true;
+    cmError.hidden = true;
+    cmConfirm.disabled = false;
+    cancelModal.classList.add('is-open');
+    cancelModal.setAttribute('aria-hidden', 'false');
+    cancelModalBd.classList.add('is-open');
+    setTimeout(() => cmReason.focus(), 50);
+  }
+
+  function closeCancelModal() {
+    cancelModal.classList.remove('is-open');
+    cancelModal.setAttribute('aria-hidden', 'true');
+    cancelModalBd.classList.remove('is-open');
+    cancelTargetOrder = null;
+  }
+
+  document.getElementById('cancel-modal-close').addEventListener('click', closeCancelModal);
+  document.getElementById('cancel-modal-dismiss').addEventListener('click', closeCancelModal);
+  cancelModalBd.addEventListener('click', closeCancelModal);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && cancelModal.classList.contains('is-open')) closeCancelModal();
+  });
+  cmReason.addEventListener('input', () => { if (cmReason.value.trim()) cmError.hidden = true; });
+
+  cmConfirm.addEventListener('click', async () => {
+    if (!cancelTargetOrder) return;
+    const reason = (cmReason.value || '').trim();
+    if (!reason) {
+      cmError.hidden = false;
+      cmReason.focus();
+      return;
+    }
+    const causeKey = cmCause.value || null;
+    const notifyClient = !!cmNotify.checked;
+    cmConfirm.disabled = true;
+    try {
+      await submitCancel(cancelTargetOrder, { reason, causeKey, notifyClient });
+      closeCancelModal();
+    } catch (e) {
+      console.warn('[cancel] submit failed:', e);
+      cmConfirm.disabled = false;
+      window.MH.toast({ type: 'error', title: 'Hủy đơn thất bại', message: (e && e.message) || 'Lỗi không xác định.' });
+    }
+  });
+
+  async function submitCancel(order, opts) {
+    const reason = opts.reason;
+    const causeKey = opts.causeKey;
+    const notifyClient = opts.notifyClient;
+    let me = null;
+    try { me = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { me = null; }
+    const meName = me && (me.name || me.email) || 'Hệ thống';
+    const nowIso = new Date().toISOString();
+    const nowLocal = nowIso.slice(0, 16).replace('T', ' ');
+
+    // Mutate local snapshot (optimistic)
+    order.account_status     = 'rejected';
+    order.production_status  = 'cancelled';
+    order.cancel_reason      = reason;
+    order.cancel_cause       = causeKey;
+    order.cancelled_by       = meName;
+    order.cancelled_by_id    = me && me.id ? me.id : null;
+    order.cancelled_at       = nowLocal;
+    order.last_updated       = nowLocal;
+
+    // Persist sang Supabase (write-through). Nếu cột chưa tồn tại sẽ fail mềm —
+    // patch payload vẫn gửi các cột chuẩn để status được sync.
+    const patch = {
+      account_status:    'rejected',
+      production_status: 'cancelled',
+      last_updated:      nowIso
+    };
+    // Optional fields — chỉ gửi nếu schema đã add columns (xem supabase/add-cancel-fields.sql)
+    patch.cancel_reason  = reason;
+    patch.cancel_cause   = causeKey;
+    patch.cancelled_by   = order.cancelled_by_id;
+    patch.cancelled_at   = nowIso;
+    persistOrder(order.order_id, patch);
+
+    // Notify client + activity log
+    if (notifyClient && window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      try {
+        let clientUserId = order.requester_id || null;
+        if (!clientUserId && order.requester_email) {
+          try {
+            const { data } = await window.MH.supabase
+              .from('users').select('id').eq('email', order.requester_email).maybeSingle();
+            if (data && data.id) clientUserId = data.id;
+          } catch (err) { console.warn('[cancel] lookup client by email failed:', err); }
+        }
+        if (clientUserId) {
+          const causeTxt = causeKey ? (CAUSE_LABEL[causeKey] || causeKey) : null;
+          await window.MH.store.notifications.create({
+            user_id: clientUserId,
+            type: 'order_cancelled',
+            title: '❌ Yêu cầu đã bị hủy',
+            message: order.order_id + ' · ' + (order.project_name || '') + (causeTxt ? ' · ' + causeTxt : '') + ' — Lý do: ' + reason,
+            link: 'tracking.html?code=' + encodeURIComponent(order.order_id),
+            related_entity_type: 'orders',
+            related_entity_id: order.order_id
+          });
+        } else {
+          console.warn('[cancel] không tìm thấy user_id cho client requester:', order.requester_email);
+        }
+      } catch (err) { console.warn('[cancel] notify client failed:', err); }
+    }
+
+    window.MH.toast({
+      type: 'success',
+      title: '✓ Đã hủy yêu cầu',
+      message: notifyClient ? 'Đã hủy ' + order.order_id + ' và gửi thông báo đến client.' : 'Đã hủy ' + order.order_id + '.'
+    });
+    render();
+    openDrawer(order);
+  }
 
   function updateStatus(o, newStatus, msg) {
     if (!o) return;
@@ -1127,7 +1228,7 @@
       case 'assign': openDrawer(order); break;
       case 'push': pushToProduction(order); break;
       case 'cancel':
-        if (confirm('Hủy đơn ' + order.order_id + '?')) updateStatus(order, 'rejected', 'Đã hủy đơn');
+        openCancelModal(order);
         break;
     }
   }

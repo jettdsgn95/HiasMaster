@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-20 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · Demo data cleared*
+> *Last updated: 2026-05-20 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · Demo data cleared · Cancel-order modal flow*
 
 ---
 
@@ -123,8 +123,13 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - **Producers** đã ship: `order-form.js` (notify admin+account khi client submit, type=`order_new`), `database-orders.js pushToProduction` (notify PIC khi push to prod, type=`task_assigned`).
 
 **Other 2026-05-20 work:**
-- 4-step Account workflow buttons gradient nền nhạt→đậm + Cancel red-700 (bỏ outline).
-- Stepper UI 4 chấm + đường nối + hint text thay 4 button row cũ. `updateStepperState()` highlight current/done/needinfo/cancelled state theo `account_status + production_status`.
+- **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.
+- **Cancel modal**: `#cancel-modal` overlay với Order ID + Project name readonly + select "Nguyên nhân chính" (5 cause keys: brief_insufficient / no_longer_needed / deadline_mismatch / duplicate_request / other) + textarea "Lý do hủy đơn" required + checkbox "Gửi thông báo đến client" default checked. Submit → `submitCancel()` validate reason → mutate local order → `persistOrder({ account_status:'rejected', production_status:'cancelled', cancel_reason, cancel_cause, cancelled_by, cancelled_at })` → nếu notify checked + Supabase enabled → lookup client `users.id` qua `requester_id` hoặc `requester_email` → INSERT notification type=`order_cancelled` link `tracking.html?code=...`. Row kebab "Hủy đơn" cũng mở modal (bỏ `confirm()` cũ).
+- **Tracking cancel banner**: `tracking.html` thêm `#r-cancel-banner` hiển thị "Yêu cầu này đã bị hủy" + cause + reason + cancelled_by/at khi `raw.account_status === 'rejected'` || `raw.production_status === 'cancelled'`. Đọc từ `data.__rawOrder` (Supabase shape).
+- **Green-circle tick style (yêu cầu #5)**: `.checklist li.ok::before` + `.push-check li.ok::before` đổi sang nền `#16A34A`, check trắng, `border-radius: 9999px`, `width/height 16-18px`. Áp dụng cho Brief checklist + Push-to-Production pre-check.
+- **SQL migration** `supabase/add-cancel-fields.sql`: ADD `cancel_reason text` + `cancel_cause text` (CHECK 5 keys) + `cancelled_by uuid REFERENCES users(id)` + `cancelled_at timestamptz` vào `orders`. Đồng thời extend `notifications.type` CHECK constraint với `'order_cancelled'` + `'order_new'`.
+- 4-step Account workflow buttons gradient nền nhạt→đậm + Cancel red-700 (bỏ outline). _(Step 4 đã đổi từ red sang green 5/2026.)_
+- Stepper UI 4 chấm + đường nối + hint text — _(đã remove 5/2026, xem mục Drawer action area refactor.)_
 - `pushToProduction` (async): idempotent check (đã có task → toast warning + skip), INSERT task auto-fill từ order, INSERT notification cho PIC, UPDATE order.production_status.
 - ROLE_LABEL trong `user-management.js` mở rộng `design`/`editor` (trước thiếu → UI hiển thị UNDEFINED). CSS `rt--design` teal + `rt--editor` cam.
 - Tracking auth flow: chưa login + click Tra cứu → `requireLoginModal()` overlay với CTA preserve `?code=`. Scope check: legacy `client_scope` OR `requester_email`/`requester_id` match.
