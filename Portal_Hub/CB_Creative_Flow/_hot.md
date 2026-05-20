@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-18 · Project state: MVP demo · 11/11 modules done · Task Tracker formalization + Dashboard split*
+> *Last updated: 2026-05-20 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · Demo data cleared*
 
 ---
 
@@ -96,7 +96,7 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - `assets/styles.css` — Design tokens, components, page styles. Gồm `.header-profile-chip`, `.theme-toggle-switch`, `.sidebar-version-block`, `.btn-login-pill`, `.auth-gate-bar`.
 - `assets/config.js` — **Runtime config**, load TRƯỚC `app.js` trên 17/17 page. Expose `window.MH_CONFIG` với `SENTRY_DSN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SENTRY_ENV` (auto-detect localhost vs production), `SENTRY_RELEASE`, `APP_VERSION`, `FEATURES` flags (gồm `SUPABASE_DB`). Để trống các key = disable feature tương ứng. File commit kèm repo, fill tay khi sẵn sàng bật.
 - `assets/supabase-client.js` — **Supabase SDK loader (Phase 1)**, dynamic import @supabase/supabase-js@2.45.4 từ `esm.sh` CDN (giữ zero-build). Expose `window.MH.supabase`, `window.MH.supabaseReady` (Promise), `window.MH.supabaseEnabled`. Auth state change handler mirror Supabase session sang `localStorage['mh-user']` cho compat code hiện tại. Khi config trống → stub null, không network call.
-- `assets/data-store.js` — **Data abstraction (Phase 1)**, expose `window.MH.store` với namespaces: `users`, `orders`, `tasks`, `taskComments`, `deliveries`, `aiUsage`, `auth`, `activity`. Mọi method trả Promise — nếu Supabase enabled → query qua SDK, else fallback `window.MH_MOCK_*` arrays + localStorage keys cũ. Consumer code dùng `await MH.store.tasks.get(id)` thay vì `TASKS.find(...)` — không branch theo backend.
+- `assets/data-store.js` — **Data abstraction (Phase 1+2)**, expose `window.MH.store` với 10 namespaces: `users`, `orders`, `tasks`, `taskComments`, `deliveries`, `aiUsage`, `chatbot`, `files`, **`notifications`**, `auth`, `activity`. Mọi method trả Promise — nếu Supabase enabled → query qua SDK, else fallback `window.MH_MOCK_*` arrays + localStorage keys cũ. Consumer code dùng `await MH.store.tasks.get(id)` thay vì `TASKS.find(...)` — không branch theo backend. **Always-swap pattern (5/2026)**: bỏ điều kiện `remote.length > 0`, khi Supabase enabled luôn replace local array (kể cả empty → UI hiển thị empty state thay vì fallback mock).
 
 **Module migration progress (Phase 1):**
 - ✅ `login.html` — Supabase Auth-first via `MH.store.auth.signIn()`, fallback `loginAsDemo()`.
@@ -114,6 +114,23 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `assets/app.js` Profile modal save: nếu Supabase Storage enabled VÀ pendingAvatar là data URL → fetch → blob → upload `avatars/{user.id}/avatar-{ts}.{ext}` → publicUrl thay thế data URL. Persist profile metadata (name/initials/title/phone/department/bio/avatar_url/role) sang `public.users` qua raw client.
 - ✅ `assets/order-form.js` doSubmit (async): trước khi tạo order, upload mỗi file trong `files` Map lên `brief-files/{order_id}/brief-{ts}-{filename}` với contentType. Lưu array `briefFiles` vào payload, INSERT row vào `public.orders` qua `MH.store.orders.create()`. localStorage fallback giữ nguyên.
 - ⬜ Delivery preview/final file upload — chưa migrate (current dùng Drive URL inputs, không có upload native).
+
+**Phase 1.5 — Realtime Notifications (5/2026):**
+- ✅ `supabase/add-notifications.sql` — bảng `notifications` (user_id, type, title, message, link, related_entity_*, is_read) + 3 index + trigger `touch_notif_read_at`.
+- ✅ `supabase/enable-realtime.sql` — `ALTER PUBLICATION supabase_realtime ADD TABLE notifications` để WebSocket push từ Postgres.
+- ✅ `data-store.js notifications` namespace — listUnread/listAll/create/markRead/markAllRead/findUserIdByName.
+- ✅ `app.js initNotificationBell` IIFE — auto-wire dropdown vào tất cả `button[aria-label="Thông báo"]`, badge unread, click bell mở dropdown 20 mới nhất. **Supabase Realtime subscribe channel `notif-{uid}` filter `user_id=eq.me`** → INSERT event → `showNotifPopup()` toast 8s + click→markRead+navigate. Poll 60s backup, cleanup channel on `beforeunload`.
+- **Producers** đã ship: `order-form.js` (notify admin+account khi client submit, type=`order_new`), `database-orders.js pushToProduction` (notify PIC khi push to prod, type=`task_assigned`).
+
+**Other 2026-05-20 work:**
+- 4-step Account workflow buttons gradient nền nhạt→đậm + Cancel red-700 (bỏ outline).
+- Stepper UI 4 chấm + đường nối + hint text thay 4 button row cũ. `updateStepperState()` highlight current/done/needinfo/cancelled state theo `account_status + production_status`.
+- `pushToProduction` (async): idempotent check (đã có task → toast warning + skip), INSERT task auto-fill từ order, INSERT notification cho PIC, UPDATE order.production_status.
+- ROLE_LABEL trong `user-management.js` mở rộng `design`/`editor` (trước thiếu → UI hiển thị UNDEFINED). CSS `rt--design` teal + `rt--editor` cam.
+- Tracking auth flow: chưa login + click Tra cứu → `requireLoginModal()` overlay với CTA preserve `?code=`. Scope check: legacy `client_scope` OR `requester_email`/`requester_id` match.
+- Client redirect fix: dashboard.html/ai-tools.js/production-board.js role=client → `client-dashboard.html` (trước redirect `tracking.html` legacy).
+- Demo Accounts section + ACCOUNTS map + DEMO_PWD hardcoded XÓA khỏi login.html (security). loginAs() chỉ Supabase auth.
+- Cross-page tasks/orders: clear demo seed qua `supabase/clear-demo.sql`, đồng bộ 9 user password (5 demo `Cbmedia2026`, 4 client test `client@test`) qua SQL `UPDATE auth.users SET encrypted_password = crypt(..., gen_salt('bf'))`.
 
 **Migration pattern thống nhất:**
 ```text

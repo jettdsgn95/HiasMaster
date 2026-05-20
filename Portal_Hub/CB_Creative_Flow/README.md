@@ -101,7 +101,18 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **17 HTML pages · 11 JS files · 1 CSS file · 1 logo asset**.
+Build hiện tại: **17 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 6 Supabase SQL migrations**.
+
+Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN).
+
+Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folder):
+1. [`schema.sql`](supabase/schema.sql) — 11 tables + 2 views + triggers
+2. [`seed.sql`](supabase/seed.sql) — initial 5 demo users metadata (optional, anh đã clear)
+3. [`add-notifications.sql`](supabase/add-notifications.sql) — notifications table + trigger
+4. [`rls.sql`](supabase/rls.sql) — Row-Level Security policies cho 11 bảng
+5. [`storage.sql`](supabase/storage.sql) — 3 buckets + storage.objects policies
+6. [`enable-realtime.sql`](supabase/enable-realtime.sql) — ADD TABLE notifications vào publication
+7. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
 
 ### Order ↔ Task ↔ Delivery relationship
 
@@ -174,11 +185,17 @@ Project có sẵn `package.json` và `railway.json` để deploy lên [Railway](
 - [x] `.env.example` scaffold env vars
 - [x] Sentry skeleton trong `assets/config.js` + lazy CDN load trong `app.js`
 - [x] **Phase 1 foundation**: `supabase/schema.sql`, `supabase/seed.sql`, `assets/supabase-client.js`, `assets/data-store.js`. Frontend zero-build retained — Supabase SDK loaded từ `esm.sh` CDN.
-- [x] **Phase 1 module migration COMPLETE**: login, database-orders, production-board, delivery-log, user-management, ai-tools, chatbot. Tất cả write-through pattern (optimistic UI + Supabase fire-and-forget). Demo localStorage flow vẫn hoạt động khi chưa cấu hình Supabase.
-- [x] **Phase 1 RLS** — `supabase/rls.sql` (idempotent, helper functions + per-table policies).
-- [x] **Phase 2 foundation**: `supabase/storage.sql` (3 buckets + policies), `MH.store.files` namespace (upload/signedUrl/getPublicUrl/list/remove). Avatar upload trong Profile modal + Brief file upload trong Order Form đã migrate sang Supabase Storage (data URL fallback cho avatar khi chưa cấu hình).
+- [x] **Phase 1 module migration COMPLETE**: login, database-orders, production-board, delivery-log, user-management, client-dashboard, tracking, ai-tools, chatbot. Tất cả write-through pattern (optimistic UI + Supabase fire-and-forget). Always-swap khi Supabase enabled.
+- [x] **Phase 1 RLS LIVE** — `supabase/rls.sql` đã chạy: 11 bảng + 4 helper functions.
+- [x] **Phase 2 storage LIVE**: `supabase/storage.sql` chạy xong, 3 buckets (avatars/brief-files/deliverables) active. Avatar upload + Brief file upload qua Supabase Storage.
+- [x] **Phase 1.5 Realtime notifications**: `supabase/add-notifications.sql` + `enable-realtime.sql`. Bell dropdown auto-wire mọi page, badge unread, Supabase Realtime subscribe push popup toast 8s.
+- [x] **Security cleanup**: Demo Accounts section xóa khỏi login. Password 9 user (5 demo `Cbmedia2026` + 4 client test `client@test`) đồng bộ qua SQL.
+- [x] **Demo data cleared**: `supabase/clear-demo.sql` chạy, DB clean cho production test.
+- [x] **Workflow UX upgrade**: 4-step Stepper UI + Push→Production tạo task tự động + Notification cho PIC.
 - [ ] Generate `package-lock.json` — cần Node.js local. Chạy `npm install` 1 lần, commit lockfile.
 - [ ] Migrate delivery file upload (preview/final) sang Storage — Phase 2 nice-to-have
+- [ ] Custom SMTP (Resend / Brevo) để vượt free tier 3 email/h cho password recovery
+- [ ] Enable Realtime cho `orders`/`tasks` để dashboard auto-refresh — Phase 1.6 optional
 
 ---
 
@@ -322,4 +339,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-18*
+*Last updated: 2026-05-20*
