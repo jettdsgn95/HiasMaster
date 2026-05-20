@@ -3600,9 +3600,23 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 .wf-hint.is-done::before { content: '✓'; color: #16a34a; }
 .wf-hint.is-warn::before { content: '⚠️'; }
 
-/* Action buttons row */
+/* Action buttons — 2 nhóm: flow (4 step) trên, destructive (Hủy đơn) dưới với divider */
 .wf-actions {
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.wf-actions-flow {
   display: flex; gap: var(--space-2); flex-wrap: wrap;
+}
+.wf-actions-danger {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border);
+}
+.wf-danger-label {
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* Account workflow step buttons — gradient nhạt → đậm (1→4)
@@ -3641,12 +3655,11 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
   background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
 }
 
-/* Hủy đơn: gradient đỏ brand, canh trái — đẩy nhóm step ra phải bằng margin-right: auto */
+/* Hủy đơn: gradient đỏ brand, nằm trong .wf-actions-danger row riêng (tách khỏi flow 4 steps) */
 .drawer-actions .act-cancel {
   background: linear-gradient(135deg, #E53935 0%, #BA110F 100%);
   color: #fff;
   border: 1px solid transparent;
-  margin-right: auto;
   box-shadow: 0 1px 3px rgba(186, 17, 15, 0.28);
   transition: filter 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
 }
