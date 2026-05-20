@@ -737,6 +737,69 @@
       });
     }
 
+    async function showNotifPopup(notif) {
+      // Toast lớn ở góc với link, sound nhẹ (skip nếu user reduced-motion)
+      if (!window.MH || !window.MH.toast) return;
+      window.MH.toast({
+        type: 'info',
+        title: notif.title || 'Thông báo mới',
+        message: notif.message || '',
+        duration: 8000
+      });
+      // Nếu có link, sau 800ms add click-to-navigate cho toast vừa hiện
+      if (notif.link) {
+        setTimeout(() => {
+          const toasts = document.querySelectorAll('.toast');
+          const last = toasts[toasts.length - 1];
+          if (last) {
+            last.style.cursor = 'pointer';
+            last.title = 'Click để mở';
+            last.addEventListener('click', async (e) => {
+              if (e.target.closest('button')) return; // không trigger khi click nút close
+              if (window.MH.store && notif.id) {
+                await window.MH.store.notifications.markRead(notif.id);
+                await refreshBadge();
+              }
+              window.location.href = notif.link;
+            }, { once: true });
+          }
+        }, 50);
+      }
+    }
+
+    let realtimeChannel = null;
+
+    async function startRealtime() {
+      if (!window.MH || !window.MH.supabase) return;
+      const { data: { user: authUser } } = await window.MH.supabase.auth.getUser();
+      if (!authUser) return;
+      // Unsubscribe channel cũ nếu có (avoid duplicate khi re-init)
+      if (realtimeChannel) {
+        try { await window.MH.supabase.removeChannel(realtimeChannel); } catch (e) {}
+        realtimeChannel = null;
+      }
+      realtimeChannel = window.MH.supabase
+        .channel('notif-' + authUser.id)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: 'user_id=eq.' + authUser.id
+        }, (payload) => {
+          const n = payload.new;
+          if (!n) return;
+          console.log('[notif] realtime new:', n.type, n.title);
+          showNotifPopup(n);
+          refreshBadge();
+          // Re-render dropdown if open
+          if (dropdown && dropdown.classList.contains('is-open')) renderDropdown();
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') console.log('[notif] realtime subscribed');
+          else if (status === 'CHANNEL_ERROR') console.warn('[notif] realtime channel error — fallback polling');
+        });
+    }
+
     function start() {
       // Chỉ bật notification khi user đã login + Supabase enabled
       let user;
@@ -746,7 +809,15 @@
       bellButtons().forEach(buildDropdown);
       refreshBadge();
       if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(refreshBadge, 60000); // 1 phút poll
+      pollTimer = setInterval(refreshBadge, 60000); // 1 phút poll backup
+      // Realtime subscribe để có popup ngay khi có notification mới
+      startRealtime().catch((e) => console.warn('[notif] realtime start failed:', e));
+      // Cleanup on page hide để tránh leak channel
+      window.addEventListener('beforeunload', async () => {
+        if (realtimeChannel && window.MH.supabase) {
+          try { await window.MH.supabase.removeChannel(realtimeChannel); } catch (e) {}
+        }
+      });
     }
     // Delay start để chờ supabase ready
     if (window.MH && window.MH.supabaseReady) {

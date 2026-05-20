@@ -570,6 +570,29 @@
         };
         await window.MH.store.orders.create(row);
         dbPersisted = true;
+
+        // Notify TẤT CẢ admin + account user về order mới (realtime + bell badge)
+        try {
+          const { data: staff } = await window.MH.supabase
+            .from('users')
+            .select('id, name')
+            .in('role', ['admin', 'account'])
+            .eq('status', 'active');
+          if (Array.isArray(staff) && staff.length) {
+            const notifPayloads = staff.map(function (u) {
+              return {
+                user_id: u.id,
+                type: 'order_new',
+                title: '📥 Order mới: ' + code,
+                message: (orderPayload.project_name || 'Untitled') + ' · ' + (orderPayload.requester_name || '') + ' · ' + (orderPayload.department || ''),
+                link: 'database-orders.html?id=' + code,
+                related_entity_type: 'orders',
+                related_entity_id: code
+              };
+            });
+            await window.MH.supabase.from('notifications').insert(notifPayloads);
+          }
+        } catch (e) { console.warn('[order-form] notify staff failed:', e); }
       } catch (e) {
         console.warn('[order-form] create order in Supabase failed:', e);
         window.MH.toast({ type: 'warning', title: 'Sync DB lỗi', message: 'Order lưu local. Liên hệ admin để re-submit.' });
