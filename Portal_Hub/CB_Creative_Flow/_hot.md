@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-20 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · Demo data cleared · Cancel-order modal flow*
+> *Last updated: 2026-05-20 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · Demo data cleared · Cancel-order modal flow · Railway deploy stuck ⚠*
 
 ---
 
@@ -464,6 +464,12 @@ Task drawer comment thread hỗ trợ @mention + Reply:
 - Profile chip đã được move từ sidebar bottom lên header right. Sidebar bottom dùng App version block đơn giản.
 - `#logout-btn` ID nằm trong `.header-profile-menu` và được xử lý bởi từng page JS riêng.
 - `app.js` handle toggle cho `#header-profile-chip`; page JS files không cần tự xử lý toggle nữa.
+- **AI Voice TTS engine evaluation (5/2026)** — Supertonic giữ làm production target chính sau khi đánh giá 3 alternative đều fail web compatibility:
+  - **VietCloneVoice** (github.com/pvlong19911-cmyk/VietCloneVoice): Windows `.exe` binary, không có WASM/JS port → cần Windows server backend. Loại.
+  - **OmniVoice** (github.com/k2-fsa/OmniVoice): PyTorch model, 600+ language support nhưng không có ONNX/WASM export, cần GPU + Python backend. Loại.
+  - **sherpa-onnx** (github.com/k2-fsa/sherpa-onnx) + Piper VN models: WASM build có thể chạy on-device thật, có 3 Vietnamese Piper model (`vais1000-medium` 63MB, `25hours_single-low` 20MB, `vivos-x_low` 10MB). NHƯNG yêu cầu build emscripten + cmake local + bundle 75-80MB first load + phá nguyên tắc zero-build. Defer làm Phase 3 task riêng.
+  - → Kết luận: giữ Supertonic spec (10 preset M1-M5/F1-F5, 16 ngôn ngữ gồm `vi`, expression tags). Demo runtime Web Speech API tiếp tục là placeholder. Khi nào sẵn sàng build pipeline thật → swap.
+- **Web Speech API Vietnamese voice limitation**: `window.speechSynthesis` chỉ có giọng Việt nếu OS đã cài. Windows 10/11 KHÔNG ship vi-VN voices default — cần `Settings → Time & Language → Speech → Add voices → Vietnamese`. Edge browser có thể truy cập Microsoft cloud neural voices (`vi-VN-HoaiMyNeural`, `vi-VN-NamMinhNeural`) khi online. Chrome/Firefox phụ thuộc OS voice. Khi không có vi voice → `getVoices().filter(v.lang.startsWith('vi'))` rỗng → code fallback sang voice tiếng Anh đầu tiên → đọc Tiếng Việt sai phonetic. Diagnostic snippet: `window.speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith('vi'))`.
 
 ---
 
