@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-20 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · Demo data cleared · Cancel-order modal flow · Railway deploy stuck ⚠*
+> *Last updated: 2026-05-21 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · **Full demo data cleared (operations)** · Cancel-order modal flow · Railway deploy LIVE ✓*
 
 ---
 

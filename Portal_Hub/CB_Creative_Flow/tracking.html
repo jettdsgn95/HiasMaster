@@ -52,12 +52,6 @@
         </div>
         <button class="btn btn-primary btn-lg" type="submit">Tra cứu</button>
       </div>
-      <div class="lookup-examples" style="margin-top:var(--space-3); justify-content:center">
-        <span>Thử nhanh:</span>
-        <code data-fill="MEDIA-2026-0001">MEDIA-2026-0001</code>
-        <code data-fill="MEDIA-2026-0008">MEDIA-2026-0008</code>
-        <code data-fill="MEDIA-2026-0010">MEDIA-2026-0010</code>
-      </div>
     </form>
   </div>
 </section>
@@ -248,50 +242,8 @@
 <script>
 (function(){
   // Mock data
-  const DB = {
-    'MEDIA-2026-0001': {
-      project: 'Summer Campaign 2026', service: 'Design / POSM', deadline: '25/05/2026', priority: 'Gấp',
-      created: '12/05/2026', updated: '12/05/2026 09:24', percent: 5, statusKey: 'received',
-      statusLabel: 'Đã tiếp nhận', stage: 'Account đang kiểm tra brief và chờ xác nhận scope',
-      assignee: 'Account Team — Hậu Nguyễn', avatar: 'HN'
-    },
-    'MEDIA-2026-0004': {
-      project: 'Bộ Key Visual Sự kiện Q3', service: 'Design / POSM', deadline: '22/05/2026', priority: 'Gấp',
-      created: '10/05/2026', updated: '12/05/2026 11:42', percent: 50, statusKey: 'progress',
-      statusLabel: 'Đang sản xuất', stage: 'Design đang thực hiện bộ key visual và chuẩn bị preview',
-      assignee: 'Account Team — Mai Phương', avatar: 'MP'
-    },
-    'MEDIA-2026-0008': {
-      project: 'Social Post Lịch Thi IELTS', service: 'Ads / Post', deadline: '16/05/2026', priority: 'Bình thường',
-      created: '08/05/2026', updated: '12/05/2026 16:00', percent: 80, statusKey: 'preview',
-      statusLabel: 'Chờ phản hồi preview', stage: 'Preview đã gửi, đang chờ client phản hồi',
-      assignee: 'Account Team — Hậu Nguyễn', avatar: 'HN'
-    },
-    'MEDIA-2026-0010': {
-      project: 'Bộ Poster Tuyển dụng', service: 'Design / POSM', deadline: '10/05/2026', priority: 'Bình thường',
-      created: '04/05/2026', updated: '09/05/2026 11:30', percent: 95, statusKey: 'preview',
-      statusLabel: 'Đã bàn giao', stage: 'Final đã bàn giao, chờ xác nhận/rating',
-      assignee: 'Account Team — Hậu Nguyễn', avatar: 'HN'
-    },
-    'CB-2026-028': {
-      project: 'Summer Campaign 2026', service: 'Video', deadline: '30/03/2026', priority: 'Cao',
-      created: '21/03/2026', updated: '27/03/2026 16:20', percent: 68, statusKey: 'progress',
-      statusLabel: 'Đang xử lý', stage: 'Sản xuất bản preview đầu tiên',
-      assignee: 'Account Team — Mai Phương', avatar: 'MP'
-    },
-    'CB-2026-031': {
-      project: 'Motion Logo Sản phẩm Mới', service: 'Motion', deadline: '15/05/2026', priority: 'Bình thường',
-      created: '01/05/2026', updated: '10/05/2026 09:30', percent: 35, statusKey: 'received',
-      statusLabel: 'Đã tiếp nhận', stage: 'Đang chốt scope với khách',
-      assignee: 'Account Team — Đức Anh', avatar: 'ĐA'
-    },
-    'CB-2026-024': {
-      project: 'Reel Sản phẩm mới', service: 'Motion', deadline: '20/02/2026', priority: 'Bình thường',
-      created: '01/02/2026', updated: '18/02/2026 11:00', percent: 100, statusKey: 'completed',
-      statusLabel: 'Hoàn tất', stage: 'Đã bàn giao file final',
-      assignee: 'Account Team — Linh Chi', avatar: 'LC'
-    }
-  };
+  // Legacy hardcoded DB cleared — tracking lookup chỉ dùng Supabase + localStorage mh-submitted-orders.
+  const DB = {};
 
   const statusBadge = {
     received:  { cls: 'badge-info',    label: 'Đã tiếp nhận' },
