@@ -228,13 +228,13 @@ const AUTH_USER = (() => { try { return JSON.parse(localStorage.getItem('mh-user
 ```text
 Vận hành
 ├── Master Dashboard
-├── Order Dashboard     admin/account
-├── Task Dashboard
-├── Order Form          admin/account (design/editor blocked)
-├── Database Orders     admin/account
-├── Task Tracker        (sidebar label; page H1: "Task Tracker / Production Board")
-├── Delivery Log        admin/account
-└── Reports             admin/account
+├── Orders Dashboard       admin/account  (was "Order Dashboard")
+├── Task Dashboard         (page subtitle: "Internal Work Dashboard")
+├── Order Form             admin/account (design/editor blocked)
+├── Client Orders          admin/account  (was "Database Orders"; file: database-orders.html)
+├── Internal Task Tracker  (was "Task Tracker"; file: production-board.html; page H1: "Internal Task Tracker / Task Tracker · Production Board")
+├── Delivery Log           admin/account
+└── Reports                admin/account
 
 Hệ thống
 ├── AI Tools            all internal roles
@@ -464,10 +464,11 @@ Task drawer comment thread hỗ trợ @mention + Reply:
 - Profile chip đã được move từ sidebar bottom lên header right. Sidebar bottom dùng App version block đơn giản.
 - `#logout-btn` ID nằm trong `.header-profile-menu` và được xử lý bởi từng page JS riêng.
 - `app.js` handle toggle cho `#header-profile-chip`; page JS files không cần tự xử lý toggle nữa.
-- **Business model — 2 operational flows (5/2026 clarification)**: Hệ thống có 2 luồng vận hành SEPARATE:
-  - **(1) Client Orders**: requests từ client/branch/department submit qua `request.html`. Lifecycle đầy đủ: receive brief → check brief → request more info → confirm brief → production → delivery → feedback/rating → completed/cancelled. Mô hình data: `public.orders` table, mỗi row có `requester_id` link `auth.users`. Quản lý qua **Database Orders** + **Order Dashboard**.
-  - **(2) Internal Tasks**: work items nội bộ Leader/Admin/Account assign trực tiếp cho Media team. Có thể link với 1 Client Order (`order_id`) HOẶC standalone (`is_standalone=true`, no order_id) cho admin/internal workstream. Mô hình data: `public.tasks` table. Quản lý qua **Task Tracker** (`production-board.html`) + **Task Dashboard**. **Client KHÔNG được thấy data này** — RLS chặn DB level + role guard client-side redirect role=client → `client-dashboard.html`.
-  - **Dashboard mapping (đã wire 21/5)**: Master Dashboard = combined orders + tasks; Order Dashboard = ONLY orders; Task Dashboard = ONLY tasks.
+- **Business model — 2 operational flows (5/2026 clarification + Module 1 UI naming)**: Hệ thống có 2 luồng vận hành SEPARATE:
+  - **(1) Client Orders**: requests từ client/branch/department submit qua `request.html`. Lifecycle đầy đủ: receive brief → check brief → request more info → confirm brief → production → delivery → feedback/rating → completed/cancelled. Mô hình data: `public.orders` table, mỗi row có `requester_id` link `auth.users`. Quản lý qua **Client Orders** (`database-orders.html` — sidebar label "Client Orders") + **Orders Dashboard** (`order-dashboard.html`).
+  - **(2) Internal Tasks**: work items nội bộ Leader/Admin/Account assign trực tiếp cho Media team. Có thể link với 1 Client Order (`order_id`) HOẶC standalone (`is_standalone=true`, no order_id) cho admin/internal workstream. Mô hình data: `public.tasks` table. Quản lý qua **Internal Task Tracker** (`production-board.html` — sidebar label "Internal Task Tracker") + **Task Dashboard** / Internal Work Dashboard (`task-dashboard.html`). **Client KHÔNG được thấy data này** — RLS chặn DB level + role guard client-side redirect role=client → `client-dashboard.html`.
+  - **Dashboard mapping (đã wire 21/5)**: Master Dashboard = combined orders + tasks; Orders Dashboard = ONLY orders; Task Dashboard = ONLY tasks.
+  - **UI label changes (Module 1, 5/2026)**: KHÔNG rename files/routes. Chỉ update text trong sidebar `<span>`, page `<h1>`, `<title>`, meta description, và JS user-visible strings (toast/chatbot reply/action buttons). File paths giữ nguyên: `database-orders.html`, `production-board.html`, `order-dashboard.html`, `task-dashboard.html`.
 - **Dashboard data wiring pattern (5/2026)**: 3 dashboard pages (`dashboard.html`/`order-dashboard.html`/`task-dashboard.html`) inline async `loadXDashboard()` IIFE: (1) await `MH.supabaseReady` (2) parallel fetch `MH.store.orders.list()` + `MH.store.tasks.list()` (3) compute KPI + counts (4) update DOM qua `data-card-key` / `data-pipe` / `data-pic` / `data-branch` / `data-type` / `data-link` attributes. Khi Supabase off → console.warn + UI giữ 0 (no breakage). Helper: `dbIsOverdue(deadline, isCompleted)`, `dbIsDueSoon(deadline, isCompleted)` (48h window), `dbIsCompleted(status)` (status === 'completed' || 'delivered'). Pattern này KHÔNG động database-orders.js/production-board.js (đã có write-through), chỉ wire read-only dashboards.
 - **AI Voice TTS engine evaluation (5/2026)** — Supertonic giữ làm production target chính sau khi đánh giá 3 alternative đều fail web compatibility:
   - **VietCloneVoice** (github.com/pvlong19911-cmyk/VietCloneVoice): Windows `.exe` binary, không có WASM/JS port → cần Windows server backend. Loại.

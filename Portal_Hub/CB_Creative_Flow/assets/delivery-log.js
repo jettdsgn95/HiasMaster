@@ -442,7 +442,7 @@
 
       case 'request_rev':
         openModal('Yêu cầu chỉnh sửa nội bộ', `
-          <p class="text-sm muted" style="margin-bottom:var(--space-3)">Comment sẽ gửi về P.I.C <b>${escapeHtml(cur.production_pic)}</b>. Task sẽ quay lại Production Board với status "Chỉnh sửa nội bộ".</p>
+          <p class="text-sm muted" style="margin-bottom:var(--space-3)">Comment sẽ gửi về P.I.C <b>${escapeHtml(cur.production_pic)}</b>. Task sẽ quay lại Internal Task Tracker với status "Chỉnh sửa nội bộ".</p>
           <div class="field"><label class="label">Nội dung chỉnh sửa <span class="req">*</span></label><textarea class="textarea" id="rev-comment" placeholder="Mô tả cụ thể những điểm cần chỉnh..."></textarea></div>
         `, () => {
           const text = document.getElementById('rev-comment').value.trim();
@@ -450,7 +450,7 @@
           cur.delivery_status = 'need_rev';
           cur.delivery_note = text;
           logActivity('internal_revision_requested', 'Yêu cầu chỉnh sửa: ' + text);
-          window.MH.toast({ type: 'success', title: 'Đã yêu cầu chỉnh sửa', message: 'Task quay lại Production Board cho ' + cur.production_pic });
+          window.MH.toast({ type: 'success', title: 'Đã yêu cầu chỉnh sửa', message: 'Task quay lại Internal Task Tracker cho ' + cur.production_pic });
           closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         break;
@@ -555,7 +555,7 @@
 
       case 'reopen':
         openModal('Mở lại delivery', `
-          <p class="text-sm muted" style="margin-bottom:var(--space-3)">Mở lại sẽ tăng counter "Reopened" và quay lại Production Board.</p>
+          <p class="text-sm muted" style="margin-bottom:var(--space-3)">Mở lại sẽ tăng counter "Reopened" và quay lại Internal Task Tracker.</p>
           <div class="field"><label class="label">Lý do mở lại <span class="req">*</span></label><textarea class="textarea" id="reopen-reason" placeholder="VD: Client phát hiện lỗi sau khi đã bàn giao..."></textarea></div>
         `, () => {
           const reason = document.getElementById('reopen-reason').value.trim();

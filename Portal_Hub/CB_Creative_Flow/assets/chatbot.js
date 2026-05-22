@@ -273,7 +273,7 @@
     return {
       intent: 'order_status_query',
       text: `Order ${order.id} hiện đang ở trạng thái: ${order.internal_status}.\n\nThông tin chính:\n- Project: ${order.project}\n- P.I.C: ${order.pic}\n- Progress: ${order.progress}%\n- Deadline nội bộ: ${order.deadline}\n- Delivery: ${order.delivery}\n\nHành động tiếp theo: P.I.C cần cập nhật preview trước deadline nếu task chưa qua review.`,
-      actions: [{ label: 'Open Orders', url: 'database-orders.html' }, { label: 'Open Task', url: 'production-board.html' }]
+      actions: [{ label: 'Open Client Orders', url: 'database-orders.html' }, { label: 'Open Task', url: 'production-board.html' }]
     };
   }
 
@@ -282,8 +282,8 @@
     if (!task || !canSeeTask(task)) return { intent: 'permission_denied', text: 'Em chưa tìm thấy task này hoặc anh không có quyền xem task đó.', actions: [] };
     return {
       intent: 'task_status_query',
-      text: `Task ${task.id} đang ở trạng thái: ${task.status}.\n\nThông tin chính:\n- Project: ${task.project}\n- Order: ${task.order}\n- P.I.C: ${task.pic}\n- Progress: ${task.progress}%\n- Deadline nội bộ: ${task.deadline}\n\nGợi ý: nếu đã có preview/final link, cập nhật trong Production Board để Account duyệt.`,
-      actions: [{ label: 'Open Production Board', url: 'production-board.html' }]
+      text: `Task ${task.id} đang ở trạng thái: ${task.status}.\n\nThông tin chính:\n- Project: ${task.project}\n- Order: ${task.order}\n- P.I.C: ${task.pic}\n- Progress: ${task.progress}%\n- Deadline nội bộ: ${task.deadline}\n\nGợi ý: nếu đã có preview/final link, cập nhật trong Internal Task Tracker để Account duyệt.`,
+      actions: [{ label: 'Open Internal Task Tracker', url: 'production-board.html' }]
     };
   }
 
@@ -324,15 +324,15 @@
     return {
       intent: 'process_help',
       text: 'Status chính trong flow:\n\n- Pending/Checking: Account đang kiểm tra brief.\n- Need Info: requester cần bổ sung thông tin.\n- Confirmed: brief đã đủ để sản xuất.\n- In Production: Design/Editor đang làm task.\n- Internal Review: chờ Account/Admin duyệt.\n- Ready/Preview/Final: sẵn sàng hoặc đã bàn giao qua Delivery Log.\n\nChatbot chỉ giải thích và điều hướng; các thao tác như đổi deadline, gửi final hoặc đóng order phải làm trong UI có quyền.',
-      actions: [{ label: 'Open Production Board', url: 'production-board.html' }, { label: 'Open Delivery Log', url: 'delivery-log.html' }]
+      actions: [{ label: 'Open Internal Task Tracker', url: 'production-board.html' }, { label: 'Open Delivery Log', url: 'delivery-log.html' }]
     };
   }
 
   function navigationHelp(text) {
     if (/report|báo cáo/.test(text)) return { intent: 'navigation_help', text: 'Em mở Reports để xem KPI, chart, overdue risk và feedback.', actions: [{ label: 'Open Reports', url: 'reports.html' }] };
-    if (/production|task|board/.test(text)) return { intent: 'navigation_help', text: 'Em mở Production Board để xem task, Kanban và My Tasks.', actions: [{ label: 'Open Production Board', url: 'production-board.html' }] };
-    if (/order|brief/.test(text)) return { intent: 'navigation_help', text: 'Em mở Order Form hoặc Database Orders tùy anh muốn tạo mới hay quản lý order.', actions: [{ label: 'Open Order Form', url: 'request.html' }, { label: 'Open Orders', url: 'database-orders.html' }] };
-    return { intent: 'navigation_help', text: 'Anh muốn đi tới module nào? Em có thể mở Order Form, Production Board, Delivery Log, Reports hoặc AI Tools.', actions: [{ label: 'Open Dashboard', url: 'dashboard.html' }] };
+    if (/production|task|board/.test(text)) return { intent: 'navigation_help', text: 'Em mở Internal Task Tracker để xem task, Kanban và My Tasks.', actions: [{ label: 'Open Internal Task Tracker', url: 'production-board.html' }] };
+    if (/order|brief/.test(text)) return { intent: 'navigation_help', text: 'Em mở Order Form hoặc Client Orders tùy anh muốn tạo mới hay quản lý order.', actions: [{ label: 'Open Order Form', url: 'request.html' }, { label: 'Open Client Orders', url: 'database-orders.html' }] };
+    return { intent: 'navigation_help', text: 'Anh muốn đi tới module nào? Em có thể mở Order Form, Internal Task Tracker, Delivery Log, Reports hoặc AI Tools.', actions: [{ label: 'Open Dashboard', url: 'dashboard.html' }] };
   }
 
   function fallback() {

@@ -15,7 +15,7 @@
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
   if (user.role === 'client') {
-    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Production Board chỉ dành cho team nội bộ.' });
+    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Internal Task Tracker chỉ dành cho team nội bộ.' });
     setTimeout(() => location.replace('client-dashboard.html'), 1200);
     return;
   }
