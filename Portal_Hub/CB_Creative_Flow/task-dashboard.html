@@ -96,7 +96,7 @@
     <div class="dash-page-head">
       <div>
         <h1><span class="serif-italic">Task</span> Dashboard <span class="text-xs muted" style="font-weight:500; font-size:0.5em; vertical-align:middle; margin-left:8px">— Internal Work Dashboard / Công việc nội bộ</span></h1>
-        <p>KPI <b>Internal Tasks</b> (công việc nội bộ) — workload, deadline, status, hiệu suất P.I.C. Bao gồm cả task linked-to-Client-Order và standalone.</p>
+        <p>Trả lời câu hỏi: <b>"Team đang làm gì, ai đang quá tải, việc nào trễ?"</b> — Volume / Workload / Deadline / Status / Performance. <span class="text-xs muted">CHỈ tracking Internal Tasks (linked + standalone), KHÔNG load Client Orders.</span></p>
         <div class="meta-row">
           <span>Last updated: <b id="last-updated">13/05/2026 10:00</b></span>
           <a class="refresh-btn" href="dashboard.html" style="text-decoration:none">
@@ -144,70 +144,217 @@
       <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="td-total-display">0</b> internal tasks</span>
     </div>
 
-    <div class="kpi-grid">
-      <div class="kpi kpi--brand kpi--hero" data-card-key="total_tasks" tabindex="0" role="link" aria-label="Drilldown: Total Internal Tasks">
-        <div class="kpi-head"><span class="kpi-label">Total Internal Tasks</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+    <!-- ============ TASK VOLUME (4 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Task</span> Volume</h2>
+          <p>Tổng quan internal tasks — linked vs standalone, mới được giao.</p>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up"><b>+3</b> tuần này</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi" data-card-key="in_production" tabindex="0" role="link" aria-label="Drilldown: In Production">
-        <div class="kpi-head"><span class="kpi-label">In Production</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <div class="kpi-grid">
+        <div class="kpi kpi--brand kpi--hero" data-card-key="total_tasks" tabindex="0" role="link" aria-label="Drilldown: Total Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Total Internal Tasks</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Toàn bộ công việc nội bộ</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend">Đang xử lý</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi" data-card-key="internal_review" tabindex="0" role="link" aria-label="Drilldown: Internal Review">
-        <div class="kpi-head"><span class="kpi-label">Chờ duyệt nội bộ</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <div class="kpi" data-card-key="linked_tasks" tabindex="0" role="link" aria-label="Drilldown: Linked Tasks">
+          <div class="kpi-head"><span class="kpi-label">Linked Tasks</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Gắn với Client Order</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend">Account/Admin cần duyệt</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--warn" data-card-key="due_soon" tabindex="0" role="link" aria-label="Drilldown: Due Soon">
-        <div class="kpi-head"><span class="kpi-label">Due Soon (48h)</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <div class="kpi kpi--red" data-card-key="standalone_tasks" tabindex="0" role="link" aria-label="Drilldown: Standalone Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Standalone Internal Tasks</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Không gắn Client Order</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend">Đẩy task nhanh</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--red" data-card-key="overdue" tabindex="0" role="link" aria-label="Drilldown: Overdue">
-        <div class="kpi-head"><span class="kpi-label">Overdue</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></span>
+        <div class="kpi kpi--brand" data-card-key="new_internal_tasks" tabindex="0" role="link" aria-label="Drilldown: New Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">New Internal Tasks</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Mới giao, chưa nhận</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend down">Cần escalate</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--ok" data-card-key="on_time_rate" tabindex="0" role="link" aria-label="Drilldown: On-time Rate">
-        <div class="kpi-head"><span class="kpi-label">On-time Rate</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+    </section>
+
+    <!-- ============ WORKLOAD (1 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Workload</span></h2>
+          <p>Phân bổ task đang mở theo team member — ai đang quá tải?</p>
         </div>
-        <span class="kpi-value">0%</span>
-        <span class="kpi-trend up">SLA nội bộ</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-    </div>
+      <div class="kpi-grid">
+        <div class="kpi kpi--warn" data-card-key="unassigned_tasks" tabindex="0" role="link" aria-label="Drilldown: Unassigned Tasks">
+          <div class="kpi-head"><span class="kpi-label">Unassigned Tasks</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><line x1="17" y1="11" x2="23" y2="11"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend down">Chưa gán P.I.C</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DEADLINE (3 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Deadline</span></h2>
+          <p>Task sắp đến hạn + đã trễ — cần escalate ai.</p>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi kpi--warn" data-card-key="due_today" tabindex="0" role="link" aria-label="Drilldown: Due Today">
+          <div class="kpi-head"><span class="kpi-label">Due Today</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Hết hạn hôm nay</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--warn" data-card-key="due_this_week" tabindex="0" role="link" aria-label="Drilldown: Due This Week">
+          <div class="kpi-head"><span class="kpi-label">Due This Week</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Trong 7 ngày tới</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--red" data-card-key="overdue" tabindex="0" role="link" aria-label="Drilldown: Overdue Tasks">
+          <div class="kpi-head"><span class="kpi-label">Overdue Tasks</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend down">Đã quá hạn — escalate</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRODUCTION STATUS (6 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Production</span> Status</h2>
+          <p>Phân bổ task theo trạng thái sản xuất hiện tại.</p>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi" data-card-key="status_pending" tabindex="0" role="link" aria-label="Drilldown: To Do / Pending">
+          <div class="kpi-head"><span class="kpi-label">To Do / Pending</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Chưa nhận task</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="in_production" tabindex="0" role="link" aria-label="Drilldown: In Progress">
+          <div class="kpi-head"><span class="kpi-label">In Progress</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Đang thực hiện / chỉnh sửa</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="internal_review" tabindex="0" role="link" aria-label="Drilldown: Internal Review">
+          <div class="kpi-head"><span class="kpi-label">Internal Review</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Account/Admin cần duyệt</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--warn" data-card-key="status_revision" tabindex="0" role="link" aria-label="Drilldown: Revision">
+          <div class="kpi-head"><span class="kpi-label">Revision</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Đang chỉnh sửa nội bộ</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--ok" data-card-key="status_completed" tabindex="0" role="link" aria-label="Drilldown: Completed">
+          <div class="kpi-head"><span class="kpi-label">Completed</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend up">Hoàn thành</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--red" data-card-key="status_blocked" tabindex="0" role="link" aria-label="Drilldown: Blocked">
+          <div class="kpi-head"><span class="kpi-label">Blocked</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend down">Tạm dừng / bị block</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PERFORMANCE (3 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Performance</span></h2>
+          <p>SLA nội bộ + tốc độ hoàn thành — team đang chạy ổn không?</p>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi kpi--ok" data-card-key="on_time_rate" tabindex="0" role="link" aria-label="Drilldown: On-time Rate">
+          <div class="kpi-head"><span class="kpi-label">On-time Rate</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+          </div>
+          <span class="kpi-value">0%</span>
+          <span class="kpi-trend up">SLA nội bộ</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="completed_this_week" tabindex="0" role="link" aria-label="Drilldown: Completed This Week">
+          <div class="kpi-head"><span class="kpi-label">Completed This Week</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 11.08 22 12 22 11.08"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend up">Task done trong 7 ngày</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--brand" data-card-key="avg_completion_time">
+          <div class="kpi-head"><span class="kpi-label">Avg Completion Time</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          </div>
+          <span class="kpi-value">—</span>
+          <span class="kpi-trend"><b>ngày</b> / task hoàn thành</span>
+        </div>
+      </div>
+    </section>
 
     <section class="dash-section">
       <div class="dash-section-head">
         <div>
-          <h2><span class="serif-italic">Workload</span> theo P.I.C</h2>
-          <p>Task đang mở per Designer/Editor.</p>
+          <h2><span class="serif-italic">Workload</span> by team member</h2>
+          <p>Tasks by P.I.C — số task đang mở (chưa completed/cancelled/paused) per nhân sự.</p>
         </div>
       </div>
       <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-        <div class="bar-row" data-pic="Duy"><span style="width:140px"><b>Duy</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">4 / 5</b></div>
-        <div class="bar-row" data-pic="Vinh"><span style="width:140px"><b>Vinh</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">4 / 5</b></div>
-        <div class="bar-row" data-pic="Linh Chi"><span style="width:140px"><b>Linh Chi</b> · Editor</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">3 / 5</b></div>
-        <div class="bar-row" data-pic="Mai Phương"><span style="width:140px"><b>Mai Phương</b> · Admin</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">1 / 5</b></div>
+        <div class="bar-row" data-pic="Duy"><span style="width:140px"><b>Duy</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
+        <div class="bar-row" data-pic="Vinh"><span style="width:140px"><b>Vinh</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
+        <div class="bar-row" data-pic="Linh Chi"><span style="width:140px"><b>Linh Chi</b> · Editor</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
+        <div class="bar-row" data-pic="Hậu"><span style="width:140px"><b>Hậu</b> · Account</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
+        <div class="bar-row" data-pic="Đức Anh"><span style="width:140px"><b>Đức Anh</b> · Account</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
+        <div class="bar-row" data-pic="Mai Phương"><span style="width:140px"><b>Mai Phương</b> · Admin</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
       </div>
+      <p class="text-xs muted" style="margin-top:var(--space-3)">Workload max 8 task / member. Bar đỏ = critical (vượt ngưỡng), brand = bình thường. Bao gồm linked + standalone tasks.</p>
     </section>
 
     <div class="row-2">
@@ -268,14 +415,30 @@
     setTimeout(() => location.href = 'login.html', 400);
   });
 
-  // KPI drilldown → production-board
+  // KPI drilldown → production-board (Module 4 — full 17 KPI mapping).
+  // avg_completion_time KHÔNG có drilldown (chỉ display).
   const DRILL = {
+    // Task Volume
     total_tasks: 'all',
+    linked_tasks: 'linked',
+    standalone_tasks: 'standalone',
+    new_internal_tasks: 'pending',
+    // Workload
+    unassigned_tasks: 'unassigned',
+    // Deadline
+    due_today: 'due_today',
+    due_this_week: 'due_week',
+    overdue: 'overdue',
+    // Production Status
+    status_pending: 'pending',
     in_production: 'in_production',
     internal_review: 'internal_review',
-    due_soon: 'due_soon',
-    overdue: 'overdue',
-    on_time_rate: 'on_time_rate'
+    status_revision: 'revision',
+    status_completed: 'status_completed',
+    status_blocked: 'blocked',
+    // Performance
+    on_time_rate: 'on_time_rate',
+    completed_this_week: 'completed_week'
   };
   document.querySelectorAll('.kpi[data-card-key]').forEach((card) => {
     const key = card.getAttribute('data-card-key');
@@ -293,10 +456,11 @@
     });
   });
 
-  /* ---------- Load real Internal Tasks từ Supabase + compute KPI ----------
+  /* ---------- Load Internal Tasks từ Supabase + compute KPI (Module 4 expanded) ----------
      Per business model: Task Dashboard hiển thị TOÀN BỘ internal tasks
      (cả linked-to-order VÀ standalone). Client KHÔNG được thấy data này
-     (RLS đã chặn ở Supabase + role guard ở client-side). */
+     (RLS chặn ở Supabase + role guard client-side).
+     KHÔNG load orders (separate flow — Orders Dashboard responsibility). */
   function setKpi(cardKey, val) {
     const el = document.querySelector('.kpi[data-card-key="' + cardKey + '"] .kpi-value');
     if (el) el.textContent = val;
@@ -305,21 +469,29 @@
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   }
-  function isOverdue(deadline, isCompleted) {
-    if (!deadline || isCompleted) return false;
-    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
-    if (isNaN(d.getTime())) return false;
-    return d.getTime() < Date.now();
+  function parseDate(s) {
+    if (!s) return null;
+    const d = new Date(typeof s === 'string' ? s.replace(' ', 'T') : s);
+    return isNaN(d.getTime()) ? null : d;
   }
-  function isDueSoon(deadline, isCompleted) {
+  function diffDaysFromNow(deadline) {
+    const d = parseDate(deadline);
+    if (!d) return null;
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dlStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return Math.round((dlStart - dayStart) / (24 * 60 * 60 * 1000));
+  }
+  function isOverdueD(deadline, isCompleted) {
     if (!deadline || isCompleted) return false;
-    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
-    if (isNaN(d.getTime())) return false;
-    const diff = d.getTime() - Date.now();
-    return diff > 0 && diff <= 48 * 60 * 60 * 1000;
+    const d = parseDate(deadline);
+    return d ? d.getTime() < Date.now() : false;
   }
   function isCompletedStatus(s) {
     return s === 'completed' || s === 'delivered';
+  }
+  function isOpenStatus(s) {
+    return !isCompletedStatus(s) && s !== 'cancelled' && s !== 'paused';
   }
 
   async function loadTaskDashboard() {
@@ -332,42 +504,114 @@
       const tasks = await window.MH.store.tasks.list();
       if (!Array.isArray(tasks)) return;
 
-      const total = tasks.length;
-      const inProduction   = tasks.filter((t) => ['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)).length;
-      const internalReview = tasks.filter((t) => t.status === 'review').length;
-      const dueSoonCount   = tasks.filter((t) => isDueSoon(t.internal_deadline, isCompletedStatus(t.status))).length;
-      const overdueCount   = tasks.filter((t) => isOverdue(t.internal_deadline, isCompletedStatus(t.status))).length;
-      const completedCount = tasks.filter((t) => isCompletedStatus(t.status)).length;
-      const eligibleForOntime = tasks.filter((t) => isCompletedStatus(t.status) || isOverdue(t.internal_deadline, false));
-      const ontimeRate = eligibleForOntime.length === 0 ? 0
-        : Math.round((completedCount / eligibleForOntime.length) * 100);
+      const NOW = Date.now();
+      const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+      const weekAgo = NOW - WEEK_MS;
 
+      /* ============ TASK VOLUME (4) ============ */
+      const total = tasks.length;
+      const linkedTasks     = tasks.filter((t) => !!t.order_id && !t.is_standalone).length;
+      const standaloneTasks = tasks.filter((t) => t.is_standalone || !t.order_id).length;
+      const newInternalTasks = tasks.filter((t) => t.status === 'pending').length;
+
+      /* ============ WORKLOAD (1 KPI + chart) ============ */
+      const unassignedTasks = tasks.filter((t) => !t.assigned_to && isOpenStatus(t.status)).length;
+
+      /* ============ DEADLINE (3) ============ */
+      const dueTodayCount    = tasks.filter((t) => {
+        if (isCompletedStatus(t.status)) return false;
+        const days = diffDaysFromNow(t.internal_deadline);
+        return days === 0;
+      }).length;
+      const dueThisWeekCount = tasks.filter((t) => {
+        if (isCompletedStatus(t.status)) return false;
+        const days = diffDaysFromNow(t.internal_deadline);
+        return days !== null && days >= 0 && days <= 7;
+      }).length;
+      const overdueCount = tasks.filter((t) => isOverdueD(t.internal_deadline, isCompletedStatus(t.status))).length;
+
+      /* ============ PRODUCTION STATUS (6) ============ */
+      const statusPending   = tasks.filter((t) => t.status === 'pending').length;
+      const inProduction    = tasks.filter((t) => ['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)).length;
+      const internalReview  = tasks.filter((t) => t.status === 'review').length;
+      const statusRevision  = tasks.filter((t) => t.status === 'revision').length;
+      const statusCompleted = tasks.filter((t) => isCompletedStatus(t.status)).length;
+      const statusBlocked   = tasks.filter((t) => t.status === 'paused').length;
+
+      /* ============ PERFORMANCE (3) ============ */
+      const eligibleForOntime = tasks.filter((t) => isCompletedStatus(t.status) || isOverdueD(t.internal_deadline, false));
+      const ontimeRate = eligibleForOntime.length === 0 ? 0
+        : Math.round((statusCompleted / eligibleForOntime.length) * 100);
+
+      // Completed This Week: status completed AND last_update trong 7 ngày qua
+      const completedThisWeek = tasks.filter((t) => {
+        if (!isCompletedStatus(t.status)) return false;
+        const d = parseDate(t.last_update);
+        return d && d.getTime() >= weekAgo;
+      }).length;
+
+      // Average Completion Time: avg days từ created_at → last_update cho completed tasks
+      const completedWithDates = tasks.filter((t) => {
+        if (!isCompletedStatus(t.status)) return false;
+        return parseDate(t.created_at) && parseDate(t.last_update);
+      });
+      let avgCompletionDays = null;
+      if (completedWithDates.length > 0) {
+        const totalMs = completedWithDates.reduce((s, t) => {
+          const start = parseDate(t.created_at).getTime();
+          const end = parseDate(t.last_update).getTime();
+          return s + Math.max(0, end - start);
+        }, 0);
+        avgCompletionDays = +(totalMs / completedWithDates.length / (24 * 60 * 60 * 1000)).toFixed(1);
+      }
+
+      /* ============ UPDATE KPI CARDS ============ */
+      // Task Volume
       setKpi('total_tasks', total);
+      setKpi('linked_tasks', linkedTasks);
+      setKpi('standalone_tasks', standaloneTasks);
+      setKpi('new_internal_tasks', newInternalTasks);
+      // Workload
+      setKpi('unassigned_tasks', unassignedTasks);
+      // Deadline
+      setKpi('due_today', dueTodayCount);
+      setKpi('due_this_week', dueThisWeekCount);
+      setKpi('overdue', overdueCount);
+      // Production Status
+      setKpi('status_pending', statusPending);
       setKpi('in_production', inProduction);
       setKpi('internal_review', internalReview);
-      setKpi('due_soon', dueSoonCount);
-      setKpi('overdue', overdueCount);
+      setKpi('status_revision', statusRevision);
+      setKpi('status_completed', statusCompleted);
+      setKpi('status_blocked', statusBlocked);
+      // Performance
       setKpi('on_time_rate', ontimeRate + '%');
+      setKpi('completed_this_week', completedThisWeek);
+      setKpi('avg_completion_time', avgCompletionDays !== null ? avgCompletionDays : '—');
       setText('td-total-display', total);
 
-      // Workload by PIC (open tasks = not completed/delivered/cancelled/paused)
-      const openTasks = tasks.filter((t) => !isCompletedStatus(t.status) && t.status !== 'cancelled' && t.status !== 'paused');
+      /* ============ WORKLOAD by PIC (6 members, MAX 8) ============ */
+      const openTasks = tasks.filter((t) => isOpenStatus(t.status));
       const picCounts = {};
       openTasks.forEach((t) => {
         const p = t.assigned_to || '— Chưa gán —';
         picCounts[p] = (picCounts[p] || 0) + 1;
       });
-      const picMax = Math.max(5, ...Object.values(picCounts));  // max 5 per row (UI shows "/ 5"), grow if needed
+      const MAX_PER_PIC = 8;
       document.querySelectorAll('[data-pic]').forEach((row) => {
         const name = row.getAttribute('data-pic');
         const c = picCounts[name] || 0;
         const count = row.querySelector('b[style*="text-align:right"]');
-        if (count) count.textContent = c + ' / 5';
+        if (count) count.textContent = c + ' / ' + MAX_PER_PIC;
         const bar = row.querySelector('.bar > i');
-        if (bar) bar.style.width = Math.min(100, c / picMax * 100) + '%';
+        if (bar) {
+          bar.style.width = Math.min(100, c / MAX_PER_PIC * 100) + '%';
+          // Critical (overload): bar đỏ
+          bar.style.background = c > MAX_PER_PIC ? 'var(--red-600)' : 'var(--grad-brand)';
+        }
       });
 
-      // Task type distribution
+      /* ============ Task type distribution ============ */
       const typeCounts = {};
       tasks.forEach((t) => {
         const tt = t.task_type || 'other';
@@ -383,13 +627,11 @@
         if (bar) bar.style.width = (c / typeMax * 100) + '%';
       });
 
-      // Linked vs Standalone
-      const linkedCount = tasks.filter((t) => !!t.order_id && !t.is_standalone).length;
-      const standaloneCount = tasks.filter((t) => t.is_standalone || (!t.order_id && !t.is_standalone)).length;
-      const linkMax = Math.max(1, linkedCount, standaloneCount);
+      /* ============ Linked vs Standalone bar ============ */
+      const linkMax = Math.max(1, linkedTasks, standaloneTasks);
       document.querySelectorAll('[data-link]').forEach((row) => {
         const kind = row.getAttribute('data-link');
-        const c = kind === 'linked' ? linkedCount : standaloneCount;
+        const c = kind === 'linked' ? linkedTasks : standaloneTasks;
         const count = row.querySelector('b[style*="text-align:right"]');
         if (count) count.textContent = c;
         const bar = row.querySelector('.bar > i');

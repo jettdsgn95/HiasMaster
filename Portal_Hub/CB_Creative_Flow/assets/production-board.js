@@ -306,7 +306,23 @@
           case 'review': if (t.status !== 'review') return false; break;
           case 'ready': if (t.status !== 'ready') return false; break;
           case 'inproduction': if (!['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)) return false; break;
-          case 'completed': if (t.status !== 'completed') return false; break;
+          case 'completed': if (t.status !== 'completed' && t.status !== 'delivered') return false; break;
+          // Module 4 — Task Dashboard drilldown keys
+          case 'pending': if (t.status !== 'pending') return false; break;
+          case 'revision': if (t.status !== 'revision') return false; break;
+          case 'blocked': if (t.status !== 'paused') return false; break;
+          case 'unassigned': if (t.assigned_to) return false; break;
+          case 'linked': if (!(t.order_id && !t.is_standalone)) return false; break;
+          case 'standalone': if (!(t.is_standalone || !t.order_id)) return false; break;
+          case 'due_today': { const d = diffDays(t.internal_deadline); if (!(d === 0 && t.status !== 'completed' && t.status !== 'delivered')) return false; break; }
+          case 'due_week': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 7 && t.status !== 'completed' && t.status !== 'delivered')) return false; break; }
+          case 'completed_week': {
+            if (t.status !== 'completed' && t.status !== 'delivered') return false;
+            const lu = t.last_update ? new Date((typeof t.last_update === 'string' ? t.last_update.replace(' ', 'T') : t.last_update)) : null;
+            if (!lu || isNaN(lu.getTime())) return false;
+            if (Date.now() - lu.getTime() > 7 * 24 * 60 * 60 * 1000) return false;
+            break;
+          }
         }
       }
       if (state.quickChip) {
@@ -1045,13 +1061,30 @@
   document.getElementById('view-kanban').addEventListener('click', openByEvent);
   document.getElementById('view-mytasks').addEventListener('click', openByEvent);
 
-  /* ---------- Drilldown from Master Dashboard ---------- */
+  /* ---------- Drilldown from Master/Task Dashboard ----------
+     Expanded (Module 4) cho 17 KPI của Task Dashboard. */
   const DRILLDOWN_MAP = {
-    in_production:   { quick: 'inproduction', view: 'table', label: 'In Production',   desc: 'Task đang sản xuất (Nhận / Đang thực hiện / Chỉnh sửa).' },
-    internal_review: { quick: 'review',       view: 'table', label: 'Internal Review', desc: 'Task chờ duyệt nội bộ.' },
-    due_soon:        { quick: 'soon',         view: 'table', label: 'Due Soon',        desc: 'Task tới hạn trong 48h, chưa hoàn thành.' },
-    overdue:         { quick: 'overdue',      view: 'table', label: 'Overdue',         desc: 'Task đã quá hạn nội bộ, chưa hoàn thành.' },
-    on_time_rate:    { quick: 'completed',    view: 'table', label: 'On-time Rate',    desc: 'Task đã hoàn thành — đối chiếu deadline để tính SLA.' }
+    // Master Dashboard legacy keys
+    in_production:    { quick: 'inproduction',  view: 'table', label: 'In Production',     desc: 'Task đang sản xuất (Nhận / Đang thực hiện / Chỉnh sửa).' },
+    internal_review:  { quick: 'review',        view: 'table', label: 'Internal Review',   desc: 'Task chờ duyệt nội bộ.' },
+    due_soon:         { quick: 'soon',          view: 'table', label: 'Due Soon',          desc: 'Task tới hạn trong 48h, chưa hoàn thành.' },
+    overdue:          { quick: 'overdue',       view: 'table', label: 'Overdue Tasks',     desc: 'Task đã quá hạn nội bộ, chưa hoàn thành.' },
+    on_time_rate:     { quick: 'completed',     view: 'table', label: 'On-time Rate',      desc: 'Task đã hoàn thành — đối chiếu deadline để tính SLA.' },
+    // Task Volume
+    linked:           { quick: 'linked',        view: 'table', label: 'Linked Tasks',      desc: 'Internal tasks gắn với Client Order.' },
+    standalone:       { quick: 'standalone',    view: 'table', label: 'Standalone Tasks',  desc: 'Công việc nội bộ độc lập, không gắn Client Order.' },
+    pending:          { quick: 'pending',       view: 'table', label: 'New / Pending',     desc: 'Task mới được giao, chưa nhận.' },
+    // Workload
+    unassigned:       { quick: 'unassigned',    view: 'table', label: 'Unassigned Tasks',  desc: 'Task chưa gán P.I.C.' },
+    // Deadline
+    due_today:        { quick: 'due_today',     view: 'table', label: 'Due Today',         desc: 'Task tới hạn hôm nay, chưa hoàn thành.' },
+    due_week:         { quick: 'due_week',      view: 'table', label: 'Due This Week',     desc: 'Task tới hạn trong 7 ngày tới, chưa hoàn thành.' },
+    // Production Status
+    revision:         { quick: 'revision',      view: 'table', label: 'Revision',          desc: 'Task đang chỉnh sửa nội bộ.' },
+    status_completed: { quick: 'completed',     view: 'table', label: 'Completed',         desc: 'Task đã hoàn thành.' },
+    blocked:          { quick: 'blocked',       view: 'table', label: 'Blocked',           desc: 'Task tạm dừng / bị block.' },
+    // Performance
+    completed_week:   { quick: 'completed_week',view: 'table', label: 'Completed This Week', desc: 'Task hoàn thành trong 7 ngày qua.' }
   };
   function applyDrilldownFromURL() {
     const params = new URLSearchParams(location.search);
