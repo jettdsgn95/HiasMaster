@@ -141,7 +141,7 @@
         <option>Ads / Post</option>
       </select>
       <div class="grow"></div>
-      <span class="text-xs muted">Hiển thị <b style="color:var(--text)">0</b> tasks</span>
+      <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="td-total-display">0</b> tasks</span>
     </div>
 
     <div class="kpi-grid">
@@ -203,10 +203,10 @@
         </div>
       </div>
       <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-        <div class="bar-row"><span style="width:140px"><b>Duy</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">4 / 5</b></div>
-        <div class="bar-row"><span style="width:140px"><b>Vinh</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">4 / 5</b></div>
-        <div class="bar-row"><span style="width:140px"><b>Linh Chi</b> · Editor</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">3 / 5</b></div>
-        <div class="bar-row"><span style="width:140px"><b>Mai Phương</b> · Admin</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">1 / 5</b></div>
+        <div class="bar-row" data-pic="Duy"><span style="width:140px"><b>Duy</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">4 / 5</b></div>
+        <div class="bar-row" data-pic="Vinh"><span style="width:140px"><b>Vinh</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">4 / 5</b></div>
+        <div class="bar-row" data-pic="Linh Chi"><span style="width:140px"><b>Linh Chi</b> · Editor</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">3 / 5</b></div>
+        <div class="bar-row" data-pic="Mai Phương"><span style="width:140px"><b>Mai Phương</b> · Admin</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:60px; text-align:right">1 / 5</b></div>
       </div>
     </section>
 
@@ -216,13 +216,13 @@
           <div><h3>Phân bố theo loại task</h3><p class="desc">Bao gồm cả standalone task không gắn Order.</p></div>
         </div>
         <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Quay</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Ads / Post</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="design"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="video"><span style="width:120px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="motion"><span style="width:120px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="photo"><span style="width:120px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="shoot"><span style="width:120px">Quay</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="ads"><span style="width:120px">Ads / Post</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="slide"><span style="width:120px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
         </div>
       </section>
 
@@ -231,8 +231,8 @@
           <div><h3>Task vs Order link</h3><p class="desc">Task gắn order vs standalone internal task.</p></div>
         </div>
         <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row"><span style="width:160px">Linked to Order</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:160px">Standalone (internal)</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
+          <div class="bar-row" data-link="linked"><span style="width:160px">Linked to Order</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
+          <div class="bar-row" data-link="standalone"><span style="width:160px">Standalone (internal)</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
         </div>
         <p class="text-xs muted" style="margin-top:var(--space-3)">Standalone task được tạo trực tiếp từ Task Tracker, không gắn order_id. Dùng cho admin/internal workstreams.</p>
       </section>
@@ -292,6 +292,114 @@
       }
     });
   });
+
+  /* ---------- Load real Internal Tasks từ Supabase + compute KPI ----------
+     Per business model: Task Dashboard hiển thị TOÀN BỘ internal tasks
+     (cả linked-to-order VÀ standalone). Client KHÔNG được thấy data này
+     (RLS đã chặn ở Supabase + role guard ở client-side). */
+  function setKpi(cardKey, val) {
+    const el = document.querySelector('.kpi[data-card-key="' + cardKey + '"] .kpi-value');
+    if (el) el.textContent = val;
+  }
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+  function isOverdue(deadline, isCompleted) {
+    if (!deadline || isCompleted) return false;
+    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
+    if (isNaN(d.getTime())) return false;
+    return d.getTime() < Date.now();
+  }
+  function isDueSoon(deadline, isCompleted) {
+    if (!deadline || isCompleted) return false;
+    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
+    if (isNaN(d.getTime())) return false;
+    const diff = d.getTime() - Date.now();
+    return diff > 0 && diff <= 48 * 60 * 60 * 1000;
+  }
+  function isCompletedStatus(s) {
+    return s === 'completed' || s === 'delivered';
+  }
+
+  async function loadTaskDashboard() {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
+      console.warn('[task-dashboard] Supabase chưa enabled — giữ UI 0.');
+      return;
+    }
+    try {
+      await window.MH.supabaseReady;
+      const tasks = await window.MH.store.tasks.list();
+      if (!Array.isArray(tasks)) return;
+
+      const total = tasks.length;
+      const inProduction   = tasks.filter((t) => ['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)).length;
+      const internalReview = tasks.filter((t) => t.status === 'review').length;
+      const dueSoonCount   = tasks.filter((t) => isDueSoon(t.internal_deadline, isCompletedStatus(t.status))).length;
+      const overdueCount   = tasks.filter((t) => isOverdue(t.internal_deadline, isCompletedStatus(t.status))).length;
+      const completedCount = tasks.filter((t) => isCompletedStatus(t.status)).length;
+      const eligibleForOntime = tasks.filter((t) => isCompletedStatus(t.status) || isOverdue(t.internal_deadline, false));
+      const ontimeRate = eligibleForOntime.length === 0 ? 0
+        : Math.round((completedCount / eligibleForOntime.length) * 100);
+
+      setKpi('total_tasks', total);
+      setKpi('in_production', inProduction);
+      setKpi('internal_review', internalReview);
+      setKpi('due_soon', dueSoonCount);
+      setKpi('overdue', overdueCount);
+      setKpi('on_time_rate', ontimeRate + '%');
+      setText('td-total-display', total);
+
+      // Workload by PIC (open tasks = not completed/delivered/cancelled/paused)
+      const openTasks = tasks.filter((t) => !isCompletedStatus(t.status) && t.status !== 'cancelled' && t.status !== 'paused');
+      const picCounts = {};
+      openTasks.forEach((t) => {
+        const p = t.assigned_to || '— Chưa gán —';
+        picCounts[p] = (picCounts[p] || 0) + 1;
+      });
+      const picMax = Math.max(5, ...Object.values(picCounts));  // max 5 per row (UI shows "/ 5"), grow if needed
+      document.querySelectorAll('[data-pic]').forEach((row) => {
+        const name = row.getAttribute('data-pic');
+        const c = picCounts[name] || 0;
+        const count = row.querySelector('b[style*="text-align:right"]');
+        if (count) count.textContent = c + ' / 5';
+        const bar = row.querySelector('.bar > i');
+        if (bar) bar.style.width = Math.min(100, c / picMax * 100) + '%';
+      });
+
+      // Task type distribution
+      const typeCounts = {};
+      tasks.forEach((t) => {
+        const tt = t.task_type || 'other';
+        typeCounts[tt] = (typeCounts[tt] || 0) + 1;
+      });
+      const typeMax = Math.max(1, ...Object.values(typeCounts));
+      document.querySelectorAll('[data-type]').forEach((row) => {
+        const t = row.getAttribute('data-type');
+        const c = typeCounts[t] || 0;
+        const count = row.querySelector('b[style*="text-align:right"]');
+        if (count) count.textContent = c;
+        const bar = row.querySelector('.bar > i');
+        if (bar) bar.style.width = (c / typeMax * 100) + '%';
+      });
+
+      // Linked vs Standalone
+      const linkedCount = tasks.filter((t) => !!t.order_id && !t.is_standalone).length;
+      const standaloneCount = tasks.filter((t) => t.is_standalone || (!t.order_id && !t.is_standalone)).length;
+      const linkMax = Math.max(1, linkedCount, standaloneCount);
+      document.querySelectorAll('[data-link]').forEach((row) => {
+        const kind = row.getAttribute('data-link');
+        const c = kind === 'linked' ? linkedCount : standaloneCount;
+        const count = row.querySelector('b[style*="text-align:right"]');
+        if (count) count.textContent = c;
+        const bar = row.querySelector('.bar > i');
+        if (bar) bar.style.width = (c / linkMax * 100) + '%';
+      });
+    } catch (e) {
+      console.warn('[task-dashboard] load failed:', e);
+    }
+  }
+  loadTaskDashboard();
 })();
 </script>
 <script src="assets/chatbot.js"></script>
