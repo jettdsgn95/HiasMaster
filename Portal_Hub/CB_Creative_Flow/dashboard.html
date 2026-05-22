@@ -315,12 +315,12 @@
         </div>
       </div>
       <div class="pipeline">
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">New Request</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Brief Checking</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">In Production</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Internal Review</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Delivery</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Completed</span></div>
+        <div class="pipe-stage" data-pipe="new_request"><span class="pipe-count">0</span><span class="pipe-label">New Request</span></div>
+        <div class="pipe-stage" data-pipe="brief_checking"><span class="pipe-count">0</span><span class="pipe-label">Brief Checking</span></div>
+        <div class="pipe-stage" data-pipe="in_production"><span class="pipe-count">0</span><span class="pipe-label">In Production</span></div>
+        <div class="pipe-stage" data-pipe="internal_review"><span class="pipe-count">0</span><span class="pipe-label">Internal Review</span></div>
+        <div class="pipe-stage" data-pipe="delivery"><span class="pipe-count">0</span><span class="pipe-label">Delivery</span></div>
+        <div class="pipe-stage" data-pipe="completed"><span class="pipe-count">0</span><span class="pipe-label">Completed</span></div>
       </div>
     </section>
 
@@ -345,8 +345,8 @@
           <span class="badge badge-success"><span class="dot"></span> Trong ngưỡng</span>
         </div>
         <div class="workload-list">
-          <div class="workload-row">
-            <span class="wname"><span class="ava">Duy</span> Duy</span>
+          <div class="workload-row" data-pic="Duy">
+            <span class="wname"><span class="ava">Du</span> Duy</span>
             <div class="workload-bar" title="Đang thực hiện 5 · Chờ duyệt 1 · Trễ 1">
               <span class="wb--progress" style="width:0%"></span>
               <span class="wb--review"   style="width:0%"></span>
@@ -355,7 +355,7 @@
             </div>
             <span class="wcount"><b>0</b> /max 8</span>
           </div>
-          <div class="workload-row">
+          <div class="workload-row" data-pic="Vinh">
             <span class="wname"><span class="ava">Vi</span> Vinh</span>
             <div class="workload-bar">
               <span class="wb--progress" style="width:0%"></span>
@@ -365,7 +365,7 @@
             </div>
             <span class="wcount"><b>0</b> /max 8</span>
           </div>
-          <div class="workload-row">
+          <div class="workload-row" data-pic="Hậu">
             <span class="wname"><span class="ava">Hậ</span> Hậu</span>
             <div class="workload-bar">
               <span class="wb--progress" style="width:0%"></span>
@@ -375,7 +375,7 @@
             </div>
             <span class="wcount"><b>0</b> /max 8</span>
           </div>
-          <div class="workload-row">
+          <div class="workload-row" data-pic="Linh Chi">
             <span class="wname"><span class="ava">LC</span> Linh Chi</span>
             <div class="workload-bar">
               <span class="wb--progress" style="width:0%"></span>
@@ -385,7 +385,7 @@
             </div>
             <span class="wcount"><b>0</b> /max 8</span>
           </div>
-          <div class="workload-row">
+          <div class="workload-row" data-pic="Đức Anh">
             <span class="wname"><span class="ava">ĐA</span> Đức Anh</span>
             <div class="workload-bar">
               <span class="wb--progress" style="width:0%"></span>
@@ -395,7 +395,7 @@
             </div>
             <span class="wcount"><b>0</b> /max 8</span>
           </div>
-          <div class="workload-row">
+          <div class="workload-row" data-pic="Mai Phương">
             <span class="wname"><span class="ava">MP</span> Mai Phương</span>
             <div class="workload-bar">
               <span class="wb--progress" style="width:0%"></span>
@@ -731,6 +731,151 @@
       }, 700);
     });
   }
+
+  /* ---------- Master Dashboard data loader ----------
+     Per business model:
+       - Client Orders → KPI: total_orders, new_requests, brief_need_info,
+         average_rating, rating_coverage, completed (order side)
+       - Internal Tasks → KPI: in_production, internal_review, due_soon,
+         overdue, on_time_rate, ready_for_delivery (task side)
+       - Pipeline + Workload PIC → combined Internal Tasks (open work).
+     Client KHÔNG vào page này (auth guard role !== 'client'). */
+  function dbSetKpi(key, val) {
+    const el = document.querySelector('.kpi[data-card-key="' + key + '"] .kpi-value');
+    if (el) { el.textContent = val; el.setAttribute('data-count-up', String(val).replace(/[^0-9.]/g,'') || '0'); }
+  }
+  function dbSetKpiTrend(key, html) {
+    const el = document.querySelector('.kpi[data-card-key="' + key + '"] .kpi-trend');
+    if (el) el.innerHTML = html;
+  }
+  function dbIsOverdue(deadline, isCompleted) {
+    if (!deadline || isCompleted) return false;
+    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
+    if (isNaN(d.getTime())) return false;
+    return d.getTime() < Date.now();
+  }
+  function dbIsDueSoon(deadline, isCompleted) {
+    if (!deadline || isCompleted) return false;
+    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
+    if (isNaN(d.getTime())) return false;
+    const diff = d.getTime() - Date.now();
+    return diff > 0 && diff <= 48 * 60 * 60 * 1000;
+  }
+  function dbIsCompleted(s) { return s === 'completed' || s === 'delivered'; }
+
+  async function loadMasterDashboard() {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
+      console.warn('[dashboard] Supabase chưa enabled — KPI giữ 0.');
+      return;
+    }
+    try {
+      await window.MH.supabaseReady;
+      const [orders, tasks] = await Promise.all([
+        window.MH.store.orders.list(),
+        window.MH.store.tasks.list()
+      ]);
+      const O = Array.isArray(orders) ? orders : [];
+      const T = Array.isArray(tasks) ? tasks : [];
+
+      /* ============ CLIENT ORDERS side ============ */
+      const totalOrders = O.length;
+      const newRequests = O.filter((o) => o.account_status === 'pending').length;
+      const briefNeedInfo = O.filter((o) => o.account_status === 'needinfo').length;
+      const ordersDelivered = O.filter((o) => o.production_status === 'delivered' || o.production_status === 'completed').length;
+      const ordersRated = O.filter((o) => typeof o.satisfaction_score === 'number' && o.satisfaction_score > 0).length;
+      const ratingSum = O.reduce((s, o) => s + (typeof o.satisfaction_score === 'number' ? o.satisfaction_score : 0), 0);
+      const avgRating = ordersRated > 0 ? +(ratingSum / ordersRated).toFixed(1) : 0;
+      const ratingCoverage = ordersDelivered > 0 ? Math.round(ordersRated / ordersDelivered * 100) : 0;
+
+      /* ============ INTERNAL TASKS side ============ */
+      const totalTasks = T.length;
+      const inProduction   = T.filter((t) => ['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)).length;
+      const internalReview = T.filter((t) => t.status === 'review').length;
+      const readyForDelivery = T.filter((t) => t.status === 'ready').length;
+      const dueSoon = T.filter((t) => dbIsDueSoon(t.internal_deadline, dbIsCompleted(t.status))).length;
+      const overdue = T.filter((t) => dbIsOverdue(t.internal_deadline, dbIsCompleted(t.status))).length;
+      const tasksCompleted = T.filter((t) => dbIsCompleted(t.status)).length;
+      const eligibleForOntime = T.filter((t) => dbIsCompleted(t.status) || dbIsOverdue(t.internal_deadline, false));
+      const ontimeRate = eligibleForOntime.length === 0 ? 0
+        : Math.round(tasksCompleted / eligibleForOntime.length * 100);
+
+      /* ============ Combined "Completed" ============ */
+      const combinedCompleted = ordersDelivered;  // dùng order-side để khớp với client journey
+
+      /* ============ Update KPI cards ============ */
+      dbSetKpi('total_orders', totalOrders);
+      dbSetKpi('new_requests', newRequests);
+      dbSetKpiTrend('new_requests', `<b>${newRequests}</b> chờ xác nhận`);
+      dbSetKpi('brief_need_info', briefNeedInfo);
+      dbSetKpiTrend('brief_need_info', `<b>${briefNeedInfo}</b> cần bổ sung`);
+      dbSetKpi('in_production', inProduction);
+      dbSetKpiTrend('in_production', `<b>${inProduction}</b> đang xử lý`);
+      dbSetKpi('internal_review', internalReview);
+      dbSetKpiTrend('internal_review', `<b>${internalReview}</b> chờ duyệt`);
+      dbSetKpi('ready_for_delivery', readyForDelivery);
+      dbSetKpi('due_soon', dueSoon);
+      dbSetKpi('overdue', overdue);
+      dbSetKpiTrend('overdue', `<b>${overdue}</b> mới hôm nay`);
+      dbSetKpi('completed', combinedCompleted);
+      dbSetKpi('on_time_rate', ontimeRate + '%');
+      dbSetKpi('average_rating', avgRating);
+      dbSetKpiTrend('average_rating', `<b>/5</b> từ ${ordersRated} đánh giá`);
+      dbSetKpi('rating_coverage', ratingCoverage + '%');
+      dbSetKpiTrend('rating_coverage', `<b>${ordersRated}/${ordersDelivered}</b> đơn được rating`);
+
+      /* ============ Workflow Health pipeline ============
+         Pipeline kết hợp: New Request/Brief Checking (orders) +
+         In Production/Internal Review (tasks) + Delivery/Completed (orders). */
+      const briefChecking = O.filter((o) => o.account_status === 'checking').length;
+      const pipeCounts = {
+        new_request: newRequests,
+        brief_checking: briefChecking,
+        in_production: inProduction,
+        internal_review: internalReview,
+        delivery: readyForDelivery,
+        completed: combinedCompleted
+      };
+      document.querySelectorAll('[data-pipe]').forEach((stage) => {
+        const k = stage.getAttribute('data-pipe');
+        const span = stage.querySelector('.pipe-count');
+        if (span) span.textContent = pipeCounts[k] || 0;
+      });
+
+      /* ============ Workload by PIC (Internal Tasks only) ============ */
+      const openTasks = T.filter((t) => !dbIsCompleted(t.status) && t.status !== 'cancelled' && t.status !== 'paused');
+      const picData = {};  // { picName: { progress, review, overdue, done } }
+      T.forEach((t) => {
+        const p = t.assigned_to || '—';
+        if (!picData[p]) picData[p] = { progress: 0, review: 0, overdue: 0, done: 0 };
+        const completed = dbIsCompleted(t.status);
+        if (completed) picData[p].done++;
+        else if (dbIsOverdue(t.internal_deadline, false)) picData[p].overdue++;
+        else if (t.status === 'review') picData[p].review++;
+        else if (['received','inprogress','revision','feedback_fix','pending','feedback_wait','ready'].includes(t.status)) picData[p].progress++;
+      });
+      const MAX_PER_PIC = 8;
+      document.querySelectorAll('[data-pic]').forEach((row) => {
+        const name = row.getAttribute('data-pic');
+        const d = picData[name] || { progress: 0, review: 0, overdue: 0, done: 0 };
+        const openCount = d.progress + d.review + d.overdue;
+        const wcount = row.querySelector('.wcount b');
+        if (wcount) wcount.textContent = openCount;
+        // Segment widths as % of MAX_PER_PIC
+        const w = (n) => Math.min(100, n / MAX_PER_PIC * 100) + '%';
+        const progBar = row.querySelector('.wb--progress');
+        const revBar  = row.querySelector('.wb--review');
+        const odBar   = row.querySelector('.wb--overdue');
+        const dBar    = row.querySelector('.wb--done');
+        if (progBar) progBar.style.width = w(d.progress);
+        if (revBar)  revBar.style.width  = w(d.review);
+        if (odBar)   odBar.style.width   = w(d.overdue);
+        if (dBar)    dBar.style.width    = w(d.done);
+      });
+    } catch (e) {
+      console.warn('[dashboard] load failed:', e);
+    }
+  }
+  loadMasterDashboard();
 })();
 </script>
 </body>
