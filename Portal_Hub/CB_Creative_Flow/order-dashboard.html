@@ -142,7 +142,7 @@
         <option>Đức Anh</option>
       </select>
       <div class="grow"></div>
-      <span class="text-xs muted">Hiển thị <b style="color:var(--text)">18</b> orders trong dataset demo</span>
+      <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="od-total-display">0</b> orders</span>
     </div>
 
     <div class="kpi-grid">
@@ -202,12 +202,12 @@
         </div>
       </div>
       <div class="pipeline">
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Pending</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Checking</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Need Info</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Confirmed</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Delivered</span></div>
-        <div class="pipe-stage"><span class="pipe-count">0</span><span class="pipe-label">Cancelled</span></div>
+        <div class="pipe-stage" data-stage="pending"><span class="pipe-count" id="od-pipe-pending">0</span><span class="pipe-label">Pending</span></div>
+        <div class="pipe-stage" data-stage="checking"><span class="pipe-count" id="od-pipe-checking">0</span><span class="pipe-label">Checking</span></div>
+        <div class="pipe-stage" data-stage="needinfo"><span class="pipe-count" id="od-pipe-needinfo">0</span><span class="pipe-label">Need Info</span></div>
+        <div class="pipe-stage" data-stage="confirmed"><span class="pipe-count" id="od-pipe-confirmed">0</span><span class="pipe-label">Confirmed</span></div>
+        <div class="pipe-stage" data-stage="delivered"><span class="pipe-count" id="od-pipe-delivered">0</span><span class="pipe-label">Delivered</span></div>
+        <div class="pipe-stage" data-stage="cancelled"><span class="pipe-count" id="od-pipe-cancelled">0</span><span class="pipe-label">Cancelled</span></div>
       </div>
     </section>
 
@@ -217,13 +217,13 @@
           <div><h3>Phân bố theo chi nhánh</h3><p class="desc">Source brief 30 ngày gần nhất.</p></div>
         </div>
         <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row"><span style="width:120px">HO Marketing</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Academic</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Sales</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">CB Mekong</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">CB Hưng Phú</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">CB Cần Thơ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">CB Tiên Thủy</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="HO Marketing"><span style="width:120px">HO Marketing</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="Academic"><span style="width:120px">Academic</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="Sales"><span style="width:120px">Sales</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="CB Mekong"><span style="width:120px">CB Mekong</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="CB Hưng Phú"><span style="width:120px">CB Hưng Phú</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="CB Cần Thơ"><span style="width:120px">CB Cần Thơ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-branch="CB Tiên Thủy"><span style="width:120px">CB Tiên Thủy</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
         </div>
       </section>
 
@@ -232,12 +232,12 @@
           <div><h3>Theo loại request</h3><p class="desc">Tỉ lệ Design / Video / Photo / Motion ...</p></div>
         </div>
         <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Digital</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row"><span style="width:120px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="design"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="video"><span style="width:120px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="photo"><span style="width:120px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="motion"><span style="width:120px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="digital"><span style="width:120px">Digital</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          <div class="bar-row" data-type="slide"><span style="width:120px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
         </div>
       </section>
     </div>
@@ -285,6 +285,86 @@
     card.addEventListener('click', () => { location.href = 'database-orders.html?dl=' + key; });
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.href = 'database-orders.html?dl=' + key; } });
   });
+
+  /* ---------- Load real data từ Supabase + compute KPI ---------- */
+  function setKpi(cardKey, val) {
+    const el = document.querySelector('.kpi[data-card-key="' + cardKey + '"] .kpi-value');
+    if (el) el.textContent = val;
+  }
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  async function loadOrderDashboard() {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
+      console.warn('[order-dashboard] Supabase chưa enabled — giữ UI 0.');
+      return;
+    }
+    try {
+      await window.MH.supabaseReady;
+      const orders = await window.MH.store.orders.list();
+      if (!Array.isArray(orders)) return;
+
+      // KPI counts
+      const total = orders.length;
+      const pending   = orders.filter((o) => o.account_status === 'pending').length;
+      const checking  = orders.filter((o) => o.account_status === 'checking').length;
+      const needinfo  = orders.filter((o) => o.account_status === 'needinfo').length;
+      const confirmed = orders.filter((o) => o.account_status === 'confirmed' && o.production_status !== 'completed').length;
+      const completed = orders.filter((o) => o.production_status === 'completed' || o.production_status === 'delivered').length;
+      const cancelled = orders.filter((o) => o.account_status === 'rejected' || o.production_status === 'cancelled').length;
+      const delivered = orders.filter((o) => o.production_status === 'delivered' || o.production_status === 'completed').length;
+
+      // Top KPI cards
+      setKpi('total_orders', total);
+      setKpi('new_requests', pending);
+      setKpi('brief_need_info', needinfo);
+      setKpi('checking', checking);
+      setKpi('confirmed', confirmed);
+      setKpi('completed', completed);
+      setText('od-total-display', total);
+
+      // Order Funnel pipeline
+      setText('od-pipe-pending',   pending);
+      setText('od-pipe-checking',  checking);
+      setText('od-pipe-needinfo',  needinfo);
+      setText('od-pipe-confirmed', confirmed);
+      setText('od-pipe-delivered', delivered);
+      setText('od-pipe-cancelled', cancelled);
+
+      // Branch distribution
+      const branchCounts = {};
+      orders.forEach((o) => {
+        const d = o.department || '—';
+        branchCounts[d] = (branchCounts[d] || 0) + 1;
+      });
+      const branchMax = Math.max(1, ...Object.values(branchCounts));
+      document.querySelectorAll('[data-branch]').forEach((row) => {
+        const name = row.getAttribute('data-branch');
+        const c = branchCounts[name] || 0;
+        const count = row.querySelector('b'); if (count) count.textContent = c;
+        const bar = row.querySelector('.bar > i'); if (bar) bar.style.width = (c / branchMax * 100) + '%';
+      });
+
+      // Type distribution
+      const typeCounts = {};
+      orders.forEach((o) => {
+        const t = o.request_type || 'other';
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+      });
+      const typeMax = Math.max(1, ...Object.values(typeCounts));
+      document.querySelectorAll('[data-type]').forEach((row) => {
+        const t = row.getAttribute('data-type');
+        const c = typeCounts[t] || 0;
+        const count = row.querySelector('b'); if (count) count.textContent = c;
+        const bar = row.querySelector('.bar > i'); if (bar) bar.style.width = (c / typeMax * 100) + '%';
+      });
+    } catch (e) {
+      console.warn('[order-dashboard] load failed:', e);
+    }
+  }
+  loadOrderDashboard();
 })();
 </script>
 <script src="assets/chatbot.js"></script>
