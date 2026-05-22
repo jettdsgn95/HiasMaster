@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-21 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push enabled · **Full demo data cleared (operations)** · Cancel-order modal flow · **3 Dashboards wired** (Master/Order/Task load real-time Supabase) · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-21 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-4) · Railway deploy LIVE ✓*
 
 ---
 
@@ -426,6 +426,45 @@ Order  (client/branch submits brief — lives in Database Orders)
 - Client never sees Tasks; Task Tracker và Task Dashboard chỉ có role admin/account/design/editor.
 - Cross-page bridge: tasks tạo mới qua Task Tracker hoặc "Create Task from Order" lưu vào `localStorage['mh-extra-tasks']`. Cả `production-board.js` và `database-orders.js` đều đọc storage này để hiển thị lẫn nhau.
 - "Create Task from this Order" trong Database Orders drawer → redirect `production-board.html?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...` → auto-mở Create Task modal có prefill.
+
+## 8f. Dashboard KPI groups (Modules 3+4)
+
+Cả 3 dashboard (Master / Orders / Task) đều load real-time từ Supabase qua `MH.store`. **Orders Dashboard** chỉ đọc `orders.list()` (NEVER tasks). **Task Dashboard** chỉ đọc `tasks.list()` (NEVER orders). **Master Dashboard** parallel fetch cả 2.
+
+### Orders Dashboard (`order-dashboard.html`) — 13 KPI + 6 breakdowns
+
+- **Order Intake** (5): `total_orders` / `new_requests` (pending) / `checking` / `brief_need_info` (needinfo) / `confirmed` (confirmed && !completed)
+- **Production Flow** (3): `in_production` (received/inprogress/revision/feedback_fix) / `ready_for_delivery` (production_status=ready) / `delivered`
+- **Feedback & Completion** (5): `waiting_feedback` (delivery_status preview/client_wait/client_rev) / `rated_orders` (satisfaction_score>0) / `average_rating` (no drilldown) / `completed` (production_status=completed) / `cancelled_orders` (account=rejected OR production=cancelled)
+- **Breakdowns**: by branch (`data-branch`), type (`data-type`), priority (`data-priority`), account PIC (`data-account-pic`), production status (`data-prod-status`), delivery status (`data-delivery-status`)
+- **Drilldown** → `database-orders.html?dl=KEY` via `DRILLDOWN_MAP` 12 keys (matched với `matchesView()` switch trong database-orders.js).
+
+### Task Dashboard (`task-dashboard.html`) — 17 KPI + 6-PIC workload + 2 breakdowns
+
+- **Task Volume** (4): `total_tasks` / `linked_tasks` (order_id && !is_standalone) / `standalone_tasks` (is_standalone OR !order_id) / `new_internal_tasks` (status=pending)
+- **Workload** (1 KPI + chart): `unassigned_tasks` (!assigned_to && isOpenStatus) + **Workload by PIC** 6-member bar chart (Duy/Vinh/Linh Chi/Hậu/Đức Anh/Mai Phương, MAX_PER_PIC=8, bar đỏ khi overload)
+- **Deadline** (3): `due_today` (diffDays=0) / `due_this_week` (diffDays ∈ [0,7]) / `overdue` (deadline past)
+- **Production Status** (6): `status_pending` (=pending) / `in_production` (received/inprogress/revision/feedback_fix) / `internal_review` (=review) / `status_revision` (=revision) / `status_completed` (=completed/delivered) / `status_blocked` (=paused)
+- **Performance** (3): `on_time_rate` (= completed / (completed + overdue) * 100) / `completed_this_week` (completed && last_update ≥ NOW-7d) / `avg_completion_time` (avg days created_at → last_update, no drilldown)
+- **Drilldown** → `production-board.html?dl=KEY` via `DRILLDOWN_MAP` 15 keys (`state.quick` switch trong production-board.js).
+
+### Master Dashboard (`dashboard.html`) — combined view
+
+- 12 KPI gộp từ orders + tasks (Total Orders + 5 Order-side KPI + 5 Task-side KPI + Workflow Health 6-stage pipeline + 6-PIC workload với segment bars progress/review/overdue/done).
+
+### Helper functions (inline mỗi dashboard)
+
+- `setKpi(cardKey, val)` — update `.kpi[data-card-key=X] .kpi-value`
+- `updateBars(attr, countsMap)` — update bar rows + widths theo max
+- `parseDate(s)`, `diffDaysFromNow(d)`, `isOverdueD(d, isCompleted)`, `isCompletedStatus(s)`, `isOpenStatus(s)`
+
+### Why separate Orders vs Task Dashboard?
+
+- Orders = client-facing lifecycle (brief → confirm → produce → deliver → rate)
+- Tasks = internal workload (assigned, deadline, on-time rate, who's overloaded)
+- Mixing 2 flow tạo confusion. Master Dashboard mới là combined view.
+
+---
 
 ## 8e. Internal Task Tracker (Production Board) formalization
 

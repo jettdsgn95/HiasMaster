@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-21 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications enabled · **Full demo data cleared** (operations) · Cancel-order modal flow · **3 Dashboards wired live** (Master/Order/Task) · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-21 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-4) · Railway deploy LIVE ✓*
 
 ---
 
@@ -196,28 +196,28 @@ New files 2026-05-20:
 | File | KB |
 |---|---:|
 | `assets/styles.css` | 209.2 |
-| `assets/production-board.js` | 68.7 |
+| `assets/production-board.js` | 73.4 |
 | `request.html` | 64.3 |
-| `assets/database-orders.js` | 57.6 |
-| `dashboard.html` | 46.9 |
-| `assets/delivery-log.js` | 41.9 |
+| `assets/database-orders.js` | 59.9 |
+| `dashboard.html` | 54.9 |
+| `order-dashboard.html` | 50.9 |
 | `settings.html` | 49.1 |
+| `task-dashboard.html` | 46.4 |
 | `assets/user-management.js` | 42.8 |
+| `assets/delivery-log.js` | 42.0 |
 | `assets/client-dashboard.js` | 36.5 |
+| `production-board.html` | 34.3 |
 | `client-dashboard.html` | 30.6 |
 | `assets/ai-tools.js` | 30.5 |
+| `tracking.html` | 29.2 |
 | `assets/reports.js` | 27.7 |
 | `reports.html` | 27.3 |
-| `tracking.html` | 29.2 |
-| `task-dashboard.html` | 24.5 |
-| `order-dashboard.html` | 23.9 |
 | `assets/order-form.js` | 26.3 |
 | `user-management.html` | 25.0 |
 | `assets/app.js` | 24.3 |
 | `assets/settings.js` | 23.3 |
-| `production-board.html` | 21.6 |
+| `database-orders.html` | 23.1 |
 | `assets/chatbot.js` | 21.0 |
-| `database-orders.html` | 18.8 |
 | `index.html` | 17.8 |
 | `delivery-log.html` | 17.4 |
 | `ai-tools.html` | 15.7 |
