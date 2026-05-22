@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Orders Dashboard — CB Media Hub</title>
-<meta name="description" content="Orders Dashboard — KPI và phân tích cho Client Orders: nguồn brief, trạng thái xác nhận, hiệu suất Account, phân bố theo chi nhánh." />
+<meta name="description" content="Orders Dashboard — KPI cho Client Orders only: Intake / Production Flow / Feedback & Completion. Breakdowns theo chi nhánh, type, priority, account PIC, production + delivery status. KHÔNG bao gồm standalone internal tasks." />
 <meta name="theme-color" content="#191970" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -96,7 +96,7 @@
     <div class="dash-page-head">
       <div>
         <h1><span class="serif-italic">Orders</span> Dashboard <span class="text-xs muted" style="font-weight:500; font-size:0.5em; vertical-align:middle; margin-left:8px">— Client Orders KPI</span></h1>
-        <p>KPI cấp Order — nguồn brief, trạng thái xác nhận, hiệu suất Account, chi nhánh.</p>
+        <p>Trả lời câu hỏi: <b>"Client orders đang ở giai đoạn nào?"</b> — Intake → Production → Feedback & Completion. <span class="text-xs muted">CHỈ tracking Client Orders, KHÔNG bao gồm standalone internal tasks.</span></p>
         <div class="meta-row">
           <span>Last updated: <b id="last-updated">13/05/2026 10:00</b></span>
           <a class="refresh-btn" href="dashboard.html" style="text-decoration:none">
@@ -145,54 +145,144 @@
       <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="od-total-display">0</b> orders</span>
     </div>
 
-    <div class="kpi-grid">
-      <div class="kpi kpi--brand kpi--hero" data-card-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Total Orders">
-        <div class="kpi-head"><span class="kpi-label">Total Orders</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+    <!-- ============ ORDER INTAKE (5 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Order</span> Intake</h2>
+          <p>Brief từ client/branch/department vào hệ thống — pipeline confirm.</p>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up"><b>+4</b> so tuần trước</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-      <div class="kpi kpi--red kpi--attention" data-card-key="new_requests" tabindex="0" role="link" aria-label="Drilldown: New Requests">
-        <div class="kpi-head"><span class="kpi-label">Chờ xác nhận</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+      <div class="kpi-grid">
+        <div class="kpi kpi--brand kpi--hero" data-card-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Total Client Orders">
+          <div class="kpi-head"><span class="kpi-label">Total Client Orders</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Tổng đơn từ client/branch</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend">Account cần xử lý ngay</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--warn" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Brief Need Info">
-        <div class="kpi-head"><span class="kpi-label">Cần bổ sung brief</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg></span>
+        <div class="kpi kpi--red kpi--attention" data-card-key="new_requests" tabindex="0" role="link" aria-label="Drilldown: New Orders">
+          <div class="kpi-head"><span class="kpi-label">New Orders</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Account cần xử lý ngay</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend">Đang block Account</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi" data-card-key="checking">
-        <div class="kpi-head"><span class="kpi-label">Đang kiểm tra</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <div class="kpi" data-card-key="checking" tabindex="0" role="link" aria-label="Drilldown: Checking Brief">
+          <div class="kpi-head"><span class="kpi-label">Checking Brief</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Account đang review brief</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend">Account đang review brief</span>
-      </div>
-      <div class="kpi kpi--ok" data-card-key="confirmed">
-        <div class="kpi-head"><span class="kpi-label">Đã xác nhận</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <div class="kpi kpi--warn" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Need More Info">
+          <div class="kpi-head"><span class="kpi-label">Need More Info</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Đang chờ client bổ sung</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up">Đã đẩy sang Internal Task Tracker</span>
-      </div>
-      <div class="kpi kpi--ok" data-card-key="completed" tabindex="0" role="link" aria-label="Drilldown: Completed Orders">
-        <div class="kpi-head"><span class="kpi-label">Đã hoàn thành</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+        <div class="kpi kpi--ok" data-card-key="confirmed" tabindex="0" role="link" aria-label="Drilldown: Confirmed Brief">
+          <div class="kpi-head"><span class="kpi-label">Confirmed Brief</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend up">Sẵn sàng push Production</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up">Có rating client</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
-    </div>
+    </section>
+
+    <!-- ============ PRODUCTION FLOW (3 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Production</span> Flow</h2>
+          <p>Trạng thái sản xuất của Client Orders đã push sang Internal Task Tracker.</p>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi" data-card-key="in_production" tabindex="0" role="link" aria-label="Drilldown: In Production">
+          <div class="kpi-head"><span class="kpi-label">In Production</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Team đang sản xuất</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--ok" data-card-key="ready_for_delivery" tabindex="0" role="link" aria-label="Drilldown: Ready for Delivery">
+          <div class="kpi-head"><span class="kpi-label">Ready for Delivery</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4z"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Sẵn sàng bàn giao</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--brand" data-card-key="delivered" tabindex="0" role="link" aria-label="Drilldown: Delivered">
+          <div class="kpi-head"><span class="kpi-label">Delivered</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Đã giao đến client</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEEDBACK & COMPLETION (5 KPI) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Feedback</span> & Completion</h2>
+          <p>Phản hồi từ client + rating + đơn hoàn thành / hủy.</p>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi kpi--warn" data-card-key="waiting_feedback" tabindex="0" role="link" aria-label="Drilldown: Waiting Feedback">
+          <div class="kpi-head"><span class="kpi-label">Waiting Feedback</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Chờ client phản hồi preview</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="rated_orders" tabindex="0" role="link" aria-label="Drilldown: Rated Orders">
+          <div class="kpi-head"><span class="kpi-label">Rated Orders</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend">Đơn đã có rating</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--brand" data-card-key="average_rating">
+          <div class="kpi-head"><span class="kpi-label">Average Rating</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend"><b>/5</b> từ rated orders</span>
+        </div>
+        <div class="kpi kpi--ok" data-card-key="completed" tabindex="0" role="link" aria-label="Drilldown: Completed Orders">
+          <div class="kpi-head"><span class="kpi-label">Completed Orders</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend up">Hoàn tất bàn giao</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--red" data-card-key="cancelled_orders" tabindex="0" role="link" aria-label="Drilldown: Cancelled Orders">
+          <div class="kpi-head"><span class="kpi-label">Cancelled Orders</span>
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span>
+          </div>
+          <span class="kpi-value">0</span>
+          <span class="kpi-trend down">Đã hủy</span>
+          <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </div>
+    </section>
 
     <section class="dash-section">
       <div class="dash-section-head">
@@ -211,36 +301,107 @@
       </div>
     </section>
 
-    <div class="row-2">
-      <section class="dash-card">
-        <div class="row between">
-          <div><h3>Phân bố theo chi nhánh</h3><p class="desc">Source brief 30 ngày gần nhất.</p></div>
+    <!-- ============ BREAKDOWNS (Branch + Type + Priority + Account PIC + Production Status + Delivery Status) ============ -->
+    <section class="dash-section">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Order</span> Breakdowns</h2>
+          <p>Phân bổ Client Orders theo chi nhánh, loại request, priority, P.I.C, production status và delivery status.</p>
         </div>
-        <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row" data-branch="HO Marketing"><span style="width:120px">HO Marketing</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-branch="Academic"><span style="width:120px">Academic</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-branch="Sales"><span style="width:120px">Sales</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-branch="CB Mekong"><span style="width:120px">CB Mekong</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-branch="CB Hưng Phú"><span style="width:120px">CB Hưng Phú</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-branch="CB Cần Thơ"><span style="width:120px">CB Cần Thơ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-branch="CB Tiên Thủy"><span style="width:120px">CB Tiên Thủy</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-        </div>
-      </section>
+      </div>
 
-      <section class="dash-card">
-        <div class="row between">
-          <div><h3>Theo loại request</h3><p class="desc">Tỉ lệ Design / Video / Photo / Motion ...</p></div>
-        </div>
-        <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row" data-type="design"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-type="video"><span style="width:120px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-type="photo"><span style="width:120px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-type="motion"><span style="width:120px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-type="digital"><span style="width:120px">Digital</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-          <div class="bar-row" data-type="slide"><span style="width:120px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
-        </div>
-      </section>
-    </div>
+      <div class="row-2">
+        <section class="dash-card">
+          <div class="row between">
+            <div><h3>Theo chi nhánh / bộ phận</h3><p class="desc">Source brief từ client/branch/department.</p></div>
+          </div>
+          <div class="bar-list" id="od-branch-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+            <div class="bar-row" data-branch="HO Marketing"><span style="width:140px">HO Marketing</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-branch="Academic"><span style="width:140px">Academic</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-branch="Sales"><span style="width:140px">Sales</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-branch="CB Mekong"><span style="width:140px">CB Mekong</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-branch="CB Hưng Phú"><span style="width:140px">CB Hưng Phú</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-branch="CB Cần Thơ"><span style="width:140px">CB Cần Thơ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-branch="CB Tiên Thủy"><span style="width:140px">CB Tiên Thủy</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          </div>
+        </section>
+
+        <section class="dash-card">
+          <div class="row between">
+            <div><h3>Theo loại request</h3><p class="desc">Design / Video / Photo / Motion ...</p></div>
+          </div>
+          <div class="bar-list" id="od-type-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+            <div class="bar-row" data-type="design"><span style="width:140px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="digital"><span style="width:140px">Digital</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="video"><span style="width:140px">Video</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="motion"><span style="width:140px">Motion</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="shoot"><span style="width:140px">Quay</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="photo"><span style="width:140px">Photo</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="ads"><span style="width:140px">Ads / Post</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-type="slide"><span style="width:140px">Slide</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="row-2" style="margin-top:var(--space-4)">
+        <section class="dash-card">
+          <div class="row between">
+            <div><h3>Theo priority</h3><p class="desc">Mức độ ưu tiên Client Orders.</p></div>
+          </div>
+          <div class="bar-list" id="od-priority-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+            <div class="bar-row" data-priority="normal"><span style="width:140px">Bình thường</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#22c55e; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-priority="urgent"><span style="width:140px">Gấp</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#f59e0b; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-priority="critical"><span style="width:140px">Rất gấp</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--red-600); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          </div>
+        </section>
+
+        <section class="dash-card">
+          <div class="row between">
+            <div><h3>Theo Account P.I.C</h3><p class="desc">Workload Account team — số order assigned.</p></div>
+          </div>
+          <div class="bar-list" id="od-account-pic-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+            <div class="bar-row" data-account-pic="Mai Phương"><span style="width:140px">Mai Phương</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-account-pic="Hậu"><span style="width:140px">Hậu</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-account-pic="Đức Anh"><span style="width:140px">Đức Anh</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-account-pic="— Chưa gán —"><span style="width:140px; color:var(--text-muted)">— Chưa gán —</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--text-muted); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="row-2" style="margin-top:var(--space-4)">
+        <section class="dash-card">
+          <div class="row between">
+            <div><h3>Theo production status</h3><p class="desc">Stage sản xuất hiện tại của Client Orders đã push.</p></div>
+          </div>
+          <div class="bar-list" id="od-prod-status-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+            <div class="bar-row" data-prod-status="unassigned"><span style="width:160px">Chưa phân công</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--text-muted); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="received"><span style="width:160px">Nhận task</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#0ea5e9; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="inprogress"><span style="width:160px">Đang thực hiện</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="review"><span style="width:160px">Chờ duyệt nội bộ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#8b5cf6; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="revision"><span style="width:160px">Chỉnh sửa nội bộ</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#f59e0b; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="ready"><span style="width:160px">Sẵn sàng bàn giao</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#16a34a; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="delivered"><span style="width:160px">Đã bàn giao</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--brand-600); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="completed"><span style="width:160px">Hoàn thành</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#16a34a; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-prod-status="cancelled"><span style="width:160px">Hủy</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--red-600); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          </div>
+        </section>
+
+        <section class="dash-card">
+          <div class="row between">
+            <div><h3>Theo delivery status</h3><p class="desc">Stage bàn giao + feedback từ client.</p></div>
+          </div>
+          <div class="bar-list" id="od-delivery-status-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+            <div class="bar-row" data-delivery-status="waiting"><span style="width:160px">Chờ bàn giao</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--text-muted); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-delivery-status="preview"><span style="width:160px">Đã gửi preview</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#0ea5e9; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-delivery-status="client_wait"><span style="width:160px">Chờ phản hồi client</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#f59e0b; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-delivery-status="client_rev"><span style="width:160px">Client yêu cầu chỉnh</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#ef4444; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-delivery-status="final"><span style="width:160px">Đã gửi final</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--brand-600); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-delivery-status="rated"><span style="width:160px">Đã rating</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#16a34a; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+            <div class="bar-row" data-delivery-status="completed"><span style="width:160px">Hoàn tất</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:#16a34a; border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
+          </div>
+        </section>
+      </div>
+    </section>
 
   </main>
 </div>
@@ -272,18 +433,27 @@
     setTimeout(() => location.href = 'login.html', 400);
   });
 
-  // KPI drilldown → database-orders
+  // KPI drilldown → database-orders. Đầy đủ keys của 3 KPI group.
+  // average_rating không drilldown (chỉ display).
   const DRILL = {
     total_orders: 'all',
     new_requests: 'pending',
+    checking: 'checking',
     brief_need_info: 'needinfo',
-    completed: 'completed'
+    confirmed: 'confirmed',
+    in_production: 'in_production',
+    ready_for_delivery: 'ready_for_delivery',
+    delivered: 'delivered',
+    waiting_feedback: 'waiting_feedback',
+    rated_orders: 'rated_orders',
+    completed: 'completed',
+    cancelled_orders: 'cancelled'
   };
   document.querySelectorAll('.kpi[data-card-key]').forEach((card) => {
     const key = card.getAttribute('data-card-key');
     if (!DRILL[key]) return;
-    card.addEventListener('click', () => { location.href = 'database-orders.html?dl=' + key; });
-    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.href = 'database-orders.html?dl=' + key; } });
+    card.addEventListener('click', () => { location.href = 'database-orders.html?dl=' + DRILL[key]; });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.href = 'database-orders.html?dl=' + DRILL[key]; } });
   });
 
   /* ---------- Load real data từ Supabase + compute KPI ---------- */
@@ -296,6 +466,19 @@
     if (el) el.textContent = val;
   }
 
+  // Helper: update bar row by data attribute → counts + width %
+  function updateBars(attr, countsMap) {
+    const max = Math.max(1, ...Object.values(countsMap));
+    document.querySelectorAll('[' + attr + ']').forEach((row) => {
+      const key = row.getAttribute(attr);
+      const c = countsMap[key] || 0;
+      const count = row.querySelector('b');
+      if (count) count.textContent = c;
+      const bar = row.querySelector('.bar > i');
+      if (bar) bar.style.width = (c / max * 100) + '%';
+    });
+  }
+
   async function loadOrderDashboard() {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
       console.warn('[order-dashboard] Supabase chưa enabled — giữ UI 0.');
@@ -303,63 +486,111 @@
     }
     try {
       await window.MH.supabaseReady;
+      // IMPORTANT: Orders Dashboard CHỈ đọc Client Orders (public.orders).
+      // KHÔNG bao giờ load tasks. Internal tasks (linked + standalone) thuộc Task Dashboard.
       const orders = await window.MH.store.orders.list();
       if (!Array.isArray(orders)) return;
 
-      // KPI counts
-      const total = orders.length;
-      const pending   = orders.filter((o) => o.account_status === 'pending').length;
-      const checking  = orders.filter((o) => o.account_status === 'checking').length;
-      const needinfo  = orders.filter((o) => o.account_status === 'needinfo').length;
-      const confirmed = orders.filter((o) => o.account_status === 'confirmed' && o.production_status !== 'completed').length;
-      const completed = orders.filter((o) => o.production_status === 'completed' || o.production_status === 'delivered').length;
-      const cancelled = orders.filter((o) => o.account_status === 'rejected' || o.production_status === 'cancelled').length;
-      const delivered = orders.filter((o) => o.production_status === 'delivered' || o.production_status === 'completed').length;
+      /* ============ ORDER INTAKE counts ============ */
+      const total      = orders.length;
+      const pending    = orders.filter((o) => o.account_status === 'pending').length;
+      const checking   = orders.filter((o) => o.account_status === 'checking').length;
+      const needinfo   = orders.filter((o) => o.account_status === 'needinfo').length;
+      // "Confirmed Brief" = đã confirm nhưng chưa hoàn thành (vẫn ở giai đoạn sản xuất hoặc đang chờ push)
+      const confirmed  = orders.filter((o) =>
+        o.account_status === 'confirmed' && o.production_status !== 'completed'
+      ).length;
 
-      // Top KPI cards
+      /* ============ PRODUCTION FLOW counts ============ */
+      const PROD_IN_PROGRESS_STATUSES = ['received', 'inprogress', 'revision', 'feedback_fix'];
+      const inProduction = orders.filter((o) => PROD_IN_PROGRESS_STATUSES.includes(o.production_status)).length;
+      const readyForDelivery = orders.filter((o) => o.production_status === 'ready').length;
+      const delivered = orders.filter((o) => o.production_status === 'delivered').length;
+
+      /* ============ FEEDBACK & COMPLETION counts ============ */
+      // Waiting Feedback = delivery_status đang chờ client (preview gửi rồi chưa rate)
+      const WAITING_FEEDBACK_DS = ['preview', 'client_wait', 'client_rev'];
+      const waitingFeedback = orders.filter((o) => WAITING_FEEDBACK_DS.includes(o.delivery_status)).length;
+      const ratedOrders = orders.filter((o) => typeof o.satisfaction_score === 'number' && o.satisfaction_score > 0).length;
+      const ratingSum   = orders.reduce((s, o) => s + (typeof o.satisfaction_score === 'number' ? o.satisfaction_score : 0), 0);
+      const avgRating   = ratedOrders > 0 ? +(ratingSum / ratedOrders).toFixed(1) : 0;
+      const completed   = orders.filter((o) => o.production_status === 'completed').length;
+      const cancelled   = orders.filter((o) =>
+        o.account_status === 'rejected' || o.production_status === 'cancelled'
+      ).length;
+
+      /* ============ Update KPI cards ============ */
       setKpi('total_orders', total);
       setKpi('new_requests', pending);
-      setKpi('brief_need_info', needinfo);
       setKpi('checking', checking);
+      setKpi('brief_need_info', needinfo);
       setKpi('confirmed', confirmed);
+      setKpi('in_production', inProduction);
+      setKpi('ready_for_delivery', readyForDelivery);
+      setKpi('delivered', delivered);
+      setKpi('waiting_feedback', waitingFeedback);
+      setKpi('rated_orders', ratedOrders);
+      setKpi('average_rating', avgRating);
       setKpi('completed', completed);
+      setKpi('cancelled_orders', cancelled);
       setText('od-total-display', total);
 
-      // Order Funnel pipeline
+      /* ============ Order Funnel pipeline ============ */
       setText('od-pipe-pending',   pending);
       setText('od-pipe-checking',  checking);
       setText('od-pipe-needinfo',  needinfo);
       setText('od-pipe-confirmed', confirmed);
-      setText('od-pipe-delivered', delivered);
+      setText('od-pipe-delivered', delivered + completed);
       setText('od-pipe-cancelled', cancelled);
 
-      // Branch distribution
+      /* ============ Breakdowns (6) ============ */
+      // 1. By branch/department
       const branchCounts = {};
       orders.forEach((o) => {
         const d = o.department || '—';
         branchCounts[d] = (branchCounts[d] || 0) + 1;
       });
-      const branchMax = Math.max(1, ...Object.values(branchCounts));
-      document.querySelectorAll('[data-branch]').forEach((row) => {
-        const name = row.getAttribute('data-branch');
-        const c = branchCounts[name] || 0;
-        const count = row.querySelector('b'); if (count) count.textContent = c;
-        const bar = row.querySelector('.bar > i'); if (bar) bar.style.width = (c / branchMax * 100) + '%';
-      });
+      updateBars('data-branch', branchCounts);
 
-      // Type distribution
+      // 2. By request type
       const typeCounts = {};
       orders.forEach((o) => {
         const t = o.request_type || 'other';
         typeCounts[t] = (typeCounts[t] || 0) + 1;
       });
-      const typeMax = Math.max(1, ...Object.values(typeCounts));
-      document.querySelectorAll('[data-type]').forEach((row) => {
-        const t = row.getAttribute('data-type');
-        const c = typeCounts[t] || 0;
-        const count = row.querySelector('b'); if (count) count.textContent = c;
-        const bar = row.querySelector('.bar > i'); if (bar) bar.style.width = (c / typeMax * 100) + '%';
+      updateBars('data-type', typeCounts);
+
+      // 3. By priority
+      const priorityCounts = {};
+      orders.forEach((o) => {
+        const p = o.priority || 'normal';
+        priorityCounts[p] = (priorityCounts[p] || 0) + 1;
       });
+      updateBars('data-priority', priorityCounts);
+
+      // 4. By Account PIC
+      const accountPicCounts = {};
+      orders.forEach((o) => {
+        const p = o.account_pic || '— Chưa gán —';
+        accountPicCounts[p] = (accountPicCounts[p] || 0) + 1;
+      });
+      updateBars('data-account-pic', accountPicCounts);
+
+      // 5. By production status
+      const prodStatusCounts = {};
+      orders.forEach((o) => {
+        const s = o.production_status || 'unassigned';
+        prodStatusCounts[s] = (prodStatusCounts[s] || 0) + 1;
+      });
+      updateBars('data-prod-status', prodStatusCounts);
+
+      // 6. By delivery status
+      const deliveryStatusCounts = {};
+      orders.forEach((o) => {
+        const s = o.delivery_status;
+        if (s) deliveryStatusCounts[s] = (deliveryStatusCounts[s] || 0) + 1;
+      });
+      updateBars('data-delivery-status', deliveryStatusCounts);
     } catch (e) {
       console.warn('[order-dashboard] load failed:', e);
     }

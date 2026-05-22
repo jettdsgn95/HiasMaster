@@ -172,6 +172,7 @@
     switch (state.view) {
       case 'all': return o.account_status !== 'rejected';
       case 'pending': return o.account_status === 'pending';
+      case 'checking': return o.account_status === 'checking';
       case 'needinfo': return o.account_status === 'needinfo';
       case 'confirmed': return o.account_status === 'confirmed' && o.production_status !== 'completed';
       case 'unassigned': return o.account_status === 'confirmed' && !o.production_pic;
@@ -180,7 +181,13 @@
         const days = diffDays(o.requested_deadline);
         return days !== null && days < 0 && o.production_status !== 'completed' && o.account_status !== 'rejected';
       }
-      case 'completed': return o.production_status === 'completed' || o.production_status === 'delivered';
+      case 'completed': return o.production_status === 'completed';
+      case 'in_production': return ['received', 'inprogress', 'revision', 'feedback_fix'].includes(o.production_status);
+      case 'ready_for_delivery': return o.production_status === 'ready';
+      case 'delivered': return o.production_status === 'delivered';
+      case 'waiting_feedback': return ['preview', 'client_wait', 'client_rev'].includes(o.delivery_status);
+      case 'rated_orders': return typeof o.satisfaction_score === 'number' && o.satisfaction_score > 0;
+      case 'cancelled': return o.account_status === 'rejected' || o.production_status === 'cancelled';
       default: return true;
     }
   }
@@ -1053,12 +1060,24 @@
     }
   }
 
-  /* ---------- Drilldown from Master Dashboard ---------- */
+  /* ---------- Drilldown from Master/Orders Dashboard ----------
+     Expanded (Module 3) để support tất cả KPI của Orders Dashboard. */
   const DRILLDOWN_MAP = {
-    total_orders:    { view: 'all',       sortKey: 'created_at',   sortDir: 'desc', label: 'Total Orders',    desc: 'Toàn bộ order trong kỳ.' },
-    new_requests:    { view: 'pending',   sortKey: 'created_at',   sortDir: 'asc',  label: 'New Requests',    desc: 'Đơn mới chờ Account xác nhận.' },
-    brief_need_info: { view: 'needinfo',  sortKey: 'last_updated', sortDir: 'desc', label: 'Brief Need Info', desc: 'Đơn cần bổ sung thông tin.' },
-    completed:       { view: 'completed', sortKey: 'last_updated', sortDir: 'desc', label: 'Completed',       desc: 'Đơn đã hoàn thành hoặc đã bàn giao.' }
+    // Order Intake
+    total_orders:      { view: 'all',          sortKey: 'created_at',   sortDir: 'desc', label: 'Total Client Orders', desc: 'Toàn bộ Client Orders đang active (không gồm rejected).' },
+    new_requests:      { view: 'pending',      sortKey: 'created_at',   sortDir: 'asc',  label: 'New Orders',          desc: 'Đơn mới chờ Account xác nhận.' },
+    checking:          { view: 'checking',     sortKey: 'last_updated', sortDir: 'desc', label: 'Checking Brief',      desc: 'Account đang review brief.' },
+    brief_need_info:   { view: 'needinfo',     sortKey: 'last_updated', sortDir: 'desc', label: 'Need More Info',      desc: 'Đơn cần bổ sung thông tin từ client.' },
+    confirmed:         { view: 'confirmed',    sortKey: 'last_updated', sortDir: 'desc', label: 'Confirmed Brief',     desc: 'Brief đã xác nhận, đang/sẵn sàng push Production.' },
+    // Production Flow
+    in_production:     { view: 'in_production',sortKey: 'last_updated', sortDir: 'desc', label: 'In Production',       desc: 'Đang sản xuất (received/inprogress/revision/feedback_fix).' },
+    ready_for_delivery:{ view: 'ready_for_delivery', sortKey: 'last_updated', sortDir: 'desc', label: 'Ready for Delivery', desc: 'Sẵn sàng bàn giao (production_status=ready).' },
+    delivered:         { view: 'delivered',    sortKey: 'last_updated', sortDir: 'desc', label: 'Delivered',           desc: 'Đã bàn giao đến client.' },
+    // Feedback & Completion
+    waiting_feedback:  { view: 'waiting_feedback', sortKey: 'last_updated', sortDir: 'desc', label: 'Waiting Feedback', desc: 'Delivery đã gửi, chờ client phản hồi.' },
+    rated_orders:      { view: 'rated_orders', sortKey: 'last_updated', sortDir: 'desc', label: 'Rated Orders',        desc: 'Đơn đã có rating từ client.' },
+    completed:         { view: 'completed',    sortKey: 'last_updated', sortDir: 'desc', label: 'Completed Orders',    desc: 'Đơn hoàn thành (production_status=completed).' },
+    cancelled:         { view: 'cancelled',    sortKey: 'last_updated', sortDir: 'desc', label: 'Cancelled Orders',    desc: 'Đơn đã hủy (account=rejected hoặc production=cancelled).' }
   };
   function applyDrilldownFromURL() {
     const params = new URLSearchParams(location.search);
