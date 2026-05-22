@@ -427,14 +427,24 @@ Order  (client/branch submits brief — lives in Database Orders)
 - Cross-page bridge: tasks tạo mới qua Task Tracker hoặc "Create Task from Order" lưu vào `localStorage['mh-extra-tasks']`. Cả `production-board.js` và `database-orders.js` đều đọc storage này để hiển thị lẫn nhau.
 - "Create Task from this Order" trong Database Orders drawer → redirect `production-board.html?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...` → auto-mở Create Task modal có prefill.
 
-## 8e. Task Tracker (Production Board) formalization
+## 8e. Internal Task Tracker (Production Board) formalization
 
-- Page H1 hiển thị: `Task Tracker / Production Board`. Sidebar label: `Task Tracker`. File path vẫn `production-board.html` (không rename file ở task này).
-- Page head có button `[+ Tạo Task]` (gắn `#btn-create-task`). Mở Create Task modal trong cùng page.
-- Quick filter chips hàng trên toolbar (`#quick-filter-chips`): Tất cả · Due Today · Due This Week · Overdue · Unassigned · My Tasks · Standalone. Lưu trong `state.quickChip`. Khác với summary card `data-quick` (giữ nguyên).
-- Create Task modal (`#task-modal`): hỗ trợ standalone checkbox (ẩn order_id row), prefill order_id/project/type/priority/deadline/pic/content/status. Save mới tạo `TASK-NNNN` (auto-increment dựa trên max TASK ID), push vào TASKS + `mh-extra-tasks`.
-- Edit Task: drawer head sẽ chèn dynamic `[Sửa Task]` button cho admin/account hoặc P.I.C của task. Mở modal trong edit mode.
-- Linked Order block trong drawer: hiển thị order_id + project_name + button "Mở Order" → `database-orders.html?id=<order_id>`. Nếu task `is_standalone`, hiển thị note "Standalone internal task — không gắn Order".
+- Page H1: `Internal Task Tracker / Task Tracker · Production Board`. Sidebar label: `Internal Task Tracker`. File path vẫn `production-board.html` (no rename, per Module 1 acceptance).
+- Page head có button `[+ Giao việc nội bộ]` (gắn `#btn-create-task`). Mở Create Task modal trong cùng page.
+- Quick filter chips trên toolbar (`#quick-filter-chips`): Tất cả · Due Today · Due This Week · Overdue · Unassigned · My Tasks · **Standalone Internal**. Lưu trong `state.quickChip`. Khác với summary card `data-quick` (giữ nguyên).
+- **Create / Edit Task modal `#task-modal` (Module 2 refactor, 5/2026)**:
+  - Modal title default "Giao việc nội bộ mới" (create) / "Sửa công việc nội bộ" (edit).
+  - **Radio group "Loại công việc"** (`name="tm-worktype"`) thay cho old checkbox `#tm-standalone`. 2 option:
+    - `value="linked"` (default, `#tm-worktype-linked`): Liên kết với Client Order → hiển thị `#tm-order-row` để nhập MEDIA-* code.
+    - `value="standalone"` (`#tm-worktype-standalone`): Công việc nội bộ độc lập → ẩn order row, hiện `#tm-standalone-hint` info card "ℹ Công việc này không liên kết với Client Order nào."
+  - Save validation: linked option BẮT BUỘC nhập order_id (warning toast nếu trống). Standalone không cần.
+  - Prefill từ URL params (`?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...&standalone=1`) hoặc edit task → set radio đúng theo `is_standalone`.
+  - Save mới tạo `TASK-NNNN` (auto-increment dựa trên max TASK ID), push vào TASKS + `mh-extra-tasks` + Supabase `tasks` table.
+  - JS helper: `applyWorktypeUI(isStandalone)`, `isWorktypeStandalone()`.
+- Edit Task: drawer head sẽ chèn dynamic `[Sửa công việc]` button cho admin/account hoặc P.I.C của task. Mở modal trong edit mode.
+- **Drawer "Loại công việc" block** (rename từ "Linked Order"):
+  - Nếu task có `order_id && !is_standalone` → badge `.worktype-badge--linked` (navy "Linked to Client Order") + linked-order-card với order_id + project + "Mở Order" button → `database-orders.html?id=<order_id>`.
+  - Nếu `is_standalone || !order_id` → badge `.worktype-badge--standalone` (red "Standalone Internal Task") + giải thích "Công việc nội bộ độc lập — KHÔNG gắn Client Order...".
 
 ## 8c. Comment system (Production Board)
 

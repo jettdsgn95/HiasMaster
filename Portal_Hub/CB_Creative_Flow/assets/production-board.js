@@ -689,8 +689,9 @@
       </div>
 
       <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Linked Order</h4></div>
+        <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Loại công việc</h4></div>
         ${(t.order_id && !t.is_standalone) ? `
+          <p class="text-xs muted" style="margin:0 0 8px"><span class="worktype-badge worktype-badge--linked">Linked to Client Order</span></p>
           <div class="linked-order-card">
             <span class="lo-id">${escapeHtml(t.order_id)}</span>
             <span class="lo-title">${escapeHtml((ORDER_INDEX[t.order_id] && ORDER_INDEX[t.order_id].project_name) || t.project_name || '—')}</span>
@@ -699,7 +700,10 @@
               Mở Order
             </a>
           </div>
-        ` : `<p class="text-xs muted" style="margin:0"><b>Standalone internal task</b> — không gắn Order. Đây là task nội bộ do team Media tự khởi tạo.</p>`}
+        ` : `
+          <p class="text-xs muted" style="margin:0 0 8px"><span class="worktype-badge worktype-badge--standalone">Standalone Internal Task</span></p>
+          <p class="text-xs muted" style="margin:0">Công việc nội bộ độc lập — KHÔNG gắn Client Order. Task do team Media tự khởi tạo cho campaign nội bộ / brand asset / admin workstream.</p>
+        `}
       </section>
 
       <section class="drawer-block">
@@ -1141,11 +1145,16 @@
     });
   }
 
-  /* ---------- Create / Edit Task modal ---------- */
+  /* ---------- Create / Edit Task modal ----------
+     Module 2 (5/2026): standalone checkbox → radio group "Loại công việc" với
+     2 option: 'linked' (gắn Client Order) hoặc 'standalone' (Internal Task độc lập).
+     `is_standalone` field trong data model giữ nguyên — UI chỉ đổi cách user chọn. */
   const modal = document.getElementById('task-modal');
   const modalBd = document.getElementById('task-modal-backdrop');
-  const tmStandalone = document.getElementById('tm-standalone');
+  const tmWorktypeLinked = document.getElementById('tm-worktype-linked');
+  const tmWorktypeStandalone = document.getElementById('tm-worktype-standalone');
   const tmOrderRow = document.getElementById('tm-order-row');
+  const tmStandaloneHint = document.getElementById('tm-standalone-hint');
   const tmOrderId = document.getElementById('tm-order-id');
   const tmProject = document.getElementById('tm-project');
   const tmContent = document.getElementById('tm-content');
@@ -1157,12 +1166,24 @@
   const modalTitle = document.getElementById('task-modal-title');
   let editingTaskId = null;
 
+  function applyWorktypeUI(isStandalone) {
+    tmOrderRow.style.display = isStandalone ? 'none' : '';
+    tmStandaloneHint.style.display = isStandalone ? '' : 'none';
+  }
+
   function openTaskModal(prefill, editId) {
     editingTaskId = editId || null;
-    modalTitle.textContent = editId ? 'Sửa Task' : 'Tạo Task mới';
+    modalTitle.textContent = editId ? 'Sửa công việc nội bộ' : 'Giao việc nội bộ mới';
     const p = prefill || {};
-    tmStandalone.checked = !!p.is_standalone || (!p.order_id && !!editId === false ? false : (editId ? !!p.is_standalone : false));
-    tmOrderRow.style.display = tmStandalone.checked ? 'none' : '';
+    const isStandalone = !!p.is_standalone || (editId ? !!p.is_standalone : false);
+    if (isStandalone) {
+      tmWorktypeStandalone.checked = true;
+      tmWorktypeLinked.checked = false;
+    } else {
+      tmWorktypeLinked.checked = true;
+      tmWorktypeStandalone.checked = false;
+    }
+    applyWorktypeUI(isStandalone);
     tmOrderId.value = p.order_id || '';
     tmProject.value = p.project_name || '';
     tmContent.value = p.content || '';
@@ -1188,9 +1209,18 @@
     document.body.style.overflow = '';
     editingTaskId = null;
   }
-  tmStandalone.addEventListener('change', () => {
-    tmOrderRow.style.display = tmStandalone.checked ? 'none' : '';
-    if (tmStandalone.checked) tmOrderId.value = '';
+  // Helper: lấy worktype hiện tại (true = standalone, false = linked)
+  function isWorktypeStandalone() {
+    return tmWorktypeStandalone && tmWorktypeStandalone.checked;
+  }
+  // Radio group change handler — toggle order row + helper text
+  [tmWorktypeLinked, tmWorktypeStandalone].forEach((radio) => {
+    if (!radio) return;
+    radio.addEventListener('change', () => {
+      const std = isWorktypeStandalone();
+      applyWorktypeUI(std);
+      if (std) tmOrderId.value = '';
+    });
   });
   document.getElementById('btn-create-task').addEventListener('click', () => {
     if (user.role === 'client') return;
@@ -1208,8 +1238,14 @@
       tmProject.focus();
       return;
     }
-    const isStandalone = !!tmStandalone.checked;
+    const isStandalone = isWorktypeStandalone();
     const orderId = isStandalone ? '' : (tmOrderId.value || '').trim();
+    // Validation: linked option phải có Client Order ID
+    if (!isStandalone && !orderId) {
+      window.MH.toast({ type: 'warning', title: 'Thiếu Client Order ID', message: 'Chọn "Liên kết với Client Order" thì cần nhập mã MEDIA-*, hoặc đổi sang "Công việc nội bộ độc lập".' });
+      tmOrderId.focus();
+      return;
+    }
     const deadlineRaw = tmDeadline.value ? tmDeadline.value.replace('T', ' ') : '';
     const status = tmStatus.value || 'pending';
 
@@ -1333,7 +1369,7 @@
     btn.type = 'button';
     btn.className = 'btn btn-secondary btn-sm btn-edit-task';
     btn.style.marginTop = '8px';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Sửa Task';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Sửa công việc';
     btn.addEventListener('click', () => {
       if (!currentTask) return;
       openTaskModal({

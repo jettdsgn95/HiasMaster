@@ -95,8 +95,8 @@
 
     <div class="dash-page-head">
       <div>
-        <h1><span class="serif-italic">Task</span> Dashboard <span class="text-xs muted" style="font-weight:500; font-size:0.5em; vertical-align:middle; margin-left:8px">— Internal Work Dashboard</span></h1>
-        <p>KPI nội bộ team sản xuất — workload, deadline, status task, hiệu suất P.I.C.</p>
+        <h1><span class="serif-italic">Task</span> Dashboard <span class="text-xs muted" style="font-weight:500; font-size:0.5em; vertical-align:middle; margin-left:8px">— Internal Work Dashboard / Công việc nội bộ</span></h1>
+        <p>KPI <b>Internal Tasks</b> (công việc nội bộ) — workload, deadline, status, hiệu suất P.I.C. Bao gồm cả task linked-to-Client-Order và standalone.</p>
         <div class="meta-row">
           <span>Last updated: <b id="last-updated">13/05/2026 10:00</b></span>
           <a class="refresh-btn" href="dashboard.html" style="text-decoration:none">
@@ -112,7 +112,7 @@
         </a>
         <a class="btn btn-primary btn-sm" href="production-board.html?createTask=1">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Tạo Task
+          Giao việc nội bộ
         </a>
       </div>
     </div>
@@ -141,12 +141,12 @@
         <option>Ads / Post</option>
       </select>
       <div class="grow"></div>
-      <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="td-total-display">0</b> tasks</span>
+      <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="td-total-display">0</b> internal tasks</span>
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi kpi--brand kpi--hero" data-card-key="total_tasks" tabindex="0" role="link" aria-label="Drilldown: Total Tasks">
-        <div class="kpi-head"><span class="kpi-label">Total Tasks</span>
+      <div class="kpi kpi--brand kpi--hero" data-card-key="total_tasks" tabindex="0" role="link" aria-label="Drilldown: Total Internal Tasks">
+        <div class="kpi-head"><span class="kpi-label">Total Internal Tasks</span>
           <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
         </div>
         <span class="kpi-value">0</span>
@@ -213,7 +213,7 @@
     <div class="row-2">
       <section class="dash-card">
         <div class="row between">
-          <div><h3>Phân bố theo loại task</h3><p class="desc">Bao gồm cả standalone task không gắn Order.</p></div>
+          <div><h3>Phân bố theo loại công việc nội bộ</h3><p class="desc">Bao gồm cả linked-to-Client-Order và standalone internal task.</p></div>
         </div>
         <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
           <div class="bar-row" data-type="design"><span style="width:120px">Design / POSM</span><div class="bar" style="flex:1; height:8px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:30px; text-align:right">0</b></div>
@@ -228,11 +228,11 @@
 
       <section class="dash-card">
         <div class="row between">
-          <div><h3>Task vs Order link</h3><p class="desc">Task gắn order vs standalone internal task.</p></div>
+          <div><h3>Internal Tasks: Linked vs Standalone</h3><p class="desc">Task gắn Client Order vs công việc nội bộ độc lập.</p></div>
         </div>
         <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-          <div class="bar-row" data-link="linked"><span style="width:160px">Linked to Order</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
-          <div class="bar-row" data-link="standalone"><span style="width:160px">Standalone (internal)</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
+          <div class="bar-row" data-link="linked"><span style="width:200px">Linked to Client Order</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
+          <div class="bar-row" data-link="standalone"><span style="width:200px">Standalone Internal Task</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:50px; text-align:right">0</b></div>
         </div>
         <p class="text-xs muted" style="margin-top:var(--space-3)">Standalone task được tạo trực tiếp từ Internal Task Tracker, không gắn Client Order. Dùng cho admin/internal workstreams.</p>
       </section>
