@@ -52,119 +52,24 @@
     }
     return data;
   }
-  // Use deterministic seed-like pattern instead so render is stable each load
-  const TREND = [
-    { label: '30/04', orders: 5, tasks: 9, completed: 4, overdue: 0 },
-    { label: '01/05', orders: 7, tasks: 10, completed: 6, overdue: 1 },
-    { label: '02/05', orders: 2, tasks: 5, completed: 3, overdue: 0 },
-    { label: '03/05', orders: 4, tasks: 7, completed: 5, overdue: 0 },
-    { label: '04/05', orders: 3, tasks: 6, completed: 4, overdue: 0 },
-    { label: '05/05', orders: 9, tasks: 12, completed: 7, overdue: 1 },
-    { label: '06/05', orders: 8, tasks: 11, completed: 8, overdue: 0 },
-    { label: '07/05', orders: 6, tasks: 9, completed: 6, overdue: 1 },
-    { label: '08/05', orders: 11, tasks: 14, completed: 9, overdue: 2 },
-    { label: '09/05', orders: 7, tasks: 10, completed: 8, overdue: 1 },
-    { label: '10/05', orders: 4, tasks: 7, completed: 6, overdue: 0 },
-    { label: '11/05', orders: 3, tasks: 6, completed: 5, overdue: 0 },
-    { label: '12/05', orders: 12, tasks: 16, completed: 10, overdue: 2 },
-    { label: '13/05', orders: 9, tasks: 13, completed: 8, overdue: 3 }
-  ];
-
-  // Type distribution (matches Production Board / Database Orders patterns)
-  const TYPES = [
-    { key: 'design',  label: 'Design / POSM',  count: 42, color: 'var(--brand-600)' },
-    { key: 'video',   label: 'Video',          count: 23, color: 'var(--red-600)' },
-    { key: 'photo',   label: 'Chụp ảnh',       count: 14, color: '#10b981' },
-    { key: 'motion',  label: 'Motion',         count: 12, color: '#f59e0b' },
-    { key: 'ads',     label: 'Ads / Post',     count: 18, color: '#0ea5e9' },
-    { key: 'slide',   label: 'Slide',          count: 9,  color: '#8b5cf6' }
-  ];
-
-  // Role performance
-  const ROLES = [
-    { key: 'account', label: 'Account',  cls: 'r--account', total: 47, completed: 44, rating: 4.9 },
-    { key: 'design',  label: 'Design',   cls: 'r--design',  total: 52, completed: 39, rating: 4.7 },
-    { key: 'editor',  label: 'Editor',   cls: 'r--editor',  total: 36, completed: 31, rating: 4.6 },
-    { key: 'shoot',   label: 'Shooting', cls: 'r--shoot',   total: 14, completed: 12, rating: 4.8 },
-    { key: 'hybrid',  label: 'Hybrid',   cls: 'r--hybrid',  total:  8, completed:  7, rating: 4.5 }
-  ];
-
-  // PIC performance (stacked)
-  const PICS = [
-    { name: 'Duy',        ontime: 28, soon: 4, overdue: 1, done: 39, ongoing: 5, total: 45 },
-    { name: 'Vinh',       ontime: 22, soon: 6, overdue: 2, done: 31, ongoing: 7, total: 40 },
-    { name: 'Linh Chi',   ontime: 18, soon: 3, overdue: 1, done: 26, ongoing: 6, total: 35 },
-    { name: 'Mai Phương', ontime: 32, soon: 2, overdue: 0, done: 35, ongoing: 4, total: 41 },
-    { name: 'Hậu',        ontime: 30, soon: 3, overdue: 1, done: 33, ongoing: 5, total: 39 },
-    { name: 'Đức Anh',    ontime: 14, soon: 2, overdue: 0, done: 17, ongoing: 3, total: 22 }
-  ];
-
-  // Heatmap — 7 days × 1 row (combined activity)
-  // Intensity 1-6
-  const HEATMAP = [
-    { day: 'T2', count: 18, intensity: 4 },
-    { day: 'T3', count: 22, intensity: 5 },
-    { day: 'T4', count: 25, intensity: 6 },
-    { day: 'T5', count: 19, intensity: 4 },
-    { day: 'T6', count: 21, intensity: 5 },
-    { day: 'T7', count: 8,  intensity: 2 },
-    { day: 'CN', count: 4,  intensity: 1 }
-  ];
-
-  // Delivery funnel
-  const FUNNEL = [
-    { label: 'Ready for Delivery',  count: 28, pct: 100 },
-    { label: 'Account Checked',     count: 26, pct: 93 },
-    { label: 'Preview Sent',        count: 22, pct: 79 },
-    { label: 'Client Approved',     count: 19, pct: 68 },
-    { label: 'Final Sent',          count: 17, pct: 61 },
-    { label: 'Rated',               count: 14, pct: 50 },
-    { label: 'Completed',           count: 11, pct: 39 }
-  ];
-
-  // Rating distribution
-  const RATINGS = [
-    { stars: 5, count: 28 },
-    { stars: 4, count: 18 },
-    { stars: 3, count: 4 },
-    { stars: 2, count: 1 },
-    { stars: 1, count: 1 }
-  ];
-
-  // PIC KPI table
-  const PIC_KPI = [
-    { role: 'Account', name: 'Mai Phương', total: 41, done: 35, ontime: 95, late: 2, rev: 1.1, rating: 4.9, time: '0.8 ngày', kpi: 96 },
-    { role: 'Account', name: 'Hậu',        total: 39, done: 33, ontime: 94, late: 2, rev: 1.2, rating: 4.9, time: '1.1 ngày', kpi: 95 },
-    { role: 'Design',  name: 'Duy',        total: 45, done: 39, ontime: 93, late: 3, rev: 1.3, rating: 4.8, time: '2.1 ngày', kpi: 92 },
-    { role: 'Editor',  name: 'Vinh',       total: 40, done: 31, ontime: 86, late: 4, rev: 1.6, rating: 4.6, time: '3.4 ngày', kpi: 84 },
-    { role: 'Photo',   name: 'Linh Chi',   total: 35, done: 26, ontime: 88, late: 3, rev: 1.4, rating: 4.7, time: '2.6 ngày', kpi: 87 },
-    { role: 'Account', name: 'Đức Anh',    total: 22, done: 17, ontime: 91, late: 2, rev: 1.0, rating: 4.8, time: '1.4 ngày', kpi: 90 }
-  ];
-
-  // Overdue / risk
-  const OVERDUE = [
-    { task: 'TASK-0008', order: 'MEDIA-2026-0011', project: 'TVC Sản phẩm Hè 30s', type: 'Video', pic: 'Vinh', account: 'Mai Phương', priority: 'urgent', deadline: '2026-05-08 17:00', overdue: '5 ngày', status: 'inprogress' },
-    { task: 'TASK-0004', order: 'MEDIA-2026-0007', project: 'Brochure Khóa AI Summer', type: 'Design', pic: 'Duy', account: 'Mai Phương', priority: 'normal', deadline: '2026-05-06 17:00', overdue: '7 ngày', status: 'inprogress' },
-    { task: 'TASK-0013', order: 'MEDIA-2026-0016', project: 'Facebook Ads Copy Tháng 5', type: 'Ads', pic: 'Mai Phương', account: 'Hậu', priority: 'urgent', deadline: '2026-05-01 17:00', overdue: '12 ngày', status: 'inprogress' },
-    { task: 'TASK-0003', order: 'MEDIA-2026-0006', project: 'Reel TikTok Tháng 5', type: 'Video', pic: 'Vinh', account: 'Hậu', priority: 'critical', deadline: '2026-05-12 17:00', overdue: '1 ngày', status: 'review' },
-    { task: 'TASK-0014', order: 'MEDIA-2026-0005', project: 'Photoshoot Cơ sở Mới — Retouch', type: 'Photo', pic: 'Linh Chi', account: 'Đức Anh', priority: 'normal', deadline: '2026-05-16 17:00', overdue: 'Còn 3 ngày', status: 'revision' }
-  ];
-
-  // Feedback / rating recent
-  const FEEDBACK = [
-    { order: 'MEDIA-2026-0010', project: 'Bộ Poster Tuyển dụng', requester: 'Phạm Thanh Hà', account: 'Hậu', pic: 'Vinh', rating: 5, fb: 'Bộ poster đẹp, đủ thông tin, đúng tone. Cảm ơn team!', cats: ['quality','timing'], date: '2026-05-10' },
-    { order: 'MEDIA-2026-0014', project: 'Voucher Ưu đãi Tháng 5', requester: 'Trần Quốc Anh', account: 'Hậu', pic: 'Duy', rating: 5, fb: 'Voucher đẹp, in ra rõ, đúng spec.', cats: ['quality','file'], date: '2026-05-06' },
-    { order: 'MEDIA-2026-0012', project: 'Email Template Newsletter Q2', requester: 'Vũ Hoàng Mai', account: 'Hậu', pic: 'Duy', rating: 4, fb: 'Template chuẩn responsive. Có thể tinh tế hơn ở phần CTA.', cats: ['quality'], date: '2026-05-11' },
-    { order: 'MEDIA-2026-0021', project: 'Banner OA Sự kiện', requester: 'Nguyễn Thu Hà', account: 'Đức Anh', pic: 'Linh Chi', rating: 5, fb: 'Banner phối hợp tốt, brand chuẩn.', cats: ['quality','coord'], date: '2026-05-08' },
-    { order: 'MEDIA-2026-0019', project: 'Photoshoot Sản phẩm Mới', requester: 'Đỗ Quang Hùng', account: 'Đức Anh', pic: 'Linh Chi', rating: 4, fb: 'Ảnh sản phẩm tốt, hậu kỳ có thể đậm hơn.', cats: ['quality'], date: '2026-01-30' },
-    { order: 'MEDIA-2026-0024', project: 'Reel Sản phẩm Hè', requester: 'Trần Quốc Anh', account: 'Mai Phương', pic: 'Linh Chi', rating: 3, fb: 'Cut chậm, cần tăng nhịp ở phần cuối.', cats: ['timing','content'], date: '2026-02-18' }
-  ];
+  // Mock data cleared — Reports sẽ render empty state cho đến khi có data thật.
+  // Phase 3 task: wire Reports load dynamic từ Supabase (MH.store.orders/tasks/deliveries/aiUsage).
+  const TREND = [];
+  const TYPES = [];
+  const ROLES = [];
+  const PICS = [];
+  const HEATMAP = [];
+  const FUNNEL = [];
+  const RATINGS = [];
+  const PIC_KPI = [];
+  const OVERDUE = [];
+  const FEEDBACK = [];
 
   const KPI_AGG = {
-    orders: 128, tasks: 174, completed: 119, progress: 32, ontime: 92, overdue: 4,
-    rating: 4.7, ratedCount: 52, coverage: 76, ratedTotal: 68,
-    revision: 1.4, reopened: 3, briefNeed: 5, delivery: 68,
-    dlOntrack: 32, dlSoon: 11, dlToday: 5, dlLate: 4, avgCompletion: 2.4
+    orders: 0, tasks: 0, completed: 0, progress: 0, ontime: 0, overdue: 0,
+    rating: 0, ratedCount: 0, coverage: 0, ratedTotal: 0,
+    revision: 0, reopened: 0, briefNeed: 0, delivery: 0,
+    dlOntrack: 0, dlSoon: 0, dlToday: 0, dlLate: 0, avgCompletion: 0
   };
 
   /* ---------- Helpers ---------- */
