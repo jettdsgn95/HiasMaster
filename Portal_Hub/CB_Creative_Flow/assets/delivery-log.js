@@ -678,16 +678,18 @@
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Auto-open delivery drawer khi ?id=MEDIA-*, ?id=DLV-* hoặc ?id=TASK-* được pass từ Dashboard Alert Center.
+  // Auto-open delivery drawer khi ?id=MEDIA-*, ?id=DLV-* hoặc ?id=TASK-* được pass (Alert Center, notification click...).
   const focusId = new URLSearchParams(location.search).get('id');
-  if (focusId) {
+  function tryFocusDelivery(showToast) {
+    if (!focusId) return false;
     const delivery = DELIVERIES.find((d) => d.delivery_id === focusId || d.order_id === focusId || d.task_id === focusId);
-    if (delivery) {
-      setTimeout(() => openDrawer(delivery), 80);
-    } else {
-      window.MH.toast({ type: 'warning', title: 'Không tìm thấy delivery', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
+    if (delivery) { setTimeout(() => openDrawer(delivery), 80); return true; }
+    if (showToast) {
+      window.MH.toast({ type: 'warning', title: 'Không tìm thấy delivery', message: `${focusId} không có trong dataset.`, duration: 5000 });
     }
+    return false;
   }
+  const focusedFromMock = tryFocusDelivery(false);
 
   // Phase 1: swap dataset từ Supabase nếu enabled.
   loadDeliveriesFromStore(DELIVERIES).then(function (n) {
@@ -698,6 +700,9 @@
         const updated = DELIVERIES.find(function (d) { return d.delivery_id === cur.delivery_id; });
         if (updated) openDrawer(updated);
       }
+      if (focusId && !focusedFromMock) tryFocusDelivery(true);
+    } else if (focusId && !focusedFromMock) {
+      tryFocusDelivery(true);
     }
   });
 })();

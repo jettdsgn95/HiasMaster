@@ -1204,6 +1204,21 @@
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // Auto-open drawer cho record cụ thể nếu ?id=MEDIA-* được pass (Dashboard Alert Center, notification click...).
+  // Helper: thử mở drawer ngay; nếu chưa có thì caller phải retry sau khi data load.
+  const focusId = new URLSearchParams(location.search).get('id');
+  function tryFocusOrder(showToast) {
+    if (!focusId) return false;
+    const order = ORDERS.find((o) => o.order_id === focusId);
+    if (order) { setTimeout(() => openDrawer(order), 80); return true; }
+    if (showToast) {
+      window.MH.toast({ type: 'warning', title: 'Không tìm thấy order', message: `${focusId} không có trong dataset.`, duration: 5000 });
+    }
+    return false;
+  }
+  // First attempt: với mock data hiện có (legacy demo nếu Supabase off).
+  const focusedFromMock = tryFocusOrder(false);
+
   // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
   // Chạy fire-and-forget — không block initial paint với mock.
   loadOrdersFromStore(ORDERS).then(function (n) {
@@ -1215,17 +1230,11 @@
         const updated = ORDERS.find(function (o) { return o.order_id === currentOrder.order_id; });
         if (updated) openDrawer(updated);
       }
+      // Retry focus nếu lần đầu chưa thấy order (ORDERS rỗng lúc init vì demo cleared).
+      if (focusId && !focusedFromMock) tryFocusOrder(true);
+    } else if (focusId && !focusedFromMock) {
+      // Supabase off và mock không có → warn người dùng.
+      tryFocusOrder(true);
     }
   });
-
-  // Auto-open drawer cho record cụ thể nếu ?id=MEDIA-* được pass từ Dashboard Alert Center.
-  const focusId = new URLSearchParams(location.search).get('id');
-  if (focusId) {
-    const order = ORDERS.find((o) => o.order_id === focusId);
-    if (order) {
-      setTimeout(() => openDrawer(order), 80);
-    } else {
-      window.MH.toast({ type: 'warning', title: 'Không tìm thấy order', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
-    }
-  }
 })();

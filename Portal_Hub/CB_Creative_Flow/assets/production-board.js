@@ -1137,16 +1137,18 @@
     document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Auto-open task drawer khi ?id=MEDIA-* hoặc ?id=TASK-* được pass từ Dashboard Alert Center.
+  // Auto-open task drawer khi ?id=MEDIA-* hoặc ?id=TASK-* được pass (Alert Center, notification click...).
   const focusId = new URLSearchParams(location.search).get('id');
-  if (focusId) {
+  function tryFocusTask(showToast) {
+    if (!focusId) return false;
     const task = TASKS.find((t) => t.task_id === focusId || t.order_id === focusId);
-    if (task) {
-      setTimeout(() => openDrawer(task), 80);
-    } else {
-      window.MH.toast({ type: 'warning', title: 'Không tìm thấy task', message: `${focusId} chưa có trong dataset demo.`, duration: 5000 });
+    if (task) { setTimeout(() => openDrawer(task), 80); return true; }
+    if (showToast) {
+      window.MH.toast({ type: 'warning', title: 'Không tìm thấy task', message: `${focusId} không có trong dataset.`, duration: 5000 });
     }
+    return false;
   }
+  const focusedFromMock = tryFocusTask(false);
 
   // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
   loadTasksFromStore(TASKS).then(function (n) {
@@ -1162,6 +1164,9 @@
         const updated = TASKS.find(function (t) { return t.task_id === currentTask.task_id; });
         if (updated) openDrawer(updated);
       }
+      if (focusId && !focusedFromMock) tryFocusTask(true);
+    } else if (focusId && !focusedFromMock) {
+      tryFocusTask(true);
     }
   });
 
