@@ -732,14 +732,66 @@ document.getElementById('feedback-submit').addEventListener('click', () => {
 document.getElementById('info-close').addEventListener('click', closeInfoModal);
 document.getElementById('info-cancel').addEventListener('click', closeInfoModal);
 document.getElementById('info-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeInfoModal(); });
-document.getElementById('info-submit').addEventListener('click', () => {
+document.getElementById('info-submit').addEventListener('click', async () => {
   const content = document.getElementById('info-content').value.trim();
+  const link = document.getElementById('info-link').value.trim();
   if (!content) { toast('warning','Thiếu thông tin','Vui lòng nhập thông tin cần bổ sung.'); return; }
   const o = ORDERS.find(x => x.id === state.infoOrderId);
-  if (o) o.status = 'checking';
+  if (!o) { closeInfoModal(); return; }
+
+  // Optimistic UI: đổi status local + clear need_info hint
+  o.status = 'checking';
+  o.need_info = '';
   closeInfoModal();
   renderAll();
   toast('success','Đã gửi bổ sung brief','Account team sẽ kiểm tra và xác nhận sớm nhất.');
+
+  // Persist Supabase + notify admin/account (fire-and-forget)
+  if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+  try {
+    await window.MH.supabaseReady;
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const ts = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const prevNote = (o.__raw && o.__raw.internal_note) || '';
+    const block =
+      `\n\n[Client bổ sung — ${ts}]\n` +
+      `Nội dung: ${content}` +
+      (link ? `\nLink: ${link}` : '');
+    const newNote = (prevNote ? prevNote.trimEnd() : '') + block;
+
+    await window.MH.store.orders.update(o.id, {
+      account_status: 'checking',
+      internal_note: newNote,
+      last_updated: now.toISOString()
+    });
+    if (o.__raw) { o.__raw.internal_note = newNote; o.__raw.account_status = 'checking'; }
+
+    // Notify admin + account active
+    const { data: staff } = await window.MH.supabase
+      .from('users')
+      .select('id, name')
+      .in('role', ['admin', 'account'])
+      .eq('status', 'active');
+    if (Array.isArray(staff) && staff.length) {
+      const projectName = o.name || '';
+      const payloads = staff.map(function (u) {
+        return {
+          user_id: u.id,
+          type: 'order_status_changed',
+          title: '📥 Client đã bổ sung brief',
+          message: `${o.id} · ${projectName} — Client đã gửi thông tin bổ sung. Vui lòng kiểm tra brief.`,
+          link: 'database-orders.html?id=' + o.id,
+          related_entity_type: 'orders',
+          related_entity_id: o.id
+        };
+      });
+      await window.MH.supabase.from('notifications').insert(payloads);
+    }
+  } catch (err) {
+    console.warn('[client-dashboard] submit info supplement failed:', err);
+    toast('warning','Sync lỗi','Đã lưu local. Vui lòng thử lại nếu Account chưa nhận thông báo.');
+  }
 });
 
 // Orders filters
