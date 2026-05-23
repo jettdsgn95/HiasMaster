@@ -54,13 +54,49 @@ const ORDERS = [
   { id:'MEDIA-2026-0025', name:'Thumbnail Pack Học bổng 2026',    type:'Thiết kế', category:'Thumbnail',       date:'03/05/2026', deadline:'15/05/2026', status:'confirmed',     pic:'Mai Phương', preview_link:'', final_link:'', rating:null, rating_comment:'', need_info:'' },
 ];
 
-const NOTIFS = [
-  { id:'N001', type:'needinfo',  order_id:'MEDIA-2026-0008', title:'Cần bổ sung brief',        message:'Order MEDIA-2026-0008 cần bổ sung kích thước, CTA chính và link ảnh sản phẩm.', time:'12/05/2026 09:30', read:false },
-  { id:'N002', type:'preview',   order_id:'MEDIA-2026-0015', title:'Đã có bản xem trước',       message:'Order MEDIA-2026-0015 đã có bản preview để bạn kiểm tra và phản hồi.', time:'11/05/2026 14:00', read:false },
-  { id:'N003', type:'rating',    order_id:'MEDIA-2026-0019', title:'Nhắc đánh giá sản phẩm',   message:'Order MEDIA-2026-0019 đã bàn giao 2 ngày trước. Vui lòng đánh giá mức độ hài lòng.', time:'10/05/2026 10:00', read:false },
-  { id:'N004', type:'confirmed', order_id:'MEDIA-2026-0025', title:'Brief đã được tiếp nhận',  message:'Order MEDIA-2026-0025 đã được Account xác nhận và chuyển sang giai đoạn sản xuất.', time:'08/05/2026 16:30', read:true },
-  { id:'N005', type:'completed', order_id:'MEDIA-2026-0022', title:'Yêu cầu hoàn thành',       message:'Order MEDIA-2026-0022 đã hoàn thành. Cảm ơn bạn đã sử dụng dịch vụ CB Media.', time:'06/05/2026 11:00', read:true },
-];
+// Notifications — load từ Supabase notifications table khi Supabase enabled,
+// fallback empty array khi off. Real-time push qua channel notif-{uid}.
+let NOTIFS = [];
+
+// Map Supabase notification.type → client UI type (cho ACT_MAP button rendering)
+const NOTIF_TYPE_UI_MAP = {
+  order_needinfo:        'needinfo',
+  order_confirmed:       'confirmed',
+  order_status_changed:  'confirmed',
+  order_new:             'confirmed',
+  delivery_preview:      'preview',
+  delivery_final:        'rating',
+  rating_received:       'rating',
+  order_cancelled:       'cancelled',
+  task_assigned:         'confirmed',
+  system:                'system'
+};
+
+// Format Supabase timestamptz → "DD/MM/YYYY HH:MM"
+function formatNotifTime(s) {
+  if (!s) return '';
+  try {
+    const d = new Date(typeof s === 'string' ? s.replace(' ', 'T') : s);
+    if (isNaN(d.getTime())) return s;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch (e) { return s; }
+}
+
+// Adapter: Supabase notification row → client NOTIFS shape
+function mapNotifFromSupabase(n) {
+  return {
+    id: n.id,
+    type: NOTIF_TYPE_UI_MAP[n.type] || 'system',
+    raw_type: n.type,
+    order_id: n.related_entity_id || '',
+    title: n.title || '',
+    message: n.message || '',
+    link: n.link || '',
+    time: formatNotifTime(n.created_at),
+    read: !!n.is_read
+  };
+}
 
 /* ===== STATE ===== */
 const state = {
@@ -82,6 +118,59 @@ NOTIFS.filter(n => n.read).forEach(n => state.notifRead.add(n.id));
 
 // Phase 1: expose mock array để cross-page reference (Master Dashboard funnel...)
 window.MH_MOCK_CLIENT_ORDERS = ORDERS;
+window.MH_MOCK_CLIENT_NOTIFS = NOTIFS;
+
+/* ===== Load notifications thật của client từ Supabase ===== */
+async function loadNotificationsFromStore() {
+  if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
+  try {
+    await window.MH.supabaseReady;
+    const remote = await window.MH.store.notifications.listAll(50);
+    if (!Array.isArray(remote)) return null;
+    // Always replace khi Supabase enabled (DB là source of truth)
+    NOTIFS.length = 0;
+    remote.forEach((n) => NOTIFS.push(mapNotifFromSupabase(n)));
+    // Re-seed state.notifRead từ data thật
+    state.notifRead = new Set();
+    NOTIFS.filter((n) => n.read).forEach((n) => state.notifRead.add(n.id));
+    return NOTIFS.length;
+  } catch (e) { console.warn('[client-dashboard] load notifications failed:', e); return null; }
+}
+
+/* ===== Realtime subscribe — push notification INSERT vào NOTIFS ===== */
+function startNotificationsRealtime() {
+  if (!window.MH || !window.MH.supabase || !window.MH.supabaseEnabled || !user || !user.id) return;
+  try {
+    const channel = window.MH.supabase
+      .channel('notif-' + user.id)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: 'user_id=eq.' + user.id
+      }, (payload) => {
+        const mapped = mapNotifFromSupabase(payload.new);
+        // Prepend tới NOTIFS (mới nhất ở đầu)
+        NOTIFS.unshift(mapped);
+        // Auto-render notification tab nếu đang ở đó
+        if (typeof renderNotifications === 'function') renderNotifications();
+        // Toast popup ngay khi có notification mới
+        if (window.MH && window.MH.toast) {
+          window.MH.toast({
+            type: 'info',
+            title: '🔔 ' + (mapped.title || 'Thông báo mới'),
+            message: mapped.message || '',
+            duration: 6000
+          });
+        }
+      })
+      .subscribe();
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      try { window.MH.supabase.removeChannel(channel); } catch (e) {}
+    });
+  } catch (err) { console.warn('[client-dashboard] realtime subscribe failed:', err); }
+}
 
 /* ===== Phase 1 — Load orders thật của client từ Supabase ===== */
 async function loadClientOrdersFromStore() {
@@ -578,7 +667,16 @@ document.addEventListener('click', e => {
   const orderId = btn.dataset.orderId;
   const notifId = btn.dataset.notifId;
 
-  if (notifId) { state.notifRead.add(notifId); renderNotifications(); }
+  if (notifId) {
+    state.notifRead.add(notifId);
+    renderNotifications();
+    // Write-through tới Supabase (fire-and-forget)
+    if (window.MH && window.MH.store && window.MH.store.notifications && window.MH.supabaseEnabled) {
+      Promise.resolve(window.MH.store.notifications.markRead(notifId)).catch(function (err) {
+        console.warn('[client-dashboard] markRead failed:', err);
+      });
+    }
+  }
 
   if (action === 'open-order')  openOrderDrawer(orderId);
   else if (action === 'needinfo') openInfoModal(orderId);
@@ -677,4 +775,13 @@ loadClientOrdersFromStore().then(function (n) {
     console.log('[client-dashboard] swapped ' + n + ' orders từ Supabase (theo requester của ' + (user && user.email) + ')');
     renderAll();
   }
+});
+
+// Phase 2: swap notifications từ Supabase + subscribe realtime
+loadNotificationsFromStore().then(function (n) {
+  if (typeof n === 'number') {
+    console.log('[client-dashboard] swapped ' + n + ' notifications từ Supabase');
+    renderNotifications();
+  }
+  startNotificationsRealtime();
 });

@@ -905,6 +905,44 @@
     openDrawer(order);
   }
 
+  /* ---------- Helper: notifyClient(order, payload) ----------
+     Centralized helper để mọi workflow action (status change, push to prod, cancel,
+     delivery preview/final) bắn 1 notification cho client requester.
+     - Lookup user_id qua requester_id (preferred) hoặc requester_email (fallback)
+     - INSERT vào notifications table với related_entity_type=orders + entity_id=order_id
+     - Fire-and-forget: không block UI nếu lookup hoặc INSERT fail (log warning) */
+  async function notifyClient(order, notifPayload) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return false;
+    if (!order) return false;
+    try {
+      let clientUserId = order.requester_id || null;
+      if (!clientUserId && order.requester_email && window.MH.supabase) {
+        try {
+          const { data } = await window.MH.supabase
+            .from('users').select('id').eq('email', order.requester_email).maybeSingle();
+          if (data && data.id) clientUserId = data.id;
+        } catch (err) { console.warn('[notifyClient] lookup by email failed:', err); }
+      }
+      if (!clientUserId) {
+        console.warn('[notifyClient] không tìm thấy user_id cho client:', order.requester_email);
+        return false;
+      }
+      await window.MH.store.notifications.create({
+        user_id: clientUserId,
+        type: notifPayload.type,
+        title: notifPayload.title,
+        message: notifPayload.message,
+        link: notifPayload.link || ('tracking.html?code=' + encodeURIComponent(order.order_id)),
+        related_entity_type: 'orders',
+        related_entity_id: order.order_id
+      });
+      return true;
+    } catch (err) {
+      console.warn('[notifyClient] create failed:', err);
+      return false;
+    }
+  }
+
   function updateStatus(o, newStatus, msg) {
     if (!o) return;
     o.account_status = newStatus;
@@ -916,6 +954,27 @@
       production_status: o.production_status,
       last_updated: new Date().toISOString()
     });
+    // Module: notify client khi status thay đổi (fire-and-forget)
+    const projectName = o.project_name || o.order_id;
+    if (newStatus === 'checking') {
+      notifyClient(o, {
+        type: 'order_status_changed',
+        title: '🔎 Brief đang được kiểm tra',
+        message: `${o.order_id} · ${projectName} — Account đang review brief của bạn.`
+      });
+    } else if (newStatus === 'needinfo') {
+      notifyClient(o, {
+        type: 'order_needinfo',
+        title: '⚠ Cần bổ sung brief',
+        message: `${o.order_id} · ${projectName} — Account yêu cầu bổ sung thông tin. Vui lòng kiểm tra và phản hồi.`
+      });
+    } else if (newStatus === 'confirmed') {
+      notifyClient(o, {
+        type: 'order_confirmed',
+        title: '✅ Brief đã được xác nhận',
+        message: `${o.order_id} · ${projectName} — Account xác nhận brief, chuẩn bị chuyển sang sản xuất.`
+      });
+    }
     window.MH.toast({ type: 'success', title: msg, message: o.order_id });
     render();
     openDrawer(o);
@@ -1019,6 +1078,13 @@
       production_status: 'received',
       progress: 20,
       last_updated: new Date().toISOString()
+    });
+
+    // Notify client: order đã chuyển sang sản xuất (fire-and-forget)
+    notifyClient(o, {
+      type: 'order_status_changed',
+      title: '🚀 Đã chuyển sang sản xuất',
+      message: `${o.order_id} · ${o.project_name || ''} — Team Media đang thực hiện. Bản preview sẽ được gửi khi hoàn thành.`
     });
 
     window.MH.toast({

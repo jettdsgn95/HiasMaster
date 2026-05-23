@@ -429,6 +429,42 @@
     cur.updated_at = fmtDT();
   }
 
+  /* ---------- Helper: notifyClientDelivery(delivery, payload) ----------
+     Bắn notification cho client khi gửi preview/final/rating ack.
+     Lookup user_id qua requester_email từ delivery row (delivery KHÔNG có
+     requester_id field — chỉ có email).
+     Fire-and-forget. Skip nếu Supabase off hoặc không tìm được user. */
+  async function notifyClientDelivery(delivery, notifPayload) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return false;
+    if (!delivery || !delivery.requester_email) return false;
+    try {
+      let clientUserId = null;
+      if (window.MH.supabase) {
+        const { data } = await window.MH.supabase
+          .from('users').select('id').eq('email', delivery.requester_email).maybeSingle();
+        if (data && data.id) clientUserId = data.id;
+      }
+      if (!clientUserId) {
+        console.warn('[notifyClientDelivery] không tìm thấy user_id cho:', delivery.requester_email);
+        return false;
+      }
+      const orderId = delivery.order_id || delivery.delivery_id;
+      await window.MH.store.notifications.create({
+        user_id: clientUserId,
+        type: notifPayload.type,
+        title: notifPayload.title,
+        message: notifPayload.message,
+        link: notifPayload.link || ('tracking.html?code=' + encodeURIComponent(orderId)),
+        related_entity_type: 'orders',
+        related_entity_id: orderId
+      });
+      return true;
+    } catch (err) {
+      console.warn('[notifyClientDelivery] failed:', err);
+      return false;
+    }
+  }
+
   function handleAction(act) {
     switch (act) {
       case 'check': {
@@ -475,6 +511,13 @@
           cur.delivered_by = user.name;
           cur.delivered_to = cur.requester_email;
           logActivity('preview_sent', `Gửi preview qua ${CHANNEL_LABEL[channel]}`);
+          // Notify client: preview đã sẵn sàng (fire-and-forget)
+          notifyClientDelivery(cur, {
+            type: 'delivery_preview',
+            title: '👀 Đã có bản xem trước',
+            message: `${cur.order_id || cur.delivery_id} · ${cur.project_name || ''} — Bản preview đã sẵn sàng. Vui lòng kiểm tra và phản hồi.`,
+            link: link  // Direct link tới preview file
+          });
           window.MH.toast({ type: 'success', title: 'Đã gửi Preview', message: cur.delivery_id });
           closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
@@ -502,6 +545,13 @@
           cur.delivered_by = user.name;
           cur.client_approval_status = 'Approved';
           logActivity('final_sent', `Gửi final qua ${CHANNEL_LABEL[cur.delivery_channel]}`);
+          // Notify client: final đã bàn giao + nhắc rating (fire-and-forget)
+          notifyClientDelivery(cur, {
+            type: 'delivery_final',
+            title: '📦 Đã bàn giao final',
+            message: `${cur.order_id || cur.delivery_id} · ${cur.project_name || ''} — File final đã bàn giao. Vui lòng kiểm tra và đánh giá mức độ hài lòng.`,
+            link: link  // Direct link tới final file
+          });
           window.MH.toast({ type: 'success', title: '✓ Đã gửi Final', message: cur.delivery_id });
           closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });

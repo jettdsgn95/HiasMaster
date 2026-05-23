@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-22 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-23 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Railway deploy LIVE ✓*
 
 ---
 
@@ -121,6 +121,22 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `data-store.js notifications` namespace — listUnread/listAll/create/markRead/markAllRead/findUserIdByName.
 - ✅ `app.js initNotificationBell` IIFE — auto-wire dropdown vào tất cả `button[aria-label="Thông báo"]`, badge unread, click bell mở dropdown 20 mới nhất. **Supabase Realtime subscribe channel `notif-{uid}` filter `user_id=eq.me`** → INSERT event → `showNotifPopup()` toast 8s + click→markRead+navigate. Poll 60s backup, cleanup channel on `beforeunload`.
 - **Producers** đã ship: `order-form.js` (notify admin+account khi client submit, type=`order_new`), `database-orders.js pushToProduction` (notify PIC khi push to prod, type=`task_assigned`).
+
+**Phase 1.5b — Client notifications sync (2026-05-23):**
+- ✅ `database-orders.js notifyClient()` helper — lookup `order.requester_id` first, fallback `users.id` qua `requester_email`. INSERT notification row fire-and-forget.
+- ✅ `database-orders.js updateStatus()` — hooked 3 status transitions: `checking` (🔎 Brief đang được kiểm tra, type=`order_status_changed`), `needinfo` (⚠ Cần bổ sung brief, type=`order_needinfo`), `confirmed` (✅ Brief đã được xác nhận, type=`order_confirmed`).
+- ✅ `database-orders.js pushToProduction()` — thêm notification cho client (🚀 Đã chuyển sang sản xuất, type=`order_status_changed`) song song với notify PIC.
+- ✅ `delivery-log.js notifyClientDelivery()` helper — lookup `users.id` qua `delivery.requester_email` (delivery rows không có requester_id field). Hooks: `send_preview` (👀 Đã có bản xem trước, type=`delivery_preview`, kèm link preview file) + `send_final` (📦 Đã bàn giao final, type=`delivery_final`, kèm link final file).
+- ✅ `client-dashboard.js` Consumer wired:
+  - Replaced 5 mock NOTIFS entries → `let NOTIFS = []`.
+  - `NOTIF_TYPE_UI_MAP` bridge Supabase notification.type → client UI type (needinfo/preview/rating/confirmed/cancelled/system).
+  - `mapNotifFromSupabase(n)` adapter: row → mock NOTIFS shape `{id, type, raw_type, order_id, title, message, link, time, read}`.
+  - `formatNotifTime(s)` ISO timestamptz → "DD/MM/YYYY HH:MM".
+  - `loadNotificationsFromStore()` async fetch `MH.store.notifications.listAll(50)` → replace NOTIFS + re-seed `state.notifRead`. Always-swap pattern.
+  - `startNotificationsRealtime()` subscribe `notif-{user.id}` channel filter `user_id=eq.{user.id}` → INSERT event → `NOTIFS.unshift(mapped)` + `renderNotifications()` + toast popup 🔔 6s. Cleanup channel on `beforeunload`.
+  - Mark-as-read click handler now calls `MH.store.notifications.markRead(notifId)` write-through (fire-and-forget).
+- **Producer/consumer pattern**: producers (database-orders.js, delivery-log.js, order-form.js) fire-and-forget INSERT vào notifications table với try/catch + console.warn; consumer (client-dashboard.js, app.js initNotificationBell) subscribe Realtime channel filter theo user_id để push UI.
+- Type schema: `notifications.type` CHECK constraint (từ `add-cancel-fields.sql`) cover: task_assigned, task_status_changed, task_comment, order_new, order_status_changed, order_confirmed, order_needinfo, order_cancelled, delivery_preview, delivery_final, rating_received, system.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.
