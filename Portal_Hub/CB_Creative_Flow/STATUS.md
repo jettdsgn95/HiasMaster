@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-21 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-4) · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-22 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · Railway deploy LIVE ✓*
 
 ---
 
@@ -45,7 +45,7 @@ Status: Done
 
 Status: Done
 
-- **Master Dashboard** (`dashboard.html`): unchanged. Role-aware sidebar, header chip, 12 KPI cards with `?dl=<card_key>` drilldown sang Orders/Production/Delivery. Workflow health, alert center, workload, production status, SLA gauge, delivery funnel, recent activity. Quick Actions panel với role-based visibility.
+- **Master Dashboard** (`dashboard.html`): refined Module 5 combined overview. KPI layout now visually separates **Client Orders Overview** (8 order metrics) and **Internal Tasks Overview** (8 task metrics), followed by **Alerts** and **Team Workload**. Existing drilldown click behavior remains wired via `data-card-key` / `data-drill-key` to `database-orders.html` and `production-board.html`.
 - **Order Dashboard** (`order-dashboard.html`): KPI cấp Order — Total / Pending / Need Info / Checking / Confirmed / Completed. Funnel theo `account_status`. Phân bố theo chi nhánh + theo loại request. Mỗi KPI click-through tới `database-orders.html?dl=<key>`.
 - **Task Dashboard** (`task-dashboard.html`): KPI nội bộ team — Total Tasks / In Production / Internal Review / Due Soon / Overdue / On-time Rate. Workload theo P.I.C, phân bố loại task, Linked vs Standalone. KPI click-through tới `production-board.html?dl=<key>`.
 - Cả 3 page dùng chung sidebar (Master / Order / Task Dashboard tách thành 3 entries dưới group "Vận hành").
@@ -199,7 +199,7 @@ New files 2026-05-20:
 | `assets/production-board.js` | 73.4 |
 | `request.html` | 64.3 |
 | `assets/database-orders.js` | 59.9 |
-| `dashboard.html` | 54.9 |
+| `dashboard.html` | 81.1 |
 | `order-dashboard.html` | 50.9 |
 | `settings.html` | 49.1 |
 | `task-dashboard.html` | 46.4 |
@@ -236,6 +236,8 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-05-22 | Master Dashboard (Module 5 refine) | **Cleanup legacy hidden blocks**. Module 5 đã ship trước đó với 4 sections (Client Orders Overview 8 metrics / Internal Tasks Overview 8 metrics / Alerts / Team Workload) nhưng giữ kèm legacy HTML hidden (~302 lines: old mixed KPI grid + Workflow Health pipeline + Production Status donut + Delivery Funnel + Recent Activity feed). Refine session 2026-05-22: (1) Remove 5 legacy hidden blocks bằng awk skip lines từ `<!-- ============ LEGACY ...` đến `<!-- ============ MODULE 5 ...` next marker. (2) Simplify `loadMasterDashboard()` inline JS: bỏ 18 dbSetKpi/dbSetKpiTrend calls cho legacy keys (total_orders, new_requests, in_production, internal_review, ready_for_delivery, due_soon, on_time_rate, average_rating, rating_coverage) — các keys này không còn DOM target sau khi remove cards. Loader giờ gọi trực tiếp `renderModule5Dashboard(O, T)` rồi compute Workload by PIC. (3) Bỏ `[data-pipe]` selector code (Workflow Health đã removed). dashboard.html từ 1138 → 774 lines (~32% reduction). Drilldown behavior unchanged: `DRILLDOWN_MAP` 26 entries, goDrilldown() reads card data-card-key + optional data-drill-key. Acceptance: ✓ Leader/Admin combined view rõ ràng, ✓ Orders + Tasks visually separated, ✓ drilldown working |
+| 2026-05-22 | Master Dashboard (Module 5) | Refined `dashboard.html` as a combined Leader/Admin overview with 4 clear sections: Client Orders Overview (8 metrics), Internal Tasks Overview (8 metrics), Alerts, and Team Workload. Legacy mixed KPI row/workflow row kept hidden for rollback. Added new KPI keys with `data-drill-key` so existing drilldown behavior continues to route to Client Orders or Internal Task Tracker without mixing order/task semantics |
 | 2026-05-12 | Public site | Built initial 5 pages and brand setup |
 | 2026-05-13 | Public site | Rebrand to navy `#191970` + red `#BA110F`, pill buttons, serif accents |
 | 2026-05-13 | Dashboard/Auth | Built dashboard, demo accounts, role-based UI |

@@ -194,307 +194,145 @@
       <span class="text-xs muted">Hiển thị <b style="color:var(--text)">0</b> orders</span>
     </div>
 
-    <!-- ============ KPI CARDS ============ -->
-    <div class="kpi-grid">
-      <div class="kpi kpi--brand kpi--hero" data-show-roles="admin,account" data-card-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Total Orders">
-        <div class="kpi-head">
-          <span class="kpi-label">Total Orders</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-        </div>
-        <span class="kpi-value" data-count-up="0">0</span>
-        <span class="kpi-trend up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg><b>—</b> so với tháng trước</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--red kpi--attention" data-show-roles="admin,account" data-card-key="new_requests" tabindex="0" role="link" aria-label="Drilldown: New Requests">
-        <div class="kpi-head">
-          <span class="kpi-label">New Requests</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
-        </div>
-        <span class="kpi-value" data-count-up="0">0</span>
-        <span class="kpi-trend up"><b>0</b> chờ xác nhận</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--warn" data-show-roles="admin,account" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Brief Need Info">
-        <div class="kpi-head">
-          <span class="kpi-label">Brief Need Info</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend down"><b>0</b> cần bổ sung</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi" data-show-roles="admin,account,design,editor" data-card-key="in_production" tabindex="0" role="link" aria-label="Drilldown: In Production">
-        <div class="kpi-head">
-          <span class="kpi-label">In Production</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up"><b>0</b> đang xử lý</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi" data-show-roles="admin,account,design,editor" data-card-key="internal_review" tabindex="0" role="link" aria-label="Drilldown: Internal Review">
-        <div class="kpi-head">
-          <span class="kpi-label">Internal Review</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up"><b>0</b> chờ duyệt</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--ok" data-show-roles="admin,account" data-card-key="ready_for_delivery" tabindex="0" role="link" aria-label="Drilldown: Ready for Delivery">
-        <div class="kpi-head">
-          <span class="kpi-label">Ready for Delivery</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend"><b>0</b> đang chờ Account</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--warn" data-show-roles="admin,account,design,editor" data-card-key="due_soon" tabindex="0" role="link" aria-label="Drilldown: Due Soon">
-        <div class="kpi-head">
-          <span class="kpi-label">Due Soon</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend"><b>48h</b> tới</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--red" data-show-roles="admin,account,design,editor" data-card-key="overdue" tabindex="0" role="link" aria-label="Drilldown: Overdue">
-        <div class="kpi-head">
-          <span class="kpi-label">Overdue</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend down"><b>0</b> mới hôm nay</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--ok" data-show-roles="admin,account,design,editor" data-card-key="completed" tabindex="0" role="link" aria-label="Drilldown: Completed">
-        <div class="kpi-head">
-          <span class="kpi-label">Completed</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend up"><b>+22</b> kỳ này</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--ok" data-show-roles="admin,account" data-card-key="on_time_rate" tabindex="0" role="link" aria-label="Drilldown: On-time Rate">
-        <div class="kpi-head">
-          <span class="kpi-label">On-time Rate</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-        </div>
-        <span class="kpi-value">0%</span>
-        <span class="kpi-trend up"><b>+3%</b> so kỳ trước</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi kpi--brand" data-show-roles="admin,account" data-card-key="average_rating" tabindex="0" role="link" aria-label="Drilldown: Average Rating">
-        <div class="kpi-head">
-          <span class="kpi-label">Average Rating</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-        </div>
-        <span class="kpi-value">0</span>
-        <span class="kpi-trend"><b>/5</b> từ 52 đánh giá</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-      <div class="kpi" data-show-roles="admin,account" data-card-key="rating_coverage" tabindex="0" role="link" aria-label="Drilldown: Rating Coverage">
-        <div class="kpi-head">
-          <span class="kpi-label">Rating Coverage</span>
-          <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-        </div>
-        <span class="kpi-value">0%</span>
-        <span class="kpi-trend"><b>52/68</b> đơn được rating</span>
-        <span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-      </div>
-    </div>
-
-    <!-- ============ WORKFLOW HEALTH ============ -->
+    <!-- ============ MODULE 5: CLIENT ORDERS OVERVIEW ============ -->
     <section class="dash-section" data-show-roles="admin,account">
       <div class="dash-section-head">
         <div>
-          <h2><span class="serif-italic">Workflow</span> Health</h2>
-          <p>Số order/task đang ở từng bước của luồng vận hành.</p>
+          <h2><span class="serif-italic">Client Orders</span> Overview</h2>
+          <p>Client-facing lifecycle: brief, production, delivery, feedback, completion.</p>
         </div>
       </div>
-      <div class="pipeline">
-        <div class="pipe-stage" data-pipe="new_request"><span class="pipe-count">0</span><span class="pipe-label">New Request</span></div>
-        <div class="pipe-stage" data-pipe="brief_checking"><span class="pipe-count">0</span><span class="pipe-label">Brief Checking</span></div>
-        <div class="pipe-stage" data-pipe="in_production"><span class="pipe-count">0</span><span class="pipe-label">In Production</span></div>
-        <div class="pipe-stage" data-pipe="internal_review"><span class="pipe-count">0</span><span class="pipe-label">Internal Review</span></div>
-        <div class="pipe-stage" data-pipe="delivery"><span class="pipe-count">0</span><span class="pipe-label">Delivery</span></div>
-        <div class="pipe-stage" data-pipe="completed"><span class="pipe-count">0</span><span class="pipe-label">Completed</span></div>
+      <div class="kpi-grid">
+        <div class="kpi kpi--brand" data-card-key="total_client_orders" data-drill-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Total Client Orders">
+          <div class="kpi-head"><span class="kpi-label">Total Client Orders</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Orders</b> created</span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="active_client_orders" data-drill-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Active Client Orders">
+          <div class="kpi-head"><span class="kpi-label">Active Client Orders</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Not cancelled</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--warn" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Client Orders Need More Info">
+          <div class="kpi-head"><span class="kpi-label">Orders Need More Info</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend down"><b>0</b> briefs</span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="order_in_production" data-drill-key="in_production" tabindex="0" role="link" aria-label="Drilldown: Client Orders In Production">
+          <div class="kpi-head"><span class="kpi-label">Orders In Production</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Order status</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--ok" data-card-key="delivered" tabindex="0" role="link" aria-label="Drilldown: Delivered Client Orders">
+          <div class="kpi-head"><span class="kpi-label">Orders Delivered</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4z"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Handoff sent</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--warn" data-card-key="waiting_feedback" tabindex="0" role="link" aria-label="Drilldown: Client Orders Waiting Feedback">
+          <div class="kpi-head"><span class="kpi-label">Orders Waiting Feedback</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Client review</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--ok" data-card-key="completed" tabindex="0" role="link" aria-label="Drilldown: Completed Client Orders">
+          <div class="kpi-head"><span class="kpi-label">Orders Completed</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Client lifecycle</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--red" data-card-key="cancelled" tabindex="0" role="link" aria-label="Drilldown: Cancelled Client Orders">
+          <div class="kpi-head"><span class="kpi-label">Orders Cancelled</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend down"><b>0</b> cancelled</span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
       </div>
     </section>
 
-    <!-- ============ ALERT + WORKLOAD ============ -->
-    <div class="row-2">
-      <section class="dash-card" data-show-roles="admin,account,design,editor">
-        <div class="row between">
-          <div><h3>Alert Center</h3><p class="desc">Các điểm cần xử lý gấp.</p></div>
-          <span class="badge badge-success"><span class="dot"></span> 0 cảnh báo</span>
+    <!-- ============ MODULE 5: INTERNAL TASKS OVERVIEW ============ -->
+    <section class="dash-section" data-show-roles="admin,account,design,editor">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic serif-italic--red">Internal Tasks</span> Overview</h2>
+          <p>Internal workload: standalone work and tasks linked to Client Orders.</p>
         </div>
-        <div class="alert-list">
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi kpi--brand" data-card-key="total_internal_tasks" data-drill-key="" tabindex="0" role="link" aria-label="Open Internal Task Tracker">
+          <div class="kpi-head"><span class="kpi-label">Total Internal Tasks</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Tasks</b> created</span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="active_internal_tasks" data-drill-key="in_production" tabindex="0" role="link" aria-label="Drilldown: Active Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Active Internal Tasks</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Open tasks</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="standalone" tabindex="0" role="link" aria-label="Drilldown: Standalone Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Standalone Tasks</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>No Client Order</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi" data-card-key="linked" tabindex="0" role="link" aria-label="Drilldown: Linked Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Linked Tasks</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Linked to Orders</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--warn" data-card-key="due_today" tabindex="0" role="link" aria-label="Drilldown: Internal Tasks Due Today">
+          <div class="kpi-head"><span class="kpi-label">Tasks Due Today</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Deadline today</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--red" data-card-key="overdue" tabindex="0" role="link" aria-label="Drilldown: Overdue Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Tasks Overdue</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend down"><b>0</b> overdue</span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--warn" data-card-key="unassigned" tabindex="0" role="link" aria-label="Drilldown: Unassigned Internal Tasks">
+          <div class="kpi-head"><span class="kpi-label">Tasks Unassigned</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Need PIC</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+        <div class="kpi kpi--ok" data-card-key="completed_week" tabindex="0" role="link" aria-label="Drilldown: Internal Tasks Completed This Week">
+          <div class="kpi-head"><span class="kpi-label">Tasks Completed This Week</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Last 7 days</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 5: ALERTS ============ -->
+    <section class="dash-section" data-show-roles="admin,account,design,editor">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic">Alerts</span></h2>
+          <p>Separate alerts for Client Orders and Internal Tasks.</p>
+        </div>
+      </div>
+      <section class="dash-card">
+        <div class="row between">
+          <div><h3>Alert Center</h3><p class="desc">Brief info, feedback, overdue, unassigned, and high-priority pressure.</p></div>
+          <span class="badge badge-success" id="alert-badge"><span class="dot"></span> 0 alerts</span>
+        </div>
+        <div class="alert-list" id="master-alert-list">
           <div class="alert-empty" style="padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36" style="margin: 0 auto 8px; display: block; opacity: 0.4"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <p style="margin: 0">Chưa có cảnh báo nào. Cảnh báo sẽ xuất hiện khi có task trễ deadline, brief thiếu thông tin, hoặc rating chưa được client gửi.</p>
+            <p style="margin: 0">No alerts right now.</p>
           </div>
         </div>
       </section>
+    </section>
 
-      <section class="dash-card" data-show-roles="admin">
-        <div class="row between">
-          <div><h3>Workload by PIC</h3><p class="desc">Phân bổ task đang mở theo nhân sự.</p></div>
-          <span class="badge badge-success"><span class="dot"></span> Trong ngưỡng</span>
+    <!-- ============ MODULE 5: TEAM WORKLOAD ============ -->
+    <section class="dash-section" data-show-roles="admin">
+      <div class="dash-section-head">
+        <div>
+          <h2><span class="serif-italic serif-italic--red">Team</span> Workload</h2>
+          <p>Tasks by PIC, overdue by PIC, and workload pressure.</p>
         </div>
-        <div class="workload-list">
-          <div class="workload-row" data-pic="Duy">
-            <span class="wname"><span class="ava">Du</span> Duy</span>
-            <div class="workload-bar" title="Đang thực hiện 5 · Chờ duyệt 1 · Trễ 1">
-              <span class="wb--progress" style="width:0%"></span>
-              <span class="wb--review"   style="width:0%"></span>
-              <span class="wb--overdue"  style="width:0%"></span>
-              <span class="wb--done"     style="width:0%"></span>
-            </div>
-            <span class="wcount"><b>0</b> /max 8</span>
-          </div>
-          <div class="workload-row" data-pic="Vinh">
-            <span class="wname"><span class="ava">Vi</span> Vinh</span>
-            <div class="workload-bar">
-              <span class="wb--progress" style="width:0%"></span>
-              <span class="wb--review"   style="width:0%"></span>
-              <span class="wb--overdue"  style="width:0%"></span>
-              <span class="wb--done"     style="width:0%"></span>
-            </div>
-            <span class="wcount"><b>0</b> /max 8</span>
-          </div>
-          <div class="workload-row" data-pic="Hậu">
-            <span class="wname"><span class="ava">Hậ</span> Hậu</span>
-            <div class="workload-bar">
-              <span class="wb--progress" style="width:0%"></span>
-              <span class="wb--review"   style="width:0%"></span>
-              <span class="wb--overdue"  style="width:0%"></span>
-              <span class="wb--done"     style="width:0%"></span>
-            </div>
-            <span class="wcount"><b>0</b> /max 8</span>
-          </div>
-          <div class="workload-row" data-pic="Linh Chi">
-            <span class="wname"><span class="ava">LC</span> Linh Chi</span>
-            <div class="workload-bar">
-              <span class="wb--progress" style="width:0%"></span>
-              <span class="wb--review"   style="width:0%"></span>
-              <span class="wb--overdue"  style="width:0%"></span>
-              <span class="wb--done"     style="width:0%"></span>
-            </div>
-            <span class="wcount"><b>0</b> /max 8</span>
-          </div>
-          <div class="workload-row" data-pic="Đức Anh">
-            <span class="wname"><span class="ava">ĐA</span> Đức Anh</span>
-            <div class="workload-bar">
-              <span class="wb--progress" style="width:0%"></span>
-              <span class="wb--review"   style="width:0%"></span>
-              <span class="wb--overdue"  style="width:0%"></span>
-              <span class="wb--done"     style="width:0%"></span>
-            </div>
-            <span class="wcount"><b>0</b> /max 8</span>
-          </div>
-          <div class="workload-row" data-pic="Mai Phương">
-            <span class="wname"><span class="ava">MP</span> Mai Phương</span>
-            <div class="workload-bar">
-              <span class="wb--progress" style="width:0%"></span>
-              <span class="wb--review"   style="width:0%"></span>
-              <span class="wb--overdue"  style="width:0%"></span>
-              <span class="wb--done"     style="width:0%"></span>
-            </div>
-            <span class="wcount"><b>0</b> /max 8</span>
-          </div>
+      </div>
+      <section class="dash-card">
+        <div class="row between">
+          <div><h3>Workload by PIC</h3><p class="desc">Open task volume by PIC. Red segment means overdue. Pressure threshold: 8 open tasks.</p></div>
+          <span class="badge badge-success" id="workload-pressure-badge"><span class="dot"></span> Trong ngưỡng</span>
+        </div>
+        <div class="workload-list" id="module5-workload-list">
+          <div class="workload-row" data-pic="Duy"><span class="wname"><span class="ava">Du</span> Duy</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
+          <div class="workload-row" data-pic="Vinh"><span class="wname"><span class="ava">Vi</span> Vinh</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
+          <div class="workload-row" data-pic="Hậu"><span class="wname"><span class="ava">Hậ</span> Hậu</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
+          <div class="workload-row" data-pic="Linh Chi"><span class="wname"><span class="ava">LC</span> Linh Chi</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
+          <div class="workload-row" data-pic="Đức Anh"><span class="wname"><span class="ava">ĐA</span> Đức Anh</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
+          <div class="workload-row" data-pic="Mai Phương"><span class="wname"><span class="ava">MP</span> Mai Phương</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
         </div>
         <div class="workload-legend">
-          <span><i class="wl--progress"></i> Đang thực hiện</span>
-          <span><i class="wl--review"></i> Chờ duyệt</span>
-          <span><i class="wl--overdue"></i> Trễ hạn</span>
-          <span><i class="wl--done"></i> Hoàn thành</span>
+          <span><i class="wl--progress"></i> Active tasks</span>
+          <span><i class="wl--review"></i> Internal review</span>
+          <span><i class="wl--overdue"></i> Overdue</span>
+          <span><i class="wl--done"></i> Completed</span>
         </div>
       </section>
-    </div>
-
-    <!-- ============ PRODUCTION + DEADLINE ============ -->
-    <div class="row-2 row-2--equal">
-      <section class="dash-card" data-show-roles="admin,account">
-        <div class="row between">
-          <div><h3>Production Status</h3><p class="desc">Phân bổ task theo status (in production).</p></div>
-        </div>
-        <div class="status-block">
-          <div class="donut" role="img" aria-label="Donut chart phân bổ status">
-            <div class="donut-inner"><div><b>0</b><span>task đang mở</span></div></div>
-          </div>
-          <div class="status-legend">
-            <div class="status-legend-item"><i class="sl--progress"></i><span>Đang thực hiện</span><span class="pct">36%</span></div>
-            <div class="status-legend-item"><i class="sl--review"></i><span>Chờ duyệt nội bộ</span><span class="pct">18%</span></div>
-            <div class="status-legend-item"><i class="sl--ready"></i><span>Sẵn sàng bàn giao</span><span class="pct">14%</span></div>
-            <div class="status-legend-item"><i class="sl--done"></i><span>Hoàn thành</span><span class="pct">22%</span></div>
-            <div class="status-legend-item"><i class="sl--overdue"></i><span>Trễ hạn</span><span class="pct">10%</span></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="dash-card" data-show-roles="admin,account">
-        <div class="row between">
-          <div><h3>Deadline &amp; SLA</h3><p class="desc">Tỷ lệ đúng hạn và phân loại deadline.</p></div>
-          <span class="badge badge-success"><span class="dot"></span> 92% đúng hạn</span>
-        </div>
-        <div class="sla-gauge">
-          <span class="sla-num">92%</span>
-          <div class="grow">
-            <div class="sla-bar"><i style="width:92%"></i></div>
-            <div class="row between" style="margin-top:6px; font-size:11px; color:var(--text-muted)">
-              <span>On-time Rate</span>
-              <span>Mục tiêu 95%</span>
-            </div>
-          </div>
-        </div>
-        <div class="deadline-grid">
-          <div class="dl-tile dl--ok"><b>0</b><span>On Track (&gt;48h)</span></div>
-          <div class="dl-tile dl--soon"><b>0</b><span>Due Soon (24–48h)</span></div>
-          <div class="dl-tile dl--soon"><b>0</b><span>Due Today</span></div>
-          <div class="dl-tile dl--late"><b>0</b><span>Internal Overdue</span></div>
-          <div class="dl-tile dl--late"><b>0</b><span>Client Overdue</span></div>
-          <div class="dl-tile dl--ok"><b>0</b><span>Completed On Time</span></div>
-        </div>
-      </section>
-    </div>
-
-    <!-- ============ DELIVERY + RECENT ACTIVITY ============ -->
-    <div class="row-2 row-2--equal">
-      <section class="dash-card" data-show-roles="admin,account">
-        <div class="row between">
-          <div><h3>Delivery Funnel</h3><p class="desc">Tỷ lệ chuyển bước từ Ready → Completed.</p></div>
-        </div>
-        <div class="funnel">
-          <div class="funnel-step"><b>Ready for Delivery</b><span class="fn-count">22</span></div>
-          <div class="funnel-step"><b>Account Checked</b><span class="fn-count">21</span></div>
-          <div class="funnel-step"><b>Preview Sent</b><span class="fn-count">19</span></div>
-          <div class="funnel-step"><b>Client Approved</b><span class="fn-count">17</span></div>
-          <div class="funnel-step"><b>Final Sent</b><span class="fn-count">14</span></div>
-          <div class="funnel-step"><b>Rated &amp; Completed</b><span class="fn-count">11</span></div>
-        </div>
-        <div class="row" style="margin-top:var(--space-2); gap:var(--space-4); font-size:var(--text-xs); color:var(--text-muted)">
-          <span>Rating TB: <b style="color:var(--text)">4.7/5</b></span>
-          <span>Coverage: <b style="color:var(--text)">76%</b></span>
-          <span>Reopened: <b style="color:var(--red-600)">2 task</b></span>
-        </div>
-      </section>
-
-      <section class="dash-card" data-show-roles="admin,account,design,editor">
-        <div class="row between">
-          <div><h3>Recent Activity</h3><p class="desc">Cập nhật mới nhất từ team.</p></div>
-          <a href="#" class="text-xs" style="color:var(--primary); font-weight:600">Xem tất cả →</a>
-        </div>
-        <div class="activity-feed">
-          <div class="activity-empty" style="padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36" style="margin: 0 auto 8px; display: block; opacity: 0.4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <p style="margin: 0">Chưa có hoạt động. Activity sẽ xuất hiện khi team push task, comment, hoặc bàn giao.</p>
-          </div>
-        </div>
-      </section>
-    </div>
+    </section>
 
     <!-- ============ QUICK ACTIONS ============ -->
     <section class="dash-section">
@@ -689,6 +527,19 @@
 
   /* ============ KPI card → drilldown ============ */
   const DRILLDOWN_MAP = {
+    total_client_orders:{ href: 'database-orders.html',  label: 'Total Client Orders', drillKey: 'total_orders' },
+    active_client_orders:{ href: 'database-orders.html', label: 'Active Client Orders', drillKey: 'total_orders' },
+    order_in_production:{ href: 'database-orders.html', label: 'Orders In Production', drillKey: 'in_production' },
+    delivered:         { href: 'database-orders.html',  label: 'Delivered Client Orders' },
+    waiting_feedback:  { href: 'database-orders.html',  label: 'Orders Waiting Feedback' },
+    cancelled:         { href: 'database-orders.html',  label: 'Cancelled Client Orders' },
+    total_internal_tasks:{ href: 'production-board.html', label: 'Total Internal Tasks', drillKey: '' },
+    active_internal_tasks:{ href: 'production-board.html', label: 'Active Internal Tasks', drillKey: 'in_production' },
+    standalone:        { href: 'production-board.html', label: 'Standalone Tasks' },
+    linked:            { href: 'production-board.html', label: 'Linked Tasks' },
+    due_today:         { href: 'production-board.html', label: 'Tasks Due Today' },
+    unassigned:        { href: 'production-board.html', label: 'Unassigned Tasks' },
+    completed_week:    { href: 'production-board.html', label: 'Tasks Completed This Week' },
     total_orders:      { href: 'database-orders.html',  label: 'Total Orders' },
     new_requests:      { href: 'database-orders.html',  label: 'New Requests' },
     brief_need_info:   { href: 'database-orders.html',  label: 'Brief Need Info' },
@@ -706,7 +557,13 @@
     const key = card.getAttribute('data-card-key');
     const map = DRILLDOWN_MAP[key];
     if (!map) return;
-    const params = new URLSearchParams({ dl: key, from: 'dashboard' });
+    const drillKey = card.getAttribute('data-drill-key');
+    const targetKey = drillKey !== null ? drillKey : (map.drillKey !== undefined ? map.drillKey : key);
+    if (!targetKey) {
+      location.href = `${map.href}?from=dashboard`;
+      return;
+    }
+    const params = new URLSearchParams({ dl: targetKey, from: 'dashboard' });
     location.href = `${map.href}?${params.toString()}`;
   }
   document.querySelectorAll('.kpi[data-card-key]').forEach((card) => {
@@ -762,6 +619,94 @@
     return diff > 0 && diff <= 48 * 60 * 60 * 1000;
   }
   function dbIsCompleted(s) { return s === 'completed' || s === 'delivered'; }
+  function dbDiffDaysFromNow(deadline) {
+    if (!deadline) return null;
+    const d = new Date(typeof deadline === 'string' ? deadline.replace(' ', 'T') : deadline);
+    if (isNaN(d.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return Math.round((d.getTime() - today.getTime()) / 86400000);
+  }
+  function dbIsCancelledOrder(o) {
+    return o.account_status === 'rejected' || o.production_status === 'cancelled';
+  }
+  function dbIsActiveTask(t) {
+    return !dbIsCompleted(t.status) && t.status !== 'cancelled' && t.status !== 'paused';
+  }
+  function dbTaskCompletedThisWeek(t) {
+    if (!dbIsCompleted(t.status)) return false;
+    const raw = t.last_update || t.completed_at || t.updated_at;
+    const d = raw ? new Date(typeof raw === 'string' ? raw.replace(' ', 'T') : raw) : null;
+    return !!(d && !isNaN(d.getTime()) && Date.now() - d.getTime() <= 7 * 86400000);
+  }
+  function dbRenderAlertRow(kind, title, meta, count, href, level) {
+    const cls = level === 'critical' ? 'alert-item--critical' : level === 'warning' ? 'alert-item--warning' : 'alert-item--info';
+    return `<a class="alert-item ${cls}" href="${href}">
+      <span class="alert-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="alert-body"><b>${title}</b><span class="alert-meta"><span>${kind}</span><span class="sep">/</span><span>${meta}</span></span></span>
+      <span class="badge ${level === 'critical' ? 'badge-danger' : level === 'warning' ? 'badge-warning' : 'badge-success'}">${count}</span>
+    </a>`;
+  }
+  function renderModule5Dashboard(O, T) {
+    const orderInProductionStatuses = ['received', 'inprogress', 'revision', 'feedback_fix'];
+    const totalClientOrders = O.length;
+    const activeClientOrders = O.filter((o) => !dbIsCancelledOrder(o) && o.production_status !== 'completed').length;
+    const orderNeedInfo = O.filter((o) => o.account_status === 'needinfo').length;
+    const orderInProduction = O.filter((o) => orderInProductionStatuses.includes(o.production_status)).length;
+    const deliveredOrders = O.filter((o) => o.production_status === 'delivered').length;
+    const waitingFeedbackOrders = O.filter((o) => ['preview', 'client_wait', 'client_rev'].includes(o.delivery_status)).length;
+    const completedOrders = O.filter((o) => o.production_status === 'completed').length;
+    const cancelledOrders = O.filter(dbIsCancelledOrder).length;
+
+    const totalInternalTasks = T.length;
+    const activeInternalTasks = T.filter(dbIsActiveTask).length;
+    const standaloneTasks = T.filter((t) => t.is_standalone || !t.order_id).length;
+    const linkedTasks = T.filter((t) => t.order_id && !t.is_standalone).length;
+    const dueTodayTasks = T.filter((t) => dbDiffDaysFromNow(t.internal_deadline) === 0 && !dbIsCompleted(t.status)).length;
+    const overdueTasks = T.filter((t) => dbIsOverdue(t.internal_deadline, dbIsCompleted(t.status))).length;
+    const unassignedTasks = T.filter((t) => dbIsActiveTask(t) && !t.assigned_to).length;
+    const completedWeekTasks = T.filter(dbTaskCompletedThisWeek).length;
+
+    dbSetKpi('total_client_orders', totalClientOrders);
+    dbSetKpi('active_client_orders', activeClientOrders);
+    dbSetKpi('brief_need_info', orderNeedInfo);
+    dbSetKpiTrend('brief_need_info', `<b>${orderNeedInfo}</b> briefs`);
+    dbSetKpi('order_in_production', orderInProduction);
+    dbSetKpi('delivered', deliveredOrders);
+    dbSetKpi('waiting_feedback', waitingFeedbackOrders);
+    dbSetKpi('completed', completedOrders);
+    dbSetKpi('cancelled', cancelledOrders);
+    dbSetKpiTrend('cancelled', `<b>${cancelledOrders}</b> cancelled`);
+
+    dbSetKpi('total_internal_tasks', totalInternalTasks);
+    dbSetKpi('active_internal_tasks', activeInternalTasks);
+    dbSetKpi('standalone', standaloneTasks);
+    dbSetKpi('linked', linkedTasks);
+    dbSetKpi('due_today', dueTodayTasks);
+    dbSetKpi('overdue', overdueTasks);
+    dbSetKpiTrend('overdue', `<b>${overdueTasks}</b> overdue`);
+    dbSetKpi('unassigned', unassignedTasks);
+    dbSetKpi('completed_week', completedWeekTasks);
+
+    const highPriorityOrders = O.filter((o) => ['urgent', 'critical', 'high'].includes(o.priority) && !dbIsCancelledOrder(o)).length;
+    const highPriorityTasks = T.filter((t) => ['urgent', 'critical', 'high'].includes(t.priority) && dbIsActiveTask(t)).length;
+    const alerts = [
+      { kind: 'Client Orders', title: 'Waiting brief info', meta: 'Orders need more info', count: orderNeedInfo, href: 'database-orders.html?dl=brief_need_info&from=dashboard', level: orderNeedInfo > 0 ? 'warning' : 'info' },
+      { kind: 'Client Orders', title: 'Waiting feedback', meta: 'Client review pending', count: waitingFeedbackOrders, href: 'database-orders.html?dl=waiting_feedback&from=dashboard', level: waitingFeedbackOrders > 0 ? 'warning' : 'info' },
+      { kind: 'Internal Tasks', title: 'Overdue internal tasks', meta: 'Deadline already passed', count: overdueTasks, href: 'production-board.html?dl=overdue&from=dashboard', level: overdueTasks > 0 ? 'critical' : 'info' },
+      { kind: 'Internal Tasks', title: 'Unassigned internal tasks', meta: 'Need PIC assignment', count: unassignedTasks, href: 'production-board.html?dl=unassigned&from=dashboard', level: unassignedTasks > 0 ? 'warning' : 'info' },
+      { kind: 'Orders + Tasks', title: 'High priority work', meta: `${highPriorityOrders} orders / ${highPriorityTasks} tasks`, count: highPriorityOrders + highPriorityTasks, href: 'database-orders.html?from=dashboard', level: highPriorityOrders + highPriorityTasks > 0 ? 'critical' : 'info' }
+    ];
+    const alertList = document.getElementById('master-alert-list');
+    if (alertList) alertList.innerHTML = alerts.map((a) => dbRenderAlertRow(a.kind, a.title, a.meta, a.count, a.href, a.level)).join('');
+    const alertBadge = document.getElementById('alert-badge');
+    const activeAlerts = alerts.filter((a) => a.count > 0).length;
+    if (alertBadge) {
+      alertBadge.className = `badge ${activeAlerts ? 'badge-warning' : 'badge-success'}`;
+      alertBadge.innerHTML = `<span class="dot"></span> ${activeAlerts} alerts`;
+    }
+  }
 
   async function loadMasterDashboard() {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
@@ -777,72 +722,11 @@
       const O = Array.isArray(orders) ? orders : [];
       const T = Array.isArray(tasks) ? tasks : [];
 
-      /* ============ CLIENT ORDERS side ============ */
-      const totalOrders = O.length;
-      const newRequests = O.filter((o) => o.account_status === 'pending').length;
-      const briefNeedInfo = O.filter((o) => o.account_status === 'needinfo').length;
-      const ordersDelivered = O.filter((o) => o.production_status === 'delivered' || o.production_status === 'completed').length;
-      const ordersRated = O.filter((o) => typeof o.satisfaction_score === 'number' && o.satisfaction_score > 0).length;
-      const ratingSum = O.reduce((s, o) => s + (typeof o.satisfaction_score === 'number' ? o.satisfaction_score : 0), 0);
-      const avgRating = ordersRated > 0 ? +(ratingSum / ordersRated).toFixed(1) : 0;
-      const ratingCoverage = ordersDelivered > 0 ? Math.round(ordersRated / ordersDelivered * 100) : 0;
+      // Module 5: render 16 KPI cards (8 Client Orders + 8 Internal Tasks) + Alert Center.
+      // Legacy mixed KPI row + Workflow Health đã removed. NO ambiguous mixed KPI.
+      renderModule5Dashboard(O, T);
 
-      /* ============ INTERNAL TASKS side ============ */
-      const totalTasks = T.length;
-      const inProduction   = T.filter((t) => ['received', 'inprogress', 'revision', 'feedback_fix'].includes(t.status)).length;
-      const internalReview = T.filter((t) => t.status === 'review').length;
-      const readyForDelivery = T.filter((t) => t.status === 'ready').length;
-      const dueSoon = T.filter((t) => dbIsDueSoon(t.internal_deadline, dbIsCompleted(t.status))).length;
-      const overdue = T.filter((t) => dbIsOverdue(t.internal_deadline, dbIsCompleted(t.status))).length;
-      const tasksCompleted = T.filter((t) => dbIsCompleted(t.status)).length;
-      const eligibleForOntime = T.filter((t) => dbIsCompleted(t.status) || dbIsOverdue(t.internal_deadline, false));
-      const ontimeRate = eligibleForOntime.length === 0 ? 0
-        : Math.round(tasksCompleted / eligibleForOntime.length * 100);
-
-      /* ============ Combined "Completed" ============ */
-      const combinedCompleted = ordersDelivered;  // dùng order-side để khớp với client journey
-
-      /* ============ Update KPI cards ============ */
-      dbSetKpi('total_orders', totalOrders);
-      dbSetKpi('new_requests', newRequests);
-      dbSetKpiTrend('new_requests', `<b>${newRequests}</b> chờ xác nhận`);
-      dbSetKpi('brief_need_info', briefNeedInfo);
-      dbSetKpiTrend('brief_need_info', `<b>${briefNeedInfo}</b> cần bổ sung`);
-      dbSetKpi('in_production', inProduction);
-      dbSetKpiTrend('in_production', `<b>${inProduction}</b> đang xử lý`);
-      dbSetKpi('internal_review', internalReview);
-      dbSetKpiTrend('internal_review', `<b>${internalReview}</b> chờ duyệt`);
-      dbSetKpi('ready_for_delivery', readyForDelivery);
-      dbSetKpi('due_soon', dueSoon);
-      dbSetKpi('overdue', overdue);
-      dbSetKpiTrend('overdue', `<b>${overdue}</b> mới hôm nay`);
-      dbSetKpi('completed', combinedCompleted);
-      dbSetKpi('on_time_rate', ontimeRate + '%');
-      dbSetKpi('average_rating', avgRating);
-      dbSetKpiTrend('average_rating', `<b>/5</b> từ ${ordersRated} đánh giá`);
-      dbSetKpi('rating_coverage', ratingCoverage + '%');
-      dbSetKpiTrend('rating_coverage', `<b>${ordersRated}/${ordersDelivered}</b> đơn được rating`);
-
-      /* ============ Workflow Health pipeline ============
-         Pipeline kết hợp: New Request/Brief Checking (orders) +
-         In Production/Internal Review (tasks) + Delivery/Completed (orders). */
-      const briefChecking = O.filter((o) => o.account_status === 'checking').length;
-      const pipeCounts = {
-        new_request: newRequests,
-        brief_checking: briefChecking,
-        in_production: inProduction,
-        internal_review: internalReview,
-        delivery: readyForDelivery,
-        completed: combinedCompleted
-      };
-      document.querySelectorAll('[data-pipe]').forEach((stage) => {
-        const k = stage.getAttribute('data-pipe');
-        const span = stage.querySelector('.pipe-count');
-        if (span) span.textContent = pipeCounts[k] || 0;
-      });
-
-      /* ============ Workload by PIC (Internal Tasks only) ============ */
-      const openTasks = T.filter((t) => !dbIsCompleted(t.status) && t.status !== 'cancelled' && t.status !== 'paused');
+      /* ============ Workload by PIC (Internal Tasks only, Module 5 Team Workload section) ============ */
       const picData = {};  // { picName: { progress, review, overdue, done } }
       T.forEach((t) => {
         const p = t.assigned_to || '—';
@@ -854,10 +738,12 @@
         else if (['received','inprogress','revision','feedback_fix','pending','feedback_wait','ready'].includes(t.status)) picData[p].progress++;
       });
       const MAX_PER_PIC = 8;
+      const overloadedPics = new Set();
       document.querySelectorAll('[data-pic]').forEach((row) => {
         const name = row.getAttribute('data-pic');
         const d = picData[name] || { progress: 0, review: 0, overdue: 0, done: 0 };
         const openCount = d.progress + d.review + d.overdue;
+        if (openCount > MAX_PER_PIC) overloadedPics.add(name);
         const wcount = row.querySelector('.wcount b');
         if (wcount) wcount.textContent = openCount;
         // Segment widths as % of MAX_PER_PIC
@@ -871,6 +757,12 @@
         if (odBar)   odBar.style.width   = w(d.overdue);
         if (dBar)    dBar.style.width    = w(d.done);
       });
+      const pressureBadge = document.getElementById('workload-pressure-badge');
+      if (pressureBadge) {
+        const overloadedPicCount = overloadedPics.size;
+        pressureBadge.className = `badge ${overloadedPicCount ? 'badge-danger' : 'badge-success'}`;
+        pressureBadge.innerHTML = `<span class="dot"></span> ${overloadedPicCount ? overloadedPicCount + ' PIC quá tải' : 'Trong ngưỡng'}`;
+      }
     } catch (e) {
       console.warn('[dashboard] load failed:', e);
     }

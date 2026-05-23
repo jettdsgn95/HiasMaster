@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-21 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-4) · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-22 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · Railway deploy LIVE ✓*
 
 ---
 
@@ -448,9 +448,15 @@ Cả 3 dashboard (Master / Orders / Task) đều load real-time từ Supabase qu
 - **Performance** (3): `on_time_rate` (= completed / (completed + overdue) * 100) / `completed_this_week` (completed && last_update ≥ NOW-7d) / `avg_completion_time` (avg days created_at → last_update, no drilldown)
 - **Drilldown** → `production-board.html?dl=KEY` via `DRILLDOWN_MAP` 15 keys (`state.quick` switch trong production-board.js).
 
-### Master Dashboard (`dashboard.html`) — combined view
+### Master Dashboard (`dashboard.html`) — separated combined view
 
-- 12 KPI gộp từ orders + tasks (Total Orders + 5 Order-side KPI + 5 Task-side KPI + Workflow Health 6-stage pipeline + 6-PIC workload với segment bars progress/review/overdue/done).
+- Module 5 refine (2026-05-22): Master Dashboard remains combined, but no ambiguous mixed KPI row. Layout is now 4 sections:
+  - **Client Orders Overview**: Total Client Orders / Active Client Orders / Need More Info / In Production / Delivered / Waiting Feedback / Completed / Cancelled.
+  - **Internal Tasks Overview**: Total Internal Tasks / Active Internal Tasks / Standalone Tasks / Linked Tasks / Due Today / Overdue / Unassigned / Completed This Week.
+  - **Alerts**: Client Orders waiting brief info, Client Orders waiting feedback, overdue internal tasks, unassigned internal tasks, high priority tasks/orders.
+  - **Team Workload**: tasks by PIC, overdue by PIC, workload pressure threshold MAX_PER_PIC=8.
+- Drilldown pattern preserved: visible Module 5 KPI cards use `data-card-key` plus optional `data-drill-key` to route to supported target filters in `database-orders.html` / `production-board.html`.
+- **Cleanup 2026-05-22**: 5 legacy hidden blocks REMOVED (~302 lines): old mixed KPI grid + Workflow Health pipeline + Production Status donut + Delivery Funnel + Recent Activity. `loadMasterDashboard()` bỏ 18 dbSetKpi calls dead (legacy keys không còn card target). Loader giờ gọn: `renderModule5Dashboard(O, T)` + Workload by PIC. dashboard.html từ 1138 → 774 lines. Git history giữ rollback.
 
 ### Helper functions (inline mỗi dashboard)
 
