@@ -45,7 +45,7 @@ Status: Done
 
 Status: Done
 
-- **Master Dashboard** (`dashboard.html`): refined Module 5 combined overview. KPI layout now visually separates **Client Orders Overview** (8 order metrics) and **Internal Tasks Overview** (8 task metrics), followed by **Alerts** and **Team Workload**. Existing drilldown click behavior remains wired via `data-card-key` / `data-drill-key` to `database-orders.html` and `production-board.html`.
+- **Master Dashboard** (`dashboard.html`): Module 5 combined overview cleaned up 2026-05-22. KPI layout có 4 sections rõ ràng — **Client Orders Overview** (8 order metrics), **Internal Tasks Overview** (8 task metrics), **Alerts** (5 alert categories), và **Team Workload** (6-PIC bar chart với pressure threshold MAX_PER_PIC=8). Legacy mixed KPI row + Workflow Health + Production Status donut + Delivery Funnel + Recent Activity đã removed (~302 lines). Drilldown wired qua `data-card-key` + optional `data-drill-key` → `database-orders.html` hoặc `production-board.html`. dashboard.html giờ 55.0 KB / 774 lines.
 - **Order Dashboard** (`order-dashboard.html`): KPI cấp Order — Total / Pending / Need Info / Checking / Confirmed / Completed. Funnel theo `account_status`. Phân bố theo chi nhánh + theo loại request. Mỗi KPI click-through tới `database-orders.html?dl=<key>`.
 - **Task Dashboard** (`task-dashboard.html`): KPI nội bộ team — Total Tasks / In Production / Internal Review / Due Soon / Overdue / On-time Rate. Workload theo P.I.C, phân bố loại task, Linked vs Standalone. KPI click-through tới `production-board.html?dl=<key>`.
 - Cả 3 page dùng chung sidebar (Master / Order / Task Dashboard tách thành 3 entries dưới group "Vận hành").
@@ -199,18 +199,17 @@ New files 2026-05-20:
 | `assets/production-board.js` | 73.4 |
 | `request.html` | 64.3 |
 | `assets/database-orders.js` | 59.9 |
-| `dashboard.html` | 81.1 |
+| `dashboard.html` | 55.0 |
 | `order-dashboard.html` | 50.9 |
 | `settings.html` | 49.1 |
 | `task-dashboard.html` | 46.4 |
+| `assets/ai-tools.js` | 45.7 |
 | `assets/user-management.js` | 42.8 |
 | `assets/delivery-log.js` | 42.0 |
 | `assets/client-dashboard.js` | 36.5 |
 | `production-board.html` | 34.3 |
 | `client-dashboard.html` | 30.6 |
-| `assets/ai-tools.js` | 30.5 |
 | `tracking.html` | 29.2 |
-| `assets/reports.js` | 27.7 |
 | `reports.html` | 27.3 |
 | `assets/order-form.js` | 26.3 |
 | `user-management.html` | 25.0 |
@@ -218,6 +217,7 @@ New files 2026-05-20:
 | `assets/settings.js` | 23.3 |
 | `database-orders.html` | 23.1 |
 | `assets/chatbot.js` | 21.0 |
+| `assets/reports.js` | 20.7 |
 | `index.html` | 17.8 |
 | `delivery-log.html` | 17.4 |
 | `ai-tools.html` | 15.7 |

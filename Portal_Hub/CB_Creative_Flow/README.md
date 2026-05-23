@@ -36,7 +36,7 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 | Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile |
 | Internal ops | Done | Dashboard, orders, production, delivery, reports, AI, chatbot, users, settings |
 | AI Tools | Done | 13 mini apps (gồm AI Voice / Supertonic on-device TTS), workspace form, output panel, usage log demo |
-| Dashboards | Wired LIVE | **Master** (combined orders + tasks) · **Orders Dashboard** (13 KPI Client Order lifecycle: Intake / Production Flow / Feedback & Completion + 6 breakdowns) · **Task Dashboard** (17 KPI Internal workload: Volume / Workload / Deadline / Status / Performance + 6-PIC bar chart). Tất cả load real-time từ Supabase qua MH.store. Drilldown click-through tới database-orders.html / production-board.html với filter chính xác |
+| Dashboards | Wired LIVE | **Master Dashboard** (Module 5 — 4 sections separated: Client Orders Overview 8 metrics / Internal Tasks Overview 8 metrics / Alerts 5 categories / Team Workload 6-PIC bar) · **Orders Dashboard** (13 KPI Client Order lifecycle: Intake / Production Flow / Feedback & Completion + 6 breakdowns) · **Task Dashboard** (17 KPI Internal workload: Volume / Workload / Deadline / Status / Performance + 6-PIC bar chart). Tất cả load real-time từ Supabase qua MH.store. Drilldown click-through tới database-orders.html / production-board.html với filter chính xác |
 | Chatbot | Done | Dedicated page + floating widget trên internal/public pages khi đã login |
 
 Xem tiến độ chi tiết ở [`STATUS.md`](STATUS.md). Agent/dev mới nên đọc [`_hot.md`](_hot.md) trước khi sửa code.
@@ -341,4 +341,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-21*
+*Last updated: 2026-05-22 · Module 5 Master Dashboard cleanup*
