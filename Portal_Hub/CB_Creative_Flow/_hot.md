@@ -146,13 +146,10 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
   - Cập nhật `o.__raw.internal_note` + `o.__raw.account_status` để local cache đồng nhất sau refresh.
 - Gap còn lại (out-of-scope): account-side click "Yêu cầu bổ sung" hiện chỉ `updateStatus('needinfo')` → KHÔNG có modal cho account nhập "cần bổ sung gì cụ thể" → client thấy default text "Vui lòng bổ sung brief — liên hệ Account team." Cần thêm modal account-side trong lần refine sau.
 
-**Header compact redesign + lang toggle scaffold (2026-05-23):**
-- ✅ Header top-right giờ có 4 element circular nhỏ gọn cùng kích thước (36px): **[VN/EN pill] [Theme circle] [Bell circle] [Avatar circle]**. Bỏ pill switch theme cũ (48×26 với thumb translateX), chuyển sang icon-only circular giống bell. Profile chip thu gọn chỉ còn avatar 30px (ẩn name + role badge + chevron), click vẫn mở dropdown menu cũ.
-- ✅ `assets/i18n.js` (NEW) — lightweight lang module. Persist `localStorage['mh-lang']` ('vi'|'en'), set `<html lang>`, expose `MH.i18n.{getLang,setLang,t,apply}`. Translate qua `data-i18n="key"` (text content) hoặc `data-i18n-aria="key"` (aria-label).
-- ✅ DICT phase 1 hiện chỉ cover header chrome (profile menu 3 items + 3 aria labels). **Page content vẫn Vietnamese-first**, dịch toàn bộ 17 page sẽ là phase 2 — chiến lược: thêm `data-i18n` attributes dần khi refactor từng module.
-- ✅ CSS thêm `.lang-pill` (text-only pill 36px) + rewrite `.icon-btn`/`.theme-toggle-switch` thành circular 36px với border + hover shadow đồng nhất.
-- ✅ Bulk-update 17 HTML page: insert `<button class="lang-pill" id="lang-toggle">` trước theme toggle, thêm `<script src="assets/i18n.js">` trước app.js, gắn `data-i18n` cho 3 menu items + `data-i18n-aria` cho bell + theme.
-- Out-of-scope (deferred): full page-content translation (FAQ, table headers, KPI labels, form labels...). Khi cần, thêm `data-i18n` attrs vào element + extend DICT cho khoá tương ứng.
+**Header compact redesign (2026-05-23):**
+- ✅ Header top-right: **[Theme circle 36px] [Bell circle 36px] [Profile: text + avatar 36px]**. Theme toggle rewrite từ pill switch 48×26 với thumb translateX → icon-only circular đồng nhất bell.
+- ✅ Profile chip giờ là **inline text + avatar tròn KHÔNG border** (chốt 2026-05-23): `flex-direction: row-reverse` để name+role text bên trái, avatar bên phải. Text 2 dòng (name 13px bold + role badge 10px). Cả cụm clickable mở dropdown menu cũ. Hover: background `var(--surface-2)` + avatar ring shadow. Mobile (`max-width: 560px`): ẩn text, chỉ avatar tròn (avoid layout vỡ).
+- ✅ **VN/EN lang toggle ĐÃ REMOVED** (tested chưa cần, scope quá lớn nếu dịch full 17 page). `assets/i18n.js` đã xóa, CSS `.lang-pill` đã xóa, `data-i18n` attrs trên 3 profile menu items + 2 aria labels còn lại trong HTML nhưng KHÔNG có consumer — không gây lỗi, nhưng nếu cần clean có thể strip sau.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.
