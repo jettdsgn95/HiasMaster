@@ -1043,10 +1043,13 @@
       link_drive: o.source_link || '',
       preview_link: '',
       final_link: '',
-      shoot_location: (o.request_type === 'photo' || o.request_type === 'shoot') ? (o.shoot_location || null) : null,
       created_at: new Date().toISOString(),
       last_update: new Date().toISOString()
     };
+    // Chỉ pass shoot_location key khi photo/shoot — backward-compat với DB chưa migrate cột này.
+    if ((o.request_type === 'photo' || o.request_type === 'shoot') && o.shoot_location) {
+      taskPayload.shoot_location = o.shoot_location;
+    }
 
     if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
       try {

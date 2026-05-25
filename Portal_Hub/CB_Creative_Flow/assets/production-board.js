@@ -1322,11 +1322,10 @@
       const idx = extras.findIndex((x) => x.task_id === t.task_id);
       if (idx >= 0) { extras[idx] = t; saveExtraTasks(extras); }
       // Phase 1: persist sang Supabase nếu enabled
-      persistTask(t.task_id, {
+      const editPatch = {
         project_name: t.project_name,
         content: t.content,
         task_type: t.task_type,
-        shoot_location: t.shoot_location || null,
         priority: t.priority,
         assigned_to: t.assigned_to,
         internal_deadline: t.internal_deadline ? new Date(t.internal_deadline.replace(' ', 'T')).toISOString() : null,
@@ -1335,7 +1334,10 @@
         is_standalone: t.is_standalone,
         order_id: t.is_standalone ? null : t.order_id,
         last_update: new Date().toISOString()
-      });
+      };
+      // Chỉ pass shoot_location key khi type là photo/shoot — tránh fail nếu DB chưa có migration cột này.
+      if (t.task_type === 'photo' || t.task_type === 'shoot') editPatch.shoot_location = t.shoot_location || null;
+      persistTask(t.task_id, editPatch);
       persistTaskComment(t.task_id, editComment);
       window.MH.toast({ type: 'success', title: 'Đã lưu task', message: t.task_id });
       closeTaskModal();
@@ -1368,12 +1370,11 @@
     appendExtraTask(newTask);
     if (newTask.order_id && !ORDER_INDEX[newTask.order_id]) ORDER_INDEX[newTask.order_id] = { project_name: newTask.project_name };
     // Phase 1: persist sang Supabase (full row insert via upsert)
-    persistTask(newTask.task_id, {
+    const createPatch = {
       order_id: newTask.order_id || null,
       is_standalone: newTask.is_standalone,
       project_name: newTask.project_name,
       task_type: newTask.task_type,
-      shoot_location: newTask.shoot_location || null,
       content: newTask.content,
       priority: newTask.priority,
       assigned_to: newTask.assigned_to,
@@ -1385,7 +1386,10 @@
       final_link: newTask.final_link,
       created_at: new Date().toISOString(),
       last_update: new Date().toISOString()
-    });
+    };
+    // Chỉ pass shoot_location khi photo/shoot — backward-compat với DB chưa migrate.
+    if (newTask.task_type === 'photo' || newTask.task_type === 'shoot') createPatch.shoot_location = newTask.shoot_location || null;
+    persistTask(newTask.task_id, createPatch);
     if (newTask.comments && newTask.comments.length) {
       persistTaskComment(newTask.task_id, newTask.comments[0]);
     }

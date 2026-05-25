@@ -561,8 +561,6 @@
           requested_deadline: orderPayload.requested_deadline || null,
           actual_use_date: orderPayload.actual_use_date || null,
           urgent_reason: orderPayload.urgent_reason || null,
-          // "Địa điểm" — chỉ ý nghĩa khi request_type IN ('shoot','photo')
-          shoot_location: orderPayload.shooting_location || orderPayload.photo_location || null,
           account_status: 'pending',
           production_status: 'unassigned',
           progress: 5,
@@ -570,6 +568,11 @@
           created_at: new Date().toISOString(),
           last_updated: new Date().toISOString()
         };
+        // Chỉ pass shoot_location khi photo/shoot — backward-compat với DB chưa migrate cột này.
+        const locVal = orderPayload.shooting_location || orderPayload.photo_location;
+        if ((row.request_type === 'photo' || row.request_type === 'shoot') && locVal) {
+          row.shoot_location = locVal;
+        }
         await window.MH.store.orders.create(row);
         dbPersisted = true;
 
