@@ -341,4 +341,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-22 · Module 5 Master Dashboard cleanup*
+*Last updated: 2026-05-23 · Client notifications sync (Phase 1.5b/c) + notif-click auto-open drawer fix*
