@@ -501,6 +501,7 @@
           <dt>Loại yêu cầu</dt><dd>${v(TYPE_LABEL[o.request_type])}</dd>
           <dt>Hạng mục</dt><dd>${safeJoin(o.deliverable_type)}</dd>
           <dt>Kích thước</dt><dd>${v(o.size_ratio)}</dd>
+          ${(o.request_type === 'photo' || o.request_type === 'shoot') ? `<dt>Địa điểm</dt><dd>${v(o.shoot_location)}</dd>` : ''}
           <dt>Nội dung</dt><dd>${v(o.content_brief)}</dd>
           <dt>Định hướng</dt><dd>${v(o.creative_direction)}</dd>
           <dt>Wording</dt><dd>${o.wording_required ? 'Cần wording' : 'Dùng đúng nội dung'}</dd>
@@ -631,6 +632,9 @@
         if (currentOrder.internal_deadline) params.set('internal_deadline', currentOrder.internal_deadline);
         if (currentOrder.production_pic) params.set('production_pic', currentOrder.production_pic);
         if (currentOrder.content_brief) params.set('content', currentOrder.content_brief);
+        if (currentOrder.shoot_location && (currentOrder.request_type === 'photo' || currentOrder.request_type === 'shoot')) {
+          params.set('shoot_location', currentOrder.shoot_location);
+        }
         location.href = 'production-board.html?' + params.toString();
       });
     }
@@ -1039,6 +1043,7 @@
       link_drive: o.source_link || '',
       preview_link: '',
       final_link: '',
+      shoot_location: (o.request_type === 'photo' || o.request_type === 'shoot') ? (o.shoot_location || null) : null,
       created_at: new Date().toISOString(),
       last_update: new Date().toISOString()
     };

@@ -561,6 +561,8 @@
           requested_deadline: orderPayload.requested_deadline || null,
           actual_use_date: orderPayload.actual_use_date || null,
           urgent_reason: orderPayload.urgent_reason || null,
+          // "Địa điểm" — chỉ ý nghĩa khi request_type IN ('shoot','photo')
+          shoot_location: orderPayload.shooting_location || orderPayload.photo_location || null,
           account_status: 'pending',
           production_status: 'unassigned',
           progress: 5,

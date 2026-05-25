@@ -146,6 +146,15 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
   - Cập nhật `o.__raw.internal_note` + `o.__raw.account_status` để local cache đồng nhất sau refresh.
 - Gap còn lại (out-of-scope): account-side click "Yêu cầu bổ sung" hiện chỉ `updateStatus('needinfo')` → KHÔNG có modal cho account nhập "cần bổ sung gì cụ thể" → client thấy default text "Vui lòng bổ sung brief — liên hệ Account team." Cần thêm modal account-side trong lần refine sau.
 
+**Shoot location field (2026-05-23):**
+- ✅ SQL migration `supabase/add-shoot-location.sql` — ADD `shoot_location text` cho cả `orders` và `tasks`. Idempotent (`IF NOT EXISTS`). **Cần chạy migration này trong Supabase SQL Editor để field hoạt động trên Railway DB.**
+- ✅ Order Form (`request.html` + `order-form.js`): các sub-form `shoot` và `photo` đã có sẵn input `shooting_location`/`photo_location` từ trước → `doSubmit` giờ map qua `shoot_location` khi INSERT row Supabase. Field optional, không validate ràng buộc theo type (UI conditional show là đủ).
+- ✅ Database Orders drawer: Brief Information section thêm dòng `<dt>Địa điểm</dt>` khi `request_type IN ('photo','shoot')`.
+- ✅ Push to Production: `taskPayload.shoot_location` kế thừa từ `order.shoot_location` khi `request_type IN ('photo','shoot')` (else null). "Create Task from this Order" deep-link cũng pass qua URL param `shoot_location`.
+- ✅ Client Portal drawer: hiển thị "Địa điểm" trong section detail-row khi `request_type IN ('photo','shoot')` và `shoot_location` có value.
+- ✅ Task Tracker (`production-board.html` + `production-board.js`): modal "Giao việc nội bộ" thêm row `#tm-location-row` show/hide khi `tmType.value IN ('photo','shoot')`. Save (cả Create lẫn Edit) include `shoot_location` vào persistTask payload. Drawer Brief Information section hiển thị `<dt>Địa điểm</dt>` khi task_type photo/shoot.
+- Field optional ở tất cả entry point — không block submit; UI ẩn row khi type không phải photo/shoot để tránh nhiễu.
+
 **Header compact redesign (2026-05-23):**
 - ✅ Header top-right: **[Theme circle 36px] [Bell circle 36px] [Profile: text + avatar 36px]**. Theme toggle rewrite từ pill switch 48×26 với thumb translateX → icon-only circular đồng nhất bell.
 - ✅ Profile chip giờ là **inline text + avatar tròn KHÔNG border** (chốt 2026-05-23): `flex-direction: row-reverse` để name+role text bên trái, avatar bên phải. Text 2 dòng (name 13px bold + role badge 10px). Cả cụm clickable mở dropdown menu cũ. Hover: background `var(--surface-2)` + avatar ring shadow. Mobile (`max-width: 560px`): ẩn text, chỉ avatar tròn (avoid layout vỡ).

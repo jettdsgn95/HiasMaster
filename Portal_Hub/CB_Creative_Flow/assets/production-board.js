@@ -727,6 +727,7 @@
         <dl>
           <dt>Content</dt><dd>${v(t.content)}</dd>
           <dt>Type</dt><dd>${TYPE_LABEL[t.task_type]}</dd>
+          ${(t.task_type === 'photo' || t.task_type === 'shoot') ? `<dt>Địa điểm</dt><dd>${v(t.shoot_location)}</dd>` : ''}
         </dl>
       </section>
 
@@ -1201,6 +1202,8 @@
   const tmPic = document.getElementById('tm-pic');
   const tmDeadline = document.getElementById('tm-deadline');
   const tmStatus = document.getElementById('tm-status');
+  const tmLocationRow = document.getElementById('tm-location-row');
+  const tmLocation = document.getElementById('tm-location');
   const modalTitle = document.getElementById('task-modal-title');
   let editingTaskId = null;
 
@@ -1208,6 +1211,13 @@
     tmOrderRow.style.display = isStandalone ? 'none' : '';
     tmStandaloneHint.style.display = isStandalone ? '' : 'none';
   }
+  // Show "Địa điểm" row khi task_type là chụp/quay
+  function applyLocationUI() {
+    if (!tmLocationRow) return;
+    const isShoot = (tmType.value === 'photo' || tmType.value === 'shoot');
+    tmLocationRow.style.display = isShoot ? '' : 'none';
+  }
+  if (tmType) tmType.addEventListener('change', applyLocationUI);
 
   function openTaskModal(prefill, editId) {
     editingTaskId = editId || null;
@@ -1226,6 +1236,8 @@
     tmProject.value = p.project_name || '';
     tmContent.value = p.content || '';
     tmType.value = p.task_type || 'design';
+    if (tmLocation) tmLocation.value = p.shoot_location || '';
+    applyLocationUI();
     tmPriority.value = p.priority || 'normal';
     tmPic.value = p.assigned_to || '';
     if (p.internal_deadline) {
@@ -1293,6 +1305,7 @@
       t.project_name = project;
       t.content = tmContent.value.trim();
       t.task_type = tmType.value;
+      t.shoot_location = (t.task_type === 'photo' || t.task_type === 'shoot') ? (tmLocation ? tmLocation.value.trim() : '') : '';
       t.priority = tmPriority.value;
       t.assigned_to = tmPic.value || null;
       t.internal_deadline = deadlineRaw || null;
@@ -1313,6 +1326,7 @@
         project_name: t.project_name,
         content: t.content,
         task_type: t.task_type,
+        shoot_location: t.shoot_location || null,
         priority: t.priority,
         assigned_to: t.assigned_to,
         internal_deadline: t.internal_deadline ? new Date(t.internal_deadline.replace(' ', 'T')).toISOString() : null,
@@ -1330,13 +1344,16 @@
       return;
     }
 
+    const newTaskType = tmType.value;
+    const newShootLoc = (newTaskType === 'photo' || newTaskType === 'shoot') ? (tmLocation ? tmLocation.value.trim() : '') : '';
     const newTask = {
       task_id: nextTaskId(),
       order_id: orderId,
       is_standalone: isStandalone,
       project_name: project,
-      task_type: tmType.value,
+      task_type: newTaskType,
       content: tmContent.value.trim(),
+      shoot_location: newShootLoc,
       priority: tmPriority.value,
       assigned_to: tmPic.value || null,
       status: status,
@@ -1356,6 +1373,7 @@
       is_standalone: newTask.is_standalone,
       project_name: newTask.project_name,
       task_type: newTask.task_type,
+      shoot_location: newTask.shoot_location || null,
       content: newTask.content,
       priority: newTask.priority,
       assigned_to: newTask.assigned_to,
@@ -1390,6 +1408,7 @@
       internal_deadline: params.get('internal_deadline') || '',
       assigned_to: params.get('production_pic') || params.get('assigned_to') || '',
       content: params.get('content') || '',
+      shoot_location: params.get('shoot_location') || '',
       is_standalone: params.get('standalone') === '1'
     };
     setTimeout(() => openTaskModal(prefill), 120);
