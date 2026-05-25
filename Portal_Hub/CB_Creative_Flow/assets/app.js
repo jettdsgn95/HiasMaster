@@ -710,6 +710,19 @@
       } catch (e) { console.warn('[notif] refresh badge failed:', e); return []; }
     }
 
+    // Derive a fallback link từ related_entity_* khi notification.link rỗng.
+    // Cũng giúp old notifications (trước khi producers set field link) click được.
+    function resolveNotifLink(n) {
+      if (n.link) return n.link;
+      const type = n.related_entity_type;
+      const id = n.related_entity_id;
+      if (!id) return '';
+      if (type === 'tasks')      return 'production-board.html?id=' + encodeURIComponent(id);
+      if (type === 'orders')     return 'database-orders.html?id=' + encodeURIComponent(id);
+      if (type === 'deliveries') return 'delivery-log.html?id=' + encodeURIComponent(id);
+      return '';
+    }
+
     async function renderDropdown() {
       if (!dropdown || !window.MH.store) return;
       const list = await window.MH.store.notifications.listAll(20);
@@ -718,13 +731,15 @@
         body.innerHTML = '<div class="mh-notif-empty">Chưa có thông báo nào.</div>';
         return;
       }
-      body.innerHTML = list.map((n) => `
-        <a class="mh-notif-item ${n.is_read ? '' : 'is-unread'}" data-id="${n.id}" data-link="${escapeHtml(n.link || '#')}" data-read="${n.is_read}">
+      body.innerHTML = list.map((n) => {
+        const resolved = resolveNotifLink(n);
+        return `
+        <a class="mh-notif-item ${n.is_read ? '' : 'is-unread'}" data-id="${n.id}" data-link="${escapeHtml(resolved || '#')}" data-read="${n.is_read}">
           <div class="mh-notif-item-title">${escapeHtml(n.title)}</div>
           ${n.message ? `<div class="mh-notif-item-msg">${escapeHtml(n.message)}</div>` : ''}
           <div class="mh-notif-item-time">${fmtTime(n.created_at)}</div>
-        </a>
-      `).join('');
+        </a>`;
+      }).join('');
       body.querySelectorAll('.mh-notif-item').forEach((el) => {
         el.addEventListener('click', async (e) => {
           e.preventDefault();
@@ -746,8 +761,9 @@
         message: notif.message || '',
         duration: 8000
       });
-      // Nếu có link, sau 800ms add click-to-navigate cho toast vừa hiện
-      if (notif.link) {
+      // Resolve link (fallback từ related_entity_* nếu notif.link rỗng)
+      const resolved = resolveNotifLink(notif);
+      if (resolved) {
         setTimeout(() => {
           const toasts = document.querySelectorAll('.toast');
           const last = toasts[toasts.length - 1];
@@ -760,7 +776,7 @@
                 await window.MH.store.notifications.markRead(notif.id);
                 await refreshBadge();
               }
-              window.location.href = notif.link;
+              window.location.href = resolved;
             }, { once: true });
           }
         }, 50);
