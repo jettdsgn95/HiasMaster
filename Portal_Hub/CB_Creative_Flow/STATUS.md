@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-26 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Homepage hero background refresh · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-26 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -55,7 +55,7 @@ Status: Done
 Status: Done
 
 - 7 sections A–G: requester, brief, request type, content, assets, deadline, confirm.
-- Sticky stepper and submit bar.
+- Smart flow stepper 1-7 with active/done states, progress bar, icons, and short helper text; submit bar stays sticky.
 - Service tiles and deliverables by type (Video/Quay/Photo/Ads conditional sections).
 - Upload simulation with max-size validation.
 - Priority logic, wording warning, autosave to `mh-order-draft-v2`, preview modal.
@@ -236,6 +236,7 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-05-26 | Order Form | **Đổi sidebar A-G sang smart flow stepper 1-7**. `request.html` thêm progress bar + timeline có icon/helper text để diễn đạt bước kế tiếp rõ hơn. `assets/styles.css` thêm light/dark styles và responsive horizontal stepper trên mobile. `assets/order-form.js` sync active step theo scroll/click, done state theo section completion thật; Section E `Tài nguyên` optional nên chỉ done khi user thêm file/link/note, không auto xanh lúc mới vào form. |
 | 2026-05-26 | Public Homepage | **Refresh hero background theo hướng QuickMagic-inspired nhưng giữ CB brand**. `index.html` thêm decorative `hero-bg` layer aria-hidden; `assets/styles.css` thêm light/dark hero background system: Light mode giữ clean portal với grid/glow navy-red nhẹ, Dark mode cinematic workspace với navy/red depth, **visual-only floating panels không có text để tránh bị hiểu là button**, glass trust strip. Không thêm asset/dependency mới, dùng CSS + hero assets sẵn. Hero content/CTA/flow giữ nguyên; mobile CTA stack full-width để tránh overflow. |
 | 2026-05-23 | Shoot location field | **Thêm field "Địa điểm" cho task/order chụp ảnh hoặc quay**. SQL migration `supabase/add-shoot-location.sql` (idempotent, `IF NOT EXISTS`) ADD `shoot_location text` vào cả `orders` và `tasks`. Order Form: sub-form shoot/photo có sẵn `shooting_location`/`photo_location` input → `doSubmit` map qua `shoot_location` khi INSERT. Database Orders drawer: Brief Information thêm row "Địa điểm" khi `request_type IN ('photo','shoot')`. Push to Production: kế thừa `shoot_location` vào task. "Create Task from this Order" deep-link pass qua URL param. Client Portal drawer: hiển thị tương tự. Task Tracker modal "Giao việc nội bộ" thêm row `#tm-location-row` show/hide khi `task_type IN ('photo','shoot')`, save (Create + Edit) include `shoot_location`. Task drawer Brief Information hiển thị. Field **optional** ở tất cả entry — không block submit, UI ẩn row khi type khác. **Cần chạy migration trong Supabase SQL Editor để DB column tồn tại** |
 | 2026-05-23 | Header compact redesign (revised) | **Header top-right finalized**: 3 elements 36px — `[Theme circle] [Bell circle] [Profile: name+role text + avatar tròn]`. Theme toggle rewrite từ pill switch 48×26 với thumb translateX → icon-only circular đồng nhất bell + bell có border + hover shadow. Profile chip dùng inline text + avatar KHÔNG border (`flex-direction: row-reverse`, name 13px bold + role badge 10px stacked phải avatar phải). Cả cụm clickable mở dropdown menu cũ. Hover: bg surface-2 + avatar ring shadow. Mobile <560px: ẩn text, chỉ avatar. VN/EN lang toggle scaffold (i18n.js + .lang-pill CSS) **đã removed** sau khi user xác nhận chưa cần (scope dịch toàn bộ 17 page quá lớn để phase này) |

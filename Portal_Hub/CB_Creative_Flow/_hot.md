@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-26 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero background refresh · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-26 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -164,6 +164,11 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `index.html` hero thêm `hero-bg` decorative layer (`aria-hidden`) với orb/line/floating panels, inspired by QuickMagic mood nhưng dùng CB brand navy `#191970` + red `#BA110F` only.
 - ✅ `assets/styles.css` hỗ trợ 2 mode: Light mode = clean bright portal có grid/glow nhẹ; Dark mode = cinematic workspace navy/red, glass trust strip, floating panels rõ hơn. Floating panels là **visual-only, không có text** để tránh người xem hiểu nhầm là button/chip có thể click. Không thêm ảnh nền bitmap/dependency.
 - ✅ Hero content, CTA, character asset và flow không đổi. Mobile/tablet nhỏ stack CTA full-width, hide bớt decorative panels để tránh overflow.
+
+**Order Form smart flow stepper (2026-05-26):**
+- ✅ `request.html` sidebar stepper A-G đổi sang timeline 1-7 có icon, mô tả ngắn từng bước, progress bar và trạng thái active/done để thể hiện flow kế tiếp rõ hơn.
+- ✅ `assets/order-form.js` sync active step theo scroll/click bằng `IntersectionObserver`; done state vẫn dựa vào completion thật của từng section.
+- ✅ Section E `Tài nguyên` là optional nên không auto-complete khi chưa có file/link/note; chỉ chuyển done khi user thêm tài nguyên thật. Giữ selector/form submit flow hiện tại.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.

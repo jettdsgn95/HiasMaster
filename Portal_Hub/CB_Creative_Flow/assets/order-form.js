@@ -187,6 +187,7 @@
         <button type="button" class="x" aria-label="Xóa tệp" data-key="${key}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
       fileList.appendChild(row);
     });
+    refreshProgress();
   }
   fileList.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-key]');
@@ -210,10 +211,16 @@
 
   /* ---------- Progress info (sections completed) ---------- */
   const SECTIONS = ['sec-a', 'sec-b', 'sec-c', 'sec-d', 'sec-e', 'sec-f', 'sec-g'];
+  let activeSectionId = SECTIONS[0];
   function sectionCompleted(id) {
     const sec = document.getElementById(id);
     if (!sec) return false;
-    if (id === 'sec-e') return true; // optional section
+    if (id === 'sec-e') {
+      return files.size > 0 || ['source_link', 'working_drive_link', 'asset_note'].some((fieldId) => {
+        const field = document.getElementById(fieldId);
+        return field && field.value.trim();
+      });
+    }
     const required = sec.querySelectorAll('[required], [data-conditional-req]');
     for (const el of required) {
       if (el.offsetParent === null) continue; // hidden
@@ -232,9 +239,43 @@
     const done = SECTIONS.filter(sectionCompleted).length;
     const el = document.querySelector('#progress-info b');
     if (el) el.textContent = done;
+    const currentIndex = Math.max(0, SECTIONS.indexOf(activeSectionId));
+    const pct = Math.round((done / SECTIONS.length) * 100);
+    const sideLabel = document.getElementById('side-progress-label');
+    const sideFill = document.getElementById('side-progress-fill');
+    if (sideLabel) sideLabel.textContent = 'Bước ' + (currentIndex + 1) + '/' + SECTIONS.length + ' · ' + pct + '% hoàn tất';
+    if (sideFill) sideFill.style.width = pct + '%';
+    document.querySelectorAll('[data-step-link]').forEach((link) => {
+      const id = link.getAttribute('data-step-link');
+      link.classList.toggle('is-active', id === activeSectionId);
+      link.classList.toggle('is-done', sectionCompleted(id));
+      link.setAttribute('aria-current', id === activeSectionId ? 'step' : 'false');
+    });
   }
   form.addEventListener('input', refreshProgress);
   form.addEventListener('change', refreshProgress);
+
+  const sectionObserver = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top))[0];
+    if (!visible) return;
+    activeSectionId = visible.target.id;
+    refreshProgress();
+  }, { rootMargin: '-22% 0px -62% 0px', threshold: [0, 0.15, 0.4] });
+  SECTIONS.forEach((id) => {
+    const sec = document.getElementById(id);
+    if (sec) sectionObserver.observe(sec);
+  });
+  document.querySelectorAll('[data-step-link]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const id = link.getAttribute('data-step-link');
+      if (id) {
+        activeSectionId = id;
+        refreshProgress();
+      }
+    });
+  });
 
   /* ---------- Autosave draft to localStorage ---------- */
   const draftStatus = document.getElementById('draft-status');

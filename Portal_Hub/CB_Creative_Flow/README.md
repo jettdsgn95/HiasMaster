@@ -32,7 +32,7 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 
 | Area | Status | Ghi chú |
 |---|:---:|---|
-| Public site | Done | `index`, `request`, `tracking`, `help`, `login` |
+| Public site | Done | `index`, `request`, `tracking`, `help`, `login`; homepage hero refresh + request smart flow stepper |
 | Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile |
 | Internal ops | Done | Dashboard, orders, production, delivery, reports, AI, chatbot, users, settings |
 | AI Tools | Done | 13 mini apps (gồm AI Voice / Supertonic on-device TTS), workspace form, output panel, usage log demo |
@@ -68,7 +68,7 @@ CB_Creative_Flow/
 │
 ├── index.html            Public homepage
 ├── login.html            Login + 5 demo account tiles
-├── request.html          Order Form (auth-gated submit)
+├── request.html          Order Form (auth-gated submit + smart flow stepper)
 ├── tracking.html         Client tracking by MEDIA-* code
 ├── help.html             FAQ + search + accordion
 │
@@ -90,7 +90,7 @@ CB_Creative_Flow/
     ├── logo.png
     ├── styles.css            Design system, all page styles
     ├── app.js                Shared: theme, toast, profile modal, header chip
-    ├── order-form.js         request.html — 7-section form, auth guard, draft
+    ├── order-form.js         request.html — 7-section form, auth guard, draft, flow progress
     ├── client-dashboard.js   client-dashboard.html — Client Portal logic
     ├── database-orders.js
     ├── production-board.js
@@ -141,6 +141,7 @@ Order (client/branch submits brief)
 - Dữ liệu hiện là mock/demo, chưa có upload thật, auth thật hay API persistence.
 - Avatar luôn hình tròn (`border-radius: 9999px`) toàn bộ site.
 - Header layout (internal pages): `[Logo] ← → [Theme Toggle][Notification Bell][User Profile ▾]`
+- Request page sidebar uses the smart flow stepper pattern: 1-7 timeline, icon, helper text, scroll/click active state, completion state from real section data. Optional assets only show done after a file/link/note is added.
 
 ---
 
