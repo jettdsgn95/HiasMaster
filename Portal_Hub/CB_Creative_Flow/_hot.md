@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-23 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-26 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero background refresh · Railway deploy LIVE ✓*
 
 ---
 
@@ -159,6 +159,11 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ Header top-right: **[Theme circle 36px] [Bell circle 36px] [Profile: text + avatar 36px]**. Theme toggle rewrite từ pill switch 48×26 với thumb translateX → icon-only circular đồng nhất bell.
 - ✅ Profile chip giờ là **inline text + avatar tròn KHÔNG border** (chốt 2026-05-23): `flex-direction: row-reverse` để name+role text bên trái, avatar bên phải. Text 2 dòng (name 13px bold + role badge 10px). Cả cụm clickable mở dropdown menu cũ. Hover: background `var(--surface-2)` + avatar ring shadow. Mobile (`max-width: 560px`): ẩn text, chỉ avatar tròn (avoid layout vỡ).
 - ✅ **VN/EN lang toggle ĐÃ REMOVED** (tested chưa cần, scope quá lớn nếu dịch full 17 page). `assets/i18n.js` đã xóa, CSS `.lang-pill` đã xóa, `data-i18n` attrs trên 3 profile menu items + 2 aria labels còn lại trong HTML nhưng KHÔNG có consumer — không gây lỗi, nhưng nếu cần clean có thể strip sau.
+
+**Homepage hero background refresh (2026-05-26):**
+- ✅ `index.html` hero thêm `hero-bg` decorative layer (`aria-hidden`) với orb/line/floating panels, inspired by QuickMagic mood nhưng dùng CB brand navy `#191970` + red `#BA110F` only.
+- ✅ `assets/styles.css` hỗ trợ 2 mode: Light mode = clean bright portal có grid/glow nhẹ; Dark mode = cinematic workspace navy/red, glass trust strip, floating panels rõ hơn. Floating panels là **visual-only, không có text** để tránh người xem hiểu nhầm là button/chip có thể click. Không thêm ảnh nền bitmap/dependency.
+- ✅ Hero content, CTA, character asset và flow không đổi. Mobile/tablet nhỏ stack CTA full-width, hide bớt decorative panels để tránh overflow.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.
