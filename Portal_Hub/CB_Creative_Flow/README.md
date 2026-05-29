@@ -141,7 +141,7 @@ Order (client/branch submits brief)
 - Dữ liệu hiện là mock/demo, chưa có upload thật, auth thật hay API persistence.
 - Avatar luôn hình tròn (`border-radius: 9999px`) toàn bộ site.
 - Header layout (internal pages): `[Logo] ← → [Theme Toggle][Notification Bell][User Profile ▾]`
-- Request page sidebar uses the smart flow stepper pattern: 1-7 timeline, icon, helper text, scroll/click active state, completion state from real section data. Optional assets only show done after a file/link/note is added.
+- Request page uses the smart flow stepper pattern: 1-7 timeline, icon, helper text, scroll/click active state, and matching 1-7 section header badges inside the form. Completion state comes from real section data; optional assets only show done after a file/link/note is added.
 
 ---
 
@@ -342,4 +342,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-23 · Client notifications sync (Phase 1.5b/c) + notif-click auto-open drawer fix*
+*Last updated: 2026-05-29 · Order Form step numbering sync*

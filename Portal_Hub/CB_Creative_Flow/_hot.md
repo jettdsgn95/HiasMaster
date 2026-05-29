@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-26 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -168,7 +168,8 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 **Order Form smart flow stepper (2026-05-26):**
 - ✅ `request.html` sidebar stepper A-G đổi sang timeline 1-7 có icon, mô tả ngắn từng bước, progress bar và trạng thái active/done để thể hiện flow kế tiếp rõ hơn.
 - ✅ `assets/order-form.js` sync active step theo scroll/click bằng `IntersectionObserver`; done state vẫn dựa vào completion thật của từng section.
-- ✅ Section E `Tài nguyên` là optional nên không auto-complete khi chưa có file/link/note; chỉ chuyển done khi user thêm tài nguyên thật. Giữ selector/form submit flow hiện tại.
+- ✅ Bước 5 `Tài nguyên` là optional nên không auto-complete khi chưa có file/link/note; chỉ chuyển done khi user thêm tài nguyên thật. Giữ selector/form submit flow hiện tại.
+- ✅ 2026-05-29 sync UI: section header badge trong từng card đổi từ A-G sang 1-7, cùng ngôn ngữ với sidebar flow. Badge dùng node tròn thống nhất, không alternate chữ/màu gây lệch nhận thức.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.
