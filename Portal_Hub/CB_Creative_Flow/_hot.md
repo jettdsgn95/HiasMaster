@@ -154,6 +154,7 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ Client Portal drawer: hiển thị "Địa điểm" trong section detail-row khi `request_type IN ('photo','shoot')` và `shoot_location` có value.
 - ✅ Task Tracker (`production-board.html` + `production-board.js`): modal "Giao việc nội bộ" thêm row `#tm-location-row` show/hide khi `tmType.value IN ('photo','shoot')`. Save (cả Create lẫn Edit) include `shoot_location` vào persistTask payload. Drawer Brief Information section hiển thị `<dt>Địa điểm</dt>` khi task_type photo/shoot.
 - Field optional ở tất cả entry point — không block submit; UI ẩn row khi type không phải photo/shoot để tránh nhiễu.
+- ✅ 2026-05-29 resilience: `assets/data-store.js` catches Supabase `PGRST204` schema-cache errors for optional `shoot_location`, then retries orders/tasks write without that field. This prevents photo/shoot orders from getting stuck as local-only while the DB migration/cache is not updated. Still run `supabase/add-shoot-location.sql` to persist location values.
 
 **Header compact redesign (2026-05-23):**
 - ✅ Header top-right: **[Theme circle 36px] [Bell circle 36px] [Profile: text + avatar 36px]**. Theme toggle rewrite từ pill switch 48×26 với thumb translateX → icon-only circular đồng nhất bell.

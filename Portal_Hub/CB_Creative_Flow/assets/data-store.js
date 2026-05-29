@@ -40,6 +40,20 @@
     return window.MH.supabase || null;
   }
   function nowIso() { return new Date().toISOString(); }
+  function optionalMissingColumn(error, payload) {
+    if (!error || !payload || error.code !== 'PGRST204') return null;
+    const msg = [error.message, error.details, error.hint].filter(Boolean).join(' ');
+    const optional = ['shoot_location'];
+    return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
+  }
+  function stripMissingOptionalColumn(payload, error, label) {
+    const col = optionalMissingColumn(error, payload);
+    if (!col) return null;
+    const next = Object.assign({}, payload);
+    delete next[col];
+    console.warn(label + ' retry without optional column `' + col + '`. Run supabase/add-shoot-location.sql to persist this field.');
+    return next;
+  }
 
   /* ---------- USERS ---------- */
   const users = {
@@ -103,7 +117,15 @@
       const s = await sb();
       if (s) {
         const { data, error } = await s.from('orders').update(patch).eq('order_id', orderId).select().maybeSingle();
-        if (error) { console.warn('[store.orders.update]', error); throw error; }
+        if (error) {
+          const retryPatch = stripMissingOptionalColumn(patch, error, '[store.orders.update]');
+          if (retryPatch) {
+            const retry = await s.from('orders').update(retryPatch).eq('order_id', orderId).select().maybeSingle();
+            if (retry.error) { console.warn('[store.orders.update]', retry.error); throw retry.error; }
+            return retry.data;
+          }
+          console.warn('[store.orders.update]', error); throw error;
+        }
         return data;
       }
       // Fallback: mutate in-memory mock; persist submitted-orders if matched
@@ -118,7 +140,15 @@
       const s = await sb();
       if (s) {
         const { data, error } = await s.from('orders').insert(payload).select().maybeSingle();
-        if (error) { console.warn('[store.orders.create]', error); throw error; }
+        if (error) {
+          const retryPayload = stripMissingOptionalColumn(payload, error, '[store.orders.create]');
+          if (retryPayload) {
+            const retry = await s.from('orders').insert(retryPayload).select().maybeSingle();
+            if (retry.error) { console.warn('[store.orders.create]', retry.error); throw retry.error; }
+            return retry.data;
+          }
+          console.warn('[store.orders.create]', error); throw error;
+        }
         return data;
       }
       // Fallback: append vào localStorage 'mh-submitted-orders'
@@ -164,7 +194,15 @@
       const s = await sb();
       if (s) {
         const { data, error } = await s.from('tasks').upsert(task, { onConflict: 'task_id' }).select().maybeSingle();
-        if (error) { console.warn('[store.tasks.upsert]', error); throw error; }
+        if (error) {
+          const retryTask = stripMissingOptionalColumn(task, error, '[store.tasks.upsert]');
+          if (retryTask) {
+            const retry = await s.from('tasks').upsert(retryTask, { onConflict: 'task_id' }).select().maybeSingle();
+            if (retry.error) { console.warn('[store.tasks.upsert]', retry.error); throw retry.error; }
+            return retry.data;
+          }
+          console.warn('[store.tasks.upsert]', error); throw error;
+        }
         return data;
       }
       // Fallback: persist sang 'mh-extra-tasks'
