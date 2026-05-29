@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -177,6 +177,10 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `production-board.html` task drawer thêm class `.task-workbench`; `assets/styles.css` mở rộng riêng drawer task lên workbench 2 cột: main detail + right action rail. Không ảnh hưởng drawer Database Orders vì CSS scoped theo `.task-workbench`.
 - ✅ `assets/production-board.js` giữ logic status/link/meta/comment cũ, bổ sung production checklist tự tính từ status/content/link, action rail gồm Next Actions, Người liên quan, AI hint, Activity Log.
 - ✅ Pattern UI: task detail là nơi xử lý task cụ thể, không chỉ xem thông tin. Giữ `TASKS` data shape và Supabase payload hiện tại.
+
+**Master Dashboard live refresh (2026-05-29):**
+- ✅ `dashboard.html` fix refresh button: trước chỉ đổi timestamp/toast, giờ gọi lại `loadMasterDashboard()` để fetch `orders.list()` + `tasks.list()` thật.
+- ✅ Thêm polling fallback 60s và Supabase Realtime hook cho `orders`/`tasks` nếu publication đã bật. Timestamp `Last updated` chỉ đổi sau khi load data thành công.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.

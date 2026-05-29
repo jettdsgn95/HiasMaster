@@ -576,16 +576,26 @@
   /* ============ Refresh button ============ */
   const rf = document.getElementById('refresh-btn');
   const lu = document.getElementById('last-updated');
+  function setMasterUpdatedNow() {
+    if (!lu) return;
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    lu.textContent = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
   if (rf) {
-    rf.addEventListener('click', () => {
+    rf.addEventListener('click', async () => {
       rf.classList.add('is-spinning');
-      setTimeout(() => {
+      rf.disabled = true;
+      try {
+        await loadMasterDashboard();
+        window.MH.toast({ type: 'success', title: 'Đã làm mới', message: 'Dashboard cập nhật lúc ' + (lu ? lu.textContent : 'vừa xong') });
+      } catch (e) {
+        console.warn('[dashboard] manual refresh failed:', e);
+        window.MH.toast({ type: 'warning', title: 'Chưa cập nhật được', message: 'Vui lòng thử lại sau vài giây.' });
+      } finally {
         rf.classList.remove('is-spinning');
-        const d = new Date();
-        const pad = (n) => String(n).padStart(2, '0');
-        lu.textContent = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        window.MH.toast({ type: 'success', title: 'Đã làm mới', message: 'Dashboard cập nhật lúc ' + lu.textContent });
-      }, 700);
+        rf.disabled = false;
+      }
     });
   }
 
@@ -763,11 +773,35 @@
         pressureBadge.className = `badge ${overloadedPicCount ? 'badge-danger' : 'badge-success'}`;
         pressureBadge.innerHTML = `<span class="dot"></span> ${overloadedPicCount ? overloadedPicCount + ' PIC quá tải' : 'Trong ngưỡng'}`;
       }
+      setMasterUpdatedNow();
     } catch (e) {
       console.warn('[dashboard] load failed:', e);
     }
   }
+  let masterReloadTimer = null;
+  function scheduleMasterDashboardReload() {
+    clearTimeout(masterReloadTimer);
+    masterReloadTimer = setTimeout(() => loadMasterDashboard(), 450);
+  }
+  async function startMasterDashboardRealtime() {
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    try {
+      await window.MH.supabaseReady;
+      const channel = window.MH.supabase
+        .channel('master-dashboard-orders-tasks')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, scheduleMasterDashboardReload)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, scheduleMasterDashboardReload)
+        .subscribe();
+      window.addEventListener('beforeunload', () => {
+        try { window.MH.supabase.removeChannel(channel); } catch (_) {}
+      });
+    } catch (e) {
+      console.warn('[dashboard] realtime subscribe failed:', e);
+    }
+  }
   loadMasterDashboard();
+  startMasterDashboardRealtime();
+  setInterval(() => loadMasterDashboard(), 60000);
 })();
 </script>
 </body>

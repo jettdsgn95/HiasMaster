@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-29 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -236,6 +236,7 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-05-29 | Master Dashboard | **Fix dashboard không cập nhật order/task mới khi admin đang mở page**. Root cause: nút refresh chỉ spin + đổi `Last updated`, không gọi lại `orders.list()`/`tasks.list()`, và dashboard chỉ load một lần. `dashboard.html` refactor refresh button sang async `loadMasterDashboard()`, cập nhật timestamp sau khi load data thành công, thêm polling fallback mỗi 60s, thêm Supabase Realtime hook cho bảng `orders` + `tasks` nếu publication đã bật. |
 | 2026-05-29 | Task Tracker | **Redesign task detail drawer thành Task Workbench**. `production-board.html` thêm class `.task-workbench` cho drawer task. `assets/styles.css` thêm layout workbench 2 cột: detail/main column + right action rail, info tiles 4 mục, production checklist, file workspace zone, comment tabs, people rail, AI hint card, activity timeline; scoped để không ảnh hưởng Database Orders drawer. `assets/production-board.js` bổ sung checklist tự tính từ status/content/links, activity rail từ comments/history, next-action hint; giữ nguyên status transitions, save links, save meta, comment/mention/reply và payload hiện tại. |
 | 2026-05-29 | Order Form | **Đổi field campaign sang Mã kế hoạch**. `request.html` Section 2 label "Mã / Tên campaign" đổi thành "Mã kế hoạch", placeholder đổi sang `Tùy chọn — VD: KH07/CBMK`, subtitle đổi "campaign" thành "kế hoạch". `assets/order-form.js` preview brief đổi nhãn "Campaign code" thành "Mã kế hoạch". Giữ `id/name=campaign_code` để không đổi payload/storage. |
 | 2026-05-29 | Public Homepage | **Đổi hero audience wording sang Nội bộ CB Centres**. `index.html` hero lead đổi "khách hàng" thành "Nội bộ CB Centres"; workflow preview copy cũng đổi sang "Nội bộ CB Centres" để nhất quán audience nội bộ. Không đổi layout, CTA, routing hoặc logic. |
