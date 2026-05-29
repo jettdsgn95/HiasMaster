@@ -453,7 +453,7 @@
         <h5>B. Dự án</h5>
         <dl>
           <dt>Tên dự án</dt><dd>${val(d.project_name)}</dd>
-          <dt>Campaign code</dt><dd>${val(d.campaign_code)}</dd>
+          <dt>Mã kế hoạch</dt><dd>${val(d.campaign_code)}</dd>
           <dt>Mục đích</dt><dd>${val(d.project_purpose)}</dd>
           <dt>Đối tượng</dt><dd>${audience}</dd>
           <dt>Kênh sử dụng</dt><dd>${channels}</dd>

@@ -171,6 +171,7 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `assets/order-form.js` sync active step theo scroll/click bằng `IntersectionObserver`; done state vẫn dựa vào completion thật của từng section.
 - ✅ Bước 5 `Tài nguyên` là optional nên không auto-complete khi chưa có file/link/note; chỉ chuyển done khi user thêm tài nguyên thật. Giữ selector/form submit flow hiện tại.
 - ✅ 2026-05-29 sync UI: section header badge trong từng card đổi từ A-G sang 1-7, cùng ngôn ngữ với sidebar flow. Badge dùng node tròn thống nhất, không alternate chữ/màu gây lệch nhận thức.
+- ✅ 2026-05-29 copy update: Section 2 field hiển thị `Mã kế hoạch` với placeholder `KH07/CBMK`; giữ id/name `campaign_code` để không ảnh hưởng payload/storage.
 
 **Other 2026-05-20 work:**
 - **Drawer action area refactor (cancel modal)**: bỏ stepper UI 4 chấm khỏi `database-orders.html`. `wf-hint` giờ chỉ hiện khi `isPushed` với message "✓ Đã push sang Task Tracker · PIC · Xem task →"; ẩn khi chưa push. Action button row: `[Hủy đơn]` canh trái (gradient `#E53935 → #BA110F` + `margin-right: auto`) ⟷ `[Kiểm tra brief] [Yêu cầu bổ sung] [Xác nhận brief] [Push → Production]` (Push đổi sang gradient green `#22C55E → #16A34A`). `updateStepperState()` giờ chỉ enable/disable button + toggle hint visibility, không còn DOM ops cho stepper.

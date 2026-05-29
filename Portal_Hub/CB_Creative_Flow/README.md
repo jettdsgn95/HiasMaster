@@ -142,6 +142,7 @@ Order (client/branch submits brief)
 - Avatar luôn hình tròn (`border-radius: 9999px`) toàn bộ site.
 - Header layout (internal pages): `[Logo] ← → [Theme Toggle][Notification Bell][User Profile ▾]`
 - Request page uses the smart flow stepper pattern: 1-7 timeline, icon, helper text, scroll/click active state, and matching 1-7 section header badges inside the form. Completion state comes from real section data; optional assets only show done after a file/link/note is added.
+- Order Form Section 2 displays the planning field as `Mã kế hoạch` with example `KH07/CBMK`; the underlying field key remains `campaign_code` for compatibility.
 
 ---
 
@@ -342,4 +343,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-29 · Homepage audience copy + Order Form step numbering sync*
+*Last updated: 2026-05-29 · Order Form planning code copy + Homepage audience copy*
