@@ -609,13 +609,20 @@
             ${Object.entries(PROD_STATUS_LABEL).map(([k, label]) => `<option value="${k}" ${o.production_status === k ? 'selected' : ''}>${label}</option>`).join('')}
           </select>
         </div>
-        <div class="edit-row" style="grid-template-columns:1fr">
-          <label>Internal Note</label>
-          <textarea class="textarea" id="edit-internal-note" placeholder="Ghi chú nội bộ..." style="min-height:80px">${escapeHtml(o.internal_note || '')}</textarea>
-        </div>
+      </section>
+
+      <section class="drawer-block ow-comments">
+        <div class="drawer-block-head"><span class="block-letter">C</span><h4>Ghi chú / Comment nội bộ</h4></div>
+        <p class="ow-comment-help">Ghi chú trao đổi giữa Admin/Account về brief, thông tin cần bổ sung hoặc quyết định xử lý.</p>
+        <textarea class="textarea" id="edit-internal-note" placeholder="Viết ghi chú nội bộ..." style="min-height:110px">${escapeHtml(o.internal_note || '')}</textarea>
         <div class="row" style="justify-content: flex-end; margin-top: var(--space-3)">
-          <button class="btn btn-primary btn-sm" id="save-internal">Lưu thay đổi</button>
+          <button class="btn btn-primary btn-sm" id="save-internal">Lưu điều phối & ghi chú</button>
         </div>
+      </section>
+
+      <section class="drawer-block ow-push">
+        <div class="drawer-block-head"><span class="block-letter">E</span><h4>Điều kiện tạo task</h4></div>
+        ${buildPushCheck(o)}
       </section>
 
       <section class="drawer-block ow-tasks">
@@ -662,11 +669,6 @@
           <dt>Rating</dt><dd>${o.satisfaction_score ? `<b style="color:var(--warning); font-size:var(--text-base)">★ ${o.satisfaction_score}/5</b>` : '<em class="muted">Chưa có rating</em>'}</dd>
           <dt>Feedback</dt><dd>${v(o.client_feedback)}</dd>
         </dl>
-      </section>
-
-      <section class="drawer-block ow-push">
-        <div class="drawer-block-head"><span class="block-letter">E</span><h4>Điều kiện tạo task</h4></div>
-        ${buildPushCheck(o)}
       </section>
 
       <section class="drawer-block ow-activity">
