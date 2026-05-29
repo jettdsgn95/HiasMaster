@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-29 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -236,6 +236,7 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-05-29 | Public Homepage | **Đổi hero audience wording sang Nội bộ CB Centres**. `index.html` hero lead đổi "khách hàng" thành "Nội bộ CB Centres"; workflow preview copy cũng đổi sang "Nội bộ CB Centres" để nhất quán audience nội bộ. Không đổi layout, CTA, routing hoặc logic. |
 | 2026-05-29 | Order Form | **Đồng bộ số bước giữa sidebar và section card**. `request.html` đổi header badge từng section từ A-G sang 1-7, helper text nhắc tài nguyên đổi từ "Section E" sang "bước 5". `assets/styles.css` chỉnh `.section-num` thành node tròn đồng bộ visual với smart flow stepper, bỏ alternate A/B màu cũ để tránh lệch nhận thức giữa sidebar và nội dung form. |
 | 2026-05-26 | Order Form | **Đổi sidebar A-G sang smart flow stepper 1-7**. `request.html` thêm progress bar + timeline có icon/helper text để diễn đạt bước kế tiếp rõ hơn. `assets/styles.css` thêm light/dark styles và responsive horizontal stepper trên mobile. `assets/order-form.js` sync active step theo scroll/click, done state theo section completion thật; bước 5 `Tài nguyên` optional nên chỉ done khi user thêm file/link/note, không auto xanh lúc mới vào form. |
 | 2026-05-26 | Public Homepage | **Refresh hero background theo hướng QuickMagic-inspired nhưng giữ CB brand**. `index.html` thêm decorative `hero-bg` layer aria-hidden; `assets/styles.css` thêm light/dark hero background system: Light mode giữ clean portal với grid/glow navy-red nhẹ, Dark mode cinematic workspace với navy/red depth, **visual-only floating panels không có text để tránh bị hiểu là button**, glass trust strip. Không thêm asset/dependency mới, dùng CSS + hero assets sẵn. Hero content/CTA/flow giữ nguyên; mobile CTA stack full-width để tránh overflow. |

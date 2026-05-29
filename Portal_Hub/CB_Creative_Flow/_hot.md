@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -164,6 +164,7 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `index.html` hero thêm `hero-bg` decorative layer (`aria-hidden`) với orb/line/floating panels, inspired by QuickMagic mood nhưng dùng CB brand navy `#191970` + red `#BA110F` only.
 - ✅ `assets/styles.css` hỗ trợ 2 mode: Light mode = clean bright portal có grid/glow nhẹ; Dark mode = cinematic workspace navy/red, glass trust strip, floating panels rõ hơn. Floating panels là **visual-only, không có text** để tránh người xem hiểu nhầm là button/chip có thể click. Không thêm ảnh nền bitmap/dependency.
 - ✅ Hero content, CTA, character asset và flow không đổi. Mobile/tablet nhỏ stack CTA full-width, hide bớt decorative panels để tránh overflow.
+- ✅ 2026-05-29 copy update: Homepage hero chuyển wording từ "khách hàng" sang "Nội bộ CB Centres" để đúng audience nội bộ.
 
 **Order Form smart flow stepper (2026-05-26):**
 - ✅ `request.html` sidebar stepper A-G đổi sang timeline 1-7 có icon, mô tả ngắn từng bước, progress bar và trạng thái active/done để thể hiện flow kế tiếp rõ hơn.
