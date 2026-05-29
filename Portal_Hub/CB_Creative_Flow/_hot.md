@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · Order Workbench single-column flow · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -180,8 +180,10 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ Pattern UI: task detail là nơi xử lý task cụ thể, không chỉ xem thông tin. Giữ `TASKS` data shape và Supabase payload hiện tại.
 
 **Order Workbench drawer (2026-05-29):**
-- ✅ `database-orders.html` order drawer thêm class `.order-workbench`; `assets/styles.css` mở rộng drawer Admin/Account order thành layout 2 cột: summary strip, nội dung order/brief/điều phối ở cột trái, next action + điều kiện tạo task + activity ở cột phải.
+- ✅ `database-orders.html` order drawer thêm class `.order-workbench`; `assets/styles.css` mở rộng drawer Admin/Account order thành **single-column workbench flow**: summary strip → animated next-action banner → requester → brief → điều phối → ghi chú/comment nội bộ → điều kiện tạo task → related tasks → delivery → activity.
 - ✅ `assets/database-orders.js` Việt hóa các block drawer cũ (Requester/Brief/Internal/Related/Delivery/Push/Activity), thêm `orderNextAction()` để Account/Admin nhìn thấy bước kế tiếp ngay khi mở order mới.
+- ✅ `internal_note` được kéo ra thành block riêng **Ghi chú / Comment nội bộ**. Đây chưa phải threaded comments như Task Tracker; cố ý giữ field/schema hiện tại để không cần migration, vẫn persist qua `persistOrder(... internal_note ...)`.
+- ✅ Animation banner `Hành động kế tiếp`: CSS `orderNextAttention` nhẹ bằng lift + navy glow, bọc trong `prefers-reduced-motion` để không gây khó chịu.
 - ✅ Logic cũ giữ nguyên: action buttons Check/Need Info/Confirm/Push/Cancel, save internal fields, create task from order, notification và Supabase write-through không đổi.
 
 **Master Dashboard live refresh (2026-05-29):**

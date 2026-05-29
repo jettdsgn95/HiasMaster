@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-05-29 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-05-29 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · Order Workbench single-column flow · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
 
 ---
 
@@ -66,7 +66,7 @@ Status: Done
 Status: Done
 
 - Saved views, search, filters, sortable table, pagination.
-- Detail drawer: request info, brief, internal management, **Related Tasks**, delivery summary, push validation, activity log.
+- Detail drawer: **Order Workbench** single-column flow with summary strip, animated next-action banner, requester/brief/internal sections, dedicated internal note/comment block, push validation, related tasks, delivery summary, and activity log.
 - **Related Tasks block (T)**: list mọi task gắn với order (`order_id` match) — gộp từ in-memory built-in TASKS snapshot + `localStorage['mh-extra-tasks']`. Mỗi item click → mở Task Tracker với `?id=<task_id>` auto-open drawer.
 - **Create Task from this Order** button: chỉ enable khi `account_status === 'confirmed'`. Redirect `production-board.html?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...` → auto-mở Create Task modal có prefill.
 - Drawer actions: Check, Need Info, Confirm, Push to Production, Cancel.
@@ -195,10 +195,10 @@ New files 2026-05-20:
 
 | File | KB |
 |---|---:|
-| `assets/styles.css` | 209.2 |
+| `assets/styles.css` | 238.2 |
 | `assets/production-board.js` | 73.4 |
 | `request.html` | 64.3 |
-| `assets/database-orders.js` | 59.9 |
+| `assets/database-orders.js` | 67.4 |
 | `dashboard.html` | 55.0 |
 | `order-dashboard.html` | 50.9 |
 | `settings.html` | 49.1 |
@@ -215,7 +215,7 @@ New files 2026-05-20:
 | `user-management.html` | 25.0 |
 | `assets/app.js` | 24.3 |
 | `assets/settings.js` | 23.3 |
-| `database-orders.html` | 23.1 |
+| `database-orders.html` | 23.3 |
 | `assets/chatbot.js` | 21.0 |
 | `assets/reports.js` | 20.7 |
 | `index.html` | 17.8 |
@@ -236,6 +236,7 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-05-29 | Database Orders | **Refine Order Workbench thành flow 1 cột + animated next-action banner**. Sau feedback layout 2 cột tạo khoảng trắng chết và che nội dung, `assets/styles.css` đổi `.order-workbench .drawer-body` sang flex column, summary strip giữ ở đầu, `Hành động kế tiếp` thành banner full-width có animation chú ý nhẹ (respect `prefers-reduced-motion`). `assets/database-orders.js` kéo `internal_note` ra thành block riêng **Ghi chú / Comment nội bộ** để Admin/Account thấy rõ vùng trao đổi; vẫn dùng field `internal_note`, không đổi schema/Supabase/action flow. |
 | 2026-05-29 | Database Orders | **Update Admin/Account order drawer thành Order Workbench**. Root cause feedback: production `production-board` đã có Task Workbench, nhưng Admin đang mở order mới trong `database-orders` vẫn thấy drawer cũ A/B/C và English section labels. `database-orders.html` thêm class `.order-workbench`; `assets/database-orders.js` thêm summary strip + `orderNextAction()` + Việt hóa block labels; `assets/styles.css` thêm layout 2 cột riêng cho order drawer: nội dung order/brief/internal/related/delivery bên trái, next action + push readiness + activity bên phải. Không đổi action flow Check/Need Info/Confirm/Push/Cancel, save internal, create task, notification hoặc Supabase payload. |
 | 2026-05-29 | Data Store / Order Form | **Fix Sync DB lỗi khi DB thiếu optional `shoot_location` column**. Root cause: photo/shoot order gửi `shoot_location`, nhưng Supabase PostgREST schema cache chưa thấy cột này (`PGRST204: Could not find the 'shoot_location' column of 'orders'`). `assets/data-store.js` now retries orders/tasks create/update/upsert without optional `shoot_location` so order vẫn sync DB thay vì chỉ lưu local. Migration chuẩn vẫn là chạy `supabase/add-shoot-location.sql` để lưu được giá trị địa điểm. |
 | 2026-05-29 | Master Dashboard | **Fix dashboard không cập nhật order/task mới khi admin đang mở page**. Root cause: nút refresh chỉ spin + đổi `Last updated`, không gọi lại `orders.list()`/`tasks.list()`, và dashboard chỉ load một lần. `dashboard.html` refactor refresh button sang async `loadMasterDashboard()`, cập nhật timestamp sau khi load data thành công, thêm polling fallback mỗi 60s, thêm Supabase Realtime hook cho bảng `orders` + `tasks` nếu publication đã bật. |
