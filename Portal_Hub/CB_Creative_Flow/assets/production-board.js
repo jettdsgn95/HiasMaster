@@ -660,6 +660,88 @@
     return actions;
   }
 
+  function buildProductionChecklist(t) {
+    const statusRank = {
+      pending: 0, received: 1, inprogress: 2, review: 3, revision: 3,
+      feedback_wait: 3, feedback_fix: 3, ready: 4, delivered: 5, completed: 5
+    };
+    const rank = statusRank[t.status] || 0;
+    const items = [
+      { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
+      { label: 'Kiểm tra brief, nội dung và tài nguyên đầu vào', done: Boolean((t.content && t.content.trim()) || t.link_drive) },
+      { label: 'Cập nhật source / preview / final link', done: Boolean(t.link_drive || t.preview_link || t.final_link) },
+      { label: 'Gửi duyệt nội bộ cho Account / Lead', done: rank >= 3 },
+      { label: 'Sẵn sàng bàn giao hoặc đóng task', done: rank >= 4 }
+    ];
+    const done = items.filter((item) => item.done).length;
+    return { items, done, total: items.length };
+  }
+
+  function renderProductionChecklist(t) {
+    const checklist = buildProductionChecklist(t);
+    const pct = Math.round((checklist.done / checklist.total) * 100);
+    return `
+      <div class="tw-checklist-head">
+        <span>Production Checklist</span>
+        <b>${checklist.done}/${checklist.total}</b>
+      </div>
+      <div class="tw-check-progress"><span style="width:${pct}%"></span></div>
+      <ul class="tw-checklist">
+        ${checklist.items.map((item) => `
+          <li class="${item.done ? 'is-done' : ''}">
+            <span class="tw-check-box">${item.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</span>
+            <span>${escapeHtml(item.label)}</span>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  }
+
+  function taskActivityItems(t) {
+    const items = [];
+    if (t.created_at) items.push({ label: 'Tạo task', actor: t.comments?.[0]?.author || 'System', time: t.created_at });
+    (t.comments || []).slice(-6).forEach((c) => {
+      let label = 'Comment';
+      if (/Status:/i.test(c.text || '')) label = 'Đổi trạng thái';
+      else if (/links/i.test(c.text || '')) label = 'Cập nhật file/link';
+      else if (/PIC=|deadline=|priority=/i.test(c.text || '')) label = 'Cập nhật thông tin task';
+      else if (/Task được tạo|Standalone task/i.test(c.text || '')) label = 'Khởi tạo task';
+      items.push({ label, actor: c.author || 'System', time: c.time || t.last_update });
+    });
+    if (!items.length) items.push({ label: 'Chưa có activity', actor: 'System', time: t.last_update || fmtDT() });
+    return items.slice(-7).reverse();
+  }
+
+  function renderActivityRail(t) {
+    return `
+      <ol class="tw-activity">
+        ${taskActivityItems(t).map((item) => `
+          <li>
+            <span class="tw-dot"></span>
+            <div><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.actor)}</small></div>
+            <time>${escapeHtml(item.time || '')}</time>
+          </li>
+        `).join('')}
+      </ol>
+    `;
+  }
+
+  function renderPeopleRail(t) {
+    const names = [t.assigned_to, user.name, 'Account'].filter(Boolean);
+    const unique = [...new Set(names)].slice(0, 3);
+    return unique.map((name) => `<span class="tw-avatar" title="${escapeHtml(name)}">${escapeHtml(initials(name))}</span>`).join('');
+  }
+
+  function nextActionHint(t) {
+    if (t.status === 'pending') return 'Nhận task để bắt đầu xử lý và cập nhật timeline.';
+    if (t.status === 'received') return 'Bắt đầu sản xuất và cập nhật file nguồn khi có.';
+    if (t.status === 'inprogress') return 'Hoàn tất preview/final link trước khi gửi duyệt nội bộ.';
+    if (t.status === 'review') return 'Account / Lead kiểm tra và quyết định ready hoặc revision.';
+    if (t.status === 'revision') return 'Cập nhật chỉnh sửa rồi gửi duyệt lại.';
+    if (t.status === 'ready') return 'Chuẩn bị bàn giao qua Delivery Log.';
+    return 'Theo dõi activity và cập nhật khi có thay đổi mới.';
+  }
+
   function openDrawer(t) {
     currentTask = t;
     replyingToId = null;
@@ -696,15 +778,17 @@
     const linkInput = (id, value, placeholder) => canEditLinks
       ? `<input class="input" id="${id}" type="url" value="${escapeHtml(value || '')}" placeholder="${placeholder}" />`
       : `<span class="text-xs">${value ? `<a href="${escapeHtml(value)}" target="_blank" class="link">${escapeHtml(value)}</a>` : '<em class="muted">Chưa có</em>'}</span>`;
+    const checklist = buildProductionChecklist(t);
 
     drawerBody.innerHTML = `
       <div class="task-summary-grid">
         <div class="task-summary-tile"><label>P.I.C</label><b>${v(t.assigned_to)}</b></div>
-        <div class="task-summary-tile"><label>Progress</label><b>${t.progress}%</b></div>
         <div class="task-summary-tile"><label>Internal Deadline</label><b class="deadline-cell ${dlCls}" style="background:none; padding:0">${dl_fmt}</b></div>
+        <div class="task-summary-tile"><label>Loại task</label><b>${TYPE_LABEL[t.task_type] || t.task_type}</b></div>
+        <div class="task-summary-tile"><label>Checklist</label><b>${checklist.done}/${checklist.total}</b></div>
       </div>
 
-      <section class="drawer-block">
+      <section class="drawer-block tw-worktype">
         <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Loại công việc</h4></div>
         ${(t.order_id && !t.is_standalone) ? `
           <p class="text-xs muted" style="margin:0 0 8px"><span class="worktype-badge worktype-badge--linked">Linked to Client Order</span></p>
@@ -722,16 +806,23 @@
         `}
       </section>
 
-      <section class="drawer-block">
+      <section class="drawer-block tw-brief-card">
         <div class="drawer-block-head"><span class="block-letter">📋</span><h4>Brief Information</h4></div>
         <dl>
+          <dt>Task ID</dt><dd><span class="mono">${escapeHtml(t.task_id)}</span></dd>
+          <dt>Linked Order</dt><dd>${t.order_id ? `<span class="mono">${escapeHtml(t.order_id)}</span>` : '<em class="muted">Standalone</em>'}</dd>
           <dt>Content</dt><dd>${v(t.content)}</dd>
           <dt>Type</dt><dd>${TYPE_LABEL[t.task_type]}</dd>
           ${(t.task_type === 'photo' || t.task_type === 'shoot') ? `<dt>Địa điểm</dt><dd>${v(t.shoot_location)}</dd>` : ''}
         </dl>
       </section>
 
-      <section class="drawer-block">
+      <section class="drawer-block tw-check-card">
+        <div class="drawer-block-head"><span class="block-letter">✓</span><h4>Production Checklist</h4></div>
+        ${renderProductionChecklist(t)}
+      </section>
+
+      <section class="drawer-block tw-files-card">
         <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Files &amp; Links</h4></div>
 
         <div class="link-row ${t.link_drive ? 'has-link' : ''}">
@@ -752,11 +843,19 @@
           ${canEditLinks ? linkInput('final-in', t.final_link, 'https://drive.google.com/final...') : ''}
         </div>
 
+        <div class="tw-upload-zone">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>Drop/upload file ở đây khi bật Supabase Storage cho deliverables</span>
+        </div>
+
         ${canEditLinks ? `<div class="row" style="justify-content:flex-end; margin-top:8px"><button class="btn btn-secondary btn-sm" id="save-links">Lưu links</button></div>` : ''}
       </section>
 
-      <section class="drawer-block">
+      <section class="drawer-block tw-action-rail">
         <div class="drawer-block-head"><span class="block-letter">⚡</span><h4>Status &amp; Actions</h4></div>
+        <div class="tw-rail-section">
+          <span class="tw-rail-label">Next Actions</span>
+        </div>
         ${actionsHtml}
         ${['admin', 'account'].includes(user.role) ? `
         <div class="edit-row mt-4">
@@ -777,10 +876,30 @@
         </div>
         <div class="row" style="justify-content:flex-end; margin-top:8px"><button class="btn btn-secondary btn-sm" id="save-meta">Lưu thay đổi</button></div>
         ` : ''}
+
+        <div class="tw-rail-section">
+          <span class="tw-rail-label">Người liên quan</span>
+          <div class="tw-people">${renderPeopleRail(t)}</div>
+        </div>
+
+        <div class="tw-ai-card">
+          <span>Gợi ý bước tiếp theo</span>
+          <p>${escapeHtml(nextActionHint(t))}</p>
+          <button type="button" class="btn btn-secondary btn-sm" id="tw-generate-checklist">Tạo checklist</button>
+        </div>
+
+        <div class="tw-rail-section">
+          <span class="tw-rail-label">Activity Log</span>
+          ${renderActivityRail(t)}
+        </div>
       </section>
 
-      <section class="drawer-block">
+      <section class="drawer-block tw-comments-card">
         <div class="drawer-block-head"><span class="block-letter">💬</span><h4>Comments &amp; Activity (${(t.comments || []).length})</h4></div>
+        <div class="tw-comment-tabs">
+          <button type="button" class="is-active">Comment</button>
+          <button type="button">Activity</button>
+        </div>
         <div class="comments-thread" id="comments-thread">
           ${renderCommentsThread(t)}
         </div>
@@ -826,6 +945,13 @@
         updateStatus(currentTask, newStatus);
       });
     });
+
+    const aiChecklistBtn = document.getElementById('tw-generate-checklist');
+    if (aiChecklistBtn) {
+      aiChecklistBtn.addEventListener('click', () => {
+        window.MH.toast({ type: 'info', title: 'Checklist đã sẵn sàng', message: 'Production checklist đang được tính từ status, links và dữ liệu task hiện tại.' });
+      });
+    }
 
     // Save links
     const saveLinksBtn = document.getElementById('save-links');

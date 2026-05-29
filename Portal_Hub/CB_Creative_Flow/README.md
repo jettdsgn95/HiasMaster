@@ -34,7 +34,7 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 |---|:---:|---|
 | Public site | Done | `index`, `request`, `tracking`, `help`, `login`; homepage targets Nội bộ CB Centres + request smart flow stepper |
 | Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile |
-| Internal ops | Done | Dashboard, orders, production, delivery, reports, AI, chatbot, users, settings |
+| Internal ops | Done | Dashboard, orders, production, delivery, reports, AI, chatbot, users, settings; Task Workbench drawer |
 | AI Tools | Done | 13 mini apps (gồm AI Voice / Supertonic on-device TTS), workspace form, output panel, usage log demo |
 | Dashboards | Wired LIVE | **Master Dashboard** (Module 5 — 4 sections separated: Client Orders Overview 8 metrics / Internal Tasks Overview 8 metrics / Alerts 5 categories / Team Workload 6-PIC bar) · **Orders Dashboard** (13 KPI Client Order lifecycle: Intake / Production Flow / Feedback & Completion + 6 breakdowns) · **Task Dashboard** (17 KPI Internal workload: Volume / Workload / Deadline / Status / Performance + 6-PIC bar chart). Tất cả load real-time từ Supabase qua MH.store. Drilldown click-through tới database-orders.html / production-board.html với filter chính xác |
 | Chatbot | Done | Dedicated page + floating widget trên internal/public pages khi đã login |
@@ -143,6 +143,7 @@ Order (client/branch submits brief)
 - Header layout (internal pages): `[Logo] ← → [Theme Toggle][Notification Bell][User Profile ▾]`
 - Request page uses the smart flow stepper pattern: 1-7 timeline, icon, helper text, scroll/click active state, and matching 1-7 section header badges inside the form. Completion state comes from real section data; optional assets only show done after a file/link/note is added.
 - Order Form Section 2 displays the planning field as `Mã kế hoạch` with example `KH07/CBMK`; the underlying field key remains `campaign_code` for compatibility.
+- Task Tracker detail drawer uses the Task Workbench pattern: wide two-column task drawer, production checklist, file/link workspace, next-action rail, involved people, AI hint, and activity timeline. Existing status/link/meta/comment behavior stays compatible.
 
 ---
 
@@ -343,4 +344,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-29 · Order Form planning code copy + Homepage audience copy*
+*Last updated: 2026-05-29 · Task Workbench drawer + Order Form planning code copy*
