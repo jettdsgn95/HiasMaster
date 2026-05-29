@@ -144,6 +144,7 @@ Order (client/branch submits brief)
 - Request page uses the smart flow stepper pattern: 1-7 timeline, icon, helper text, scroll/click active state, and matching 1-7 section header badges inside the form. Completion state comes from real section data; optional assets only show done after a file/link/note is added.
 - Order Form Section 2 displays the planning field as `Mã kế hoạch` with example `KH07/CBMK`; the underlying field key remains `campaign_code` for compatibility.
 - Optional DB fields such as `shoot_location` are non-blocking: `data-store.js` retries Supabase writes without the optional field if PostgREST reports a missing schema column (`PGRST204`). Run `supabase/add-shoot-location.sql` to persist location values.
+- Database Orders detail drawer uses the Order Workbench pattern for Admin/Account intake: summary strip, next action rail, brief/task readiness, related tasks, delivery summary, and activity log. Existing check/confirm/push/cancel behavior stays compatible.
 - Task Tracker detail drawer uses the Task Workbench pattern: wide two-column task drawer, production checklist, file/link workspace, next-action rail, involved people, AI hint, and activity timeline. Existing status/link/meta/comment behavior stays compatible.
 - Master Dashboard refresh is data-backed: the refresh button calls `orders.list()` + `tasks.list()` again, with 60s polling fallback and optional Supabase Realtime for `orders`/`tasks`.
 

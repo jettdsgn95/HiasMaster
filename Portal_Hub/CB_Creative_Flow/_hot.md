@@ -179,6 +179,11 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ `assets/production-board.js` giữ logic status/link/meta/comment cũ, bổ sung production checklist tự tính từ status/content/link, action rail gồm Next Actions, Người liên quan, AI hint, Activity Log.
 - ✅ Pattern UI: task detail là nơi xử lý task cụ thể, không chỉ xem thông tin. Giữ `TASKS` data shape và Supabase payload hiện tại.
 
+**Order Workbench drawer (2026-05-29):**
+- ✅ `database-orders.html` order drawer thêm class `.order-workbench`; `assets/styles.css` mở rộng drawer Admin/Account order thành layout 2 cột: summary strip, nội dung order/brief/điều phối ở cột trái, next action + điều kiện tạo task + activity ở cột phải.
+- ✅ `assets/database-orders.js` Việt hóa các block drawer cũ (Requester/Brief/Internal/Related/Delivery/Push/Activity), thêm `orderNextAction()` để Account/Admin nhìn thấy bước kế tiếp ngay khi mở order mới.
+- ✅ Logic cũ giữ nguyên: action buttons Check/Need Info/Confirm/Push/Cancel, save internal fields, create task from order, notification và Supabase write-through không đổi.
+
 **Master Dashboard live refresh (2026-05-29):**
 - ✅ `dashboard.html` fix refresh button: trước chỉ đổi timestamp/toast, giờ gọi lại `loadMasterDashboard()` để fetch `orders.list()` + `tasks.list()` thật.
 - ✅ Thêm polling fallback 60s và Supabase Realtime hook cho `orders`/`tasks` nếu publication đã bật. Timestamp `Last updated` chỉ đổi sau khi load data thành công.

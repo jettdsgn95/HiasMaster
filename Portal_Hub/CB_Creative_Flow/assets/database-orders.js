@@ -463,6 +463,34 @@
     return `<ul class="activity-mini">${acts.slice(-5).reverse().map((a) => `<li><span>${a.label}</span><time>${a.time}</time></li>`).join('')}</ul>`;
   }
 
+  function orderNextAction(o) {
+    if (o.account_status === 'pending') {
+      return { title: 'Kiểm tra brief', detail: 'Account cần rà soát thông tin trước khi xác nhận.' };
+    }
+    if (o.account_status === 'checking') {
+      return { title: 'Xác nhận hoặc yêu cầu bổ sung', detail: 'Brief đang được kiểm tra, chọn bước phù hợp ở thanh hành động.' };
+    }
+    if (o.account_status === 'needinfo') {
+      return { title: 'Chờ client bổ sung', detail: 'Theo dõi phản hồi của client trước khi xác nhận brief.' };
+    }
+    if (o.account_status === 'confirmed' && !o.production_pic) {
+      return { title: 'Gán Production PIC', detail: 'Chọn người phụ trách sản xuất để sẵn sàng tạo task.' };
+    }
+    if (o.account_status === 'confirmed' && !o.internal_deadline) {
+      return { title: 'Set Internal Deadline', detail: 'Cần deadline nội bộ trước khi push sang Task Tracker.' };
+    }
+    if (o.account_status === 'confirmed' && o.production_status === 'unassigned') {
+      return { title: 'Push sang Task Tracker', detail: 'Brief đã đủ điều kiện, có thể tạo task sản xuất.' };
+    }
+    if (o.production_status === 'received' || o.production_status === 'inprogress') {
+      return { title: 'Theo dõi sản xuất', detail: 'Mở Task Tracker để xem tiến độ chi tiết của team Media.' };
+    }
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
+      return { title: 'Order đã hủy', detail: 'Không còn hành động sản xuất cho order này.' };
+    }
+    return { title: 'Theo dõi cập nhật', detail: 'Kiểm tra task, delivery và phản hồi client khi có thay đổi.' };
+  }
+
   function openDrawer(o) {
     currentOrder = o;
     document.getElementById('d-order-id').textContent = o.order_id;
@@ -480,9 +508,41 @@
     const v = (x) => x ? escapeHtml(x) : '<em class="muted">—</em>';
     const link = (u, label) => u ? `<a class="link" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(label || u)}</a>` : '<em class="muted">—</em>';
 
+    const nextAction = orderNextAction(o);
     drawerBody.innerHTML = `
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">A</span><h4>Requester Information</h4></div>
+      <section class="order-summary-grid" aria-label="Tóm tắt order">
+        <div class="order-summary-tile">
+          <span>Người gửi</span>
+          <b>${v(o.requester_name)}</b>
+          <small>${v(o.department)}</small>
+        </div>
+        <div class="order-summary-tile">
+          <span>Deadline mong muốn</span>
+          <b>${v(o.requested_deadline)}</b>
+          <small>${PRIORITY_LABEL[o.priority] || o.priority}</small>
+        </div>
+        <div class="order-summary-tile">
+          <span>Account PIC</span>
+          <b>${v(o.account_pic)}</b>
+          <small>${ACCOUNT_STATUS_LABEL[o.account_status] || o.account_status}</small>
+        </div>
+        <div class="order-summary-tile">
+          <span>Production PIC</span>
+          <b>${v(o.production_pic)}</b>
+          <small>${PROD_STATUS_LABEL[o.production_status] || o.production_status}</small>
+        </div>
+      </section>
+
+      <section class="drawer-block ow-next">
+        <div class="drawer-block-head"><span class="block-letter">N</span><h4>Hành động kế tiếp</h4></div>
+        <div class="order-next-action">
+          <b>${escapeHtml(nextAction.title)}</b>
+          <p>${escapeHtml(nextAction.detail)}</p>
+        </div>
+      </section>
+
+      <section class="drawer-block ow-requester">
+        <div class="drawer-block-head"><span class="block-letter">A</span><h4>Thông tin người gửi</h4></div>
         <dl>
           <dt>Họ và tên</dt><dd>${v(o.requester_name)}</dd>
           <dt>Email</dt><dd>${v(o.requester_email)}</dd>
@@ -492,8 +552,8 @@
         </dl>
       </section>
 
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">B</span><h4>Brief Information</h4></div>
+      <section class="drawer-block ow-brief">
+        <div class="drawer-block-head"><span class="block-letter">B</span><h4>Thông tin brief</h4></div>
         <dl>
           <dt>Mục đích</dt><dd>${v(o.project_purpose)}</dd>
           <dt>Đối tượng mục tiêu</dt><dd>${safeJoin(o.target_audience)}</dd>
@@ -511,8 +571,8 @@
         ${buildBriefChecklist(o)}
       </section>
 
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">C</span><h4>Internal Management</h4></div>
+      <section class="drawer-block ow-internal">
+        <div class="drawer-block-head"><span class="block-letter">C</span><h4>Điều phối nội bộ</h4></div>
         <div class="edit-row">
           <label>Account Status</label>
           <select class="select" id="edit-account-status">
@@ -558,8 +618,8 @@
         </div>
       </section>
 
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">T</span><h4>Related Tasks</h4></div>
+      <section class="drawer-block ow-tasks">
+        <div class="drawer-block-head"><span class="block-letter">T</span><h4>Task liên quan</h4></div>
         ${(function () {
           const tasks = tasksForOrder(o.order_id);
           const list = tasks.length
@@ -592,8 +652,8 @@
         })()}
       </section>
 
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">D</span><h4>Delivery Summary</h4></div>
+      <section class="drawer-block ow-delivery">
+        <div class="drawer-block-head"><span class="block-letter">D</span><h4>Tóm tắt bàn giao</h4></div>
         <dl>
           <dt>Preview Link</dt><dd>${link(o.preview_link)}</dd>
           <dt>Final Link</dt><dd>${link(o.final_delivery_link)}</dd>
@@ -604,13 +664,13 @@
         </dl>
       </section>
 
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">E</span><h4>Push to Production</h4></div>
+      <section class="drawer-block ow-push">
+        <div class="drawer-block-head"><span class="block-letter">E</span><h4>Điều kiện tạo task</h4></div>
         ${buildPushCheck(o)}
       </section>
 
-      <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">⏱</span><h4>Activity Log</h4></div>
+      <section class="drawer-block ow-activity">
+        <div class="drawer-block-head"><span class="block-letter">L</span><h4>Nhật ký xử lý</h4></div>
         ${buildActivity(o)}
       </section>
     `;
