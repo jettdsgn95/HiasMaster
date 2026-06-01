@@ -216,6 +216,52 @@
     const key = id.replace('filter-', '');
     document.getElementById(id).addEventListener('change', (e) => { state[key] = e.target.value; render(); });
   });
+
+  // Export — xuất CSV danh sách Delivery đang lọc (Excel-compatible, BOM UTF-8).
+  const exportDeliveriesBtn = document.getElementById('export-deliveries');
+  if (exportDeliveriesBtn) {
+    exportDeliveriesBtn.addEventListener('click', () => {
+      const list = applyFilters();
+      const header = ['Delivery ID', 'Order ID', 'Task ID', 'Project', 'Requester', 'Phòng ban', 'Loại', 'Account', 'P.I.C', 'Delivery status', 'Ngày giao', 'Kênh', 'Rating', 'Reopened', 'Cập nhật'];
+      const rows = [
+        ['CB Media Hub — Delivery Log Export'],
+        ['Generated: ' + new Date().toLocaleString('vi-VN')],
+        ['Số dòng: ' + list.length + ' (theo bộ lọc hiện tại)'],
+        [],
+        header,
+        ...list.map((d) => [
+          d.delivery_id,
+          d.order_id || '',
+          d.task_id || '',
+          d.project_name || '',
+          d.requester_name || '',
+          d.department || '',
+          TYPE_LABEL[d.task_type] || d.task_type || '',
+          d.account_name || '',
+          d.production_pic || '',
+          STATUS_LABEL[d.delivery_status] || d.delivery_status || '',
+          d.delivery_date || '',
+          CHANNEL_LABEL[d.delivery_channel] || d.delivery_channel || '',
+          (d.satisfaction_score || ''),
+          (d.reopened_count || 0),
+          d.updated_at || ''
+        ])
+      ];
+      const csv = rows.map((r) => r.map((c) => {
+        const s = String(c ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(',')).join('\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cb-media-hub-delivery-log-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      window.MH.toast({ type: 'success', title: 'Đã export', message: `${list.length} deliveries → CSV (Excel-compatible).` });
+    });
+  }
+
   document.querySelectorAll('.pb-stat').forEach((card) => {
     card.addEventListener('click', () => {
       const q = card.getAttribute('data-quick');

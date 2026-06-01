@@ -350,6 +350,48 @@
     document.getElementById(id).addEventListener('change', (e) => { state[key] = e.target.value; state.page = 1; render(); });
   });
 
+  // Export — xuất CSV danh sách Client Orders đang lọc (Excel-compatible, BOM UTF-8).
+  const exportOrdersBtn = document.getElementById('export-orders');
+  if (exportOrdersBtn) {
+    exportOrdersBtn.addEventListener('click', () => {
+      const list = sortBy(applyFilters(), state.sortKey, state.sortDir);
+      const header = ['Order ID', 'Ngày tạo', 'Requester', 'Phòng ban', 'Project', 'Loại', 'Ưu tiên', 'Deadline', 'Account status', 'Production status', 'P.I.C', 'Tiến độ %'];
+      const rows = [
+        ['CB Media Hub — Client Orders Export'],
+        ['Generated: ' + new Date().toLocaleString('vi-VN')],
+        ['Số dòng: ' + list.length + ' (theo bộ lọc hiện tại)'],
+        [],
+        header,
+        ...list.map((o) => [
+          o.order_id,
+          o.created_at || '',
+          o.requester_name || '',
+          o.department || '',
+          o.project_name || '',
+          TYPE_LABEL[o.request_type] || o.request_type || '',
+          PRIORITY_LABEL[o.priority] || o.priority || '',
+          o.requested_deadline || '',
+          ACCOUNT_STATUS_LABEL[o.account_status] || o.account_status || '',
+          PROD_STATUS_LABEL[o.production_status] || o.production_status || '',
+          o.production_pic || '',
+          (o.progress != null ? o.progress : '')
+        ])
+      ];
+      const csv = rows.map((r) => r.map((c) => {
+        const s = String(c ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(',')).join('\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cb-media-hub-client-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      window.MH.toast({ type: 'success', title: 'Đã export', message: `${list.length} orders → CSV (Excel-compatible).` });
+    });
+  }
+
   // Sort
   document.querySelectorAll('th.sortable').forEach((th) => {
     th.addEventListener('click', () => {

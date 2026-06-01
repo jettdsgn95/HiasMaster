@@ -148,14 +148,10 @@
         </div>
       </div>
       <div class="row" style="gap:var(--space-2)">
-        <button class="btn btn-secondary btn-sm">
+        <button class="btn btn-secondary btn-sm" id="export-btn">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export
         </button>
-        <a class="btn btn-primary btn-sm" href="request.html" data-show-roles="admin,account">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Tạo Order
-        </a>
       </div>
     </div>
 
@@ -597,6 +593,64 @@
         rf.disabled = false;
       }
     });
+  }
+
+  /* ============ Export button ============
+     Xuất snapshot CSV (Excel-compatible) đúng những gì đang hiển thị: filters,
+     KPI Client Orders + Internal Tasks (đọc từ DOM card), và Workload by PIC. */
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) {
+    const CLIENT_KEYS = ['total_client_orders','active_client_orders','brief_need_info','order_in_production','delivered','waiting_feedback','completed','cancelled'];
+    const TASK_KEYS = ['total_internal_tasks','active_internal_tasks','standalone','linked','due_today','overdue','unassigned','completed_week'];
+    function kpiRows(keys) {
+      return keys.map((k) => {
+        const card = document.querySelector(`.kpi[data-card-key="${k}"]`);
+        if (!card) return null;
+        const label = (card.querySelector('.kpi-label')?.textContent || k).trim();
+        const value = (card.querySelector('.kpi-value')?.textContent || '0').trim();
+        return [label, value];
+      }).filter(Boolean);
+    }
+    function exportMasterCSV() {
+      const filters = Array.from(document.querySelectorAll('.dash-filters select'))
+        .map((s) => s.selectedOptions[0] ? s.selectedOptions[0].textContent.trim() : '');
+      const workloadRows = Array.from(document.querySelectorAll('[data-pic]')).map((row) => {
+        const name = row.getAttribute('data-pic');
+        const count = (row.querySelector('.wcount b')?.textContent || '0').trim();
+        return [name, count];
+      });
+      const rows = [
+        ['CB Media Hub — Master Dashboard Export'],
+        ['Generated: ' + new Date().toLocaleString('vi-VN')],
+        ['Last updated: ' + (lu ? lu.textContent : '')],
+        ['Filters: ' + filters.join(' · ')],
+        [],
+        ['=== CLIENT ORDERS OVERVIEW ==='],
+        ['Metric', 'Value'],
+        ...kpiRows(CLIENT_KEYS),
+        [],
+        ['=== INTERNAL TASKS OVERVIEW ==='],
+        ['Metric', 'Value'],
+        ...kpiRows(TASK_KEYS),
+        [],
+        ['=== TEAM WORKLOAD (open tasks by PIC) ==='],
+        ['PIC', 'Open tasks'],
+        ...workloadRows
+      ];
+      const csv = rows.map((r) => r.map((c) => {
+        const s = String(c ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(',')).join('\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cb-media-hub-master-dashboard-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      window.MH.toast({ type: 'success', title: 'Đã export', message: 'File CSV (Excel-compatible) đã tải về.' });
+    }
+    exportBtn.addEventListener('click', exportMasterCSV);
   }
 
   /* ---------- Master Dashboard data loader ----------
