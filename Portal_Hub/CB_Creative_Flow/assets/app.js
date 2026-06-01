@@ -627,16 +627,64 @@
         .mh-notif-head button:hover { background: var(--surface-2); }
         .mh-notif-list { flex: 1; overflow-y: auto; padding: 4px; }
         .mh-notif-empty { padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
-        .mh-notif-item { display: block; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.12s; border-left: 3px solid transparent; }
+        .mh-notif-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.12s; border-left: 3px solid transparent; }
         .mh-notif-item:hover { background: var(--surface-2); }
         .mh-notif-item.is-unread { border-left-color: var(--brand-600); background: rgb(25 25 112 / 0.04); }
+        .mh-notif-item-ico { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; margin-top: 1px; color: var(--text-muted); }
+        .mh-notif-item-ico svg { width: 18px; height: 18px; }
+        .mh-notif-item-ico.is-accent { color: var(--brand-600); }
+        .mh-notif-item-ico.is-danger { color: var(--red-600); }
+        .mh-notif-item-body { flex: 1 1 auto; min-width: 0; }
         .mh-notif-item-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
         .mh-notif-item-msg { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px; }
         .mh-notif-item-time { font-size: 11px; color: var(--text-muted); }
         .mh-notif-foot { padding: 8px 12px; border-top: 1px solid var(--border); text-align: center; }
         .mh-notif-foot a { font-size: 12px; color: var(--brand-600); text-decoration: none; }
+
+        /* ----- Bell attention state khi có notification chưa đọc ----- */
+        .mh-notif-wrap.has-unread button[aria-label="Thông báo"] svg {
+          stroke: url(#mh-bell-grad);
+          transform-origin: 50% 4px;
+          animation: mhBellRing 2.6s ease-in-out infinite;
+        }
+        .mh-notif-wrap.has-unread .mh-notif-badge {
+          background: linear-gradient(135deg, #d62a28 0%, #BA110F 100%);
+          animation: mhBadgePulse 1.8s ease-out infinite;
+        }
+        @keyframes mhBellRing {
+          0%, 35%, 100% { transform: rotate(0); }
+          4%  { transform: rotate(15deg); }
+          8%  { transform: rotate(-13deg); }
+          12% { transform: rotate(10deg); }
+          16% { transform: rotate(-8deg); }
+          20% { transform: rotate(6deg); }
+          24% { transform: rotate(-3deg); }
+          28% { transform: rotate(0); }
+        }
+        @keyframes mhBadgePulse {
+          0%   { box-shadow: 0 0 0 0 rgba(186,17,15,0.55); }
+          70%  { box-shadow: 0 0 0 6px rgba(186,17,15,0); }
+          100% { box-shadow: 0 0 0 0 rgba(186,17,15,0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mh-notif-wrap.has-unread button[aria-label="Thông báo"] svg,
+          .mh-notif-wrap.has-unread .mh-notif-badge { animation: none; }
+        }
       `;
       document.head.appendChild(css);
+
+      // Gradient def cho stroke chuông (navy → red) — cần nằm trong document để url(#) resolve.
+      if (!document.getElementById('mh-bell-grad-def')) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const gsvg = document.createElementNS(svgNS, 'svg');
+        gsvg.id = 'mh-bell-grad-def';
+        gsvg.setAttribute('width', '0');
+        gsvg.setAttribute('height', '0');
+        gsvg.setAttribute('aria-hidden', 'true');
+        gsvg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
+        gsvg.innerHTML = '<defs><linearGradient id="mh-bell-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#191970"/><stop offset="100%" stop-color="#BA110F"/></linearGradient></defs>';
+        document.body.appendChild(gsvg);
+      }
     }
 
     function fmtTime(iso) {
@@ -651,6 +699,37 @@
       } catch (e) { return ''; }
     }
     function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    /* ---------- Minimal line icons cho notification (thay emoji) ----------
+       Outline SVG style Lucide đồng bộ sidebar: stroke-width 2, currentColor, rounded.
+       Màu mặc định = text phụ (#64748B-ish var(--text-muted)); accent navy cho "mới", red cho cancel/need-info. */
+    const NOTIF_ICON_PATHS = {
+      order_new:            '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+      order_status_changed: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+      order_confirmed:      '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+      order_needinfo:       '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+      order_cancelled:      '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+      task_assigned:        '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+      task_status_changed:  '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+      task_comment:         '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+      delivery_preview:     '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+      delivery_final:       '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+      rating_received:      '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+      system:               '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'
+    };
+    function notifIcon(type) {
+      const inner = NOTIF_ICON_PATHS[type] || NOTIF_ICON_PATHS.system;
+      let cls = '';
+      if (type === 'order_new' || type === 'task_assigned') cls = 'is-accent';
+      else if (type === 'order_cancelled' || type === 'order_needinfo') cls = 'is-danger';
+      return { svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`, cls };
+    }
+    // Bỏ emoji/ký hiệu dẫn đầu trong title cũ (📥 🎯 🚀 ✅ ⚠ ❌ 👀 📦 …) — icon giờ render bằng SVG.
+    function stripNotifEmoji(s) {
+      return String(s ?? '')
+        .replace(/^[\p{Extended_Pictographic}☀-➿⬀-⯿️‍\s]+/u, '')
+        .trim();
+    }
 
     let dropdown = null;
     let pollTimer = null;
@@ -702,9 +781,16 @@
       try {
         const list = await window.MH.store.notifications.listUnread(50);
         const count = list.length;
-        document.querySelectorAll('[data-role="notif-badge"]').forEach((b) => {
-          if (count > 0) { b.textContent = count > 99 ? '99+' : String(count); b.style.display = 'flex'; }
-          else { b.style.display = 'none'; }
+        // Một state duy nhất `has-unread` trên wrap điều khiển cả badge, gradient và animation chuông.
+        document.querySelectorAll('.mh-notif-wrap').forEach((wrap) => {
+          const b = wrap.querySelector('[data-role="notif-badge"]');
+          if (count > 0) {
+            if (b) { b.textContent = count > 99 ? '99+' : String(count); b.style.display = 'flex'; }
+            wrap.classList.add('has-unread');
+          } else {
+            if (b) b.style.display = 'none';
+            wrap.classList.remove('has-unread');
+          }
         });
         return list;
       } catch (e) { console.warn('[notif] refresh badge failed:', e); return []; }
@@ -733,11 +819,15 @@
       }
       body.innerHTML = list.map((n) => {
         const resolved = resolveNotifLink(n);
+        const ic = notifIcon(n.type);
         return `
         <a class="mh-notif-item ${n.is_read ? '' : 'is-unread'}" data-id="${n.id}" data-link="${escapeHtml(resolved || '#')}" data-read="${n.is_read}">
-          <div class="mh-notif-item-title">${escapeHtml(n.title)}</div>
-          ${n.message ? `<div class="mh-notif-item-msg">${escapeHtml(n.message)}</div>` : ''}
-          <div class="mh-notif-item-time">${fmtTime(n.created_at)}</div>
+          <span class="mh-notif-item-ico ${ic.cls}">${ic.svg}</span>
+          <div class="mh-notif-item-body">
+            <div class="mh-notif-item-title">${escapeHtml(stripNotifEmoji(n.title))}</div>
+            ${n.message ? `<div class="mh-notif-item-msg">${escapeHtml(n.message)}</div>` : ''}
+            <div class="mh-notif-item-time">${fmtTime(n.created_at)}</div>
+          </div>
         </a>`;
       }).join('');
       body.querySelectorAll('.mh-notif-item').forEach((el) => {
@@ -757,7 +847,7 @@
       if (!window.MH || !window.MH.toast) return;
       window.MH.toast({
         type: 'info',
-        title: notif.title || 'Thông báo mới',
+        title: stripNotifEmoji(notif.title) || 'Thông báo mới',
         message: notif.message || '',
         duration: 8000
       });
