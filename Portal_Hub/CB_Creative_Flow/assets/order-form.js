@@ -150,6 +150,18 @@
   }
   form.querySelectorAll('input[name="request_type"]').forEach((r) => r.addEventListener('change', updateConditional));
 
+  /* ---------- Kích thước cụ thể: chỉ bật khi chọn "Khác" trong size_ratio ---------- */
+  const sizeRatioSel = document.getElementById('size_ratio');
+  const customSizeInput = document.getElementById('custom_size');
+  function syncCustomSize() {
+    if (!sizeRatioSel || !customSizeInput) return;
+    const isOther = sizeRatioSel.value.startsWith('Khác');
+    customSizeInput.disabled = !isOther;
+    if (!isOther) customSizeInput.value = '';
+  }
+  if (sizeRatioSel) sizeRatioSel.addEventListener('change', syncCustomSize);
+  syncCustomSize();
+
   /* ---------- Priority → urgent reason ---------- */
   const urgentField = document.getElementById('urgent_field');
   const urgentReason = document.getElementById('urgent_reason');
@@ -349,6 +361,7 @@
       // re-sync UI states
       document.querySelectorAll('.chips').forEach(syncChips);
       updateConditional();
+      syncCustomSize();
       const t = new Date(savedAt);
       const pad = (n) => String(n).padStart(2, '0');
       draftMsg.textContent = 'Khôi phục bản nháp ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ' · ' + pad(t.getDate()) + '/' + pad(t.getMonth() + 1);
@@ -466,7 +479,7 @@
           <dt>Loại yêu cầu</dt><dd>${val(REQ_TYPE_LABEL[d.request_type] || d.request_type)}</dd>
           <dt>Hạng mục</dt><dd>${deliverables}</dd>
           <dt>Kích thước / tỉ lệ</dt><dd>${val(d.size_ratio)}</dd>
-          <dt>Số phiên bản</dt><dd>${val(d.version_quantity)}</dd>
+          <dt>Kích thước cụ thể</dt><dd>${val(d.custom_size)}</dd>
         </dl>
       </div>
       <div class="preview-block">
@@ -592,7 +605,9 @@
           deliverable_type: orderPayload.deliverable_type || [],
           target_audience: orderPayload.target_audience || [],
           usage_channels: orderPayload.usage_channels || [],
-          size_ratio: orderPayload.size_ratio || null,
+          size_ratio: ((orderPayload.size_ratio && orderPayload.size_ratio.startsWith('Khác') && orderPayload.custom_size)
+            ? orderPayload.custom_size
+            : orderPayload.size_ratio) || null,
           content_brief: orderPayload.content_brief || null,
           creative_direction: orderPayload.creative_direction || null,
           wording_required: !!orderPayload.wording_required,
