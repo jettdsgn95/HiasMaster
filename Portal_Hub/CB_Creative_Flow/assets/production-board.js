@@ -275,14 +275,24 @@
     quickChip: ''    // chip filter row above toolbar
   };
 
+  /* ---------- Match task PIC với user hiện tại ----------
+     PIC (assigned_to) thường lưu tên ngắn ("Duy", "Hậu"), còn user.name là tên đầy đủ
+     ("Duy Trần", "Hậu Nguyễn"). Khớp khi bằng nhau HOẶC full name chứa tên PIC theo
+     word-boundary (tránh false-positive kiểu "Duyên"). Fix: `.split(' ').pop()` cũ lấy
+     CHỮ CUỐI ("Trần") nên PIC "Duy" không bao giờ khớp. */
+  function isMyTask(assignedTo) {
+    if (!assignedTo) return false;
+    const a = String(assignedTo).trim().toLowerCase();
+    const u = String(user.name || '').trim().toLowerCase();
+    if (!a || !u) return false;
+    if (a === u) return true;
+    return u.startsWith(a + ' ') || u.endsWith(' ' + a) || u.includes(' ' + a + ' ');
+  }
+
   /* ---------- Scoping by role ---------- */
   function visibleTasks() {
     if (user.role === 'design' || user.role === 'editor') {
-      // assigned_to matches user.name OR first-name match for demo
-      return TASKS.filter((t) => {
-        const name = user.name || '';
-        return t.assigned_to === name || t.assigned_to === name.split(' ').pop();
-      });
+      return TASKS.filter((t) => isMyTask(t.assigned_to));
     }
     return TASKS;
   }
@@ -300,7 +310,7 @@
       if (state.pic && t.assigned_to !== state.pic) return false;
       if (state.quick) {
         switch (state.quick) {
-          case 'my': if (t.assigned_to !== user.name && t.assigned_to !== (user.name || '').split(' ').pop()) return false; break;
+          case 'my': if (!isMyTask(t.assigned_to)) return false; break;
           case 'soon': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 2 && t.status !== 'completed')) return false; break; }
           case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
           case 'review': if (t.status !== 'review') return false; break;
@@ -331,7 +341,7 @@
           case 'due_week': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 7 && t.status !== 'completed')) return false; break; }
           case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
           case 'unassigned': if (t.assigned_to) return false; break;
-          case 'mine': if (t.assigned_to !== user.name && t.assigned_to !== (user.name || '').split(' ').pop()) return false; break;
+          case 'mine': if (!isMyTask(t.assigned_to)) return false; break;
           case 'standalone': if (!(t.is_standalone || !t.order_id)) return false; break;
         }
       }
@@ -342,7 +352,7 @@
   /* ---------- Render: summary ---------- */
   function renderSummary() {
     const scope = visibleTasks();
-    const my = scope.filter((t) => (t.assigned_to === user.name || t.assigned_to === (user.name || '').split(' ').pop()) && t.status !== 'completed');
+    const my = scope.filter((t) => isMyTask(t.assigned_to) && t.status !== 'completed');
     const overdue = scope.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d < 0 && t.status !== 'completed'; });
     const soon = scope.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && t.status !== 'completed'; });
     const review = scope.filter((t) => t.status === 'review');
@@ -454,7 +464,7 @@
   /* ---------- Render: my tasks ---------- */
   function renderMyTasks() {
     const scope = visibleTasks();
-    const userTasks = scope.filter((t) => t.assigned_to === user.name || t.assigned_to === (user.name || '').split(' ').pop());
+    const userTasks = scope.filter((t) => isMyTask(t.assigned_to));
     const groups = {
       new: userTasks.filter((t) => ['pending', 'received'].includes(t.status)),
       progress: userTasks.filter((t) => ['inprogress', 'review'].includes(t.status)),
@@ -773,7 +783,7 @@
         </button>
       `).join('')}</div>`;
 
-    const canEditLinks = user.role !== 'client' && (t.assigned_to === user.name || t.assigned_to === (user.name || '').split(' ').pop() || ['admin', 'account'].includes(user.role));
+    const canEditLinks = user.role !== 'client' && (isMyTask(t.assigned_to) || ['admin', 'account'].includes(user.role));
 
     const linkInput = (id, value, placeholder) => canEditLinks
       ? `<input class="input" id="${id}" type="url" value="${escapeHtml(value || '')}" placeholder="${placeholder}" />`
@@ -1577,6 +1587,6 @@
   const _origOpenDrawer = openDrawer;
   openDrawer = function (t) {
     _origOpenDrawer(t);
-    if (['admin', 'account'].includes(user.role) || t.assigned_to === user.name) attachDrawerEditButton();
+    if (['admin', 'account'].includes(user.role) || isMyTask(t.assigned_to)) attachDrawerEditButton();
   };
 })();

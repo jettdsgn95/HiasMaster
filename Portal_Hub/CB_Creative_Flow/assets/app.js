@@ -799,6 +799,19 @@
     // Derive a fallback link từ related_entity_* khi notification.link rỗng.
     // Cũng giúp old notifications (trước khi producers set field link) click được.
     function resolveNotifLink(n) {
+      // Role-aware: client KHÔNG truy cập được các trang nội bộ (database-orders /
+      // production-board / delivery-log). Mọi notif của client mở order drawer ngay
+      // trong client portal qua ?order=<MEDIA-id> thay vì điều hướng sang trang nội bộ.
+      let role = '';
+      try { role = (JSON.parse(localStorage.getItem('mh-user') || 'null') || {}).role || ''; } catch (e) {}
+      if (role === 'client') {
+        let oid = n.related_entity_id || '';
+        if (!oid && n.link) {
+          const m = n.link.match(/(?:code|order|id)=([^&]+)/);
+          if (m) oid = decodeURIComponent(m[1]);
+        }
+        return oid ? ('client-dashboard.html?order=' + encodeURIComponent(oid)) : 'client-dashboard.html';
+      }
       if (n.link) return n.link;
       const type = n.related_entity_type;
       const id = n.related_entity_id;

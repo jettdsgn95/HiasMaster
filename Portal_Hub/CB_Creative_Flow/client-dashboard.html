@@ -78,11 +78,16 @@
 
 /* Notifications */
 .notif-list{display:flex;flex-direction:column;gap:var(--space-2)}
-.notif-item{display:flex;gap:var(--space-4);padding:var(--space-4) var(--space-5);border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface)}
+.notif-item{display:flex;gap:var(--space-4);padding:var(--space-4) var(--space-5);border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:border-color .12s,background .12s}
+.notif-item:hover{border-color:var(--text-subtle)}
 .notif-item.unread{background:rgb(25 25 112 / .04);border-color:rgb(25 25 112 / .18)}
 [data-theme="dark"] .notif-item.unread{background:rgb(25 25 112 / .15)}
 .notif-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:6px}
 .notif-item:not(.unread) .notif-dot{background:var(--border)}
+.notif-ico{flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;color:var(--text-muted)}
+.notif-ico svg{width:18px;height:18px}
+.notif-ico.is-accent{color:var(--primary)}
+.notif-ico.is-danger{color:var(--red-600,#BA110F)}
 .notif-body{flex:1;min-width:0}
 .notif-title{font-size:var(--text-sm);font-weight:700;margin-bottom:2px}
 .notif-msg{font-size:var(--text-sm);color:var(--text-muted);line-height:1.4}
