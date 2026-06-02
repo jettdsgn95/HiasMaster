@@ -700,36 +700,12 @@
     }
     function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-    /* ---------- Minimal line icons cho notification (thay emoji) ----------
-       Outline SVG style Lucide đồng bộ sidebar: stroke-width 2, currentColor, rounded.
-       Màu mặc định = text phụ (#64748B-ish var(--text-muted)); accent navy cho "mới", red cho cancel/need-info. */
-    const NOTIF_ICON_PATHS = {
-      order_new:            '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
-      order_status_changed: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-      order_confirmed:      '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
-      order_needinfo:       '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
-      order_cancelled:      '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
-      task_assigned:        '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
-      task_status_changed:  '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-      task_comment:         '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-      delivery_preview:     '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
-      delivery_final:       '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
-      rating_received:      '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
-      system:               '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'
-    };
-    function notifIcon(type) {
-      const inner = NOTIF_ICON_PATHS[type] || NOTIF_ICON_PATHS.system;
-      let cls = '';
-      if (type === 'order_new' || type === 'task_assigned') cls = 'is-accent';
-      else if (type === 'order_cancelled' || type === 'order_needinfo') cls = 'is-danger';
-      return { svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`, cls };
-    }
-    // Bỏ emoji/ký hiệu dẫn đầu trong title cũ (📥 🎯 🚀 ✅ ⚠ ❌ 👀 📦 …) — icon giờ render bằng SVG.
-    function stripNotifEmoji(s) {
-      return String(s ?? '')
-        .replace(/^[\p{Extended_Pictographic}☀-➿⬀-⯿️‍\s]+/u, '')
-        .trim();
-    }
+    /* ---------- Icon thông báo: dùng chung từ assets/notif-icons.js ----------
+       SINGLE SOURCE OF TRUTH — sửa icon/màu ở `assets/notif-icons.js` là cả bell
+       (đây) lẫn client panel (client-dashboard.js) tự đồng bộ. notif-icons.js load
+       TRƯỚC app.js nên window.MH.notifIcons luôn sẵn sàng. */
+    const notifIcon = (type) => window.MH.notifIcons.get(type);
+    const stripNotifEmoji = (s) => window.MH.notifIcons.stripEmoji(s);
 
     let dropdown = null;
     let pollTimer = null;

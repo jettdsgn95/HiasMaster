@@ -177,7 +177,10 @@ No pending MVP modules. Remaining work is production integration:
 
 ## File Inventory
 
-Build total: **17 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 6 Supabase SQL migrations**.
+Build total: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · 6 Supabase SQL migrations**.
+
+New file 2026-06-02:
+- `assets/notif-icons.js` — Shared notification icon module (`window.MH.notifIcons`), single source of truth dùng bởi app.js bell + client-dashboard.js panel. Load trước app.js trên 12 page có chuông/panel.
 
 New files 2026-05-18:
 - `order-dashboard.html` — Order-level KPI dashboard
@@ -236,6 +239,7 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-06-02 | Notifications (refactor) | **Tách `assets/notif-icons.js` shared module — single source of truth cho icon thông báo**. Trước đó icon map lặp ở `app.js` + `client-dashboard.js` (rủi ro lệch). Tạo `assets/notif-icons.js` expose `window.MH.notifIcons` (`PATHS` + `get(type)→{svg,cls}` + `stripEmoji(s)`); `app.js` và `client-dashboard.js` đổi sang dùng module (xóa map cục bộ, chỉ giữ alias). Thêm `<script src="assets/notif-icons.js">` TRƯỚC `app.js` trên 12 page có chuông/panel (public pages không có chuông → không cần). Sửa icon/màu giờ chỉ 1 nơi. |
 | 2026-06-02 | Task Tracker | **Fix PIC không thấy task được giao (My Tasks lọc sai tên)**. Root cause: `production-board.js` match user↔task bằng `t.assigned_to === user.name \|\| t.assigned_to === user.name.split(' ').pop()`. Với account design `Duy Trần`, `.split(' ').pop()` lấy CHỮ CUỐI = "Trần", còn PIC lưu tên ngắn "Duy" (chữ đầu) → không bao giờ khớp → Duy không thấy task. Fix: thêm helper `isMyTask(assignedTo)` khớp khi bằng nhau HOẶC full name chứa tên PIC theo word-boundary (`startsWith(a+' ')` / `endsWith(' '+a)` / `includes(' '+a+' ')`, tránh false-positive "Duyên"); thay 6 chỗ match cũ (visibleTasks, quick 'my', quickChip 'mine', renderSummary, renderMyTasks, canEditLinks, attachDrawerEditButton). LƯU Ý workflow: task CHỈ được tạo khi bấm **Push → Production** (assigned_to = order.production_pic); gán PIC trên order mà chưa push thì chưa có task. |
 | 2026-06-02 | Client Portal + Notifications | **Fix click notification (client) không mở được khung trạng thái order**. Root cause: notif client có `link='tracking.html?code=…'` (hoặc rỗng → fallback `database-orders.html` mà client bị chặn) nên click bell dropdown không mở được status drawer trong portal. Fix: (1) `app.js resolveNotifLink` role-aware — khi `mh-user.role==='client'` → trả `client-dashboard.html?order=<related_entity_id>` (fallback parse `code=/order=/id=` từ link) thay vì điều hướng trang nội bộ. (2) `client-dashboard.js` thêm `openOrderFromQuery()` đọc `?order=` sau khi `loadClientOrdersFromStore()` xong → `switchTab('orders')` + `openOrderDrawer(id)`. (3) Tab panel: cả `.notif-item` giờ clickable (`data-action="open-order"` + cursor pointer + hover) → click bất kỳ chỗ nào trên thông báo đều mở order drawer + mark read (mọi type, kể cả cancelled). |
 | 2026-06-02 | Client Portal | **Đồng bộ icon thông báo client với internal accounts (minimal line, bỏ emoji)**. Gap: `client-dashboard.js renderNotifications` render `n.title` kèm emoji (✅🔎❌) inline, không có icon column → khác giao diện internal bell. Fix: thêm `NOTIF_ICON_PATHS` + `notifIcon(rawType)` + `stripNotifEmoji()` (copy y hệt app.js, key theo `n.raw_type` để cùng icon/màu logic: accent navy cho order_new/task_assigned, red cho order_cancelled/order_needinfo, còn lại muted). Notif item đổi `.notif-dot` → `.notif-ico` (line SVG 18px), title strip emoji. Realtime toast bỏ prefix `🔔` + strip emoji title. `client-dashboard.html` thêm CSS `.notif-ico` (+ is-accent/is-danger). Unread vẫn nhận biết qua bg tint + border (`.notif-item.unread`). |

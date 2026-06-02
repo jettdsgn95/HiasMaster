@@ -102,9 +102,9 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **17 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 7 Supabase SQL migrations**.
+Build hiện tại: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · 7 Supabase SQL migrations**.
 
-Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN).
+Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN). Shared UI module: `assets/notif-icons.js` (`window.MH.notifIcons` — single source of truth cho icon thông báo, dùng bởi bell dropdown + client panel).
 
 Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folder):
 1. [`schema.sql`](supabase/schema.sql) — 11 tables + 2 views + triggers
