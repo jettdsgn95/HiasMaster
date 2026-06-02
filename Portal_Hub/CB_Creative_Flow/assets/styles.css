@@ -1363,7 +1363,7 @@ h4 { font-size: 1.125rem; }
 .flow-steps::before {
   content: "";
   position: absolute;
-  left: 18px;
+  left: 27px; /* canh giữa step-node: a padding-left 10px + node 36px/2 = 28px (line 2px → left 27px) */
   top: 18px;
   bottom: 18px;
   width: 2px;
@@ -5044,6 +5044,11 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 /* Conditional deliverable groups */
 .deliverable-group { display: none; }
 .deliverable-group.is-active { display: block; }
+/* Ẩn field theo request_type cụ thể (vd kích thước/tỉ lệ ẩn khi chọn Chụp ảnh) */
+.is-hidden-cond { display: none !important; }
+/* Hiện field CHỈ cho 1 số request_type (vd link nội dung thô chỉ cho Slide) */
+[data-subform-show-for] { display: none; }
+[data-subform-show-for].is-cond-shown { display: block; }
 .deliverable-group .group-label {
   font-size: var(--text-xs); font-weight: 600; color: var(--text-muted);
   text-transform: uppercase; letter-spacing: 0.04em;

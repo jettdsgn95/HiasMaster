@@ -48,7 +48,7 @@
     final: 'Đã gửi final', rated: 'Đã nhận đánh giá', completed: 'Hoàn thành',
     reopened: 'Mở lại', cancelled: 'Hủy'
   };
-  const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };
+  const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };
   const CHANNEL_LABEL = { portal: 'Portal', email: 'Email', zalo: 'Zalo', drive: 'Google Drive', dm: 'Direct message', other: 'Khác' };
   const FB_CATEGORIES = [
     { key: 'quality',  label: 'Chất lượng', cls: 'is-quality' },

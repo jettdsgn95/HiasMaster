@@ -114,7 +114,9 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 5. [`rls.sql`](supabase/rls.sql) — Row-Level Security policies cho 11 bảng
 6. [`storage.sql`](supabase/storage.sql) — 3 buckets + storage.objects policies
 7. [`enable-realtime.sql`](supabase/enable-realtime.sql) — ADD TABLE notifications vào publication
-8. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
+8. [`add-shoot-location.sql`](supabase/add-shoot-location.sql) — orders/tasks.shoot_location
+9. [`add-media-pics.sql`](supabase/add-media-pics.sql) — request_type CHECK thêm `'media'` (Quay/Chụp gộp) + orders.production_pic_video / production_pic_photo (BẮT BUỘC cho order type media)
+10. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
 
 ### Order ↔ Task ↔ Delivery relationship
 

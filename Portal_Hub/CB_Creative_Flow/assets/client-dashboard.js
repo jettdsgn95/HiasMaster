@@ -566,7 +566,7 @@ function openOrderDrawer(orderId) {
         <div class="detail-row"><span class="detail-dt">Tên yêu cầu</span><span class="detail-dd">${o.name}</span></div>
         <div class="detail-row"><span class="detail-dt">Loại dịch vụ</span><span class="detail-dd">${o.type}</span></div>
         <div class="detail-row"><span class="detail-dt">Hạng mục</span><span class="detail-dd">${o.category}</span></div>
-        ${(o.request_type === 'photo' || o.request_type === 'shoot') && o.shoot_location ? `<div class="detail-row"><span class="detail-dt">Địa điểm</span><span class="detail-dd">${o.shoot_location}</span></div>` : ''}
+        ${['media', 'photo', 'shoot'].includes(o.request_type) && o.shoot_location ? `<div class="detail-row"><span class="detail-dt">Địa điểm</span><span class="detail-dd">${o.shoot_location}</span></div>` : ''}
         <div class="detail-row"><span class="detail-dt">Ngày gửi</span><span class="detail-dd">${o.date}</span></div>
         <div class="detail-row"><span class="detail-dt">Deadline</span><span class="detail-dd">${o.deadline}</span></div>
         <div class="detail-row"><span class="detail-dt">Trạng thái</span><span class="detail-dd"><span class="tb-status ${st.cls}">${st.label}</span></span></div>

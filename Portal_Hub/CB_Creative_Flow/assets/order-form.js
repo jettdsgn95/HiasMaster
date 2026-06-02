@@ -145,6 +145,16 @@
       const roles = g.getAttribute('data-subform-for').split(',').map((s) => s.trim());
       g.classList.toggle('is-active', val && roles.includes(val));
     });
+    // Ẩn field cho 1 số type cụ thể (vd: kích thước/tỉ lệ KHÔNG áp dụng cho Chụp ảnh).
+    document.querySelectorAll('[data-subform-hide-for]').forEach((g) => {
+      const roles = g.getAttribute('data-subform-hide-for').split(',').map((s) => s.trim());
+      g.classList.toggle('is-hidden-cond', val && roles.includes(val));
+    });
+    // Hiện field CHỈ cho 1 số type (vd: link nội dung thô chỉ cho Slide).
+    document.querySelectorAll('[data-subform-show-for]').forEach((g) => {
+      const roles = g.getAttribute('data-subform-show-for').split(',').map((s) => s.trim());
+      g.classList.toggle('is-cond-shown', val && roles.includes(val));
+    });
     // Uncheck deliverables that are now hidden
     document.querySelectorAll('.deliverable-group:not(.is-active) input[type="checkbox"]').forEach((cb) => (cb.checked = false));
   }
@@ -301,6 +311,7 @@
     data.target_audience = [...document.querySelectorAll('#target_audience input:checked')].map((i) => i.value);
     data.usage_channels = [...document.querySelectorAll('#usage_channels input:checked')].map((i) => i.value);
     data.deliverable_type = [...document.querySelectorAll('input[name="deliverable_type"]:checked')].map((i) => i.value);
+    data.media_service = [...document.querySelectorAll('input[name="media_service"]:checked')].map((i) => i.value);
     return data;
   }
   function saveDraft(announce) {
@@ -419,6 +430,13 @@
       const sec = document.getElementById('sec-b');
       if (sec && !firstInvalid) firstInvalid = sec;
     }
+    // Media (Quay / Chụp): bắt buộc chọn ít nhất 1 dịch vụ
+    const reqType = form.querySelector('input[name="request_type"]:checked');
+    if (reqType && reqType.value === 'media' && !form.querySelector('input[name="media_service"]:checked')) {
+      showGroupError('media_service');
+      const sec = document.getElementById('sec-c');
+      if (sec && !firstInvalid) firstInvalid = sec;
+    }
 
     if (firstInvalid) {
       firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -439,7 +457,8 @@
 
   const REQ_TYPE_LABEL = {
     design: 'Thiết kế / POSM', digital: 'Digital Design', video: 'Video Editing',
-    motion: 'Motion Graphic', shoot: 'Quay', photo: 'Chụp ảnh',
+    motion: 'Motion Graphic', media: 'Quay / Chụp ảnh',
+    shoot: 'Quay', photo: 'Chụp ảnh', // giữ cho order cũ
     ads: 'Ads / Post Basic', slide: 'Slide / Proposal', other: 'Khác'
   };
   const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
@@ -449,6 +468,8 @@
     const audience = (d.target_audience || []).map((v) => `<span class="chip-mini">${v}</span>`).join('') || '<em class="muted">—</em>';
     const channels = (d.usage_channels || []).map((v) => `<span class="chip-mini">${v}</span>`).join('') || '<em class="muted">—</em>';
     const deliverables = (d.deliverable_type || []).map((v) => `<span class="chip-mini">${v}</span>`).join('') || '<em class="muted">—</em>';
+    const mediaSvcArr = Array.isArray(d.media_service) ? d.media_service : (d.media_service ? [d.media_service] : []);
+    const mediaServices = mediaSvcArr.map((v) => `<span class="chip-mini">${v}</span>`).join('') || '<em class="muted">—</em>';
     const fileList = [...files.values()].map((f) => `<span class="chip-mini">${f.name} <small class="muted">(${fmtSize(f.size)})</small></span>`).join('') || '<em class="muted">Chưa đính kèm file</em>';
     const val = (v) => v && String(v).trim() ? v : '<em class="muted">—</em>';
 
@@ -470,26 +491,41 @@
           <dt>Mục đích</dt><dd>${val(d.project_purpose)}</dd>
           <dt>Đối tượng</dt><dd>${audience}</dd>
           <dt>Kênh sử dụng</dt><dd>${channels}</dd>
-          <dt>Ngày sử dụng</dt><dd>${val(d.actual_use_date)}</dd>
         </dl>
       </div>
       <div class="preview-block">
         <h5>C. Loại yêu cầu &amp; hạng mục</h5>
         <dl>
           <dt>Loại yêu cầu</dt><dd>${val(REQ_TYPE_LABEL[d.request_type] || d.request_type)}</dd>
+          ${d.request_type === 'media' ? `
+          <dt>Dịch vụ</dt><dd>${mediaServices}</dd>
+          <dt>Ngày / giờ</dt><dd>${val(d.media_date)}${d.media_time ? ' · ' + d.media_time : ''}</dd>
+          <dt>Địa điểm</dt><dd>${val(d.media_location)}</dd>
+          <dt>Nội dung</dt><dd>${val(d.media_content)}</dd>
+          ` : ['video', 'motion'].includes(d.request_type) ? `
           <dt>Hạng mục</dt><dd>${deliverables}</dd>
+          <dt>Tỉ lệ / thời lượng</dt><dd>${val(d.video_ratio)}${d.video_duration ? ' · ' + d.video_duration : ''}</dd>
+          <dt>Link kịch bản</dt><dd>${val(d.script_link)}</dd>
+          <dt>Link source</dt><dd>${val(d.footage_link)}</dd>
+          ` : `
+          <dt>Hạng mục</dt><dd>${deliverables}</dd>
+          ${d.request_type === 'slide' ? '' : `
           <dt>Kích thước / tỉ lệ</dt><dd>${val(d.size_ratio)}</dd>
           <dt>Kích thước cụ thể</dt><dd>${val(d.custom_size)}</dd>
+          `}
+          `}
         </dl>
       </div>
       <div class="preview-block">
         <h5>D. Nội dung &amp; định hướng</h5>
         <dl>
-          <dt>Nội dung</dt><dd>${val(d.content_brief)}</dd>
+          <dt>${d.request_type === 'slide' ? 'Link nội dung thô' : 'Nội dung'}</dt><dd>${val(d.request_type === 'slide' ? d.slide_source_link : d.content_brief)}</dd>
+          ${d.request_type === 'slide' ? '' : `
           <dt>Headline</dt><dd>${val(d.main_headline)}</dd>
           <dt>CTA</dt><dd>${val(d.cta)}</dd>
+          `}
           <dt>Định hướng</dt><dd>${val(d.creative_direction)}</dd>
-          <dt>Wording</dt><dd>${d.wording_required === 'yes' ? 'Cần hỗ trợ wording' : (d.wording_required === 'no' ? 'Dùng đúng nội dung' : '—')}</dd>
+          ${d.request_type === 'slide' ? '' : `<dt>Wording</dt><dd>${d.wording_required === 'yes' ? 'Cần hỗ trợ wording' : (d.wording_required === 'no' ? 'Dùng đúng nội dung' : '—')}</dd>`}
           <dt>Link tham khảo</dt><dd>${val(d.reference_link)}</dd>
         </dl>
       </div>
@@ -624,10 +660,41 @@
           created_at: new Date().toISOString(),
           last_updated: new Date().toISOString()
         };
-        // Chỉ pass shoot_location khi photo/shoot — backward-compat với DB chưa migrate cột này.
-        const locVal = orderPayload.shooting_location || orderPayload.photo_location;
-        if ((row.request_type === 'photo' || row.request_type === 'shoot') && locVal) {
+        // Pass shoot_location cho media/photo/shoot — backward-compat với DB chưa migrate cột này.
+        const locVal = orderPayload.media_location || orderPayload.shooting_location || orderPayload.photo_location;
+        if (['media', 'photo', 'shoot'].includes(row.request_type) && locVal) {
           row.shoot_location = locVal;
+        }
+        // Media: gói thông tin buổi Quay/Chụp vào content_brief (DB chưa có cột riêng cho
+        // ngày/giờ/onsite) để Account + PIC thấy đầy đủ. Địa điểm vẫn lưu riêng ở shoot_location.
+        if (row.request_type === 'media') {
+          const svcArr = Array.isArray(orderPayload.media_service) ? orderPayload.media_service : (orderPayload.media_service ? [orderPayload.media_service] : []);
+          const parts = [];
+          if (svcArr.length) parts.push('Dịch vụ: ' + svcArr.join(' + '));
+          if (orderPayload.media_date) parts.push('Ngày: ' + orderPayload.media_date);
+          if (orderPayload.media_time) parts.push('Giờ: ' + orderPayload.media_time);
+          if (orderPayload.media_location) parts.push('Địa điểm: ' + orderPayload.media_location);
+          if (orderPayload.onsite_contact) parts.push('Onsite: ' + orderPayload.onsite_contact + (orderPayload.onsite_phone ? ' (' + orderPayload.onsite_phone + ')' : ''));
+          if (orderPayload.media_content) parts.push('Nội dung: ' + orderPayload.media_content);
+          if (parts.length) {
+            const summary = '[Buổi Quay / Chụp] ' + parts.join(' · ');
+            row.content_brief = row.content_brief ? (summary + '\n\n' + row.content_brief) : summary;
+          }
+        }
+        // Video / Motion: gói link kịch bản + source vào content_brief để PIC thấy.
+        if (['video', 'motion'].includes(row.request_type)) {
+          const vparts = [];
+          if (orderPayload.script_link) vparts.push('Kịch bản: ' + orderPayload.script_link);
+          if (orderPayload.footage_link) vparts.push('Source: ' + orderPayload.footage_link);
+          if (vparts.length) {
+            const vsummary = '[Video] ' + vparts.join(' · ');
+            row.content_brief = row.content_brief ? (vsummary + '\n\n' + row.content_brief) : vsummary;
+          }
+        }
+        // Slide: nội dung là link thô (Google Doc/Slide) thay vì text → đưa vào content_brief.
+        if (row.request_type === 'slide' && orderPayload.slide_source_link) {
+          const slideNote = 'Link nội dung thô (Doc / Slide): ' + orderPayload.slide_source_link;
+          row.content_brief = row.content_brief ? (slideNote + '\n\n' + row.content_brief) : slideNote;
         }
         await window.MH.store.orders.create(row);
         dbPersisted = true;

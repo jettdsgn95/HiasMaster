@@ -230,12 +230,6 @@
                 <span class="error" data-error-for="usage_channels">Vui lòng chọn ít nhất 1 kênh.</span>
               </div>
             </div>
-
-            <div class="field" style="max-width: 320px">
-              <label class="label" for="actual_use_date">Ngày sử dụng thực tế</label>
-              <input class="input" id="actual_use_date" name="actual_use_date" type="date" />
-              <span class="helper">Ngày sự kiện / chạy chương trình (nếu có).</span>
-            </div>
           </div>
         </section>
 
@@ -271,14 +265,9 @@
                   <span class="tile-body"><b>Motion Graphic</b><span>Logo motion, animation</span></span>
                 </label>
                 <label class="service-tile">
-                  <input type="radio" name="request_type" value="shoot" />
-                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
-                  <span class="tile-body"><b>Quay</b><span>Sự kiện, lớp học, sản phẩm</span></span>
-                </label>
-                <label class="service-tile">
-                  <input type="radio" name="request_type" value="photo" />
+                  <input type="radio" name="request_type" value="media" />
                   <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-                  <span class="tile-body"><b>Chụp ảnh</b><span>Sự kiện, sản phẩm, chân dung</span></span>
+                  <span class="tile-body"><b>Quay / Chụp ảnh</b><span>Sự kiện, ngoại khóa, sản phẩm</span></span>
                 </label>
                 <label class="service-tile">
                   <input type="radio" name="request_type" value="ads" />
@@ -300,7 +289,7 @@
             </div>
 
             <!-- Deliverables — visible per request type -->
-            <div class="field">
+            <div class="field" data-subform-hide-for="media">
               <label class="label">Hạng mục cần sản xuất</label>
 
               <div class="deliverable-group" data-deliverable-for="design,digital">
@@ -339,8 +328,8 @@
                 </div>
               </div>
 
-              <div class="deliverable-group" data-deliverable-for="shoot">
-                <div class="group-label">Quay</div>
+              <div class="deliverable-group" data-deliverable-for="media">
+                <div class="group-label">Quay video</div>
                 <div class="deliverable-grid">
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay sự kiện" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Quay sự kiện</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Quay lớp học" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Quay lớp học</label>
@@ -351,14 +340,14 @@
                 </div>
               </div>
 
-              <div class="deliverable-group" data-deliverable-for="photo">
+              <div class="deliverable-group" data-deliverable-for="media">
                 <div class="group-label">Chụp ảnh</div>
                 <div class="deliverable-grid">
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp sự kiện" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp sự kiện</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp lớp học" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp lớp học</label>
-                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp chân dung" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chân dung</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Hoạt động ngoại khóa" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Hoạt động ngoại khóa</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp cơ sở" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp cơ sở</label>
-                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp sản phẩm" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp sản phẩm</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Chụp Studio/Photoshoot" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Chụp Studio/Photoshoot</label>
                 </div>
               </div>
 
@@ -375,7 +364,7 @@
               </div>
             </div>
 
-            <div class="grid-2">
+            <div class="grid-2" data-subform-hide-for="media,video,motion,slide">
               <div class="field">
                 <label class="label" for="size_ratio">Kích thước / Tỉ lệ</label>
                 <select class="select" id="size_ratio" name="size_ratio">
@@ -433,85 +422,64 @@
               </div>
               <div class="grid-2 mt-4">
                 <div class="field">
-                  <label class="label" for="footage_link">Link footage Drive</label>
-                  <input class="input" id="footage_link" name="footage_link" type="url" placeholder="https://drive.google.com/..." />
+                  <label class="label" for="script_link">Link kịch bản <span class="req">*</span></label>
+                  <input class="input" id="script_link" name="script_link" type="url" placeholder="https://docs.google.com/... (kịch bản / storyboard)" data-conditional-req />
                 </div>
                 <div class="field">
-                  <label class="label">Yêu cầu khác</label>
-                  <div class="row" style="gap: var(--space-3); flex-wrap: wrap">
-                    <label class="checkbox"><input type="checkbox" name="subtitle_required" /><span class="checkbox-text">Subtitle</span></label>
-                    <label class="checkbox"><input type="checkbox" name="has_script" /><span class="checkbox-text">Đã có kịch bản</span></label>
-                  </div>
+                  <label class="label" for="footage_link">Link source</label>
+                  <input class="input" id="footage_link" name="footage_link" type="url" placeholder="https://drive.google.com/... (footage / nguyên liệu)" />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="label">Yêu cầu khác</label>
+                <div class="row" style="gap: var(--space-3); flex-wrap: wrap">
+                  <label class="checkbox"><input type="checkbox" name="subtitle_required" /><span class="checkbox-text">Subtitle</span></label>
                 </div>
               </div>
             </div>
 
             <!-- Sub-form: Quay -->
-            <div class="sub-form" data-subform-for="shoot">
-              <div class="sub-head">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                Thông tin buổi quay
-                <span class="sub-badge">Quay</span>
-              </div>
-              <div class="grid-2">
-                <div class="field">
-                  <label class="label" for="shooting_date">Ngày quay mong muốn <span class="req">*</span></label>
-                  <input class="input" id="shooting_date" name="shooting_date" type="date" data-conditional-req />
-                </div>
-                <div class="field">
-                  <label class="label" for="shooting_time">Thời gian quay <span class="req">*</span></label>
-                  <input class="input" id="shooting_time" name="shooting_time" type="text" placeholder="VD: 9:00 — 12:00" data-conditional-req />
-                </div>
-              </div>
-              <div class="field mt-4">
-                <label class="label" for="shooting_location">Địa điểm quay <span class="req">*</span></label>
-                <input class="input" id="shooting_location" name="shooting_location" type="text" placeholder="VD: CB Mekong, sảnh chính" data-conditional-req />
-              </div>
-              <div class="field mt-4">
-                <label class="label" for="shooting_content">Nội dung cần quay</label>
-                <textarea class="textarea" id="shooting_content" name="shooting_content" placeholder="Mô tả các phân cảnh / shot list..."></textarea>
-              </div>
-              <div class="grid-2 mt-4">
-                <div class="field">
-                  <label class="label" for="onsite_contact_shoot">Người liên hệ onsite <span class="req">*</span></label>
-                  <input class="input" id="onsite_contact_shoot" name="onsite_contact" type="text" placeholder="Họ tên người đón team" data-conditional-req />
-                </div>
-                <div class="field">
-                  <label class="label" for="onsite_phone_shoot">SĐT onsite <span class="req">*</span></label>
-                  <input class="input" id="onsite_phone_shoot" name="onsite_phone" type="tel" placeholder="Số liên hệ tại địa điểm" data-conditional-req />
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-form: Photo -->
-            <div class="sub-form" data-subform-for="photo">
+            <div class="sub-form" data-subform-for="media">
               <div class="sub-head">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Thông tin buổi chụp
-                <span class="sub-badge">Chụp ảnh</span>
+                Thông tin buổi Quay / Chụp
+                <span class="sub-badge">Quay / Chụp ảnh</span>
               </div>
-              <div class="grid-2">
-                <div class="field">
-                  <label class="label" for="photo_date">Ngày chụp mong muốn <span class="req">*</span></label>
-                  <input class="input" id="photo_date" name="photo_date" type="date" data-conditional-req />
+              <div class="field">
+                <label class="label">Dịch vụ tại buổi <span class="req">*</span></label>
+                <div class="row" style="gap: var(--space-4); flex-wrap: wrap">
+                  <label class="checkbox"><input type="checkbox" name="media_service" value="Quay" /><span class="checkbox-text">Quay video</span></label>
+                  <label class="checkbox"><input type="checkbox" name="media_service" value="Chụp" /><span class="checkbox-text">Chụp ảnh</span></label>
                 </div>
-                <div class="field">
-                  <label class="label" for="photo_time">Thời gian chụp <span class="req">*</span></label>
-                  <input class="input" id="photo_time" name="photo_time" type="text" placeholder="VD: 9:00 — 11:30" data-conditional-req />
-                </div>
-              </div>
-              <div class="field mt-4">
-                <label class="label" for="photo_location">Địa điểm chụp <span class="req">*</span></label>
-                <input class="input" id="photo_location" name="photo_location" type="text" placeholder="VD: CB Cần Thơ, phòng học A2" data-conditional-req />
+                <span class="helper">Sự kiện / ngoại khóa thường cần cả hai — tick mục cần thực hiện.</span>
+                <span class="error" data-error-for="media_service">Vui lòng chọn ít nhất 1 dịch vụ (Quay / Chụp).</span>
               </div>
               <div class="grid-2 mt-4">
                 <div class="field">
-                  <label class="label" for="photo_quantity">Số lượng ảnh mong muốn</label>
-                  <input class="input" id="photo_quantity" name="photo_quantity" type="number" min="1" placeholder="VD: 50" />
+                  <label class="label" for="media_date">Ngày Quay / Chụp <span class="req">*</span></label>
+                  <input class="input" id="media_date" name="media_date" type="date" data-conditional-req />
                 </div>
                 <div class="field">
-                  <label class="label" for="onsite_contact_photo">Người liên hệ onsite <span class="req">*</span></label>
-                  <input class="input" id="onsite_contact_photo" name="onsite_contact_photo" type="text" placeholder="Họ tên người đón team" data-conditional-req />
+                  <label class="label" for="media_time">Thời gian <span class="req">*</span></label>
+                  <input class="input" id="media_time" name="media_time" type="text" placeholder="VD: 9:00 — 11:30" data-conditional-req />
+                </div>
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="media_location">Địa điểm <span class="req">*</span></label>
+                <input class="input" id="media_location" name="media_location" type="text" placeholder="VD: Trường TH Trần Hưng Đạo, CB Mekong" data-conditional-req />
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="media_content">Nội dung cần Quay / Chụp</label>
+                <textarea class="textarea" id="media_content" name="media_content" placeholder="Mô tả phân cảnh / shot list, số lượng ảnh / thời lượng video mong muốn..."></textarea>
+              </div>
+              <div class="grid-2 mt-4">
+                <div class="field">
+                  <label class="label" for="onsite_contact_media">Người liên hệ onsite <span class="req">*</span></label>
+                  <input class="input" id="onsite_contact_media" name="onsite_contact" type="text" placeholder="Họ tên người đón team" data-conditional-req />
+                </div>
+                <div class="field">
+                  <label class="label" for="onsite_phone_media">SĐT onsite <span class="req">*</span></label>
+                  <input class="input" id="onsite_phone_media" name="onsite_phone" type="tel" placeholder="Số liên hệ tại địa điểm" data-conditional-req />
                 </div>
               </div>
             </div>
@@ -555,13 +523,18 @@
             <div><h2>Nội dung &amp; định hướng sáng tạo</h2><p>Brief càng cụ thể, team càng ít phải hỏi lại.</p></div>
           </div>
           <div class="stack-lg">
-            <div class="field">
+            <div class="field" data-subform-hide-for="slide">
               <label class="label" for="content_brief">Nội dung cần thể hiện <span class="req">*</span></label>
               <textarea class="textarea" id="content_brief" name="content_brief" required placeholder="Headline, thông tin phụ, thời gian, địa điểm, ưu đãi, CTA, hotline, website, logo / đơn vị đồng hành, nội dung bắt buộc..."></textarea>
               <span class="helper">Có thể paste từ Word / Notion. Hoặc dùng file đính kèm ở bước 5.</span>
               <span class="error">Vui lòng nhập nội dung hoặc đính kèm file brief.</span>
             </div>
-            <div class="grid-2">
+            <div class="field" data-subform-show-for="slide">
+              <label class="label" for="slide_source_link">Link nội dung thô <span class="req">*</span></label>
+              <input class="input" id="slide_source_link" name="slide_source_link" type="url" placeholder="https://docs.google.com/..." data-conditional-req />
+              <span class="helper">Slide thường làm từ file Word/PPT thô — thả link Google Doc / Google Slide để team tiếp nhận.</span>
+            </div>
+            <div class="grid-2" data-subform-hide-for="slide">
               <div class="field">
                 <label class="label" for="main_headline">Headline chính</label>
                 <input class="input" id="main_headline" name="main_headline" type="text" placeholder="Tùy chọn" />
@@ -571,7 +544,7 @@
                 <input class="input" id="cta" name="cta" type="text" placeholder="VD: Đăng ký ngay" />
               </div>
             </div>
-            <div class="field">
+            <div class="field" data-subform-hide-for="slide">
               <label class="label" for="mandatory_info">Thông tin bắt buộc</label>
               <textarea class="textarea" id="mandatory_info" name="mandatory_info" placeholder="Hotline, website, địa điểm, logo đồng hành..." style="min-height:80px"></textarea>
             </div>
@@ -586,7 +559,7 @@
                 <input class="input" id="reference_link" name="reference_link" type="url" placeholder="https://..." />
                 <span class="helper">Link mẫu / inspiration (Behance, Pinterest...).</span>
               </div>
-              <div class="field">
+              <div class="field" data-subform-hide-for="slide">
                 <label class="label">Có cần hỗ trợ wording? <span class="req">*</span></label>
                 <div class="chips" role="radiogroup" id="wording_chips">
                   <label class="chip"><input type="radio" name="wording_required" value="yes" hidden required /> Có — Cần wording lại</label>

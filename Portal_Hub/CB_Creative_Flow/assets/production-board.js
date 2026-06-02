@@ -95,7 +95,7 @@
   };
   const TYPE_LABEL = {
     design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion',
-    shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide'
+    media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide'
   };
   const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
 

@@ -54,7 +54,7 @@
   /* ---------- Mock data ---------- */
   const TYPE_LABEL = {
     design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion',
-    shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide / Proposal', other: 'Khác'
+    media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide / Proposal', other: 'Khác'
   };
   const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
 
@@ -459,8 +459,8 @@
       { ok: !!o.project_purpose, label: 'Có mục đích sử dụng rõ ràng' },
       { ok: o.target_audience && o.target_audience.length > 0, label: 'Có đối tượng mục tiêu' },
       { ok: !!o.request_type, label: 'Có loại yêu cầu' },
-      { ok: o.deliverable_type && o.deliverable_type.length > 0, label: 'Có hạng mục cụ thể' },
-      { ok: !!o.size_ratio, label: 'Có kích thước / tỉ lệ' },
+      { ok: o.request_type === 'media' ? true : (o.deliverable_type && o.deliverable_type.length > 0), label: o.request_type === 'media' ? 'Có dịch vụ Quay / Chụp' : 'Có hạng mục cụ thể' },
+      { ok: o.request_type === 'media' ? !!o.shoot_location : !!o.size_ratio, label: o.request_type === 'media' ? 'Có địa điểm buổi chụp' : 'Có kích thước / tỉ lệ' },
       { ok: !!o.content_brief, label: 'Có nội dung cần thể hiện' },
       { ok: !!o.creative_direction, label: 'Có định hướng thiết kế / reference' },
       { ok: !!(o.file_brief_url || o.source_link), label: 'Có file brief / source link' },
@@ -476,10 +476,10 @@
   function buildPushCheck(o) {
     const checks = [
       { ok: o.account_status === 'confirmed', label: 'Brief đã được xác nhận' },
-      { ok: !!o.production_pic, label: 'Đã gán P.I.C sản xuất' },
+      { ok: o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic, label: o.request_type === 'media' ? 'Đã gán PIC Quay/Chụp' : 'Đã gán P.I.C sản xuất' },
       { ok: !!o.internal_deadline, label: 'Đã set Internal Deadline' },
       { ok: o.production_status !== 'cancelled' && o.account_status !== 'rejected', label: 'Order chưa bị hủy' },
-      { ok: o.deliverable_type && o.deliverable_type.length > 0, label: 'Có hạng mục cụ thể' }
+      { ok: o.request_type === 'media' ? true : (o.deliverable_type && o.deliverable_type.length > 0), label: o.request_type === 'media' ? 'Hạng mục theo dịch vụ Quay / Chụp' : 'Có hạng mục cụ thể' }
     ];
     const allOk = checks.every((c) => c.ok);
     return `<div class="push-check ${allOk ? '' : 'is-fail'}">
@@ -515,8 +515,10 @@
     if (o.account_status === 'needinfo') {
       return { title: 'Chờ client bổ sung', detail: 'Theo dõi phản hồi của client trước khi xác nhận brief.' };
     }
-    if (o.account_status === 'confirmed' && !o.production_pic) {
-      return { title: 'Gán Production PIC', detail: 'Chọn người phụ trách sản xuất để sẵn sàng tạo task.' };
+    if (o.account_status === 'confirmed' && (o.request_type === 'media' ? (!o.production_pic_video && !o.production_pic_photo) : !o.production_pic)) {
+      return o.request_type === 'media'
+        ? { title: 'Gán PIC Quay / Chụp', detail: 'Chọn PIC cho dịch vụ cần thực hiện (Quay và/hoặc Chụp) để sẵn sàng tạo task.' }
+        : { title: 'Gán Production PIC', detail: 'Chọn người phụ trách sản xuất để sẵn sàng tạo task.' };
     }
     if (o.account_status === 'confirmed' && !o.internal_deadline) {
       return { title: 'Set Internal Deadline', detail: 'Cần deadline nội bộ trước khi push sang Task Tracker.' };
@@ -603,7 +605,7 @@
           <dt>Loại yêu cầu</dt><dd>${v(TYPE_LABEL[o.request_type])}</dd>
           <dt>Hạng mục</dt><dd>${safeJoin(o.deliverable_type)}</dd>
           <dt>Kích thước</dt><dd>${v(o.size_ratio)}</dd>
-          ${(o.request_type === 'photo' || o.request_type === 'shoot') ? `<dt>Địa điểm</dt><dd>${v(o.shoot_location)}</dd>` : ''}
+          ${['media', 'photo', 'shoot'].includes(o.request_type) ? `<dt>Địa điểm</dt><dd>${v(o.shoot_location)}</dd>` : ''}
           <dt>Nội dung</dt><dd>${v(o.content_brief)}</dd>
           <dt>Định hướng</dt><dd>${v(o.creative_direction)}</dd>
           <dt>Wording</dt><dd>${o.wording_required ? 'Cần wording' : 'Dùng đúng nội dung'}</dd>
@@ -628,6 +630,22 @@
             ${['Hậu', 'Mai Phương', 'Đức Anh'].map((p) => `<option ${o.account_pic === p ? 'selected' : ''}>${p}</option>`).join('')}
           </select>
         </div>
+        ${o.request_type === 'media' ? `
+        <div class="edit-row">
+          <label>PIC Quay</label>
+          <select class="select" id="edit-prod-pic-video">
+            <option value="">— Chưa gán —</option>
+            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic_video === p ? 'selected' : ''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        <div class="edit-row">
+          <label>PIC Chụp</label>
+          <select class="select" id="edit-prod-pic-photo">
+            <option value="">— Chưa gán —</option>
+            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic_photo === p ? 'selected' : ''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        ` : `
         <div class="edit-row">
           <label>Production PIC</label>
           <select class="select" id="edit-prod-pic">
@@ -635,6 +653,7 @@
             ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic === p ? 'selected' : ''}>${p}</option>`).join('')}
           </select>
         </div>
+        `}
         <div class="edit-row">
           <label>Priority</label>
           <select class="select" id="edit-priority">
@@ -731,12 +750,12 @@
         params.set('createTask', '1');
         params.set('order_id', currentOrder.order_id || '');
         params.set('project_name', currentOrder.project_name || '');
-        params.set('task_type', currentOrder.request_type || 'design');
+        params.set('task_type', currentOrder.request_type === 'media' ? 'shoot' : (currentOrder.request_type || 'design'));
         params.set('priority', currentOrder.priority || 'normal');
         if (currentOrder.internal_deadline) params.set('internal_deadline', currentOrder.internal_deadline);
         if (currentOrder.production_pic) params.set('production_pic', currentOrder.production_pic);
         if (currentOrder.content_brief) params.set('content', currentOrder.content_brief);
-        if (currentOrder.shoot_location && (currentOrder.request_type === 'photo' || currentOrder.request_type === 'shoot')) {
+        if (currentOrder.shoot_location && ['media', 'photo', 'shoot'].includes(currentOrder.request_type)) {
           params.set('shoot_location', currentOrder.shoot_location);
         }
         location.href = 'production-board.html?' + params.toString();
@@ -745,9 +764,15 @@
 
     // Wire save button
     document.getElementById('save-internal').addEventListener('click', () => {
+      const isMedia = currentOrder.request_type === 'media';
       const newStatus = document.getElementById('edit-account-status').value;
       const newAcctPic = document.getElementById('edit-account-pic').value || null;
-      const newProdPic = document.getElementById('edit-prod-pic').value || null;
+      const elPic = document.getElementById('edit-prod-pic');
+      const elPicV = document.getElementById('edit-prod-pic-video');
+      const elPicP = document.getElementById('edit-prod-pic-photo');
+      const newProdPic = elPic ? (elPic.value || null) : (currentOrder.production_pic || null);
+      const newProdPicVideo = isMedia ? (elPicV ? (elPicV.value || null) : null) : (currentOrder.production_pic_video || null);
+      const newProdPicPhoto = isMedia ? (elPicP ? (elPicP.value || null) : null) : (currentOrder.production_pic_photo || null);
       const newPriority = document.getElementById('edit-priority').value;
       const newDeadline = document.getElementById('edit-internal-deadline').value.replace('T', ' ');
       const newProdStatus = document.getElementById('edit-prod-status').value;
@@ -757,6 +782,8 @@
         account_status: newStatus,
         account_pic: newAcctPic,
         production_pic: newProdPic,
+        production_pic_video: newProdPicVideo,
+        production_pic_photo: newProdPicPhoto,
         priority: newPriority,
         internal_deadline: newDeadline || null,
         production_status: newProdStatus,
@@ -764,7 +791,7 @@
         last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ')
       });
       // Phase 1: write-through Supabase
-      persistOrder(currentOrder.order_id, {
+      const patch = {
         account_status: newStatus,
         account_pic: newAcctPic,
         production_pic: newProdPic,
@@ -773,7 +800,10 @@
         production_status: newProdStatus,
         internal_note: newNote,
         last_updated: new Date().toISOString()
-      });
+      };
+      // 2 PIC cho media — cần cột production_pic_video/photo (chạy supabase/add-media-pics.sql)
+      if (isMedia) { patch.production_pic_video = newProdPicVideo; patch.production_pic_photo = newProdPicPhoto; }
+      persistOrder(currentOrder.order_id, patch);
       window.MH.toast({ type: 'success', title: 'Đã lưu', message: 'Cập nhật Internal Management cho ' + currentOrder.order_id });
       render();
       openDrawer(currentOrder); // refresh drawer view
@@ -809,9 +839,9 @@
     const isConfirmed = o.account_status === 'confirmed';
     const isNeedinfo  = o.account_status === 'needinfo';
     const isChecking  = o.account_status === 'checking';
-    const hasPic      = !!o.production_pic;
+    const hasPic      = o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
     const hasDeadline = !!o.internal_deadline;
-    const hasDeliv    = o.deliverable_type && o.deliverable_type.length > 0;
+    const hasDeliv    = o.request_type === 'media' ? true : (o.deliverable_type && o.deliverable_type.length > 0);
     const readyToPush = isConfirmed && hasPic && hasDeadline && hasDeliv && !isCancelled;
 
     // Cancelled state — disable mọi action, hide hint
@@ -1090,16 +1120,18 @@
 
   async function pushToProduction(o) {
     if (!o) return;
+    const isMedia = o.request_type === 'media';
+    const hasPic = isMedia ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
     const checks = {
       brief: o.account_status === 'confirmed',
-      pic: !!o.production_pic,
+      pic: hasPic,
       deadline: !!o.internal_deadline,
       notCancelled: o.production_status !== 'cancelled' && o.account_status !== 'rejected',
-      deliverable: o.deliverable_type && o.deliverable_type.length > 0
+      deliverable: o.request_type === 'media' ? true : (o.deliverable_type && o.deliverable_type.length > 0)
     };
     const missing = [];
     if (!checks.brief) missing.push('xác nhận brief');
-    if (!checks.pic) missing.push('gán P.I.C');
+    if (!checks.pic) missing.push(isMedia ? 'gán PIC Quay hoặc Chụp' : 'gán P.I.C');
     if (!checks.deadline) missing.push('Internal Deadline');
     if (!checks.notCancelled) missing.push('order chưa bị hủy');
     if (!checks.deliverable) missing.push('hạng mục');
@@ -1130,56 +1162,69 @@
       } catch (e) { console.warn('[push] idempotent check failed:', e); }
     }
 
-    // Tạo task mới từ order
-    const taskId = await generateNextTaskId();
-    const taskPayload = {
-      task_id: taskId,
-      order_id: o.order_id,
-      is_standalone: false,
-      project_name: o.project_name || 'Untitled',
-      task_type: o.request_type || 'design',
-      content: o.content_brief || '',
-      priority: o.priority || 'normal',
-      assigned_to: o.production_pic,
-      status: 'received',
-      progress: 20,
-      internal_deadline: o.internal_deadline ? (typeof o.internal_deadline === 'string' ? new Date(o.internal_deadline.replace(' ', 'T')).toISOString() : new Date(o.internal_deadline).toISOString()) : null,
-      link_drive: o.source_link || '',
-      preview_link: '',
-      final_link: '',
-      created_at: new Date().toISOString(),
-      last_update: new Date().toISOString()
-    };
-    // Chỉ pass shoot_location key khi photo/shoot — backward-compat với DB chưa migrate cột này.
-    if ((o.request_type === 'photo' || o.request_type === 'shoot') && o.shoot_location) {
-      taskPayload.shoot_location = o.shoot_location;
+    // Plan task: media → tách 2 task (Quay/Chụp) theo PIC đã gán; còn lại 1 task.
+    const deliverables = o.deliverable_type || [];
+    const isQuayItem = (d) => /^quay/i.test(String(d).trim());
+    let plan;
+    if (isMedia) {
+      plan = [];
+      if (o.production_pic_video) plan.push({ pic: o.production_pic_video, taskType: 'shoot', label: 'Quay', items: deliverables.filter(isQuayItem) });
+      if (o.production_pic_photo) plan.push({ pic: o.production_pic_photo, taskType: 'photo', label: 'Chụp', items: deliverables.filter((d) => !isQuayItem(d)) });
+    } else {
+      plan = [{ pic: o.production_pic, taskType: o.request_type || 'design', label: '', items: deliverables }];
     }
+
+    const deadlineISO = o.internal_deadline ? (typeof o.internal_deadline === 'string' ? new Date(o.internal_deadline.replace(' ', 'T')).toISOString() : new Date(o.internal_deadline).toISOString()) : null;
+    const createdTaskIds = [];
 
     if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
       try {
-        // INSERT task
-        await window.MH.store.tasks.upsert(taskPayload);
-
-        // INSERT notification cho PIC (lookup user_id qua name)
-        const picUserId = await window.MH.store.notifications.findUserIdByName(o.production_pic);
-        if (picUserId) {
-          await window.MH.store.notifications.create({
-            user_id: picUserId,
-            type: 'task_assigned',
-            title: '🎯 Task mới được giao',
-            message: `${taskId} · ${taskPayload.project_name} · ${TYPE_LABEL[taskPayload.task_type] || taskPayload.task_type} · Deadline: ${o.internal_deadline || '—'}`,
-            link: 'production-board.html?id=' + taskId,
-            related_entity_type: 'tasks',
-            related_entity_id: taskId
-          });
-        } else {
-          console.warn('[push] không tìm thấy user_id cho PIC:', o.production_pic);
+        for (const part of plan) {
+          const taskId = await generateNextTaskId();
+          const taskPayload = {
+            task_id: taskId,
+            order_id: o.order_id,
+            is_standalone: false,
+            project_name: (o.project_name || 'Untitled') + (part.label ? ' — ' + part.label : ''),
+            task_type: part.taskType,
+            content: o.content_brief || '',
+            priority: o.priority || 'normal',
+            assigned_to: part.pic,
+            status: 'received',
+            progress: 20,
+            internal_deadline: deadlineISO,
+            link_drive: o.source_link || '',
+            preview_link: '',
+            final_link: '',
+            created_at: new Date().toISOString(),
+            last_update: new Date().toISOString()
+          };
+          if (['media', 'photo', 'shoot'].includes(o.request_type) && o.shoot_location) taskPayload.shoot_location = o.shoot_location;
+          await window.MH.store.tasks.upsert(taskPayload);
+          createdTaskIds.push(taskId);
+          // Notify PIC (lookup user_id qua name, fuzzy match)
+          const picUserId = await window.MH.store.notifications.findUserIdByName(part.pic);
+          if (picUserId) {
+            await window.MH.store.notifications.create({
+              user_id: picUserId,
+              type: 'task_assigned',
+              title: 'Task mới được giao',
+              message: `${taskId} · ${taskPayload.project_name} · ${TYPE_LABEL[part.taskType] || part.taskType} · Deadline: ${o.internal_deadline || '—'}`,
+              link: 'production-board.html?id=' + taskId,
+              related_entity_type: 'tasks',
+              related_entity_id: taskId
+            });
+          } else {
+            console.warn('[push] không tìm thấy user_id cho PIC:', part.pic);
+          }
         }
       } catch (e) {
         console.warn('[push] task creation failed:', e);
         window.MH.toast({ type: 'error', title: 'Tạo task thất bại', message: 'DB không phản hồi. Thử lại hoặc liên hệ admin.' });
         return;
       }
+    } else {
+      for (const part of plan) createdTaskIds.push(await generateNextTaskId());
     }
 
     // Update order
@@ -1195,14 +1240,15 @@
     // Notify client: order đã chuyển sang sản xuất (fire-and-forget)
     notifyClient(o, {
       type: 'order_status_changed',
-      title: '🚀 Đã chuyển sang sản xuất',
+      title: 'Đã chuyển sang sản xuất',
       message: `${o.order_id} · ${o.project_name || ''} — Team Media đang thực hiện. Bản preview sẽ được gửi khi hoàn thành.`
     });
 
+    const picSummary = plan.map((p) => (p.label ? p.label + ': ' : '') + p.pic).join(' · ');
     window.MH.toast({
       type: 'success',
       title: '✓ Đã chuyển Production Board',
-      message: o.order_id + ' → ' + taskId + ' · PIC: ' + o.production_pic + ' · Đã gửi notification',
+      message: `${o.order_id} → ${createdTaskIds.join(', ')} · ${picSummary}`,
       duration: 4500
     });
     render();
