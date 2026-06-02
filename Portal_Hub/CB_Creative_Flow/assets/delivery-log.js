@@ -533,6 +533,23 @@
           cur.delivery_note = text;
           logActivity('internal_revision_requested', 'Yêu cầu chỉnh sửa: ' + text);
           window.MH.toast({ type: 'success', title: 'Đã yêu cầu chỉnh sửa', message: 'Task quay lại Internal Task Tracker cho ' + cur.production_pic });
+          // Notify PIC (designer) rằng task cần chỉnh sửa — fire-and-forget.
+          if (window.MH.store && window.MH.supabaseEnabled && cur.production_pic) {
+            (async () => {
+              try {
+                const picId = await window.MH.store.notifications.findUserIdByName(cur.production_pic);
+                if (picId) await window.MH.store.notifications.create({
+                  user_id: picId,
+                  type: 'task_status_changed',
+                  title: 'Task cần chỉnh sửa',
+                  message: `${cur.task_id || cur.delivery_id} · ${cur.project_name || ''} — Account yêu cầu chỉnh sửa: ${text}`,
+                  link: cur.task_id ? ('production-board.html?id=' + cur.task_id) : 'production-board.html',
+                  related_entity_type: 'tasks',
+                  related_entity_id: cur.task_id || cur.delivery_id
+                });
+              } catch (err) { console.warn('[delivery] notify PIC revision failed:', err); }
+            })();
+          }
           closeModal(); persistCurDelivery(cur); render(); openDrawer(cur);
         });
         break;

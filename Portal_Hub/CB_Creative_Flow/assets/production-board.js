@@ -618,6 +618,43 @@
     if (['design', 'editor'].includes(user.role) && newStatus === 'ready' && task.status !== 'review') return 'Task cần qua bước "Chờ duyệt nội bộ" trước.';
     return 'Transition không hợp lệ.';
   }
+  /* ---------- Notify khi status task đổi (Account↔Designer handoff) ----------
+     - review            → báo Account + Admin (có task chờ duyệt nội bộ)
+     - revision/feedback_fix → báo PIC (task cần chỉnh sửa)
+     Fire-and-forget, không block UI. */
+  async function notifyTaskStatusChange(task, newStatus) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    const base = {
+      related_entity_type: 'tasks',
+      related_entity_id: task.task_id,
+      link: 'production-board.html?id=' + task.task_id
+    };
+    try {
+      if (newStatus === 'review') {
+        const { data: staff } = await window.MH.supabase
+          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+        if (Array.isArray(staff) && staff.length) {
+          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
+            user_id: u.id,
+            type: 'task_status_changed',
+            title: 'Task chờ duyệt nội bộ',
+            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã gửi duyệt. Vui lòng kiểm tra.`
+          })));
+        }
+      } else if (newStatus === 'revision' || newStatus === 'feedback_fix') {
+        const picId = await window.MH.store.notifications.findUserIdByName(task.assigned_to);
+        if (picId) {
+          await window.MH.store.notifications.create(Object.assign({}, base, {
+            user_id: picId,
+            type: 'task_status_changed',
+            title: 'Task cần chỉnh sửa',
+            message: `${task.task_id} · ${task.project_name || ''} — Account yêu cầu chỉnh sửa. Xem ghi chú trong task.`
+          }));
+        }
+      }
+    } catch (e) { console.warn('[task] notify status change failed:', e); }
+  }
+
   function updateStatus(task, newStatus) {
     const old = task.status;
     task.status = newStatus;
@@ -635,6 +672,7 @@
       completed_at: newStatus === 'completed' ? new Date().toISOString() : null
     });
     persistTaskComment(task.task_id, transitionComment);
+    notifyTaskStatusChange(task, newStatus); // fire-and-forget: báo Account/Admin (duyệt) hoặc PIC (sửa)
     window.MH.toast({ type: 'success', title: 'Đã cập nhật status', message: `${task.task_id}: ${STATUS_LABEL[newStatus]} · ${task.progress}%` });
     render();
     if (currentTask && currentTask.task_id === task.task_id) openDrawer(task);

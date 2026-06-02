@@ -496,9 +496,19 @@
     async findUserIdByName(name) {
       const s = await sb();
       if (!s || !name) return null;
-      const { data, error } = await s.from('users').select('id').eq('name', name).maybeSingle();
-      if (error || !data) { console.warn('[store.notifications.findUserIdByName]', name, error); return null; }
-      return data.id;
+      // 1) Exact match.
+      const exact = await s.from('users').select('id').eq('name', name).maybeSingle();
+      if (exact.data) return exact.data.id;
+      // 2) PIC thường lưu tên ngắn ("Duy") còn users.name là tên đầy đủ ("Duy Trần").
+      //    Khớp theo ranh giới từ: đầu chuỗi ("Duy %"), cuối chuỗi ("% Duy"), rồi chứa.
+      const esc = name.replace(/[%_]/g, '\\$&');
+      const patterns = [esc + ' %', '% ' + esc, '%' + esc + '%'];
+      for (let i = 0; i < patterns.length; i++) {
+        const r = await s.from('users').select('id').ilike('name', patterns[i]).limit(1);
+        if (r.data && r.data.length) return r.data[0].id;
+      }
+      console.warn('[store.notifications.findUserIdByName] không khớp:', name);
+      return null;
     }
   };
 

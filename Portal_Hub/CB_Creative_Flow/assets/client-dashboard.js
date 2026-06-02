@@ -715,12 +715,48 @@ document.getElementById('rating-modal').addEventListener('click', e => { if (e.t
 document.querySelectorAll('#star-rating input').forEach(inp => {
   inp.addEventListener('change', () => { document.getElementById('star-label').textContent = STAR_LABELS[+inp.value] || ''; });
 });
-document.getElementById('rating-submit').addEventListener('click', () => {
+document.getElementById('rating-submit').addEventListener('click', async () => {
   const checked = document.querySelector('#star-rating input:checked');
   if (!checked) { toast('warning','Chọn mức đánh giá','Vui lòng chọn từ 1 đến 5 sao.'); return; }
-  state.ratings[state.ratingOrderId] = { score: +checked.value, comment: document.getElementById('rating-comment').value.trim() };
+  const score = +checked.value;
+  const comment = document.getElementById('rating-comment').value.trim();
   const prev = state.ratingOrderId;
+  state.ratings[prev] = { score: score, comment: comment };
   closeRatingModal();
+
+  // Persist Supabase + notify staff (fire-and-forget). Trước đây chỉ lưu local → mất khi reload.
+  if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+    try {
+      await window.MH.store.orders.update(prev, {
+        satisfaction_score: score,
+        client_feedback: comment || null,
+        last_updated: new Date().toISOString()
+      });
+      const o = ORDERS.find(x => x.id === prev);
+      if (o) { o.rating = score; o.rating_comment = comment; if (o.__raw) { o.__raw.satisfaction_score = score; o.__raw.client_feedback = comment; } }
+      if (window.MH.supabase) {
+        const { data: staff } = await window.MH.supabase
+          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+        if (Array.isArray(staff) && staff.length) {
+          await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
+            return {
+              user_id: u.id,
+              type: 'rating_received',
+              title: 'Client đã đánh giá',
+              message: `${prev} — ${score}★ (${STAR_LABELS[score] || ''})${comment ? ' · "' + comment + '"' : ''}`,
+              link: 'database-orders.html?id=' + prev,
+              related_entity_type: 'orders',
+              related_entity_id: prev
+            };
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('[client-dashboard] rating persist/notify failed:', e);
+      toast('warning','Sync lỗi','Đánh giá đã lưu tạm, vui lòng thử lại nếu chưa cập nhật.');
+    }
+  }
+
   if (state.openOrderId === prev) openOrderDrawer(prev);
   renderAll();
   toast('success','Đã gửi đánh giá','Cảm ơn phản hồi của bạn!');
