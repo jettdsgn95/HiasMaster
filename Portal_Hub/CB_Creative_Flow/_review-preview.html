@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview — Duyệt nội bộ task (Account/Admin)</title>
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  /* CSS riêng cho trang preview (không ảnh hưởng app thật) */
+  body { margin: 0; min-height: 100vh; background: var(--surface-2); font-family: Inter, system-ui, sans-serif; }
+  .pv-note {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 5;
+    background: linear-gradient(135deg, #191970 0%, #BA110F 100%); color: #fff;
+    padding: 10px 20px; font-size: 13px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .pv-note b { font-weight: 700; }
+  .pv-note .pv-toggle {
+    margin-left: auto; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+    color: #fff; padding: 5px 12px; border-radius: 9999px; cursor: pointer; font-size: 12px;
+  }
+  .pv-note .pv-toggle:hover { background: rgba(255,255,255,.3); }
+  /* Ép drawer mở sẵn, đứng yên giữa màn cho dễ xem (không cần overlay trượt) */
+  .drawer.task-workbench.pv-open {
+    position: static; transform: none; box-shadow: 0 20px 60px rgba(0,0,0,.12);
+    margin: 64px auto 40px; max-width: 880px; width: calc(100% - 40px);
+    max-height: none; border-radius: 18px; border: 1px solid var(--border);
+  }
+  .pv-result {
+    margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5;
+    border-left: 4px solid var(--brand-600); background: rgb(25 25 112 / .06); display: none;
+  }
+  .pv-result.is-warn { border-left-color: #f59e0b; background: rgb(245 158 11 / .1); }
+  .pv-result.show { display: block; }
+  .pv-result b { font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="pv-note">
+    <span>🔍 <b>Preview tĩnh</b> — Đây là task drawer khi <b>Account/Admin</b> mở 1 task ở trạng thái <b>"Chờ duyệt nội bộ"</b> (sau khi PIC bấm "Gửi duyệt nội bộ"). Khu <b>Status &amp; Actions</b> bên dưới là chỗ duyệt.</span>
+    <button class="pv-toggle" id="pv-toggle-link">Giả lập: task CHƯA có preview link</button>
+  </div>
+
+  <aside class="drawer task-workbench pv-open" aria-hidden="false">
+    <!-- HEAD -->
+    <div class="drawer-head">
+      <div>
+        <div class="order-id-large">
+          <span>TASK-0042</span>
+          · <span class="mono text-xs">MEDIA-2026-2391</span>
+        </div>
+        <h2>Key Visual — Back to School 2026</h2>
+        <div class="head-status">
+          <span class="tb-status s--review"><span class="dot"></span>Chờ duyệt nội bộ</span>
+          <span class="priority-pill p--normal"><span class="dot"></span>Bình thường</span>
+          <span class="text-xs muted">Thiết kế / POSM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="drawer-body">
+      <!-- Summary -->
+      <div class="task-summary-grid">
+        <div class="task-summary-tile"><label>P.I.C</label><b>Duy</b></div>
+        <div class="task-summary-tile"><label>Internal Deadline</label><b>15/06/2026 17:00</b></div>
+        <div class="task-summary-tile"><label>Loại task</label><b>Thiết kế / POSM</b></div>
+        <div class="task-summary-tile"><label>Checklist</label><b>4/5</b></div>
+      </div>
+
+      <!-- File / Links (lý do nút "Đạt" bật được) -->
+      <section class="drawer-block">
+        <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>File &amp; Links</h4></div>
+        <div class="detail-row"><span class="detail-dt">Source / Drive</span><span class="detail-dd"><a class="link" href="#" id="pv-preview-link">drive.google.com/file/kv-back2school-preview</a></span></div>
+        <div class="detail-row"><span class="detail-dt">Final link</span><span class="detail-dd"><em class="muted">Chưa có</em></span></div>
+        <p class="text-xs muted" style="margin:8px 0 0">Người duyệt mở link preview để kiểm tra trước khi quyết định.</p>
+      </section>
+
+      <!-- STATUS & ACTIONS — khu duyệt -->
+      <section class="drawer-block tw-action-rail">
+        <div class="drawer-block-head"><span class="block-letter">⚡</span><h4>Status &amp; Actions</h4></div>
+        <div class="tw-rail-section">
+          <span class="tw-rail-label">Next Actions — chỉ Account/Admin thấy 2 nút này</span>
+        </div>
+        <div class="status-actions" id="pv-actions">
+          <button class="status-action-btn sa--warn" data-act="revision">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span class="sa-text"><b>Yêu cầu chỉnh sửa</b><span>Quay lại P.I.C</span></span>
+          </button>
+          <button class="status-action-btn sa--success" data-act="ready" id="pv-btn-ready">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span class="sa-text"><b>Đạt — Sẵn sàng bàn giao</b><span>Push → Delivery Log</span></span>
+          </button>
+        </div>
+
+        <div class="pv-result" id="pv-result"></div>
+
+        <div class="tw-rail-section" style="margin-top:16px">
+          <span class="tw-rail-label">Activity Log</span>
+          <p class="text-xs muted" style="margin:6px 0 0">• <b>Duy</b> · Status: Đang thực hiện → Chờ duyệt nội bộ · vừa xong</p>
+          <p class="text-xs muted" style="margin:2px 0 0">• <b>Duy</b> · Cập nhật preview link · vừa xong</p>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+<script>
+  var result = document.getElementById('pv-result');
+  var btnReady = document.getElementById('pv-btn-ready');
+  var hasLink = true;
+
+  document.getElementById('pv-actions').addEventListener('click', function (e) {
+    var btn = e.target.closest('.status-action-btn');
+    if (!btn || btn.disabled) return;
+    var act = btn.dataset.act;
+    if (act === 'ready') {
+      result.className = 'pv-result show';
+      result.innerHTML = '<b>✅ Đạt → status chuyển <code>ready</code>.</b><br>Task rời khu sản xuất, sẵn sàng sang <b>Delivery Log</b> để Account bấm <b>Send Preview / Send Final</b> → client nhận link file + thông báo.';
+    } else if (act === 'revision') {
+      result.className = 'pv-result is-warn show';
+      result.innerHTML = '<b>⚠ Yêu cầu chỉnh sửa → status chuyển <code>revision</code>.</b><br>Hệ thống gửi thông báo <b>"Task cần chỉnh sửa"</b> cho PIC <b>Duy</b>. Duy sửa xong bấm <b>"Đã chỉnh xong → Review lại"</b> để quay lại bước duyệt.';
+    }
+  });
+
+  // Toggle: giả lập task chưa có preview/final link → nút "Đạt" bị disable
+  document.getElementById('pv-toggle-link').addEventListener('click', function () {
+    hasLink = !hasLink;
+    var linkRow = document.getElementById('pv-preview-link');
+    if (hasLink) {
+      btnReady.disabled = false;
+      this.textContent = 'Giả lập: task CHƯA có preview link';
+      linkRow.parentElement.innerHTML = '<a class="link" id="pv-preview-link" href="#">drive.google.com/file/kv-back2school-preview</a>';
+      result.className = 'pv-result';
+    } else {
+      btnReady.disabled = true;
+      this.textContent = 'Giả lập: task ĐÃ có preview link';
+      linkRow.parentElement.innerHTML = '<em class="muted">Chưa có</em>';
+      result.className = 'pv-result is-warn show';
+      result.innerHTML = '<b>Nút "Đạt — Sẵn sàng bàn giao" bị mờ (disabled)</b> vì task chưa có <b>preview / final link</b>. → PIC phải gắn link Drive trước thì Account mới duyệt đạt được.';
+    }
+  });
+</script>
+</body>
+</html>

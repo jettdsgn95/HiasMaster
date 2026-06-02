@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notification bell — preview</title>
+<style>
+  :root{
+    --brand-600:#191970; --red-600:#BA110F;
+    --surface:#ffffff; --surface-2:#f1f5f9; --border:#e2e8f0;
+    --text:#0f172a; --text-muted:#64748b;
+  }
+  [data-theme="dark"]{
+    --surface:#0f172a; --surface-2:#1e293b; --border:#334155;
+    --text:#e2e8f0; --text-muted:#94a3b8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,sans-serif;background:var(--surface-2);color:var(--text);min-height:100vh;}
+  .bar{height:64px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:0 24px;}
+  .icon-btn{width:40px;height:40px;border-radius:9999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .icon-btn svg{width:20px;height:20px;}
+  .panel{max-width:420px;margin:40px auto;padding:0 16px;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .controls button{padding:8px 14px;border-radius:9999px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:13px;}
+  .controls button:hover{background:var(--surface-2);}
+  .note{font-size:12px;color:var(--text-muted);margin:8px 0 22px;line-height:1.5;}
+
+  /* ====== Copy 1:1 từ app.js injectStyles ====== */
+  .mh-notif-wrap { position: relative; }
+  .mh-notif-badge { position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9999px; background: var(--red-600); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); pointer-events: none; }
+  .mh-notif-dropdown { width: 360px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.18); overflow: hidden; display: flex; flex-direction: column; }
+  .mh-notif-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .mh-notif-head h4 { margin: 0; font-size: 14px; }
+  .mh-notif-head button { background: none; border: none; color: var(--brand-600); font-size: 12px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .mh-notif-list { padding: 4px; }
+  .mh-notif-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.12s; border-left: 3px solid transparent; }
+  .mh-notif-item:hover { background: var(--surface-2); }
+  .mh-notif-item.is-unread { border-left-color: var(--brand-600); background: rgb(25 25 112 / 0.04); }
+  .mh-notif-item-ico { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; margin-top: 1px; color: var(--text-muted); }
+  .mh-notif-item-ico svg { width: 18px; height: 18px; }
+  .mh-notif-item-ico.is-accent { color: var(--brand-600); }
+  .mh-notif-item-ico.is-danger { color: var(--red-600); }
+  .mh-notif-item-body { flex: 1 1 auto; min-width: 0; }
+  .mh-notif-item-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .mh-notif-item-msg { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px; }
+  .mh-notif-item-time { font-size: 11px; color: var(--text-muted); }
+
+  .mh-notif-wrap.has-unread button[aria-label="Thông báo"] svg {
+    stroke: url(#mh-bell-grad);
+    transform-origin: 50% 4px;
+    animation: mhBellRing 2.6s ease-in-out infinite;
+  }
+  .mh-notif-wrap.has-unread .mh-notif-badge {
+    background: linear-gradient(135deg, #d62a28 0%, #BA110F 100%);
+    animation: mhBadgePulse 1.8s ease-out infinite;
+  }
+  @keyframes mhBellRing {
+    0%, 35%, 100% { transform: rotate(0); }
+    4%  { transform: rotate(15deg); } 8%  { transform: rotate(-13deg); }
+    12% { transform: rotate(10deg); } 16% { transform: rotate(-8deg); }
+    20% { transform: rotate(6deg); }  24% { transform: rotate(-3deg); }
+    28% { transform: rotate(0); }
+  }
+  @keyframes mhBadgePulse {
+    0%   { box-shadow: 0 0 0 0 rgba(186,17,15,0.55); }
+    70%  { box-shadow: 0 0 0 6px rgba(186,17,15,0); }
+    100% { box-shadow: 0 0 0 0 rgba(186,17,15,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mh-notif-wrap.has-unread button[aria-label="Thông báo"] svg,
+    .mh-notif-wrap.has-unread .mh-notif-badge { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <!-- gradient def cho stroke chuông -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs><linearGradient id="mh-bell-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#191970"/><stop offset="100%" stop-color="#BA110F"/>
+    </linearGradient></defs>
+  </svg>
+
+  <div class="bar">
+    <button class="icon-btn" title="theme" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <span class="mh-notif-wrap has-unread" id="wrap">
+      <button class="icon-btn" aria-label="Thông báo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <span class="mh-notif-badge" id="badge">3</span>
+    </span>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <button onclick="setUnread(3)">Có 3 chưa đọc</button>
+      <button onclick="setUnread(0)">Đánh dấu đã đọc hết</button>
+    </div>
+    <div class="note">Toggle để xem: khi có chưa đọc → chuông gradient navy→red + rung + chấm đỏ pulse. Đọc hết → tắt hết, chuông về xám. Nút theme trên header để thử dark mode.</div>
+
+    <div class="mh-notif-dropdown">
+      <div class="mh-notif-head"><h4>Thông báo</h4><button onclick="setUnread(0)">Đánh dấu đã đọc</button></div>
+      <div class="mh-notif-list" id="list"></div>
+    </div>
+  </div>
+
+<script>
+  const ICON = {
+    order_new:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+    order_status_changed:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    order_confirmed:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    order_needinfo:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    order_cancelled:'<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+    task_assigned:'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+    delivery_preview:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    delivery_final:'<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'
+  };
+  function ico(type){
+    let cls=''; if(type==='order_new'||type==='task_assigned')cls='is-accent';
+    else if(type==='order_cancelled'||type==='order_needinfo')cls='is-danger';
+    return {svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[type]}</svg>`,cls};
+  }
+  const DATA=[
+    {type:'order_new',title:'Order mới: MEDIA-2026-1403',msg:'Họp Phụ huynh 2026 · Lan Anh · CB Mekong',time:'2 ngày trước',unread:true},
+    {type:'order_status_changed',title:'Client đã bổ sung brief',msg:'MEDIA-2026-8671 · Back to School — Client đã gửi thông tin bổ sung.',time:'23/5/2026',unread:true},
+    {type:'task_assigned',title:'Task mới được giao: TASK-0042',msg:'Quay TVC khai giảng · PIC: Duy',time:'23/5/2026',unread:true},
+    {type:'order_confirmed',title:'Brief đã được xác nhận',msg:'MEDIA-2026-8671 đã sẵn sàng sản xuất.',time:'22/5/2026',unread:false},
+    {type:'order_needinfo',title:'Cần bổ sung brief',msg:'MEDIA-2026-0991 thiếu thông tin sản phẩm.',time:'22/5/2026',unread:false},
+    {type:'delivery_preview',title:'Đã có bản xem trước',msg:'DLV-2026-0007 · link preview đính kèm.',time:'21/5/2026',unread:false},
+    {type:'delivery_final',title:'Đã bàn giao final',msg:'DLV-2026-0007 · file final.',time:'20/5/2026',unread:false},
+    {type:'order_cancelled',title:'Yêu cầu đã bị hủy',msg:'MEDIA-2026-0777 — trùng yêu cầu.',time:'19/5/2026',unread:false}
+  ];
+  function render(){
+    document.getElementById('list').innerHTML = DATA.map(n=>{
+      const i=ico(n.type);
+      return `<a class="mh-notif-item ${n.unread?'is-unread':''}">
+        <span class="mh-notif-item-ico ${i.cls}">${i.svg}</span>
+        <div class="mh-notif-item-body">
+          <div class="mh-notif-item-title">${n.title}</div>
+          <div class="mh-notif-item-msg">${n.msg}</div>
+          <div class="mh-notif-item-time">${n.time}</div>
+        </div></a>`;
+    }).join('');
+  }
+  function setUnread(count){
+    const wrap=document.getElementById('wrap'), badge=document.getElementById('badge');
+    if(count>0){ wrap.classList.add('has-unread'); badge.style.display='flex'; badge.textContent=count; }
+    else { wrap.classList.remove('has-unread'); badge.style.display='none'; }
+  }
+  render();
+</script>
+</body>
+</html>
