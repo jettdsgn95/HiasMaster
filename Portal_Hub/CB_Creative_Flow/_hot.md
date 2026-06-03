@@ -60,7 +60,7 @@ Interaction/style invariants:
 | File | Purpose | JS |
 |---|---|---|
 | `index.html` | Homepage + hero + quick actions | inline |
-| `login.html` | Login + 5 demo account tiles | inline |
+| `login.html` | Login (email + password, Supabase auth; tiles demo/password cứng đã gỡ) | inline |
 | `request.html` | Order Form 7 sections (auth-gated) | `order-form.js` |
 | `tracking.html` | Client tracking by `MEDIA-*` code | inline |
 | `help.html` | FAQ + search + accordion | inline |
@@ -96,13 +96,13 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - `assets/notif-icons.js` — **Shared notification icon module** (2026-06-02). Expose `window.MH.notifIcons` (`PATHS` + `get(type)→{svg,cls}` + `stripEmoji(s)`). Single source of truth cho icon thông báo, dùng bởi `app.js` (bell) + `client-dashboard.js` (panel). Load TRƯỚC `app.js` trên 12 page có chuông/panel.
 - `assets/config.js` — **Runtime config**, load TRƯỚC `app.js` trên 17/17 page. Expose `window.MH_CONFIG` với `SENTRY_DSN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SENTRY_ENV` (auto-detect localhost vs production), `SENTRY_RELEASE`, `APP_VERSION`, `FEATURES` flags (gồm `SUPABASE_DB`). Để trống các key = disable feature tương ứng. File commit kèm repo, fill tay khi sẵn sàng bật.
 - `assets/supabase-client.js` — **Supabase SDK loader (Phase 1)**, dynamic import @supabase/supabase-js@2.45.4 từ `esm.sh` CDN (giữ zero-build). Expose `window.MH.supabase`, `window.MH.supabaseReady` (Promise), `window.MH.supabaseEnabled`. Auth state change handler mirror Supabase session sang `localStorage['mh-user']` cho compat code hiện tại. Khi config trống → stub null, không network call.
-- `assets/data-store.js` — **Data abstraction (Phase 1+2)**, expose `window.MH.store` với 10 namespaces: `users`, `orders`, `tasks`, `taskComments`, `deliveries`, `aiUsage`, `chatbot`, `files`, **`notifications`**, `auth`, `activity`. Mọi method trả Promise — nếu Supabase enabled → query qua SDK, else fallback `window.MH_MOCK_*` arrays + localStorage keys cũ. Consumer code dùng `await MH.store.tasks.get(id)` thay vì `TASKS.find(...)` — không branch theo backend. **Always-swap pattern (5/2026)**: bỏ điều kiện `remote.length > 0`, khi Supabase enabled luôn replace local array (kể cả empty → UI hiển thị empty state thay vì fallback mock).
+- `assets/data-store.js` — **Data abstraction (Phase 1+2)**, expose `window.MH.store` với 10 namespaces: `users`, `orders`, `tasks`, `taskComments`, `deliveries`, `aiUsage`, `chatbot`, `files`, **`notifications`**, `auth`, `activity`. Mọi method trả Promise — nếu Supabase enabled → query qua SDK, else fallback `window.MH_MOCK_*` arrays + localStorage keys cũ. Consumer code dùng `await MH.store.tasks.get(id)` thay vì `TASKS.find(...)` — không branch theo backend. **Always-swap pattern (5/2026)**: bỏ điều kiện `remote.length > 0`, khi Supabase enabled luôn replace local array (kể cả empty → UI hiển thị empty state thay vì fallback mock). ⚠ **`orders`/`tasks` có cả `update(id, patch)` (UPDATE .eq) lẫn `upsert(fullRow)`: PATCH → `update`, TẠO MỚI → `upsert` full row. KHÔNG upsert partial vào bảng có cột NOT NULL** (project_name/task_type) — vi phạm NOT NULL trước ON CONFLICT, fail âm thầm (xem fix 2026-06-03).
 
 **Module migration progress (Phase 1):**
 - ✅ `login.html` — Supabase Auth-first via `MH.store.auth.signIn()`, fallback `loginAsDemo()`.
 - ✅ `database-orders.js` — `MH_MOCK_ORDERS`, async `loadOrdersFromStore`, mutations via `persistOrder` (status, push-to-prod, save-internal).
-- ✅ `production-board.js` — `MH_MOCK_TASKS`, `loadTasksFromStore`, `persistTask` + `persistTaskComment` cho status transitions, save links/meta, comment add, Create/Edit task modal.
-- ✅ `delivery-log.js` — `MH_MOCK_DELIVERIES`, `loadDeliveriesFromStore`, `persistCurDelivery` hook vào 7 mutation sites (check, request_rev, send_preview, send_final, rate, close, reopen).
+- ✅ `production-board.js` — `MH_MOCK_TASKS`, `loadTasksFromStore`, `persistTask` (UPDATE patch) + `persistNewTask` (upsert tạo mới) + `persistTaskComment` cho status transitions, save links/meta, comment add, Create/Edit task modal.
+- ~~`delivery-log.js`~~ — **ĐÃ GỠ 2026-06-03** (bàn giao Preview/Final chuyển vào Order drawer `database-orders.js` section "Bàn giao cho client" → set `orders.preview_link`/`final_delivery_link`). `deliveries` namespace trong data-store giữ lại nhưng không còn UI.
 - ✅ `user-management.js` — `MH_MOCK_USERS`, `loadUsersFromStore` (adapter Supabase row → mock shape), `persistUser` cho status toggle + edit user (chỉ field nằm trong public.users schema).
 - ✅ `ai-tools.js` — `addUsage()` + `saveOutput()` write-through via `MH.store.aiUsage.log()` + `saveOutput()`.
 - ✅ `chatbot.js` — `pushMessage()` + `saveFeedback()` write-through via `MH.store.chatbot.append()` + `feedback()`. Cần thêm namespace `chatbot` vào data-store.js.
@@ -270,7 +270,7 @@ Profile fields (set via Profile modal từ header profile chip → Hồ sơ cá 
 - `phone`, `department`, `bio`: free text (department có datalist 7 chi nhánh).
 - Role chỉ Admin được đổi (select); các role khác readonly badge.
 
-Demo accounts, password `cb2026`:
+Demo accounts — **login thủ công** (nhập email + password; tiles demo + password cứng đã GỠ khỏi `login.html` vì lý do bảo mật, auth qua Supabase). Password demo: **`Cbmedia2026`** (5 demo) · client test riêng `client@test`:
 
 | Email | Role | Redirect sau login |
 |---|---|---|

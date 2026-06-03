@@ -11,10 +11,10 @@ Project hiện là static multi-page site, không framework, không build step. 
 ```text
 1. Mở index.html bằng browser.
 2. Click "Đăng nhập".
-3. Chọn 1 demo account tile để tự fill credentials và vào dashboard.
+3. Nhập email demo (bảng dưới) + mật khẩu, đăng nhập qua Supabase.
 ```
 
-Mật khẩu demo chung: `cb2026`
+Mật khẩu demo chung: `Cbmedia2026` _(tiles demo + password cứng đã gỡ khỏi login.html vì bảo mật — đăng nhập thủ công qua Supabase auth)_
 
 | Email | Role | Tag | Tên hiển thị | Redirect sau login |
 |---|---|---|---|---|
@@ -34,7 +34,7 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 |---|:---:|---|
 | Public site | Done | `index`, `request`, `tracking`, `help`, `login`; homepage targets Nội bộ CB Centres + request smart flow stepper |
 | Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile |
-| Internal ops | Done | Dashboard, orders, production, delivery, reports, AI, chatbot, users, settings; Order Workbench + Task Workbench drawers |
+| Internal ops | Done | Dashboard, orders, production, reports, AI, chatbot, users, settings; Order Workbench + Task Workbench drawers. _(Delivery Log đã gỡ 2026-06-03 — bàn giao Preview/Final trong Order drawer; Production Status order tự sync theo task.)_ |
 | AI Tools | Done | 13 mini apps (gồm AI Voice / Supertonic on-device TTS), workspace form, output panel, usage log demo |
 | Dashboards | Wired LIVE | **Master Dashboard** (Module 5 — 4 sections separated: Client Orders Overview 8 metrics / Internal Tasks Overview 8 metrics / Alerts 5 categories / Team Workload 6-PIC bar) · **Orders Dashboard** (13 KPI Client Order lifecycle: Intake / Production Flow / Feedback & Completion + 6 breakdowns) · **Task Dashboard** (17 KPI Internal workload: Volume / Workload / Deadline / Status / Performance + 6-PIC bar chart). Master Dashboard refresh button fetches Supabase again, polls every 60s, and listens to orders/tasks realtime when publication is enabled. Drilldown click-through tới database-orders.html / production-board.html với filter chính xác |
 | Chatbot | Done | Dedicated page + floating widget trên internal/public pages khi đã login |
