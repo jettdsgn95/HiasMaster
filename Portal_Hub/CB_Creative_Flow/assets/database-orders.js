@@ -102,6 +102,12 @@
     review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ', ready: 'Sẵn sàng bàn giao',
     delivered: 'Đã bàn giao', completed: 'Hoàn thành', cancelled: 'Hủy'
   };
+  // % progress theo production_status (đồng bộ khi đổi status để tránh "received nhưng 5%").
+  const PROD_PROGRESS = {
+    unassigned: 5, pending: 5, received: 20, inprogress: 50, review: 65,
+    revision: 75, feedback_wait: 80, feedback_fix: 85, ready: 90,
+    delivered: 95, completed: 100, paused: 0, cancelled: 0
+  };
   const TASK_STATUS_LABEL = {
     pending: 'Chưa nhận task', received: 'Nhận task', inprogress: 'Đang thực hiện',
     review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ',
@@ -148,6 +154,17 @@
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
+  // Order media gán PIC qua production_pic_video/photo; còn lại dùng production_pic đơn.
+  function orderHasPic(o) {
+    return o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
+  }
+  // Render 1 chip PIC: avatar tròn (initials) + tên (+ nhãn phụ Quay/Chụp nếu có).
+  function picChip(name, suffix) {
+    if (!name) return '';
+    const init = name.substring(0, 2).toUpperCase();
+    const alt = ['Hậu', 'Linh Chi', 'Vinh'].indexOf(name) % 2 === 0 ? 'has-red' : '';
+    return `<div class="pic-cell ${alt}"><span class="pic-avatar">${init}</span><span class="pic-name">${escapeHtml(name)}${suffix ? ` <small class="muted">· ${suffix}</small>` : ''}</span></div>`;
+  }
   function diffDays(target) {
     const d = parseDate(target);
     if (!d) return null;
@@ -193,7 +210,7 @@
       case 'checking': return o.account_status === 'checking';
       case 'needinfo': return o.account_status === 'needinfo';
       case 'confirmed': return o.account_status === 'confirmed' && o.production_status !== 'completed';
-      case 'unassigned': return o.account_status === 'confirmed' && !o.production_pic;
+      case 'unassigned': return o.account_status === 'confirmed' && !orderHasPic(o);
       case 'urgent': return o.priority === 'urgent' || o.priority === 'critical';
       case 'overdue': {
         const days = diffDays(o.requested_deadline);
@@ -247,12 +264,19 @@
     const ts_fmt = ts ? `${String(ts.getDate()).padStart(2,'0')}/${String(ts.getMonth()+1).padStart(2,'0')} · ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}` : '—';
     const dl = parseDate(o.requested_deadline);
     const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}/${dl.getFullYear()}` : '—';
-    const picInitials = o.production_pic ? o.production_pic.substring(0, 2).toUpperCase() : '';
-    const picAlt = o.production_pic && ['Hậu','Linh Chi','Vinh'].indexOf(o.production_pic) % 2 === 0 ? 'has-red' : '';
+    // PIC cell: order media gán qua production_pic_video/photo (KHÔNG phải production_pic đơn).
+    let picCell;
+    if (o.request_type === 'media' && (o.production_pic_video || o.production_pic_photo)) {
+      picCell = `<div class="pic-cell-stack">${picChip(o.production_pic_video, 'Quay')}${picChip(o.production_pic_photo, 'Chụp')}</div>`;
+    } else if (o.production_pic) {
+      picCell = picChip(o.production_pic, '');
+    } else {
+      picCell = `<span class="pic-unassigned">— Chưa gán —</span>`;
+    }
 
     return `
       <tr data-id="${o.order_id}" class="${isOverdue ? 'is-overdue' : ''}">
-        <td><span class="order-id">${o.order_id}</span></td>
+        <td><span class="order-id">${o.order_id}</span>${o.account_status === 'pending' ? '<span class="order-new-badge">NEW</span>' : ''}</td>
         <td><span class="text-xs muted">${ts_fmt}</span></td>
         <td class="requester-cell"><b>${escapeHtml(o.requester_name)}</b><span>${escapeHtml(o.department)}</span></td>
         <td class="project-cell"><b>${escapeHtml(o.project_name)}</b><span>${o.deliverable_type ? o.deliverable_type.slice(0, 2).join(' · ') + (o.deliverable_type.length > 2 ? ' +' + (o.deliverable_type.length - 2) : '') : ''}</span></td>
@@ -261,9 +285,7 @@
         <td><div class="deadline-cell ${dlCls}"><span class="date">${dl_fmt}</span><span class="relative">${fmtRelative(o.requested_deadline)}</span></div></td>
         <td><span class="tb-status s--${o.account_status}"><span class="dot"></span>${ACCOUNT_STATUS_LABEL[o.account_status]}</span></td>
         <td><span class="tb-status s--${o.production_status}"><span class="dot"></span>${PROD_STATUS_LABEL[o.production_status] || '—'}</span></td>
-        <td>${o.production_pic
-          ? `<div class="pic-cell ${picAlt}"><span class="pic-avatar">${picInitials}</span><span class="pic-name">${escapeHtml(o.production_pic)}</span></div>`
-          : `<span class="pic-unassigned">— Chưa gán —</span>`}</td>
+        <td>${picCell}</td>
         <td><div class="progress-mini"><div class="bar"><i style="width:${o.progress}%"></i></div><b>${o.progress}%</b></div></td>
         <td>
           <div class="row-actions" data-row-id="${o.order_id}">
@@ -333,7 +355,7 @@
     setCount('count-pending', ORDERS.filter((o) => o.account_status === 'pending').length);
     setCount('count-needinfo', ORDERS.filter((o) => o.account_status === 'needinfo').length);
     setCount('count-confirmed', ORDERS.filter((o) => o.account_status === 'confirmed' && o.production_status !== 'completed').length);
-    setCount('count-unassigned', ORDERS.filter((o) => o.account_status === 'confirmed' && !o.production_pic).length);
+    setCount('count-unassigned', ORDERS.filter((o) => o.account_status === 'confirmed' && !orderHasPic(o)).length);
     setCount('count-urgent', ORDERS.filter((o) => (o.priority === 'urgent' || o.priority === 'critical') && o.account_status !== 'rejected').length);
     setCount('count-overdue', ORDERS.filter((o) => {
       const days = diffDays(o.requested_deadline);
@@ -843,6 +865,9 @@
       const newDeadline = document.getElementById('edit-internal-deadline').value.replace('T', ' ');
       const newProdStatus = document.getElementById('edit-prod-status').value;
       const newNote = document.getElementById('edit-internal-note').value;
+      // Sync progress theo production_status (đổi status → progress khớp).
+      const newProgress = (newProdStatus !== currentOrder.production_status && PROD_PROGRESS[newProdStatus] != null)
+        ? PROD_PROGRESS[newProdStatus] : currentOrder.progress;
 
       Object.assign(currentOrder, {
         account_status: newStatus,
@@ -853,6 +878,7 @@
         priority: newPriority,
         internal_deadline: newDeadline || null,
         production_status: newProdStatus,
+        progress: newProgress,
         internal_note: newNote,
         last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ')
       });
@@ -864,6 +890,7 @@
         priority: newPriority,
         internal_deadline: newDeadline ? new Date(newDeadline.replace(' ', 'T')).toISOString() : null,
         production_status: newProdStatus,
+        progress: newProgress,
         internal_note: newNote,
         last_updated: new Date().toISOString()
       };

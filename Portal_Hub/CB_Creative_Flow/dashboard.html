@@ -198,9 +198,9 @@
           <div class="kpi-head"><span class="kpi-label">Total Client Orders</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
           <span class="kpi-value">0</span><span class="kpi-trend"><b>Orders</b> created</span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
-        <div class="kpi" data-card-key="active_client_orders" data-drill-key="total_orders" tabindex="0" role="link" aria-label="Drilldown: Active Client Orders">
-          <div class="kpi-head"><span class="kpi-label">Active Client Orders</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span></div>
-          <span class="kpi-value">0</span><span class="kpi-trend"><b>Not cancelled</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        <div class="kpi kpi--new-orders" data-card-key="active_client_orders" data-drill-key="new_requests" tabindex="0" role="link" aria-label="Drilldown: New Orders">
+          <div class="kpi-head"><span class="kpi-label">New Orders</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span></div>
+          <span class="kpi-value">0</span><span class="kpi-trend"><b>Chờ xác nhận</b></span><span class="kpi-drill" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </div>
         <div class="kpi kpi--warn" data-card-key="brief_need_info" tabindex="0" role="link" aria-label="Drilldown: Client Orders Need More Info">
           <div class="kpi-head"><span class="kpi-label">Orders Need More Info</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
@@ -520,7 +520,7 @@
   /* ============ KPI card → drilldown ============ */
   const DRILLDOWN_MAP = {
     total_client_orders:{ href: 'database-orders.html',  label: 'Total Client Orders', drillKey: 'total_orders' },
-    active_client_orders:{ href: 'database-orders.html', label: 'Active Client Orders', drillKey: 'total_orders' },
+    active_client_orders:{ href: 'database-orders.html', label: 'New Orders', drillKey: 'new_requests' },
     order_in_production:{ href: 'database-orders.html', label: 'Orders In Production', drillKey: 'in_production' },
     delivered:         { href: 'database-orders.html',  label: 'Delivered Client Orders' },
     waiting_feedback:  { href: 'database-orders.html',  label: 'Orders Waiting Feedback' },
@@ -711,7 +711,8 @@
   function renderModule5Dashboard(O, T) {
     const orderInProductionStatuses = ['received', 'inprogress', 'revision', 'feedback_fix'];
     const totalClientOrders = O.length;
-    const activeClientOrders = O.filter((o) => !dbIsCancelledOrder(o) && o.production_status !== 'completed').length;
+    // "New Orders" = đơn mới chờ Account xác nhận (account_status='pending').
+    const activeClientOrders = O.filter((o) => o.account_status === 'pending').length;
     const orderNeedInfo = O.filter((o) => o.account_status === 'needinfo').length;
     const orderInProduction = O.filter((o) => orderInProductionStatuses.includes(o.production_status)).length;
     const deliveredOrders = O.filter((o) => o.production_status === 'delivered').length;
@@ -730,6 +731,9 @@
 
     dbSetKpi('total_client_orders', totalClientOrders);
     dbSetKpi('active_client_orders', activeClientOrders);
+    // New Orders: bật animation chú ý khi có đơn mới chờ xác nhận.
+    const newOrdersCard = document.querySelector('.kpi[data-card-key="active_client_orders"]');
+    if (newOrdersCard) newOrdersCard.classList.toggle('kpi--attention', activeClientOrders > 0);
     dbSetKpi('brief_need_info', orderNeedInfo);
     dbSetKpiTrend('brief_need_info', `<b>${orderNeedInfo}</b> briefs`);
     dbSetKpi('order_in_production', orderInProduction);
