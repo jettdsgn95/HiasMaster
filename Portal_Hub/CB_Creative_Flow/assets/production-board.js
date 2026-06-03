@@ -93,6 +93,14 @@
     feedback_wait: 80, feedback_fix: 85, ready: 90, delivered: 95,
     completed: 100, paused: 0, cancelled: 0
   };
+  // Map task.status → order.production_status (order không có pending/feedback_*/paused).
+  // Các key trùng (received/inprogress/review/revision/ready/delivered/completed/cancelled) giữ nguyên.
+  const TASK_TO_ORDER_STATUS = {
+    pending: 'received',        // task đã giao, chờ Production nhận → order "Nhận task"
+    feedback_wait: 'delivered', // đã bàn giao, chờ client phản hồi
+    feedback_fix: 'revision',   // sửa theo feedback → order "Chỉnh sửa nội bộ"
+    paused: 'inprogress'        // tạm dừng → vẫn coi là đang trong sản xuất
+  };
   const TYPE_LABEL = {
     design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion',
     media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide'
@@ -690,9 +698,39 @@
     });
     persistTaskComment(task.task_id, transitionComment);
     notifyTaskStatusChange(task, newStatus); // fire-and-forget: báo Account/Admin (duyệt) hoặc PIC (sửa)
+    // task → order.production_status: client-side chỉ chạy cho admin/account (RLS chặn design/editor UPDATE orders).
+    // Nguồn chính là DB trigger (supabase/sync-order-status-from-tasks.sql) — cover MỌI role server-side.
+    if (task.order_id && !task.is_standalone && ['admin', 'account'].includes(user.role)) syncOrderStatusFromTasks(task.order_id, task);
     window.MH.toast({ type: 'success', title: 'Đã cập nhật status', message: `${task.task_id}: ${STATUS_LABEL[newStatus]} · ${task.progress}%` });
     render();
     if (currentTask && currentTask.task_id === task.task_id) openDrawer(task);
+  }
+
+  /* Đồng bộ order.production_status theo các task của order (fire-and-forget).
+     - Query tất cả task của order từ store (tránh thiếu task anh em khi local chỉ có 1).
+     - "Bottleneck" = task tiến độ THẤP NHẤT → order chỉ "Hoàn thành" khi MỌI task xong
+       (quan trọng cho media: 2 task Quay + Chụp).
+     - Bỏ qua task cancelled nếu còn task active. Account KHÔNG chỉnh tay status order nữa. */
+  async function syncOrderStatusFromTasks(orderId, justUpdated) {
+    if (!orderId || !(window.MH && window.MH.store && window.MH.supabaseEnabled)) return;
+    let siblings = null;
+    try { siblings = await window.MH.store.tasks.list({ order_id: orderId }); } catch (e) { console.warn('[task→order] list failed:', e); }
+    if (!Array.isArray(siblings) || !siblings.length) siblings = justUpdated ? [justUpdated] : [];
+    // Overlay status mới nhất của task vừa đổi (store có thể chưa kịp cập nhật — tránh đọc giá trị cũ).
+    if (justUpdated) siblings = siblings.map((t) => t.task_id === justUpdated.task_id ? Object.assign({}, t, { status: justUpdated.status, progress: justUpdated.progress }) : t);
+    siblings = siblings.filter((t) => !t.is_standalone);
+    if (!siblings.length) return;
+    const active = siblings.filter((t) => t.status !== 'cancelled');
+    const pool = active.length ? active : siblings;
+    let bottleneck = pool[0];
+    for (const t of pool) if ((STATUS_PROGRESS[t.status] ?? 0) < (STATUS_PROGRESS[bottleneck.status] ?? 0)) bottleneck = t;
+    const orderStatus = TASK_TO_ORDER_STATUS[bottleneck.status] || bottleneck.status;
+    const orderProgress = STATUS_PROGRESS[bottleneck.status] ?? 0;
+    window.MH.store.orders.update(orderId, {
+      production_status: orderStatus,
+      progress: orderProgress,
+      last_updated: new Date().toISOString()
+    }).catch((err) => console.warn('[task→order] order update failed:', err));
   }
 
   /* ---------- Drawer ---------- */

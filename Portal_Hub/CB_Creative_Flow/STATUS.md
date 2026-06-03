@@ -73,6 +73,8 @@ Status: Done
 - **Create Task from this Order** button: chỉ enable khi `account_status === 'confirmed'`. Redirect `production-board.html?createTask=1&order_id=...&project_name=...&task_type=...&priority=...&internal_deadline=...&production_pic=...&content=...` → auto-mở Create Task modal có prefill.
 - Drawer actions: Check, Need Info, Confirm, Push to Production, Cancel.
 - Push validation: confirmed brief + PIC + internal deadline + deliverable + active status.
+- **Push UX (2026-06-03)**: sau Confirm brief, nút **Push → Production giữ sáng** (CTA), chỉ mờ khi đã push (bỏ gate `readyToPush`); validate khi bấm. Thêm nút **"Xác nhận & Chuyển Production"** trong section Điều phối (lưu PIC/deadline rồi push 1 chạm). **Khóa PIC select sau push** (`isOrderPushed()`) + note "đổi PIC ở Task Tracker" (tránh desync order↔task). Hint push media-aware (Quay/Chụp).
+- **Auto-sync Production Status task→order (2026-06-03)**: order.production_status + progress tự đồng bộ theo task (bottleneck = task chậm nhất). Ô Production Status ở order drawer **read-only** (task-driven). Nguồn chính = DB trigger `supabase/sync-order-status-from-tasks.sql` (⚠ cần chạy production 1 lần — SECURITY DEFINER bỏ qua RLS cho design/editor); client-side chỉ admin/account.
 - 18 mock orders.
 
 ### 4. Task Tracker (Production Board)

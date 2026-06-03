@@ -4652,6 +4652,22 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
   background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
 }
 
+/* Nút "Xác nhận & Chuyển Production" trong section Điều phối (ngoài .drawer-actions) — xanh lá như Push step-4 */
+.btn-push-coord {
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
+  transition: filter 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+.btn-push-coord:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+.btn-push-coord:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+[data-theme="dark"] .btn-push-coord { background: linear-gradient(135deg, #16A34A 0%, #15803d 100%); }
+
 /* Hủy đơn: gradient đỏ brand, nằm trong .wf-actions-danger row riêng (tách khỏi flow 4 steps) */
 .drawer-actions .act-cancel {
   background: linear-gradient(135deg, #E53935 0%, #BA110F 100%);

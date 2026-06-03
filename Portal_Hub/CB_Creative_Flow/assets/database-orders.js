@@ -158,6 +158,12 @@
   function orderHasPic(o) {
     return o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
   }
+  // Order đã push sang Task Tracker (task đã được tạo) → khóa sửa PIC trong drawer
+  // để tránh desync (đổi PIC ở order KHÔNG reassign task đã tạo). Đổi PIC ở Task Tracker.
+  function isOrderPushed(o) {
+    const isCancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
+    return !!o.production_status && o.production_status !== 'unassigned' && !isCancelled;
+  }
   // Render 1 chip PIC: avatar tròn (initials) + tên (+ nhãn phụ Quay/Chụp nếu có).
   function picChip(name, suffix) {
     if (!name) return '';
@@ -329,6 +335,9 @@
     document.getElementById('visible-count').textContent = slice.length;
     document.getElementById('total-count').textContent = ORDERS.length;
     document.getElementById('page-info').textContent = `Trang ${state.page} / ${pages} · ${total} kết quả`;
+    // Cập nhật count của drilldown banner (tránh kẹt "0 kết quả" do tính lúc ORDERS còn rỗng/async).
+    const dlCount = document.getElementById('dl-count');
+    if (dlCount) dlCount.textContent = total;
     renderPagination(pages);
     renderCounts();
   }
@@ -376,6 +385,7 @@
     chip.classList.add('is-active');
     state.view = chip.getAttribute('data-view');
     state.page = 1;
+    removeDrilldownBanner(); // user đổi view thủ công → banner drilldown cũ không còn đúng
     render();
   });
 
@@ -673,14 +683,14 @@
         ${o.request_type === 'media' ? `
         <div class="edit-row">
           <label>PIC Quay</label>
-          <select class="select" id="edit-prod-pic-video">
+          <select class="select" id="edit-prod-pic-video" ${isOrderPushed(o) ? 'disabled' : ''}>
             <option value="">— Chưa gán —</option>
             ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic_video === p ? 'selected' : ''}>${p}</option>`).join('')}
           </select>
         </div>
         <div class="edit-row">
           <label>PIC Chụp</label>
-          <select class="select" id="edit-prod-pic-photo">
+          <select class="select" id="edit-prod-pic-photo" ${isOrderPushed(o) ? 'disabled' : ''}>
             <option value="">— Chưa gán —</option>
             ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic_photo === p ? 'selected' : ''}>${p}</option>`).join('')}
           </select>
@@ -688,12 +698,16 @@
         ` : `
         <div class="edit-row">
           <label>Production PIC</label>
-          <select class="select" id="edit-prod-pic">
+          <select class="select" id="edit-prod-pic" ${isOrderPushed(o) ? 'disabled' : ''}>
             <option value="">— Chưa gán —</option>
             ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic === p ? 'selected' : ''}>${p}</option>`).join('')}
           </select>
         </div>
         `}
+        ${isOrderPushed(o) ? `<p class="text-xs muted" style="margin:-4px 0 8px; display:flex; align-items:center; gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Đã push — đổi PIC tại <a href="production-board.html?dl=in_production" class="link">Task Tracker</a> để task được gán lại đúng người.
+        </p>` : ''}
         <div class="edit-row">
           <label>Priority</label>
           <select class="select" id="edit-priority">
@@ -706,18 +720,29 @@
         </div>
         <div class="edit-row">
           <label>Production Status</label>
-          <select class="select" id="edit-prod-status">
+          <select class="select" id="edit-prod-status" disabled title="Tự đồng bộ theo trạng thái task ở Task Tracker — không chỉnh tay">
             ${Object.entries(PROD_STATUS_LABEL).map(([k, label]) => `<option value="${k}" ${o.production_status === k ? 'selected' : ''}>${label}</option>`).join('')}
           </select>
         </div>
+        <p class="text-xs muted" style="margin:-2px 0 0; display:flex; align-items:center; gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+          Tự đồng bộ theo task ở <a href="production-board.html?dl=in_production" class="link">Task Tracker</a> (Production cập nhật).
+        </p>
       </section>
 
       <section class="drawer-block ow-comments">
         <div class="drawer-block-head"><span class="block-letter">C</span><h4>Ghi chú / Comment nội bộ</h4></div>
         <p class="ow-comment-help">Ghi chú trao đổi giữa Admin/Account về brief, thông tin cần bổ sung hoặc quyết định xử lý.</p>
         <textarea class="textarea" id="edit-internal-note" placeholder="Viết ghi chú nội bộ..." style="min-height:110px">${escapeHtml(o.internal_note || '')}</textarea>
-        <div class="row" style="justify-content: flex-end; margin-top: var(--space-3)">
-          <button class="btn btn-primary btn-sm" id="save-internal">Lưu điều phối & ghi chú</button>
+        <div class="row" style="justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3)">
+          <button class="btn btn-ghost btn-sm" id="save-internal">Lưu điều phối & ghi chú</button>
+          ${(() => {
+            const isCancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
+            if (isCancelled) return '';
+            if (isOrderPushed(o)) return `<button class="btn btn-sm" id="confirm-coordination" disabled style="opacity:.5">✓ Đã chuyển Production</button>`;
+            const canConfirm = o.account_status === 'confirmed';
+            return `<button class="btn btn-sm btn-push-coord" id="confirm-coordination" ${canConfirm ? '' : 'disabled'} title="${canConfirm ? 'Lưu điều phối và tạo task Production' : 'Cần Xác nhận brief trước'}">Xác nhận &amp; Chuyển Production →</button>`;
+          })()}
         </div>
       </section>
 
@@ -850,22 +875,28 @@
     const sendFinalBtn = document.getElementById('send-final-btn');
     if (sendFinalBtn) sendFinalBtn.addEventListener('click', () => sendDelivery('final'));
 
-    // Wire save button
-    document.getElementById('save-internal').addEventListener('click', () => {
+    // Đọc giá trị form Điều phối → ghi vào currentOrder + write-through Supabase.
+    // Dùng chung cho nút "Lưu điều phối" và nút "Xác nhận & Chuyển Production".
+    // Sau khi push (isPushed) các select PIC bị disable → giữ nguyên giá trị cũ, không ghi đè.
+    function applyCoordination() {
       const isMedia = currentOrder.request_type === 'media';
       const newStatus = document.getElementById('edit-account-status').value;
       const newAcctPic = document.getElementById('edit-account-pic').value || null;
       const elPic = document.getElementById('edit-prod-pic');
       const elPicV = document.getElementById('edit-prod-pic-video');
       const elPicP = document.getElementById('edit-prod-pic-photo');
-      const newProdPic = elPic ? (elPic.value || null) : (currentOrder.production_pic || null);
-      const newProdPicVideo = isMedia ? (elPicV ? (elPicV.value || null) : null) : (currentOrder.production_pic_video || null);
-      const newProdPicPhoto = isMedia ? (elPicP ? (elPicP.value || null) : null) : (currentOrder.production_pic_photo || null);
+      // Nếu select bị disable (đã push) → giữ giá trị hiện tại của order, không đọc DOM.
+      const newProdPic = (elPic && !elPic.disabled) ? (elPic.value || null) : (currentOrder.production_pic || null);
+      const newProdPicVideo = isMedia ? ((elPicV && !elPicV.disabled) ? (elPicV.value || null) : (currentOrder.production_pic_video || null)) : (currentOrder.production_pic_video || null);
+      const newProdPicPhoto = isMedia ? ((elPicP && !elPicP.disabled) ? (elPicP.value || null) : (currentOrder.production_pic_photo || null)) : (currentOrder.production_pic_photo || null);
       const newPriority = document.getElementById('edit-priority').value;
       const newDeadline = document.getElementById('edit-internal-deadline').value.replace('T', ' ');
-      const newProdStatus = document.getElementById('edit-prod-status').value;
+      // Production Status giờ TASK-DRIVEN (select disabled) → KHÔNG đọc form, giữ giá trị order hiện tại.
+      // Tránh ghi đè trạng thái đã auto-sync từ Task Tracker khi Account bấm Lưu.
+      const elProdStatus = document.getElementById('edit-prod-status');
+      const newProdStatus = (elProdStatus && !elProdStatus.disabled) ? elProdStatus.value : (currentOrder.production_status || 'unassigned');
       const newNote = document.getElementById('edit-internal-note').value;
-      // Sync progress theo production_status (đổi status → progress khớp).
+      // Sync progress theo production_status (đổi status → progress khớp). Status không đổi → giữ progress order.
       const newProgress = (newProdStatus !== currentOrder.production_status && PROD_PROGRESS[newProdStatus] != null)
         ? PROD_PROGRESS[newProdStatus] : currentOrder.progress;
 
@@ -897,9 +928,22 @@
       // 2 PIC cho media — cần cột production_pic_video/photo (chạy supabase/add-media-pics.sql)
       if (isMedia) { patch.production_pic_video = newProdPicVideo; patch.production_pic_photo = newProdPicPhoto; }
       persistOrder(currentOrder.order_id, patch);
+    }
+
+    // Wire save button — chỉ lưu, không push.
+    document.getElementById('save-internal').addEventListener('click', () => {
+      applyCoordination();
       window.MH.toast({ type: 'success', title: 'Đã lưu', message: 'Cập nhật Internal Management cho ' + currentOrder.order_id });
       render();
       openDrawer(currentOrder); // refresh drawer view
+    });
+
+    // Wire "Xác nhận & Chuyển Production" — lưu điều phối rồi push.
+    // pushToProduction tự validate (thiếu PIC/deadline → toast) + render + openDrawer.
+    const confirmProdBtn = document.getElementById('confirm-coordination');
+    if (confirmProdBtn) confirmProdBtn.addEventListener('click', () => {
+      applyCoordination();
+      pushToProduction(currentOrder);
     });
 
     // Update stepper state theo account_status + production_status
@@ -932,10 +976,7 @@
     const isConfirmed = o.account_status === 'confirmed';
     const isNeedinfo  = o.account_status === 'needinfo';
     const isChecking  = o.account_status === 'checking';
-    const hasPic      = o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
-    const hasDeadline = !!o.internal_deadline;
-    const hasDeliv    = o.request_type === 'media' ? true : (o.deliverable_type && o.deliverable_type.length > 0);
-    const readyToPush = isConfirmed && hasPic && hasDeadline && hasDeliv && !isCancelled;
+    // (Bỏ readyToPush: sau khi confirm brief, Push giữ sáng làm CTA; pushToProduction tự validate khi bấm.)
 
     // Cancelled state — disable mọi action, hide hint
     if (isCancelled) {
@@ -952,7 +993,7 @@
     } else if (isNeedinfo) {
       btnPush.disabled = true;
     } else if (isConfirmed && !isPushed) {
-      if (!readyToPush) btnPush.disabled = true;
+      // Brief đã xác nhận → Push giữ SÁNG (CTA), validate khi bấm; KHÔNG mờ vì thiếu PIC/deadline.
       btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true;
     } else if (isPushed) {
       btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
@@ -963,7 +1004,10 @@
       if (isPushed) {
         hint.hidden = false;
         hint.className = 'wf-hint is-done';
-        hint.innerHTML = 'Đã push sang Task Tracker. PIC: <b>' + (o.production_pic || '—') + '</b>. <a href="production-board.html?dl=in_production" class="link">Xem task →</a>';
+        const picText = o.request_type === 'media'
+          ? ([o.production_pic_video && ('Quay: ' + o.production_pic_video), o.production_pic_photo && ('Chụp: ' + o.production_pic_photo)].filter(Boolean).join(' · ') || '—')
+          : (o.production_pic || '—');
+        hint.innerHTML = 'Đã push sang Task Tracker. PIC: <b>' + picText + '</b>. <a href="production-board.html?dl=in_production" class="link">Xem task →</a>';
       } else {
         hint.hidden = true;
         hint.innerHTML = '';
@@ -1382,7 +1426,7 @@
   const DRILLDOWN_MAP = {
     // Order Intake
     total_orders:      { view: 'all',          sortKey: 'created_at',   sortDir: 'desc', label: 'Total Client Orders', desc: 'Toàn bộ Client Orders đang active (không gồm rejected).' },
-    new_requests:      { view: 'pending',      sortKey: 'created_at',   sortDir: 'asc',  label: 'New Orders',          desc: 'Đơn mới chờ Account xác nhận.' },
+    new_requests:      { view: 'pending',      sortKey: 'created_at',   sortDir: 'desc', label: 'New Orders',          desc: 'Đơn mới chờ Account xác nhận.' },
     checking:          { view: 'checking',     sortKey: 'last_updated', sortDir: 'desc', label: 'Checking Brief',      desc: 'Account đang review brief.' },
     brief_need_info:   { view: 'needinfo',     sortKey: 'last_updated', sortDir: 'desc', label: 'Need More Info',      desc: 'Đơn cần bổ sung thông tin từ client.' },
     confirmed:         { view: 'confirmed',    sortKey: 'last_updated', sortDir: 'desc', label: 'Confirmed Brief',     desc: 'Brief đã xác nhận, đang/sẵn sàng push Production.' },
@@ -1411,6 +1455,13 @@
       if (th.getAttribute('data-sort') === cfg.sortKey) th.classList.add(cfg.sortDir === 'asc' ? 'is-asc' : 'is-desc');
     });
     return cfg;
+  }
+  // Gỡ banner drilldown khi user tự đổi view/sort (banner không còn khớp filter hiển thị).
+  // Khác clearDrilldown: KHÔNG ép view/sort về mặc định — giữ lựa chọn user vừa thao tác.
+  function removeDrilldownBanner() {
+    const b = document.getElementById('dl-banner');
+    if (b) b.remove();
+    if (new URLSearchParams(location.search).get('dl')) history.replaceState(null, '', location.pathname);
   }
   function clearDrilldown() {
     state.view = 'all';
