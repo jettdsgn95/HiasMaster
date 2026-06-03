@@ -67,10 +67,19 @@
     } catch (e) { console.warn('[production-board] remote load failed:', e); }
     return null;
   }
+  // PATCH task đã tồn tại → dùng tasks.update (UPDATE), KHÔNG upsert partial.
+  // Upsert thiếu cột NOT NULL (project_name/task_type) sẽ fail âm thầm → status/link không lưu.
   function persistTask(taskId, patch) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
-    window.MH.store.tasks.upsert(Object.assign({ task_id: taskId }, patch)).catch(function (err) {
+    window.MH.store.tasks.update(taskId, patch).catch(function (err) {
       console.warn('[production-board] persist failed:', err);
+    });
+  }
+  // INSERT task MỚI (full row có đủ cột NOT NULL) → upsert. Chỉ dùng lúc tạo task.
+  function persistNewTask(taskId, fullRow) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    window.MH.store.tasks.upsert(Object.assign({ task_id: taskId }, fullRow)).catch(function (err) {
+      console.warn('[production-board] create persist failed:', err);
     });
   }
   function persistTaskComment(taskId, comment) {
@@ -1618,7 +1627,7 @@
     };
     // Chỉ pass shoot_location khi photo/shoot — backward-compat với DB chưa migrate.
     if (newTask.task_type === 'photo' || newTask.task_type === 'shoot') createPatch.shoot_location = newTask.shoot_location || null;
-    persistTask(newTask.task_id, createPatch);
+    persistNewTask(newTask.task_id, createPatch); // INSERT task mới (full row) — KHÔNG dùng update
     if (newTask.comments && newTask.comments.length) {
       persistTaskComment(newTask.task_id, newTask.comments[0]);
     }

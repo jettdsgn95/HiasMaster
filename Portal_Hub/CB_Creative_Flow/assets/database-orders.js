@@ -579,6 +579,15 @@
     if (o.production_status === 'received' || o.production_status === 'inprogress') {
       return { title: 'Theo dõi sản xuất', detail: 'Mở Task Tracker để xem tiến độ chi tiết của team Media.' };
     }
+    if (o.production_status === 'review') {
+      return { title: 'Duyệt nội bộ', detail: 'Team đã gửi preview/final — mở Task Tracker duyệt (Đạt → Sẵn sàng bàn giao) trước khi bàn giao client.' };
+    }
+    if (o.production_status === 'ready') {
+      return { title: 'Bàn giao cho client', detail: 'Task đã sẵn sàng. Copy link Final/Preview từ Task Tracker → dán vào mục "Bàn giao cho client" bên dưới → bấm Gửi. Client sẽ nhận thông báo + link.' };
+    }
+    if (o.production_status === 'delivered' || o.delivery_status === 'final' || o.delivery_status === 'client_wait') {
+      return { title: 'Chờ client phản hồi', detail: 'Đã bàn giao — theo dõi rating/feedback. Đóng task ở Task Tracker khi client xác nhận xong.' };
+    }
     if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
       return { title: 'Order đã hủy', detail: 'Không còn hành động sản xuất cho order này.' };
     }

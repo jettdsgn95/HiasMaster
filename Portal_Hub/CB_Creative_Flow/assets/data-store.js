@@ -212,6 +212,30 @@
       writeJSON('mh-extra-tasks', extras.slice(-100));
       return task;
     },
+    // PATCH 1 task đã tồn tại. PHẢI dùng UPDATE (không upsert partial) — bảng tasks có
+    // project_name/task_type NOT NULL nên upsert thiếu cột → INSERT-candidate vi phạm NOT NULL
+    // trước cả ON CONFLICT → update âm thầm fail. update().eq() tránh được lỗi này.
+    async update(taskId, patch) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('tasks').update(patch).eq('task_id', taskId).select().maybeSingle();
+        if (error) {
+          const retryPatch = stripMissingOptionalColumn(patch, error, '[store.tasks.update]');
+          if (retryPatch) {
+            const retry = await s.from('tasks').update(retryPatch).eq('task_id', taskId).select().maybeSingle();
+            if (retry.error) { console.warn('[store.tasks.update]', retry.error); throw retry.error; }
+            return retry.data;
+          }
+          console.warn('[store.tasks.update]', error); throw error;
+        }
+        return data;
+      }
+      // Fallback: patch sang 'mh-extra-tasks'
+      const extras = readJSON('mh-extra-tasks', []);
+      const idx = extras.findIndex((t) => t.task_id === taskId);
+      if (idx >= 0) { extras[idx] = Object.assign({}, extras[idx], patch); writeJSON('mh-extra-tasks', extras); }
+      return patch;
+    },
     async delete(taskId) {
       const s = await sb();
       if (s) {
