@@ -347,4 +347,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-05-29 · Master Dashboard live refresh + Order/Task Workbench drawers*
+*Last updated: 2026-06-03 · Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task (cần add-media-pics.sql) + Order Form rút gọn theo type + New Orders card*

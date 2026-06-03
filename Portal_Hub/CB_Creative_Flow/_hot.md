@@ -2,7 +2,7 @@
 
 > Đọc file này trước khi sửa project. Nó chứa context ngắn để agent/dev mới tiếp quản đúng style, đúng convention.
 >
-> *Last updated: 2026-06-01 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · Realtime push · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** (5 producers + Realtime consumer) · **Notification bell minimal line icons (no emoji)** · Order Workbench single-column flow · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-06-03 · Project state: Production-ready beta · Supabase Phase 1+2 LIVE · **Workflow notifications khép kín** (order→PIC→duyệt→bàn giao→rating, fuzzy PIC name match) · **Bàn giao Preview/Final trong Order drawer** (Delivery Log ĐÃ GỠ — đọc `orders.preview_link`/`final_delivery_link`) · **Order `media` "Quay/Chụp" gộp → Push tách 2 task** (production_pic_video/photo; `add-media-pics.sql` đã chạy production 2026-06-03) · Order Form theo type (media skip mục 4,5 + renumber 1-5; video gộp 1 ô; slide thả link; **bỏ wording**) · Master "New Orders" card + NEW badge · `notif-icons.js` shared module · fmtDateTime/toLocalInput fix timezone · **16 HTML · 13 JS** · Railway LIVE ✓*
 
 ---
 

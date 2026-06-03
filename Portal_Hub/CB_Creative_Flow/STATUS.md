@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-06-01 · Project state: Production-ready beta · Phase 1+2 LIVE · Realtime notifications · Demo data cleared · Cancel-order modal · **3 Dashboards fully wired** (Master separated combined / Orders Dashboard 13-KPI Client lifecycle / Task Dashboard 17-KPI Internal workload) · Master Dashboard live refresh · UI naming consistency (Modules 1-5) · **Client notifications sync LIVE** · **Notification bell minimal line icons (no emoji)** · Order Workbench single-column flow · Task Workbench drawer · Homepage hero copy targets Nội bộ CB Centres · Homepage hero background refresh · Order Form smart flow stepper · Railway deploy LIVE ✓*
+> *Last updated: 2026-06-03 · Project state: Production-ready beta · Phase 1+2 LIVE · **Workflow notifications khép kín** (order → PIC → duyệt nội bộ → bàn giao → rating) · **Bàn giao Preview/Final trong Order drawer** (trang Delivery Log ĐÃ GỠ) · **Order type `media` "Quay/Chụp" gộp → Push tách 2 task (PIC Quay + PIC Chụp)** (`add-media-pics.sql` đã chạy production 2026-06-03) · Order Form rút gọn theo type (media skip mục 4,5 + đánh số liền mạch; video gộp 1 ô nội dung+định hướng; slide thả link Google Doc; **bỏ wording toàn bộ**) · Master Dashboard "New Orders" card + animation + NEW badge ở Client Orders · notif-icons shared module · fix date/timezone (deadline không mất) · **16 HTML · 13 JS** · Railway deploy LIVE ✓*
 
 ---
 
@@ -54,12 +54,14 @@ Status: Done
 
 Status: Done
 
-- 7 sections A–G: requester, brief, request type, content, assets, deadline, confirm.
-- Smart flow stepper 1-7 with active/done states, progress bar, icons, and short helper text; submit bar stays sticky.
-- Service tiles and deliverables by type (Video/Quay/Photo/Ads conditional sections).
-- Upload simulation with max-size validation.
-- Priority logic, wording warning, autosave to `mh-order-draft-v2`, preview modal.
-- Auth guard: inject requester identity into order payload, lock email field, preserve draft on redirect.
+- 7 sections A–G: requester, brief, request type, content, assets, deadline, confirm. Smart flow stepper với active/done states, progress bar, icons; submit bar sticky.
+- **Per-type behavior** (cơ chế `data-subform-for` / `data-subform-hide-for` / `data-subform-show-for`):
+  - **Quay / Chụp ảnh = type `media`** (gộp Quay+Photo): service selector ☑Quay ☑Chụp + onsite info (ngày/giờ/địa điểm/người onsite) + Số lượng ảnh (bật khi tick Chụp); **ẩn mục 4 & 5, đi thẳng Deadline + đánh số liền mạch 1-5**.
+  - **Video/Motion**: ẩn kích thước; Link kịch bản (bắt buộc) + Link source; Section 4 gộp 1 ô "Nội dung & định hướng".
+  - **Slide**: ẩn kích thước; "Nội dung" → thả Link Google Doc/Slide; ẩn Headline/CTA/Thông tin bắt buộc.
+  - **Bỏ "Hỗ trợ wording" toàn bộ type.**
+- Upload simulation với max-size validation; priority logic; autosave `mh-order-draft-v2`; preview modal.
+- Auth guard: inject requester identity, lock email, preserve draft on redirect.
 
 ### 3. Database Orders
 
@@ -87,15 +89,13 @@ Status: Done
 - Drag/status validation, link requirement cho Ready/Delivered transitions.
 - 16 mock tasks + cross-page tasks từ `mh-extra-tasks` (created via modal hoặc "Create Task from Order").
 
-### 5. Delivery Log
+### 5. ~~Delivery Log~~ → Bàn giao trong Order drawer
 
-Status: Done
+Status: **Removed 2026-06-03** (trang `delivery-log.html` + `delivery-log.js` đã xóa).
 
-- Summary cards, toolbar filters, delivery table.
-- Detail drawer A–F: order/task, files/links, delivery control, feedback/rating, checklist, activity log.
-- Action modals: Send Preview, Send Final, Request Revision, Submit Rating.
-- Send Final requires checklist 8/8 and final link present.
-- Reopen flow. 10 mock deliveries.
+- **Lý do**: trang Delivery Log thao tác trên bảng `deliveries` riêng, KHÔNG sync sang `orders` mà Client Portal đọc → link không tới client; delivery cũng không tự tạo cho order thật.
+- **Thay bằng**: section **"Bàn giao cho client"** trong Order drawer (`database-orders.js`) — Account nhập Preview/Final Link → set `orders.preview_link`/`final_delivery_link` + `delivery_status`/`production_status` + notify client (`delivery_preview`/`delivery_final`). Client Portal đọc cột order → thấy link + rating prompt.
+- Bảng `deliveries` trong DB vẫn tồn tại nhưng không còn UI thao tác.
 
 ### 6. Reports
 
