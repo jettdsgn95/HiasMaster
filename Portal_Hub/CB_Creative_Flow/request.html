@@ -88,12 +88,12 @@
             <span class="step-copy"><b>Hạng mục</b><small>Chọn loại sản phẩm cần làm</small></span>
             <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
           </a>
-          <a href="#sec-d" data-step-link="sec-d">
+          <a href="#sec-d" data-step-link="sec-d" data-subform-hide-for="media">
             <span class="step-node"><span class="step-index">4</span><span class="step-check">✓</span></span>
             <span class="step-copy"><b>Nội dung &amp; định hướng</b><small>Thông điệp, format, yêu cầu chính</small></span>
             <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           </a>
-          <a href="#sec-e" data-step-link="sec-e">
+          <a href="#sec-e" data-step-link="sec-e" data-subform-hide-for="media">
             <span class="step-node"><span class="step-index">5</span><span class="step-check">✓</span></span>
             <span class="step-copy"><b>Tài nguyên</b><small>File, link, guideline tham chiếu</small></span>
             <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -470,7 +470,12 @@
               </div>
               <div class="field mt-4">
                 <label class="label" for="media_content">Nội dung cần Quay / Chụp</label>
-                <textarea class="textarea" id="media_content" name="media_content" placeholder="Mô tả phân cảnh / shot list, số lượng ảnh / thời lượng video mong muốn..."></textarea>
+                <textarea class="textarea" id="media_content" name="media_content" placeholder="Mô tả phân cảnh / shot list, thời lượng video mong muốn..."></textarea>
+              </div>
+              <div class="field mt-4">
+                <label class="label" for="photo_quantity">Số lượng ảnh mong muốn</label>
+                <input class="input" id="photo_quantity" name="photo_quantity" type="number" min="1" placeholder="VD: 30 - 50" disabled />
+                <span class="helper">Chỉ điền khi có tick “Chụp ảnh”.</span>
               </div>
               <div class="grid-2 mt-4">
                 <div class="field">
@@ -517,13 +522,13 @@
         </section>
 
         <!-- ============ Section 4 — Content & Creative ============ -->
-        <section class="card form-section" id="sec-d">
+        <section class="card form-section" id="sec-d" data-subform-hide-for="media">
           <div class="section-h">
             <span class="section-num" aria-label="Bước 4">4</span>
             <div><h2>Nội dung &amp; định hướng sáng tạo</h2><p>Brief càng cụ thể, team càng ít phải hỏi lại.</p></div>
           </div>
           <div class="stack-lg">
-            <div class="field" data-subform-hide-for="slide">
+            <div class="field" data-subform-hide-for="slide,video,motion">
               <label class="label" for="content_brief">Nội dung cần thể hiện <span class="req">*</span></label>
               <textarea class="textarea" id="content_brief" name="content_brief" required placeholder="Headline, thông tin phụ, thời gian, địa điểm, ưu đãi, CTA, hotline, website, logo / đơn vị đồng hành, nội dung bắt buộc..."></textarea>
               <span class="helper">Có thể paste từ Word / Notion. Hoặc dùng file đính kèm ở bước 5.</span>
@@ -534,7 +539,12 @@
               <input class="input" id="slide_source_link" name="slide_source_link" type="url" placeholder="https://docs.google.com/..." data-conditional-req />
               <span class="helper">Slide thường làm từ file Word/PPT thô — thả link Google Doc / Google Slide để team tiếp nhận.</span>
             </div>
-            <div class="grid-2" data-subform-hide-for="slide">
+            <div class="field" data-subform-show-for="video,motion">
+              <label class="label" for="video_brief">Nội dung &amp; định hướng sáng tạo <span class="req">*</span></label>
+              <textarea class="textarea" id="video_brief" name="video_brief" placeholder="Thông điệp chính, tông màu / mood, nhạc, pacing, reference, yêu cầu đặc biệt..." data-conditional-req></textarea>
+              <span class="helper">Video/Motion gộp nội dung cần thể hiện và phong cách/định hướng.</span>
+            </div>
+            <div class="grid-2" data-subform-hide-for="slide,video,motion">
               <div class="field">
                 <label class="label" for="main_headline">Headline chính</label>
                 <input class="input" id="main_headline" name="main_headline" type="text" placeholder="Tùy chọn" />
@@ -544,38 +554,25 @@
                 <input class="input" id="cta" name="cta" type="text" placeholder="VD: Đăng ký ngay" />
               </div>
             </div>
-            <div class="field" data-subform-hide-for="slide">
+            <div class="field" data-subform-hide-for="slide,video,motion">
               <label class="label" for="mandatory_info">Thông tin bắt buộc</label>
               <textarea class="textarea" id="mandatory_info" name="mandatory_info" placeholder="Hotline, website, địa điểm, logo đồng hành..." style="min-height:80px"></textarea>
             </div>
-            <div class="field">
+            <div class="field" data-subform-hide-for="video,motion">
               <label class="label" for="creative_direction">Phong cách / định hướng thiết kế <span class="req">*</span></label>
               <textarea class="textarea" id="creative_direction" name="creative_direction" required placeholder="Style, màu sắc, mood, tham khảo brand guideline..."></textarea>
               <span class="error">Vui lòng mô tả định hướng thiết kế.</span>
             </div>
-            <div class="grid-2">
-              <div class="field">
-                <label class="label" for="reference_link">Link tham khảo</label>
-                <input class="input" id="reference_link" name="reference_link" type="url" placeholder="https://..." />
-                <span class="helper">Link mẫu / inspiration (Behance, Pinterest...).</span>
-              </div>
-              <div class="field" data-subform-hide-for="slide">
-                <label class="label">Có cần hỗ trợ wording? <span class="req">*</span></label>
-                <div class="chips" role="radiogroup" id="wording_chips">
-                  <label class="chip"><input type="radio" name="wording_required" value="yes" hidden required /> Có — Cần wording lại</label>
-                  <label class="chip"><input type="radio" name="wording_required" value="no" hidden /> Không — Dùng đúng nội dung</label>
-                </div>
-                <div class="callout callout--warning mt-2" id="wording-warning" style="display:none">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span>Team Media sẽ sử dụng đúng nội dung đã cung cấp. Vui lòng kiểm tra kỹ chính tả và thông tin trước khi gửi.</span>
-                </div>
-              </div>
+            <div class="field">
+              <label class="label" for="reference_link">Link tham khảo</label>
+              <input class="input" id="reference_link" name="reference_link" type="url" placeholder="https://..." />
+              <span class="helper">Link mẫu / inspiration (Behance, Pinterest...).</span>
             </div>
           </div>
         </section>
 
         <!-- ============ Section 5 — Assets ============ -->
-        <section class="card form-section" id="sec-e">
+        <section class="card form-section" id="sec-e" data-subform-hide-for="media">
           <div class="section-h">
             <span class="section-num" aria-label="Bước 5">5</span>
             <div><h2>Tài nguyên đính kèm</h2><p>File brief, logo, hình ảnh, guideline, source cũ, link Drive...</p></div>

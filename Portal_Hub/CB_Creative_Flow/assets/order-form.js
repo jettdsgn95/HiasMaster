@@ -157,6 +157,7 @@
     });
     // Uncheck deliverables that are now hidden
     document.querySelectorAll('.deliverable-group:not(.is-active) input[type="checkbox"]').forEach((cb) => (cb.checked = false));
+    renumberSteps(); // đánh số stepper + badge liền mạch theo section đang hiện
   }
   form.querySelectorAll('input[name="request_type"]').forEach((r) => r.addEventListener('change', updateConditional));
 
@@ -172,6 +173,17 @@
   if (sizeRatioSel) sizeRatioSel.addEventListener('change', syncCustomSize);
   syncCustomSize();
 
+  /* ---------- Số lượng ảnh: chỉ bật khi tick "Chụp ảnh" (media) ---------- */
+  const photoQtyInput = document.getElementById('photo_quantity');
+  function syncPhotoQty() {
+    if (!photoQtyInput) return;
+    const chup = !!form.querySelector('input[name="media_service"][value="Chụp"]:checked');
+    photoQtyInput.disabled = !chup;
+    if (!chup) photoQtyInput.value = '';
+  }
+  form.querySelectorAll('input[name="media_service"]').forEach((c) => c.addEventListener('change', syncPhotoQty));
+  syncPhotoQty();
+
   /* ---------- Priority → urgent reason ---------- */
   const urgentField = document.getElementById('urgent_field');
   const urgentReason = document.getElementById('urgent_reason');
@@ -181,14 +193,6 @@
       urgentField.style.display = isCritical ? '' : 'none';
       if (isCritical) urgentReason.setAttribute('data-conditional-req', '');
       else urgentReason.removeAttribute('data-conditional-req');
-    });
-  });
-
-  /* ---------- Wording warning ---------- */
-  const wordingWarn = document.getElementById('wording-warning');
-  form.querySelectorAll('input[name="wording_required"]').forEach((r) => {
-    r.addEventListener('change', () => {
-      wordingWarn.style.display = (r.checked && r.value === 'no') ? '' : 'none';
     });
   });
 
@@ -257,15 +261,35 @@
     }
     return true;
   }
+  // Chỉ tính các section đang HIỆN (media ẩn sec-d/sec-e → còn 5 mục).
+  function visibleSections() {
+    return SECTIONS.filter((id) => { const el = document.getElementById(id); return el && el.offsetParent !== null; });
+  }
+  // Đánh số liền mạch theo section đang hiện: cập nhật badge .section-num trong form
+  // + .step-index trong stepper sidebar (media bỏ mục 4,5 → hiện 1-5 thay vì 1,2,3,6,7).
+  function renumberSteps() {
+    let n = 0;
+    SECTIONS.forEach((id) => {
+      const sec = document.getElementById(id);
+      if (!sec || sec.offsetParent === null) return;
+      n++;
+      const badge = sec.querySelector('.section-num');
+      if (badge) { badge.textContent = n; badge.setAttribute('aria-label', 'Bước ' + n); }
+      const link = document.querySelector(`[data-step-link="${id}"]`);
+      const idx = link && link.querySelector('.step-index');
+      if (idx) idx.textContent = n;
+    });
+  }
   function refreshProgress() {
-    const done = SECTIONS.filter(sectionCompleted).length;
+    const vis = visibleSections();
+    const done = vis.filter(sectionCompleted).length;
     const el = document.querySelector('#progress-info b');
     if (el) el.textContent = done;
-    const currentIndex = Math.max(0, SECTIONS.indexOf(activeSectionId));
-    const pct = Math.round((done / SECTIONS.length) * 100);
+    const currentIndex = Math.max(0, vis.indexOf(activeSectionId));
+    const pct = Math.round((done / vis.length) * 100);
     const sideLabel = document.getElementById('side-progress-label');
     const sideFill = document.getElementById('side-progress-fill');
-    if (sideLabel) sideLabel.textContent = 'Bước ' + (currentIndex + 1) + '/' + SECTIONS.length + ' · ' + pct + '% hoàn tất';
+    if (sideLabel) sideLabel.textContent = 'Bước ' + (currentIndex + 1) + '/' + vis.length + ' · ' + pct + '% hoàn tất';
     if (sideFill) sideFill.style.width = pct + '%';
     document.querySelectorAll('[data-step-link]').forEach((link) => {
       const id = link.getAttribute('data-step-link');
@@ -373,6 +397,7 @@
       document.querySelectorAll('.chips').forEach(syncChips);
       updateConditional();
       syncCustomSize();
+      syncPhotoQty();
       const t = new Date(savedAt);
       const pad = (n) => String(n).padStart(2, '0');
       draftMsg.textContent = 'Khôi phục bản nháp ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ' · ' + pad(t.getDate()) + '/' + pad(t.getMonth() + 1);
@@ -501,6 +526,7 @@
           <dt>Dịch vụ</dt><dd>${mediaServices}</dd>
           <dt>Ngày / giờ</dt><dd>${val(d.media_date)}${d.media_time ? ' · ' + d.media_time : ''}</dd>
           <dt>Địa điểm</dt><dd>${val(d.media_location)}</dd>
+          ${d.photo_quantity ? `<dt>Số lượng ảnh</dt><dd>${val(d.photo_quantity)}</dd>` : ''}
           <dt>Nội dung</dt><dd>${val(d.media_content)}</dd>
           ` : ['video', 'motion'].includes(d.request_type) ? `
           <dt>Hạng mục</dt><dd>${deliverables}</dd>
@@ -519,13 +545,17 @@
       <div class="preview-block">
         <h5>D. Nội dung &amp; định hướng</h5>
         <dl>
-          <dt>${d.request_type === 'slide' ? 'Link nội dung thô' : 'Nội dung'}</dt><dd>${val(d.request_type === 'slide' ? d.slide_source_link : d.content_brief)}</dd>
-          ${d.request_type === 'slide' ? '' : `
+          ${['video', 'motion'].includes(d.request_type) ? `
+          <dt>Nội dung &amp; định hướng</dt><dd>${val(d.video_brief)}</dd>
+          ` : d.request_type === 'slide' ? `
+          <dt>Link nội dung thô</dt><dd>${val(d.slide_source_link)}</dd>
+          <dt>Định hướng</dt><dd>${val(d.creative_direction)}</dd>
+          ` : `
+          <dt>Nội dung</dt><dd>${val(d.content_brief)}</dd>
           <dt>Headline</dt><dd>${val(d.main_headline)}</dd>
           <dt>CTA</dt><dd>${val(d.cta)}</dd>
-          `}
           <dt>Định hướng</dt><dd>${val(d.creative_direction)}</dd>
-          ${d.request_type === 'slide' ? '' : `<dt>Wording</dt><dd>${d.wording_required === 'yes' ? 'Cần hỗ trợ wording' : (d.wording_required === 'no' ? 'Dùng đúng nội dung' : '—')}</dd>`}
+          `}
           <dt>Link tham khảo</dt><dd>${val(d.reference_link)}</dd>
         </dl>
       </div>
@@ -675,21 +705,21 @@
           if (orderPayload.media_time) parts.push('Giờ: ' + orderPayload.media_time);
           if (orderPayload.media_location) parts.push('Địa điểm: ' + orderPayload.media_location);
           if (orderPayload.onsite_contact) parts.push('Onsite: ' + orderPayload.onsite_contact + (orderPayload.onsite_phone ? ' (' + orderPayload.onsite_phone + ')' : ''));
+          if (orderPayload.photo_quantity) parts.push('Số lượng ảnh: ' + orderPayload.photo_quantity);
           if (orderPayload.media_content) parts.push('Nội dung: ' + orderPayload.media_content);
           if (parts.length) {
             const summary = '[Buổi Quay / Chụp] ' + parts.join(' · ');
             row.content_brief = row.content_brief ? (summary + '\n\n' + row.content_brief) : summary;
           }
         }
-        // Video / Motion: gói link kịch bản + source vào content_brief để PIC thấy.
+        // Video / Motion: nội dung & định hướng gộp trong video_brief; thêm link kịch bản + source.
         if (['video', 'motion'].includes(row.request_type)) {
+          let base = (orderPayload.video_brief || '').trim();
           const vparts = [];
           if (orderPayload.script_link) vparts.push('Kịch bản: ' + orderPayload.script_link);
           if (orderPayload.footage_link) vparts.push('Source: ' + orderPayload.footage_link);
-          if (vparts.length) {
-            const vsummary = '[Video] ' + vparts.join(' · ');
-            row.content_brief = row.content_brief ? (vsummary + '\n\n' + row.content_brief) : vsummary;
-          }
+          if (vparts.length) base = (base ? base + '\n\n' : '') + '[Video] ' + vparts.join(' · ');
+          if (base) row.content_brief = base;
         }
         // Slide: nội dung là link thô (Google Doc/Slide) thay vì text → đưa vào content_brief.
         if (row.request_type === 'slide' && orderPayload.slide_source_link) {
