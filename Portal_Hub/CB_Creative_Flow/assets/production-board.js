@@ -102,6 +102,23 @@
   /* ---------- Mock tasks ---------- */
   const TODAY = new Date('2026-05-13');
   function fmtDT() { return new Date().toISOString().slice(0, 16).replace('T', ' '); }
+  // Hiển thị timestamp → "DD/MM/YYYY HH:MM" local. Bare "YYYY-MM-DD HH:MM" (fmtDT) coi là UTC.
+  function fmtDateTime(s) {
+    if (!s) return '—';
+    s = String(s);
+    const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z');
+    if (isNaN(d.getTime())) return s;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  // internal_deadline (ISO Supabase HOẶC bare local) → value cho <input datetime-local> (local).
+  function toLocalInput(s) {
+    if (!s) return '';
+    const d = new Date(String(s).replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
   function parseDate(s) { return s ? new Date(s.replace(' ', 'T')) : null; }
   function diffDays(s) { const d = parseDate(s); if (!d) return null; return Math.ceil((d - TODAY) / 86400000); }
   function fmtRelative(s) {
@@ -186,7 +203,7 @@
         <div class="c-bubble">
           <div class="c-head">
             <span><b>${escapeHtml(c.author)}</b><span class="c-type t--${c.type || 'internal'}">${(c.type || 'internal').toUpperCase()}</span></span>
-            <time>${c.time}</time>
+            <time>${fmtDateTime(c.time)}</time>
           </div>
           ${replyBadge}
           <div>${renderCommentText(c.text)}</div>
@@ -408,7 +425,7 @@
           <td><div class="progress-mini"><div class="bar"><i style="width:${t.progress}%"></i></div><b>${t.progress}%</b></div></td>
           <td><div class="deadline-cell ${dlCls}"><span class="date">${dl_fmt}</span><span class="relative">${fmtRelative(t.internal_deadline)}</span></div></td>
           <td><div class="kc-flags">${links.join('') || '<span class="text-xs muted">—</span>'}</div></td>
-          <td><span class="mono text-xs muted">${t.last_update.split(' ')[0]}</span></td>
+          <td><span class="mono text-xs muted">${fmtDateTime(t.last_update).split(' ')[0]}</span></td>
           <td><button class="icon-btn" data-action="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg></button></td>
         </tr>
       `;
@@ -767,7 +784,7 @@
           <li>
             <span class="tw-dot"></span>
             <div><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.actor)}</small></div>
-            <time>${escapeHtml(item.time || '')}</time>
+            <time>${fmtDateTime(item.time)}</time>
           </li>
         `).join('')}
       </ol>
@@ -914,7 +931,7 @@
         </div>
         <div class="edit-row">
           <label>Internal Deadline</label>
-          <input class="input" id="edit-deadline" type="datetime-local" value="${t.internal_deadline ? t.internal_deadline.replace(' ', 'T') : ''}" />
+          <input class="input" id="edit-deadline" type="datetime-local" value="${toLocalInput(t.internal_deadline)}" />
         </div>
         <div class="edit-row">
           <label>Priority</label>
@@ -1415,7 +1432,7 @@
     tmPriority.value = p.priority || 'normal';
     tmPic.value = p.assigned_to || '';
     if (p.internal_deadline) {
-      tmDeadline.value = String(p.internal_deadline).replace(' ', 'T');
+      tmDeadline.value = toLocalInput(p.internal_deadline);
     } else {
       tmDeadline.value = '';
     }

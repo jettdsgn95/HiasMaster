@@ -323,8 +323,8 @@
   function statusHelp() {
     return {
       intent: 'process_help',
-      text: 'Status chính trong flow:\n\n- Pending/Checking: Account đang kiểm tra brief.\n- Need Info: requester cần bổ sung thông tin.\n- Confirmed: brief đã đủ để sản xuất.\n- In Production: Design/Editor đang làm task.\n- Internal Review: chờ Account/Admin duyệt.\n- Ready/Preview/Final: sẵn sàng hoặc đã bàn giao qua Delivery Log.\n\nChatbot chỉ giải thích và điều hướng; các thao tác như đổi deadline, gửi final hoặc đóng order phải làm trong UI có quyền.',
-      actions: [{ label: 'Open Internal Task Tracker', url: 'production-board.html' }, { label: 'Open Delivery Log', url: 'delivery-log.html' }]
+      text: 'Status chính trong flow:\n\n- Pending/Checking: Account đang kiểm tra brief.\n- Need Info: requester cần bổ sung thông tin.\n- Confirmed: brief đã đủ để sản xuất.\n- In Production: Design/Editor đang làm task.\n- Internal Review: chờ Account/Admin duyệt.\n- Ready/Preview/Final: sẵn sàng hoặc đã bàn giao (Account gửi link trong Order drawer).\n\nChatbot chỉ giải thích và điều hướng; các thao tác như đổi deadline, gửi final hoặc đóng order phải làm trong UI có quyền.',
+      actions: [{ label: 'Open Client Orders', url: 'database-orders.html' }, { label: 'Open Internal Task Tracker', url: 'production-board.html' }]
     };
   }
 

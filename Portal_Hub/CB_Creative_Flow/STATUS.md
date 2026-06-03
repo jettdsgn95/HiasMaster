@@ -15,7 +15,7 @@
 | 2 | Order Form | Done | `request.html`, `order-form.js` | [02](../Brief_Wflow/CB_Creative_Flow_02_Order_Form_Module.md) |
 | 3 | Database Orders | Done | `database-orders.html`, `database-orders.js` | [03](../Brief_Wflow/CB_Creative_Flow_03_database_orders_module.md) |
 | 4 | Task Tracker (Production Board) | Done | `production-board.html`, `production-board.js` | [04](../Brief_Wflow/CB_Creative_Flow_04_production_board_module.md) |
-| 5 | Delivery Log | Done | `delivery-log.html`, `delivery-log.js` | [05](../Brief_Wflow/CB_Creative_Flow_05_delivery_log_module.md) |
+| 5 | ~~Delivery Log~~ → **Bàn giao trong Order drawer** | Removed 2026-06-03 | `database-orders.js` (section "Bàn giao cho client") | — |
 | 6 | Reports | Done | `reports.html`, `reports.js` | [06](../Brief_Wflow/CB_Creative_Flow_06_reports_module.md) |
 | 7 | User Management | Done | `user-management.html`, `user-management.js` | [07](../Brief_Wflow/CB_Creative_Flow_07_user_management_module.md) |
 | 8 | Settings | Done | `settings.html`, `settings.js` | [08](../Brief_Wflow/CB_Creative_Flow_08_settings_module.md) |
@@ -177,7 +177,7 @@ No pending MVP modules. Remaining work is production integration:
 
 ## File Inventory
 
-Build total: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · 6 Supabase SQL migrations**.
+Build total: **16 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 8 Supabase SQL migrations**. (Delivery Log page removed 2026-06-03.)
 
 New file 2026-06-02:
 - `assets/notif-icons.js` — Shared notification icon module (`window.MH.notifIcons`), single source of truth dùng bởi app.js bell + client-dashboard.js panel. Load trước app.js trên 12 page có chuông/panel.
@@ -208,7 +208,6 @@ New files 2026-05-20:
 | `task-dashboard.html` | 46.4 |
 | `assets/ai-tools.js` | 45.7 |
 | `assets/user-management.js` | 42.8 |
-| `assets/delivery-log.js` | 42.0 |
 | `assets/client-dashboard.js` | 36.5 |
 | `production-board.html` | 34.3 |
 | `client-dashboard.html` | 30.6 |
@@ -222,7 +221,6 @@ New files 2026-05-20:
 | `assets/chatbot.js` | 21.0 |
 | `assets/reports.js` | 20.7 |
 | `index.html` | 17.8 |
-| `delivery-log.html` | 17.4 |
 | `ai-tools.html` | 15.7 |
 | `help.html` | 14.9 |
 | `login.html` | 14.8 |
@@ -239,6 +237,9 @@ New files 2026-05-20:
 
 | Date | Module | Action |
 |---|---|---|
+| 2026-06-03 | Database Orders + Task Tracker | **Fix Internal Deadline mất khi mở lại + timestamp hiện ISO thô**. Root cause: input `datetime-local` chỉ `.replace(' ','T')` nên giá trị ISO từ Supabase (`...:00+00:00`, có giây + timezone) không parse được → input rỗng (deadline "mất"); các chỗ hiển thị `created_at`/`last_updated`/comment time đổ thẳng ISO. Fix: thêm helper `toLocalInput(s)` (ISO/bare → `YYYY-MM-DDTHH:MM` giờ local) cho input datetime-local, và `fmtDateTime(s)` (→ `DD/MM/YYYY HH:MM` local, coi bare là UTC vì lưu bằng `toISOString`) cho mọi chỗ hiển thị timestamp. Áp dụng: `database-orders.js` (edit-internal-deadline, activity log, "Tạo lúc", Ngày gửi) + `production-board.js` (edit-deadline, modal prefill, comment/activity time, table last_update). |
+| 2026-06-03 | Delivery Log (removed) | **Gỡ trang Delivery Log**. Sau khi bàn giao chuyển vào Order drawer (hướng A), trang Delivery Log (`deliveries` table lệch kiến trúc) thành vestigial → gỡ hẳn: xóa `delivery-log.html` + `assets/delivery-log.js`; gỡ sidebar nav khỏi 10 trang internal; dashboard drilldown `ready_for_delivery`/`average_rating`/`rating_coverage` → `database-orders.html`; `app.js resolveNotifLink` deliveries → `database-orders.html`; chatbot bỏ action "Open Delivery Log" → "Open Client Orders". Còn `16 HTML · 13 JS`. (Bảng `deliveries` trong DB vẫn tồn tại nhưng không còn UI thao tác — flow thật đi qua order.) |
+| 2026-06-03 | Database Orders / Delivery flow | **Fix flow bàn giao link không tới client (đứt orders↔deliveries)**. Root cause: Delivery Log lưu preview/final vào bảng `deliveries`, nhưng Client Portal đọc `orders.preview_link`/`orders.final_delivery_link` → client không thấy link; thêm nữa delivery KHÔNG tự tạo cho order thật nên Delivery Log trống. Fix (hướng A): chuyển thao tác bàn giao vào **Order drawer** (`database-orders.js`) — section "Bàn giao cho client" cho admin/account nhập **Preview Link → "Gửi Preview"** (set `order.preview_link` + `delivery_status='client_wait'` + `production_status='feedback_wait'` + `delivery_date` + notify client `delivery_preview`) và **Final Link → "Gửi Final"** (set `final_delivery_link` + `delivery_status='final'` + `production_status='delivered'` + `progress=95` + notify `delivery_final`). Client Portal đọc order → thấy link + rating prompt (status delivered). Dùng cột order có sẵn, không cần bảng deliveries. **Delivery Log cũ giờ vestigial cho flow thật.** |
 | 2026-06-02 | Order Form | **Slide / Proposal: bỏ kích thước + đổi Nội dung sang thả Link thô (Google Doc/Slide)**. Slide thường làm từ file Word/PPT thô của TGĐ. `request.html`: thêm `slide` vào `data-subform-hide-for` (ẩn size). Section 4: textarea `content_brief` thêm `data-subform-hide-for="slide"` (ẩn cho slide); thêm field `#slide_source_link` "Link nội dung thô" (`data-conditional-req`, bắt buộc) với **cơ chế mới `data-subform-show-for="slide"`** (hiện field CHỈ cho type liệt kê). `order-form.js`: thêm loop `[data-subform-show-for]` (toggle `.is-cond-shown`); doSubmit map `slide_source_link`→`content_brief`; preview slide hiện "Link nội dung thô" + bỏ size. `styles.css`: `[data-subform-show-for]{display:none}` + `.is-cond-shown{display:block}`. Validate/section-completion tự skip field ẩn (offsetParent null). Slide cũng ẩn Headline/CTA/Thông tin bắt buộc/hỗ trợ wording (`data-subform-hide-for="slide"`); chỉ giữ Link nội dung thô + Phong cách/định hướng + Link tham khảo. Preview ẩn Headline/CTA/Wording cho slide. |
 | 2026-06-02 | Order Form | **Video Editing: bỏ kích thước, thêm Link kịch bản (bắt buộc) + Link source**. `request.html`: ẩn 2 trường Kích thước/Tỉ lệ + Kích thước cụ thể cho `video`+`motion` (mở rộng `data-subform-hide-for="media,video,motion"` — 2 type này đã có "Tỉ lệ video" trong sub-form). Video sub-form thêm `#script_link` "Link kịch bản" (`data-conditional-req`, bắt buộc) + đổi "Link footage Drive" → "Link source" (`#footage_link`); bỏ checkbox "Đã có kịch bản" (thừa). `order-form.js`: gói `script_link`+`footage_link` vào `content_brief` (PIC thấy); preview video/motion hiện Tỉ lệ/thời lượng + 2 link thay vì kích thước. (Áp dụng cả Motion vì dùng chung sub-form.) |
 | 2026-06-02 | Order Form + Database Orders | **Gộp Quay + Chụp ảnh → 1 type `media` "Quay / Chụp ảnh" + tách 2 task khi Push (Phase 1+2)**. Lý do: sự kiện/ngoại khóa thường order cả quay lẫn chụp cùng 1 buổi. **P1 (form):** `request.html` gộp 2 tile → 1 tile `media`; 2 deliverable group (Quay/Chụp) đổi `data-deliverable-for="media"`; gộp 2 sub-form → 1 "Thông tin buổi Quay / Chụp" có service selector `media_service` (☑Quay ☑Chụp, ≥1) + onsite info dùng chung (ngày/giờ/địa điểm/onsite); ẩn size cho media. `order-form.js`: REQ_TYPE_LABEL+validation (≥1 service) + preview media + map `media_location`→`shoot_location` + gói onsite info vào `content_brief`. TYPE_LABEL `media` ở database-orders/production-board/delivery-log. **P2 (2 task):** `supabase/add-media-pics.sql` — mở rộng CHECK `orders.request_type` thêm `'media'` (BẮT BUỘC) + thêm cột `production_pic_video`/`production_pic_photo`. Order drawer media hiện 2 ô PIC (Quay/Chụp); `pushToProduction` cho media tạo 2 task riêng (task_type `shoot` cho Quay + `photo` cho Chụp) theo **PIC nào được gán** (không dùng deliverable), gán PIC riêng + notify từng PIC. Push readiness/next-action/brief-checklist media-aware (bỏ check deliverable+size, thay bằng dịch vụ+địa điểm). **Media KHÔNG dùng checkbox "Hạng mục cần sản xuất"** (ẩn qua `data-subform-hide-for="media"`) — chỉ cần service selector ☑Quay ☑Chụp + ô "Nội dung cần Quay/Chụp". **Order cũ `shoot`/`photo` giữ nguyên.** ⚠️ Cần chạy `add-media-pics.sql` trong Supabase trước khi dùng (nếu chưa, media order chỉ lưu local do CHECK constraint). |

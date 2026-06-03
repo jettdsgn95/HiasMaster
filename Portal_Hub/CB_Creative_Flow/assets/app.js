@@ -794,7 +794,7 @@
       if (!id) return '';
       if (type === 'tasks')      return 'production-board.html?id=' + encodeURIComponent(id);
       if (type === 'orders')     return 'database-orders.html?id=' + encodeURIComponent(id);
-      if (type === 'deliveries') return 'delivery-log.html?id=' + encodeURIComponent(id);
+      if (type === 'deliveries') return 'database-orders.html?id=' + encodeURIComponent(id);
       return '';
     }
 

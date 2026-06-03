@@ -10,9 +10,9 @@
 
 **CB Media Hub / CB Creative Flow** là Creative Service Portal cho **CB Centres**.
 
-- Static multi-page site: 17 HTML pages, 11 JS files, 1 shared CSS, zero build.
+- Static multi-page site: 16 HTML pages, 13 JS files, 1 shared CSS, zero build. (Delivery Log page gỡ 2026-06-03 — bàn giao trong Order drawer.)
 - **2 khu vực riêng biệt**: Internal Dashboard (admin/account/design/editor) và Client Portal (client).
-- Workflow chính: Order Form → Database Orders → Production Board → Delivery Log → Reports.
+- Workflow chính: Order Form → Client Orders (database-orders) → Internal Task Tracker → **bàn giao trong Order drawer** → Reports.
 - Brand: navy `#191970` + red `#BA110F`, Inter / Plus Jakarta Sans + Playfair italic accent.
 - Done: 5 public pages + 1 client portal + 10 internal modules, gồm AI Tools MVP và Chatbot MVP.
 - Data/auth/upload/API đều là demo/mock, chưa production-ready.
@@ -84,7 +84,6 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 | `task-dashboard.html` | admin, account, design, editor | inline (Task-level / Production KPI) |
 | `database-orders.html` | admin, account | `database-orders.js` |
 | `production-board.html` | admin, account, design, editor | `production-board.js` — Task Tracker / Production Board |
-| `delivery-log.html` | admin, account | `delivery-log.js` |
 | `reports.html` | admin, account | `reports.js` |
 | `ai-tools.html` | admin, account, design, editor | `ai-tools.js` |
 | `chatbot.html` | admin, account, design, editor | `chatbot.js` |
@@ -130,7 +129,7 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
   - Account **Push → Production** → tạo task + `task_assigned` → **PIC** (lookup qua `findUserIdByName` fuzzy: exact→prefix→suffix→contains, tên ngắn khớp tên đầy đủ) + `order_status_changed` → Client.
   - PIC gửi duyệt (status→`review`) → `task_status_changed` "Task chờ duyệt nội bộ" → **Admin+Account** (`production-board.js notifyTaskStatusChange`).
   - Account trả sửa (status→`revision`/`feedback_fix` ở Task Tracker, HOẶC `request_rev` ở Delivery Log) → `task_status_changed` "Task cần chỉnh sửa" → **PIC**.
-  - Account Send Preview/Final → `delivery_preview`/`delivery_final` (+ link file) → Client.
+  - **Account bàn giao trong Order drawer** (`database-orders.js` section "Bàn giao cho client", 2026-06-03): nhập Preview Link → "Gửi Preview" (set `order.preview_link`+`delivery_status=client_wait`+`production_status=feedback_wait`); Final Link → "Gửi Final" (set `final_delivery_link`+`delivery_status=final`+`production_status=delivered`) → notify `delivery_preview`/`delivery_final` → Client. **Client Portal đọc `orders.preview_link`/`orders.final_delivery_link`** (KHÔNG đọc bảng `deliveries`). ⚠️ **Delivery Log (`delivery-log.js`) thao tác trên bảng `deliveries` riêng, KHÔNG sync sang order → vestigial cho flow thật**; đừng dùng Delivery Log để bàn giao cho client.
   - Client rating → `orders.update(satisfaction_score, client_feedback)` + `rating_received` → **Admin+Account** (`client-dashboard.js`, KHÔNG còn local-only).
   - LƯU Ý: gán PIC trên order ≠ tạo task; phải Push. Mọi cross-user INSERT notification được RLS cho phép (producer chạy dưới user bất kỳ).
 - **Icon thông báo = SHARED MODULE `assets/notif-icons.js` (2026-06-02 refactor)**: SINGLE SOURCE OF TRUTH. Expose `window.MH.notifIcons` = `{ PATHS, get(type)→{svg,cls}, stripEmoji(s) }`. Cả `app.js` (bell dropdown, internal+client) lẫn `client-dashboard.js` (panel "Thông báo") đều consume `window.MH.notifIcons` — KHÔNG còn map riêng. **Sửa icon/màu chỉ ở `notif-icons.js` là mọi surface (bell, panel, toast) tự đồng bộ.** Load `<script src="assets/notif-icons.js">` TRƯỚC `app.js` trên 12 page có chuông/panel (11 internal + client-dashboard; public pages không có chuông nên `initNotificationBell` early-return, không cần). `cls` (is-accent/is-danger) do từng surface tự style màu. Client panel item dùng `.notif-ico` (CSS inline `client-dashboard.html`).
@@ -320,8 +319,8 @@ Vận hành
 ├── Order Form             admin/account (design/editor blocked)
 ├── Client Orders          admin/account  (was "Database Orders"; file: database-orders.html)
 ├── Internal Task Tracker  (was "Task Tracker"; file: production-board.html; page H1: "Internal Task Tracker / Task Tracker · Production Board")
-├── Delivery Log           admin/account
 └── Reports                admin/account
+    (Delivery Log đã GỠ 2026-06-03 — bàn giao Preview/Final link nằm trong Order drawer của Client Orders)
 
 Hệ thống
 ├── AI Tools            all internal roles

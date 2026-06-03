@@ -79,7 +79,6 @@ CB_Creative_Flow/
 ├── task-dashboard.html   Task-level / internal production KPI dashboard
 ├── database-orders.html  Orders table, drawer, push-to-prod
 ├── production-board.html Task Tracker (Production Board) — Table / Kanban / My Tasks
-├── delivery-log.html     Delivery management
 ├── reports.html          KPI, charts, export
 ├── ai-tools.html         12 AI mini apps
 ├── chatbot.html          CB Assistant dedicated page
@@ -94,7 +93,6 @@ CB_Creative_Flow/
     ├── client-dashboard.js   client-dashboard.html — Client Portal logic
     ├── database-orders.js
     ├── production-board.js
-    ├── delivery-log.js
     ├── reports.js
     ├── ai-tools.js
     ├── chatbot.js
@@ -102,7 +100,7 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · 7 Supabase SQL migrations**.
+Build hiện tại: **16 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 8 Supabase SQL migrations**. (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
 
 Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN). Shared UI module: `assets/notif-icons.js` (`window.MH.notifIcons` — single source of truth cho icon thông báo, dùng bởi bell dropdown + client panel).
 

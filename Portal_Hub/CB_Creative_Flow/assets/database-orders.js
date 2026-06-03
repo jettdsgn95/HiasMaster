@@ -130,6 +130,24 @@
   }
   const TODAY = new Date('2026-05-13'); // demo: anchored to "now"
   function parseDate(s) { return s ? new Date(s.replace(' ', 'T')) : null; }
+  // Hiển thị timestamp (created_at / last_updated) → "DD/MM/YYYY HH:MM" giờ local.
+  // created_at/last_updated lưu dạng UTC (toISOString); bare "YYYY-MM-DD HH:MM" cũng coi là UTC.
+  function fmtDateTime(s) {
+    if (!s) return '—';
+    s = String(s);
+    const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z');
+    if (isNaN(d.getTime())) return s;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  // Đổi internal_deadline (ISO từ Supabase HOẶC bare local) → value cho <input datetime-local> (giờ local).
+  function toLocalInput(s) {
+    if (!s) return '';
+    const d = new Date(String(s).replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
   function diffDays(target) {
     const d = parseDate(target);
     if (!d) return null;
@@ -502,7 +520,7 @@
       o.production_pic && { time: o.last_updated, label: `Gán P.I.C: <b>${o.production_pic}</b>` },
       ['inprogress', 'review', 'ready', 'delivered', 'completed'].includes(o.production_status) && { time: o.last_updated, label: `Status → ${PROD_STATUS_LABEL[o.production_status]}` }
     ].filter(Boolean);
-    return `<ul class="activity-mini">${acts.slice(-5).reverse().map((a) => `<li><span>${a.label}</span><time>${a.time}</time></li>`).join('')}</ul>`;
+    return `<ul class="activity-mini">${acts.slice(-5).reverse().map((a) => `<li><span>${a.label}</span><time>${fmtDateTime(a.time)}</time></li>`).join('')}</ul>`;
   }
 
   function orderNextAction(o) {
@@ -545,7 +563,7 @@
     const p = document.getElementById('d-priority');
     p.className = 'priority-pill p--' + o.priority;
     p.innerHTML = '<span class="dot"></span>' + PRIORITY_LABEL[o.priority];
-    document.getElementById('d-created').textContent = 'Tạo lúc ' + o.created_at;
+    document.getElementById('d-created').textContent = 'Tạo lúc ' + fmtDateTime(o.created_at);
     document.getElementById('d-copy').setAttribute('data-copy', o.order_id);
 
     const safeJoin = (a) => Array.isArray(a) ? a.map((v) => `<span class="chip-mini">${escapeHtml(v)}</span>`).join('') : (a || '<em class="muted">—</em>');
@@ -592,7 +610,7 @@
           <dt>Email</dt><dd>${v(o.requester_email)}</dd>
           <dt>SĐT / Liên hệ</dt><dd>${v(o.requester_contact)}</dd>
           <dt>Chi nhánh / Bộ phận</dt><dd>${v(o.department)}</dd>
-          <dt>Ngày gửi</dt><dd><span class="mono">${v(o.created_at)}</span></dd>
+          <dt>Ngày gửi</dt><dd><span class="mono">${fmtDateTime(o.created_at)}</span></dd>
         </dl>
       </section>
 
@@ -662,7 +680,7 @@
         </div>
         <div class="edit-row">
           <label>Internal Deadline</label>
-          <input class="input" id="edit-internal-deadline" type="datetime-local" value="${o.internal_deadline ? o.internal_deadline.replace(' ', 'T') : ''}" />
+          <input class="input" id="edit-internal-deadline" type="datetime-local" value="${toLocalInput(o.internal_deadline)}" />
         </div>
         <div class="edit-row">
           <label>Production Status</label>
@@ -721,10 +739,30 @@
       </section>
 
       <section class="drawer-block ow-delivery">
-        <div class="drawer-block-head"><span class="block-letter">D</span><h4>Tóm tắt bàn giao</h4></div>
+        <div class="drawer-block-head"><span class="block-letter">D</span><h4>Bàn giao cho client</h4></div>
+        ${['admin', 'account'].includes(user.role) ? `
+        <div class="edit-row">
+          <label>Preview Link</label>
+          <input class="input" id="dlv-preview-link" type="url" value="${escapeHtml(o.preview_link || '')}" placeholder="https://drive.google.com/preview..." />
+        </div>
+        <div class="row" style="justify-content:flex-end; margin:4px 0 12px">
+          <button class="btn btn-secondary btn-sm" id="send-preview-btn">Gửi Preview → Client</button>
+        </div>
+        <div class="edit-row">
+          <label>Final Link</label>
+          <input class="input" id="dlv-final-link" type="url" value="${escapeHtml(o.final_delivery_link || '')}" placeholder="https://drive.google.com/final..." />
+        </div>
+        <div class="row" style="justify-content:flex-end; margin-top:4px">
+          <button class="btn btn-primary btn-sm" id="send-final-btn">Gửi Final → Client</button>
+        </div>
+        <p class="text-xs muted" style="margin:10px 0 0">Nhập link Drive rồi bấm gửi — client nhận thông báo và mở link ngay trong Client Portal.</p>
+        ` : `
         <dl>
           <dt>Preview Link</dt><dd>${link(o.preview_link)}</dd>
           <dt>Final Link</dt><dd>${link(o.final_delivery_link)}</dd>
+        </dl>
+        `}
+        <dl style="margin-top:12px">
           <dt>Delivery Status</dt><dd>${o.delivery_status ? `<span class="tb-status s--${o.delivery_status}"><span class="dot"></span>${PROD_STATUS_LABEL[o.delivery_status] || o.delivery_status}</span>` : '<em class="muted">—</em>'}</dd>
           <dt>Delivery Date</dt><dd>${v(o.delivery_date)}</dd>
           <dt>Rating</dt><dd>${o.satisfaction_score ? `<b style="color:var(--warning); font-size:var(--text-base)">★ ${o.satisfaction_score}/5</b>` : '<em class="muted">Chưa có rating</em>'}</dd>
@@ -761,6 +799,34 @@
         location.href = 'production-board.html?' + params.toString();
       });
     }
+
+    // Wire delivery hand-off (gửi Preview/Final link → update order + notify client)
+    function sendDelivery(kind) {
+      const isFinal = kind === 'final';
+      const input = document.getElementById(isFinal ? 'dlv-final-link' : 'dlv-preview-link');
+      const linkVal = input ? input.value.trim() : '';
+      if (!linkVal) {
+        window.MH.toast({ type: 'error', title: 'Thiếu link', message: `Nhập ${isFinal ? 'Final' : 'Preview'} Link trước khi gửi.` });
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10); // date column 'YYYY-MM-DD'
+      const localFields = isFinal
+        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today }
+        : { preview_link: linkVal, delivery_status: 'client_wait', production_status: 'feedback_wait', delivery_date: today };
+      Object.assign(currentOrder, localFields, { last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ') });
+      persistOrder(currentOrder.order_id, Object.assign({}, localFields, { last_updated: new Date().toISOString() }));
+      // Notify client — resolveNotifLink (client role) sẽ mở order drawer trong Client Portal.
+      notifyClient(currentOrder, isFinal
+        ? { type: 'delivery_final', title: 'Đã bàn giao final', message: `${currentOrder.order_id} · ${currentOrder.project_name || ''} — File final đã được bàn giao. Vui lòng kiểm tra và đánh giá.`, link: linkVal }
+        : { type: 'delivery_preview', title: 'Đã có bản xem trước', message: `${currentOrder.order_id} · ${currentOrder.project_name || ''} — Bản preview đã sẵn sàng, vui lòng kiểm tra và phản hồi.`, link: linkVal });
+      window.MH.toast({ type: 'success', title: isFinal ? 'Đã gửi Final' : 'Đã gửi Preview', message: 'Client đã nhận thông báo + link.' });
+      render();
+      openDrawer(currentOrder);
+    }
+    const sendPreviewBtn = document.getElementById('send-preview-btn');
+    if (sendPreviewBtn) sendPreviewBtn.addEventListener('click', () => sendDelivery('preview'));
+    const sendFinalBtn = document.getElementById('send-final-btn');
+    if (sendFinalBtn) sendFinalBtn.addEventListener('click', () => sendDelivery('final'));
 
     // Wire save button
     document.getElementById('save-internal').addEventListener('click', () => {
