@@ -52,9 +52,10 @@
         Quay lại
       </a>
     </div>
-    <span class="eyebrow" style="margin-top:var(--space-3); display:inline-block">Tạo yêu cầu mới</span>
-    <h1><span class="serif-italic">Phiếu yêu cầu</span> Thiết kế &amp; Media</h1>
-    <p class="lead">Gửi yêu cầu thiết kế, video, quay, chụp và nội dung media cho team CB Centres. Vui lòng cung cấp đầy đủ brief, tài nguyên và deadline để team triển khai đúng chuẩn thương hiệu.</p>
+    <span class="eyebrow" id="rf-eyebrow" style="margin-top:var(--space-3); display:inline-block">Tạo yêu cầu mới</span>
+    <h1 id="rf-title"><span class="serif-italic">Phiếu yêu cầu</span> Thiết kế &amp; Media</h1>
+    <p class="lead" id="rf-lead">Gửi yêu cầu thiết kế, video, quay, chụp và nội dung media cho team CB Centres. Vui lòng cung cấp đầy đủ brief, tài nguyên và deadline để team triển khai đúng chuẩn thương hiệu.</p>
+    <div id="rf-revision-banner" hidden style="margin-top:var(--space-4);padding:14px 16px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.28);border-left:3px solid var(--info,#0ea5e9);border-radius:var(--radius);font-size:var(--text-sm);line-height:1.6;color:var(--text)"></div>
   </div>
 </section>
 
@@ -691,6 +692,14 @@
               <input type="checkbox" id="deadline_policy_confirmed" name="deadline_policy_confirmed" />
               <div>
                 <span class="checkbox-text">Tôi hiểu rằng deadline chính thức sẽ được Account / Media xác nhận sau khi kiểm tra brief.</span>
+              </div>
+            </label>
+
+            <label class="checkbox" id="revision-confirm-wrap" hidden>
+              <input type="checkbox" id="revision_confirmed" name="revision_confirmed" />
+              <div>
+                <span class="checkbox-text">Tôi xác nhận đây là yêu cầu chỉnh sửa/phát sinh mới sau khi Order gốc đã hoàn tất 03 vòng feedback.</span>
+                <span class="checkbox-hint">Bắt buộc với yêu cầu chỉnh sửa phát sinh.</span>
               </div>
             </label>
           </div>

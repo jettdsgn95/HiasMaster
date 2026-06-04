@@ -200,14 +200,13 @@
           <dt>Lúc</dt><dd>${o.last_feedback_at ? fmtDateTime(o.last_feedback_at) : '<em class="muted">—</em>'}</dd>
           <dt>Bởi</dt><dd>${o.last_feedback_by ? escapeHtml(o.last_feedback_by) : '<em class="muted">—</em>'}</dd>
         </dl>
-        ${(o.latest_feedback_note && canAct && !atLimit) ? `
-          <div class="rev-panel-actions">
-            <button type="button" class="btn btn-sm btn-secondary" id="btn-send-feedback-pic">Gửi feedback này cho PIC</button>
+        ${(atLimit && o.feedback_status === 'feedback_received' && canAct) ? `
+          <div style="margin-top:10px;padding:11px 13px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-left:3px solid var(--info,#0ea5e9);border-radius:8px;font-size:12.5px;line-height:1.55">
+            <b>Feedback Vòng 3 — Final Check.</b> Đây là vòng chỉnh sửa cuối cùng của Order hiện tại. Account/Admin cần gửi feedback này cho PIC xử lý. Sau khi Production hoàn tất, PIC cập nhật Final Link và gửi duyệt nội bộ. Account/Admin kiểm tra và gửi Final cho Client.
           </div>` : ''}
-        ${atLimit && canAct ? `
-          <div class="rev-limit-alert">
-            <p><b>Order đã đạt giới hạn 03 vòng chỉnh sửa.</b> Feedback mới (từ vòng 4) hoặc thay đổi vượt brief ban đầu nên tạo task/order mới để team Media xử lý tiếp.</p>
-            <button type="button" class="btn btn-sm btn-primary" id="btn-revision-newtask">Tạo task mới từ feedback này</button>
+        ${(o.latest_feedback_note && canAct && o.feedback_status === 'feedback_received') ? `
+          <div class="rev-panel-actions">
+            <button type="button" class="btn btn-sm ${atLimit ? 'btn-primary' : 'btn-secondary'}" id="btn-send-feedback-pic">${atLimit ? 'Gửi feedback vòng 3 cho PIC' : 'Gửi feedback này cho PIC'}</button>
           </div>` : ''}
       </div>`;
   }
@@ -260,7 +259,7 @@
       try { tasks = (await window.MH.store.tasks.list({ order_id: currentOrder.order_id }) || []).filter((t) => !t.is_standalone); } catch (e) { tasks = []; }
     }
     tasks = tasks || [];
-    if (!tasks.length) { window.MH.toast({ type: 'warning', title: 'Chưa có task', message: 'Order chưa có task liên kết — dùng "Tạo task mới từ feedback này".' }); return; }
+    if (!tasks.length) { window.MH.toast({ type: 'warning', title: 'Chưa có task liên kết', message: 'Order này chưa có task sản xuất liên kết. Vui lòng kiểm tra lại Task Tracker trước khi gửi feedback cho PIC.' }); return; }
     if (tasks.length === 1) { sendFeedbackToTask(tasks[0]); return; }
     window.MH.toast({ type: 'info', title: 'Có nhiều task', message: 'Chọn task cụ thể ở mục "Links from Task Tracker" để gửi feedback.' });
     const m = document.getElementById('tt-links-mount'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1100,13 +1099,13 @@
       // Bàn giao ĐẦU TIÊN luôn là "Preview" (yêu cầu nghiệp vụ — không gọi Final/Draft/Demo).
       // Preview → mở vòng feedback (feedback_status=waiting_feedback). Final → approved.
       const localFields = isFinal
-        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today, feedback_status: 'approved' }
+        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today, feedback_status: 'final_sent' }
         : { preview_link: linkVal, delivery_status: 'client_wait', production_status: 'feedback_wait', delivery_date: today, feedback_status: 'waiting_feedback' };
       Object.assign(currentOrder, localFields, { last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ') });
       persistOrder(currentOrder.order_id, Object.assign({}, localFields, { last_updated: new Date().toISOString() }));
       // Notify client — resolveNotifLink (client role) sẽ mở order drawer trong Client Portal.
       notifyClient(currentOrder, isFinal
-        ? { type: 'delivery_final', title: 'Đã bàn giao Final', message: `${currentOrder.order_id} · ${currentOrder.project_name || ''} — File Final đã được bàn giao. Vui lòng kiểm tra và đánh giá.`, link: linkVal }
+        ? { type: 'delivery_final', title: 'Final đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã được xử lý theo Feedback Vòng 3 và bàn giao bản Final. Anh/chị vui lòng kiểm tra sản phẩm hoàn thiện và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, vui lòng tạo một Order mới từ yêu cầu hiện tại.`, link: linkVal }
         : { type: 'delivery_preview', title: 'Sản phẩm Preview đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã có bản Preview. Anh/chị vui lòng kiểm tra nội dung, bố cục, hình ảnh và gửi feedback trực tiếp trên hệ thống để team Media tiếp tục hoàn thiện.`, link: linkVal });
       window.MH.toast({ type: 'success', title: isFinal ? 'Đã gửi Final' : 'Đã gửi Preview', message: 'Client đã nhận thông báo + link.' });
       render();
@@ -1124,20 +1123,8 @@
     drawerLinkedTasks = null;
     loadTaskLinksIntoDrawer(o.order_id);
 
-    // Order đã đạt 03 vòng → tạo task mới từ feedback (prefill content = feedback gần nhất).
-    const revNewTaskBtn = document.getElementById('btn-revision-newtask');
-    if (revNewTaskBtn) revNewTaskBtn.addEventListener('click', () => {
-      const params = new URLSearchParams();
-      params.set('createTask', '1');
-      params.set('order_id', currentOrder.order_id || '');
-      params.set('project_name', (currentOrder.project_name || '') + ' — Revision ngoài 3 vòng');
-      params.set('task_type', currentOrder.request_type === 'media' ? 'shoot' : (currentOrder.request_type || 'design'));
-      params.set('priority', currentOrder.priority || 'normal');
-      if (currentOrder.production_pic) params.set('production_pic', currentOrder.production_pic);
-      const fb = currentOrder.latest_feedback_note ? `[Feedback vòng 4+ từ client]\n${currentOrder.latest_feedback_note}` : 'Yêu cầu chỉnh sửa phát sinh sau 3 vòng feedback.';
-      params.set('content', fb);
-      location.href = 'production-board.html?' + params.toString();
-    });
+    // (Đã gỡ "Tạo task mới từ feedback này" — Feedback Vòng 3 vẫn thuộc order hiện tại:
+    //  xử lý Round 3 → PIC cập nhật Final → Account gửi Final → Client tự tạo Order mới nếu cần.)
 
     // Đọc giá trị form Điều phối → ghi vào currentOrder + write-through Supabase.
     // Dùng chung cho nút "Lưu điều phối" và nút "Xác nhận & Chuyển Production".

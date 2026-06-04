@@ -14,6 +14,9 @@
 
   const DRAFT_KEY = 'mh-order-draft-v2';
 
+  /* ===== REVISION MODE (Order mới phát sinh sau Final, do client tự tạo) ===== */
+  let REVISION_MODE = false, REF_ORDER = '', REF_ORDER_DATA = null;
+
   /* ===== AUTH ===== */
   const AUTH_USER = (() => {
     try { return JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { return null; }
@@ -605,11 +608,61 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && previewModal.classList.contains('is-open')) closePreview(); });
 
   /* ---------- Submit ---------- */
+  /* ===== Revision mode: request.html?mode=revision&ref_order=MEDIA-... ===== */
+  function initRevisionMode() {
+    const sp = new URLSearchParams(location.search);
+    if (sp.get('mode') !== 'revision') return;
+    const ref = (sp.get('ref_order') || '').trim();
+    if (!ref) return;
+    REVISION_MODE = true; REF_ORDER = ref;
+    const projParam = sp.get('project_name') || '';
+    const titleEl = document.getElementById('rf-title');
+    const eyebrowEl = document.getElementById('rf-eyebrow');
+    const leadEl = document.getElementById('rf-lead');
+    if (eyebrowEl) eyebrowEl.textContent = 'Chỉnh sửa phát sinh';
+    if (titleEl) titleEl.textContent = 'Tạo yêu cầu chỉnh sửa phát sinh';
+    if (leadEl) leadEl.textContent = 'Yêu cầu này được tạo từ một Order đã hoàn tất 03 vòng feedback. Vui lòng bổ sung nội dung chỉnh sửa/phát sinh mới để team Media tiếp tục xử lý bằng một mã Order mới.';
+    document.title = 'Tạo yêu cầu chỉnh sửa phát sinh — CB Media Hub';
+    const banner = document.getElementById('rf-revision-banner');
+    if (banner) {
+      banner.hidden = false;
+      banner.innerHTML = `Yêu cầu này được tạo từ Order gốc <b>${ref}</b> sau khi đã hoàn tất 03 vòng feedback/chỉnh sửa. Hệ thống đã tự điền các thông tin cơ bản để anh/chị không cần nhập lại từ đầu. Vui lòng bổ sung nội dung chỉnh sửa/phát sinh mới để team Media tiếp tục xử lý bằng một mã Order mới.`;
+    }
+    const wrap = document.getElementById('revision-confirm-wrap'); if (wrap) wrap.hidden = false;
+    const cb = document.getElementById('revision_confirmed'); if (cb) cb.setAttribute('required', '');
+    const projEl = document.getElementById('project_name');
+    if (projEl && projParam && !projEl.value) projEl.value = projParam + ' — Chỉnh sửa phát sinh';
+    // Prefill sâu từ order gốc (Supabase): project, request_type, department.
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      (async () => {
+        try {
+          await window.MH.supabaseReady;
+          const o = await window.MH.store.orders.get(ref);
+          if (!o) return;
+          REF_ORDER_DATA = o;
+          if (projEl) projEl.value = (o.project_name || projParam || '') + ' — Chỉnh sửa phát sinh';
+          const dep = document.getElementById('department'); if (dep && o.department && !dep.value) dep.value = o.department;
+          if (o.request_type) {
+            const r = form.querySelector(`input[name="request_type"][value="${o.request_type}"]`);
+            if (r && !r.checked) { r.checked = true; if (typeof updateConditional === 'function') updateConditional(); }
+          }
+          window.MH.toast({ type: 'info', title: 'Đã tải Order gốc', message: `${ref} — đã điền sẵn thông tin cơ bản. Vui lòng nhập nội dung chỉnh sửa/phát sinh.` });
+        } catch (e) { console.warn('[order-form] revision prefill failed:', e); }
+      })();
+    }
+  }
+  initRevisionMode();
+
   async function doSubmit() {
     // Final auth guard (API layer equivalent for static site)
     if (!AUTH_USER) {
       window.MH.toast({ type: 'error', title: '401 Unauthorized', message: 'Authentication required to submit request.' });
       return;
+    }
+    // Revision mode: bắt buộc tích xác nhận chỉnh sửa/phát sinh.
+    if (REVISION_MODE) {
+      const rcb = document.getElementById('revision_confirmed');
+      if (rcb && !rcb.checked) { window.MH.toast({ type: 'warning', title: 'Cần xác nhận', message: 'Vui lòng tích xác nhận đây là yêu cầu chỉnh sửa/phát sinh sau khi Order gốc đã hoàn tất 03 vòng feedback.' }); return; }
     }
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.classList.add('is-loading');
@@ -651,6 +704,8 @@
       brief_files:      briefFiles,
       file_brief_url:   briefFiles.length ? briefFiles[0].path : null
     });
+    // Revision: lưu quan hệ với order gốc (cho localStorage fallback + payload).
+    if (REVISION_MODE && REF_ORDER) { orderPayload.parent_order_id = REF_ORDER; orderPayload.order_origin = 'revision_over_limit'; }
 
     // Phase 1: persist sang Supabase `orders` nếu enabled
     let dbPersisted = false;
@@ -726,8 +781,20 @@
           const slideNote = 'Link nội dung thô (Doc / Slide): ' + orderPayload.slide_source_link;
           row.content_brief = row.content_brief ? (slideNote + '\n\n' + row.content_brief) : slideNote;
         }
+        // Revision: nhúng quan hệ order gốc vào content_brief (chắc chắn không cần migration).
+        if (REVISION_MODE && REF_ORDER) {
+          const reff = REF_ORDER_DATA || {};
+          const refLine = `[Yêu cầu chỉnh sửa phát sinh — từ Order gốc ${REF_ORDER}` + (reff.final_delivery_link ? ` · Final gốc: ${reff.final_delivery_link}` : '') + ']';
+          row.content_brief = row.content_brief ? (refLine + '\n\n' + row.content_brief) : refLine;
+          if (!row.project_purpose) row.project_purpose = 'Chỉnh sửa/phát sinh sau khi Order gốc ' + REF_ORDER + ' hoàn tất 03 vòng feedback.';
+        }
         await window.MH.store.orders.create(row);
         dbPersisted = true;
+        // Best-effort: set cột quan hệ nếu DB đã chạy migration add-revision-link.sql (không có thì bỏ qua).
+        if (REVISION_MODE && REF_ORDER) {
+          try { await window.MH.store.orders.update(code, { parent_order_id: REF_ORDER, order_origin: 'revision_over_limit' }); }
+          catch (e) { console.warn('[order-form] cột parent_order_id/order_origin chưa có (chạy supabase/add-revision-link.sql nếu muốn lưu cấu trúc):', e); }
+        }
 
         // Notify TẤT CẢ admin + account user về order mới (realtime + bell badge)
         try {

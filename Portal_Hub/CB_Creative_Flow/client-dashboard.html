@@ -54,7 +54,7 @@
 .action-card-title{font-size:var(--text-sm);font-weight:700}
 .action-card-order{font-size:var(--text-xs);color:var(--text-muted);font-family:var(--font-mono)}
 .action-card p{font-size:var(--text-sm);color:var(--text-muted);margin:0;line-height:1.5;flex:1}
-.action-card-btns{display:flex;gap:var(--space-2);flex-wrap:nowrap;margin-top:auto}
+.action-card-btns{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:auto}
 .ac-empty{padding:var(--space-7);text-align:center;background:var(--surface-2);border-radius:var(--radius-lg)}
 .ac-empty svg{width:36px;height:36px;color:var(--text-subtle);margin:0 auto var(--space-3);display:block}
 .ac-empty p{font-size:var(--text-sm);color:var(--text-muted);margin:0;line-height:1.6}
@@ -412,7 +412,7 @@
   <div class="modal">
     <div class="modal-head">
       <div>
-        <h3>Gửi phản hồi chỉnh sửa</h3>
+        <h3 id="feedback-modal-title">Gửi phản hồi chỉnh sửa</h3>
         <p style="font-size:var(--text-sm);color:var(--text-muted);margin:4px 0 0" id="feedback-order-label">—</p>
       </div>
       <button class="icon-btn" id="feedback-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -434,6 +434,7 @@
         <div class="field">
           <label class="label" for="fb-content">Nội dung phản hồi <span class="req">*</span></label>
           <textarea class="input" id="fb-content" rows="4" placeholder="Mô tả chi tiết những gì cần chỉnh sửa..."></textarea>
+          <p class="cl-round-note" id="fb-note" hidden style="font-size:var(--text-xs);color:var(--text-muted);margin:6px 0 0"></p>
         </div>
         <div class="field">
           <label class="label" for="fb-priority">Mức độ ưu tiên</label>

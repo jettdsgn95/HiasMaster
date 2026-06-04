@@ -642,6 +642,8 @@
     }
     // Ready for delivery requires preview or final link
     if (newStatus === 'ready' && !task.preview_link && !task.final_link) return false;
+    // Feedback Vòng 3 (order revision_round >= 3) yêu cầu Final Link trước khi gửi duyệt nội bộ.
+    if (newStatus === 'review' && Number(task._refOrderRound || 0) >= Number(task._refOrderLimit || 3) && Number(task._refOrderRound || 0) >= 3 && !task.final_link) return false;
     // Account/Admin can do anything else
     return true;
   }
@@ -650,6 +652,7 @@
       return 'P.I.C chỉ gửi task đi duyệt nội bộ. Account/Admin sẽ duyệt, bàn giao, đóng hoặc tạm dừng/hủy task.';
     }
     if (newStatus === 'ready' && !task.preview_link && !task.final_link) return 'Cần upload Preview hoặc Final link trước.';
+    if (newStatus === 'review' && Number(task._refOrderRound || 0) >= 3 && !task.final_link) return 'Feedback Vòng 3 yêu cầu Final Link trước khi gửi duyệt nội bộ.';
     return 'Transition không hợp lệ.';
   }
   /* ---------- Notify khi status task đổi (Account↔Designer handoff) ----------
@@ -758,19 +761,30 @@
     let order = null;
     try { order = await window.MH.store.orders.get(orderId); } catch (e) { console.warn('[tw-feedback] order get failed:', e); }
     const round = order && order.revision_round ? order.revision_round : 0;
+    const limit = order && order.revision_limit ? order.revision_limit : 3;
+    // Stash để gate transition "review" (Vòng 3 yêu cầu Final Link).
+    if (currentTask) { currentTask._refOrderRound = round; currentTask._refOrderFb = (order && order.feedback_status) || ''; currentTask._refOrderLimit = limit; }
     if (!order || round <= 0) { mount.innerHTML = ''; return; }
-    const limit = order.revision_limit || 3;
     const fbStatus = order.feedback_status ? (FEEDBACK_STATUS_LABEL[order.feedback_status] || order.feedback_status) : '—';
     const fixing = taskStatus === 'feedback_fix';
+    const isR3 = round >= limit;
+    const needFinal = isR3 && fixing && !(currentTask && currentTask.final_link);
     mount.innerHTML = `
       <div class="tw-fb-block ${fixing ? 'is-fixing' : ''}">
         <div class="tw-fb-head">
-          <span class="tw-fb-title">Client Feedback Round ${round}/${limit}</span>
+          <span class="tw-fb-title">${isR3 ? 'Feedback Vòng 3 — Final Check' : `Client Feedback Round ${round}/${limit}`}</span>
           ${fixing ? `<span class="tw-fb-fixing">Đang chỉnh Feedback Round ${round}</span>` : ''}
         </div>
+        ${isR3 ? `<p class="tw-fb-note" style="font-weight:600">Đây là vòng chỉnh sửa cuối cùng của Order hiện tại. PIC cần xử lý đầy đủ feedback và cập nhật <b>Final Link</b> trước khi gửi duyệt nội bộ.</p>` : ''}
         <p class="tw-fb-note">${order.latest_feedback_note ? escapeHtml(order.latest_feedback_note) : '<em class="muted">Chưa có nội dung feedback</em>'}</p>
         <p class="tw-fb-meta">Feedback status: <b>${fbStatus}</b></p>
+        ${needFinal ? `<p class="tw-fb-meta" style="color:var(--danger,#dc2626);font-weight:600">⚠ Feedback Vòng 3 yêu cầu Final Link trước khi gửi duyệt nội bộ.</p>` : ''}
       </div>`;
+    // Vô hiệu hóa nút "Gửi duyệt nội bộ" khi Vòng 3 chưa có Final Link.
+    if (needFinal) {
+      const rv = drawerBody && drawerBody.querySelector('.status-action-btn[data-status="review"]');
+      if (rv) { rv.setAttribute('disabled', ''); rv.style.opacity = '.5'; rv.style.cursor = 'not-allowed'; }
+    }
   }
 
   /* ---------- Drawer ---------- */
