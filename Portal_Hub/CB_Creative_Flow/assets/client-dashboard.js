@@ -220,6 +220,12 @@ async function loadClientOrdersFromStore() {
         need_info: o.account_status === 'needinfo' ? (o.internal_note || 'Vui lòng bổ sung brief — liên hệ Account team.') : '',
         request_type: o.request_type || '',
         shoot_location: o.shoot_location || '',
+        revision_round: o.revision_round || 0,
+        revision_limit: o.revision_limit || 3,
+        feedback_status: o.feedback_status || '',
+        latest_feedback_note: o.latest_feedback_note || '',
+        last_feedback_at: o.last_feedback_at || '',
+        last_feedback_by: o.last_feedback_by || '',
         __raw: o
       };
     });
@@ -344,12 +350,12 @@ function renderActionCenter() {
       <div class="action-card ac--preview">
         <div class="action-card-head">
           <div class="action-card-icon ai--preview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <div><div class="action-card-title">Bản preview chờ duyệt</div><div class="action-card-order">${o.id}</div></div>
+          <div><div class="action-card-title">Bản Preview chờ feedback</div><div class="action-card-order">${o.id}${appliesRevisionRule(o) ? ` · Feedback Vòng ${Math.min((o.revision_round||0)+1,3)}/${o.revision_limit||3}` : ''}</div></div>
         </div>
-        <p>${o.name} — Đã có bản xem trước để bạn kiểm tra và phản hồi.</p>
+        <p>${o.name} — Đã có <b>bản Preview</b> để anh/chị kiểm tra nội dung, bố cục, hình ảnh và gửi feedback.</p>
         <div class="action-card-btns">
-          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem preview</a>` : ''}
-          <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi phản hồi</button>
+          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+          <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi feedback</button>
         </div>
       </div>`;
     if (a.type === 'rating') return `
@@ -513,12 +519,14 @@ function openOrderDrawer(orderId) {
         <button class="btn btn-sm" style="margin-top:var(--space-3);background:var(--warning);color:#fff" data-action="needinfo" data-order-id="${o.id}">Bổ sung ngay</button>
       </div></div>`;
   } else if (o.status === 'feedback_wait') {
-    actionBlock = `<div class="drawer-detail-section"><h4>Chờ phản hồi</h4>
+    const _round = (o.revision_round || 0), _limit = (o.revision_limit || 3), _design = appliesRevisionRule(o);
+    const _roundTxt = _design ? ` · Feedback Vòng ${Math.min(_round + 1, _limit)}/${_limit}` : '';
+    actionBlock = `<div class="drawer-detail-section"><h4>Bản Preview — chờ feedback${_roundTxt}</h4>
       <div style="padding:var(--space-4);background:rgb(14 165 233 / .1);border-radius:var(--radius);border-left:3px solid var(--info)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Bạn có bản preview cần kiểm tra và phản hồi.</p>
+        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Anh/chị có <b>bản Preview</b> cần kiểm tra nội dung, bố cục, hình ảnh và gửi feedback để team Media tiếp tục hoàn thiện.</p>
         <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
-          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem preview</a>` : ''}
-          <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi phản hồi</button>
+          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+          <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Xem Preview &amp; gửi feedback</button>
         </div>
       </div></div>`;
   } else if (['delivered','completed'].includes(o.status) && !rt) {
@@ -606,11 +614,56 @@ function openRatingModal(orderId) {
 }
 function closeRatingModal() { document.getElementById('rating-modal').classList.remove('is-open'); state.ratingOrderId = null; }
 
+// ===== REVISION ROUNDS — Preview → tối đa 03 vòng feedback (chủ yếu order design) =====
+const REVISION_ROUNDS = {
+  1: { title: 'Feedback Vòng 1', help: 'Anh/chị vui lòng kiểm tra tổng thể bản Preview và gửi góp ý về bố cục, hình ảnh/element, nội dung chữ hoặc các điểm cần điều chỉnh chính. Vòng 1 hỗ trợ điều chỉnh trong phạm vi brief đã xác nhận, tối đa khoảng 60% tổng thể thiết kế.' },
+  2: { title: 'Feedback Vòng 2', help: 'Anh/chị vui lòng kiểm tra phiên bản đã được chỉnh sửa và gửi các góp ý tinh chỉnh tiếp theo. Vòng 2 tập trung hoàn thiện trên phương án hiện tại, phạm vi điều chỉnh tối đa khoảng 30% tổng thể.' },
+  3: { title: 'Feedback Vòng 3 — Final Check', help: 'Đây là vòng kiểm tra cuối trước khi chốt Final. Anh/chị vui lòng chỉ gửi các điều chỉnh nhỏ như nội dung chữ, lỗi chính tả, thông tin chi tiết hoặc các tinh chỉnh rất nhỏ.' }
+};
+const REVISION_POLICY_HTML = '<b>Chính sách feedback/chỉnh sửa:</b> Mỗi yêu cầu thiết kế gồm tối đa <b>03 vòng</b> trong phạm vi brief đã xác nhận.<br>• <b>Vòng 1</b>: điều chỉnh chính (bố cục, hình ảnh/element, nội dung chữ) — không quá ~60% tổng thể.<br>• <b>Vòng 2</b>: tinh chỉnh trên bản đã cập nhật — không quá ~30% tổng thể.<br>• <b>Vòng 3</b>: kiểm tra cuối trước Final — chỉ chỉnh nhỏ (chữ, chính tả, chi tiết).<br>Từ <b>vòng 4</b> trở đi hoặc thay đổi vượt brief → hệ thống ghi nhận thành một yêu cầu/task mới.';
+const ROUND4_MESSAGE = 'Yêu cầu này đã sử dụng đủ 03 vòng feedback/chỉnh sửa. Các góp ý mới từ vòng thứ 4 hoặc thay đổi vượt phạm vi brief ban đầu sẽ được ghi nhận thành một yêu cầu/task mới để team Media tiếp tục xử lý.';
+function appliesRevisionRule(o) { return ['design', 'digital'].includes(o.request_type); }
+
 function openFeedbackModal(orderId) {
   const o = ORDERS.find(x => x.id === orderId);
   if (!o) return;
   state.feedbackOrderId = orderId;
   document.getElementById('feedback-order-label').textContent = `${o.id} — ${o.name}`;
+
+  const applies = appliesRevisionRule(o);
+  const round = o.revision_round || 0;
+  const limit = o.revision_limit || 3;
+  const nextRound = round + 1;                 // vòng client sắp gửi
+  const atLimit = applies && round >= limit;   // đã dùng hết 3 vòng → block vòng 4
+
+  const badge = document.getElementById('fb-round-badge');
+  const help = document.getElementById('fb-round-help');
+  const form = document.getElementById('fb-form');
+  const policy = document.getElementById('fb-policy');
+  const round4 = document.getElementById('fb-round4-block');
+  const submit = document.getElementById('feedback-submit');
+
+  if (atLimit) {
+    // Vòng 4: KHÔNG cho gửi feedback thường → hiện block hướng dẫn tạo yêu cầu mới.
+    if (badge) { badge.textContent = 'Bản Preview · Đã dùng hết 03 vòng'; badge.classList.add('is-final'); }
+    if (help) help.textContent = '';
+    if (form) form.hidden = true;
+    if (policy) policy.hidden = true;
+    if (round4) { round4.hidden = false; document.getElementById('fb-round4-msg').textContent = ROUND4_MESSAGE; }
+    if (submit) submit.hidden = true;
+  } else {
+    const meta = REVISION_ROUNDS[Math.min(nextRound, 3)] || REVISION_ROUNDS[1];
+    if (badge) {
+      badge.classList.remove('is-final');
+      badge.textContent = applies ? `Bản Preview · ${meta.title} (${nextRound}/${limit})` : 'Bản Preview · Gửi feedback';
+    }
+    if (help) help.textContent = applies ? meta.help : 'Anh/chị vui lòng kiểm tra bản Preview và gửi góp ý để team Media tiếp tục hoàn thiện.';
+    if (policy) { policy.hidden = !applies; policy.innerHTML = REVISION_POLICY_HTML; }
+    if (form) form.hidden = false;
+    if (round4) round4.hidden = true;
+    if (submit) submit.hidden = false;
+  }
+
   document.getElementById('fb-type').value = '';
   document.getElementById('fb-content').value = '';
   document.getElementById('fb-priority').value = 'Bình thường';
@@ -766,12 +819,83 @@ document.getElementById('rating-submit').addEventListener('click', async () => {
 document.getElementById('feedback-close').addEventListener('click', closeFeedbackModal);
 document.getElementById('feedback-cancel').addEventListener('click', closeFeedbackModal);
 document.getElementById('feedback-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeFeedbackModal(); });
-document.getElementById('feedback-submit').addEventListener('click', () => {
+document.getElementById('feedback-submit').addEventListener('click', async () => {
+  const o = ORDERS.find(x => x.id === state.feedbackOrderId);
+  if (!o) { closeFeedbackModal(); return; }
+  const applies = appliesRevisionRule(o);
+  const round = o.revision_round || 0;
+  const limit = o.revision_limit || 3;
+
+  // Vòng 4 (order design đã đủ 3 vòng) → KHÔNG lưu như feedback thường.
+  if (applies && round >= limit) {
+    toast('warning', 'Đã đủ 03 vòng feedback', ROUND4_MESSAGE);
+    return;
+  }
+
   const type = document.getElementById('fb-type').value;
   const content = document.getElementById('fb-content').value.trim();
   if (!type || !content) { toast('warning','Thiếu thông tin','Vui lòng chọn loại phản hồi và nhập nội dung.'); return; }
+
+  const nextRound = round + 1;
+  const noteText = `[Feedback Vòng ${nextRound}] ${type}: ${content}`;
+  const by = (user && (user.name || user.email)) || 'Client';
+  const nowIso = new Date().toISOString();
+
+  // Optimistic UI: cập nhật state local
+  o.revision_round = nextRound;
+  o.feedback_status = 'feedback_received';
+  o.latest_feedback_note = noteText;
+  o.last_feedback_at = nowIso;
+  o.last_feedback_by = by;
   closeFeedbackModal();
-  toast('success','Đã gửi phản hồi','Team Media sẽ xử lý phản hồi của bạn sớm nhất.');
+  toast('success', `Đã gửi Feedback Vòng ${nextRound}`, 'Team Media sẽ xử lý phản hồi của anh/chị sớm nhất.');
+  renderAll();
+
+  // Persist Supabase + notify admin/account (fire-and-forget)
+  if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+  try {
+    await window.MH.supabaseReady;
+    await window.MH.store.orders.update(o.id, {
+      revision_round: nextRound,
+      feedback_status: 'feedback_received',
+      latest_feedback_note: noteText,
+      last_feedback_at: nowIso,
+      last_feedback_by: by,
+      last_updated: nowIso
+    });
+    if (o.__raw) Object.assign(o.__raw, { revision_round: nextRound, feedback_status: 'feedback_received', latest_feedback_note: noteText, last_feedback_at: nowIso, last_feedback_by: by });
+
+    const { data: staff } = await window.MH.supabase
+      .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+    if (Array.isArray(staff) && staff.length) {
+      const payloads = staff.map(function (u) {
+        return {
+          user_id: u.id,
+          type: 'client_feedback_received',
+          title: 'Client đã gửi feedback',
+          message: `Client đã gửi feedback Vòng ${nextRound} cho yêu cầu ${o.id} · ${o.name || ''}.`,
+          link: 'database-orders.html?id=' + o.id,
+          related_entity_type: 'orders',
+          related_entity_id: o.id
+        };
+      });
+      await window.MH.supabase.from('notifications').insert(payloads);
+    }
+  } catch (err) {
+    console.warn('[client-dashboard] submit feedback failed:', err);
+    toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng thử lại nếu Account chưa nhận thông báo.');
+  }
+});
+
+// Round-4 CTA: tạo yêu cầu mới (điều hướng sang form order với prefill từ order gốc)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action="new-request"]');
+  if (!btn) return;
+  const o = ORDERS.find(x => x.id === state.feedbackOrderId);
+  closeFeedbackModal();
+  const params = new URLSearchParams();
+  if (o) { params.set('ref_order', o.id); params.set('project_name', o.name || ''); }
+  location.href = 'request.html' + (params.toString() ? ('?' + params.toString()) : '');
 });
 
 // Info modal

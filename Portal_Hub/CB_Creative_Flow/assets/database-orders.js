@@ -164,6 +164,49 @@
     const isCancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
     return !!o.production_status && o.production_status !== 'unassigned' && !isCancelled;
   }
+  // Quy tắc 3 vòng feedback/revision áp dụng CHÍNH cho order design (design + digital design).
+  // Type khác (video/media/slide/motion/other): linh hoạt — không chặn cứng vòng 4.
+  function appliesRevisionRule(o) {
+    return ['design', 'digital'].includes(o.request_type);
+  }
+  const FEEDBACK_STATUS_LABEL = {
+    waiting_feedback: 'Chờ feedback từ client',
+    feedback_received: 'Client đã gửi feedback',
+    revision_in_progress: 'Đang chỉnh theo feedback',
+    approved: 'Client đã duyệt / đã Final',
+    exceeded_limit: 'Đã đạt giới hạn chỉnh sửa'
+  };
+  // Panel Feedback/Vòng chỉnh sửa trong Order drawer (cạnh khu Bàn giao Preview/Final).
+  function buildRevisionPanel(o) {
+    const applies = appliesRevisionRule(o);
+    const round = o.revision_round || 0;
+    const limit = o.revision_limit || 3;
+    const atLimit = applies && round >= limit;
+    const fbStatus = o.feedback_status ? (FEEDBACK_STATUS_LABEL[o.feedback_status] || o.feedback_status) : '—';
+    const roundBadge = applies
+      ? `<span class="rev-round-badge ${atLimit ? 'is-limit' : ''}">Vòng chỉnh sửa: <b>${round}/${limit}</b></span>`
+      : `<span class="rev-round-badge is-flex">Linh hoạt — không giới hạn vòng</span>`;
+    const canAct = ['admin', 'account'].includes(user.role);
+    return `
+      <div class="rev-panel ${atLimit ? 'rev-panel--limit' : ''}">
+        <div class="rev-panel-head">
+          <span class="rev-panel-title">Feedback / Vòng chỉnh sửa</span>
+          ${roundBadge}
+          ${atLimit ? `<span class="rev-limit-badge">Đã đạt giới hạn chỉnh sửa</span>` : ''}
+        </div>
+        <dl class="rev-panel-dl">
+          <dt>Feedback status</dt><dd>${fbStatus}</dd>
+          <dt>Feedback gần nhất</dt><dd>${o.latest_feedback_note ? escapeHtml(o.latest_feedback_note) : '<em class="muted">Chưa có feedback</em>'}</dd>
+          <dt>Lúc</dt><dd>${o.last_feedback_at ? fmtDateTime(o.last_feedback_at) : '<em class="muted">—</em>'}</dd>
+          <dt>Bởi</dt><dd>${o.last_feedback_by ? escapeHtml(o.last_feedback_by) : '<em class="muted">—</em>'}</dd>
+        </dl>
+        ${atLimit && canAct ? `
+          <div class="rev-limit-alert">
+            <p><b>Order đã đạt giới hạn 03 vòng chỉnh sửa.</b> Feedback mới (từ vòng 4) hoặc thay đổi vượt brief ban đầu nên tạo task/order mới để team Media xử lý tiếp.</p>
+            <button type="button" class="btn btn-sm btn-primary" id="btn-revision-newtask">Tạo task mới từ feedback này</button>
+          </div>` : ''}
+      </div>`;
+  }
   // Render 1 chip PIC: avatar tròn (initials) + tên (+ nhãn phụ Quay/Chụp nếu có).
   function picChip(name, suffix) {
     if (!name) return '';
@@ -818,6 +861,7 @@
           <dt>Final Link</dt><dd>${link(o.final_delivery_link)}</dd>
         </dl>
         `}
+        ${buildRevisionPanel(o)}
         <dl style="margin-top:12px">
           <dt>Delivery Status</dt><dd>${o.delivery_status ? `<span class="tb-status s--${o.delivery_status}"><span class="dot"></span>${PROD_STATUS_LABEL[o.delivery_status] || o.delivery_status}</span>` : '<em class="muted">—</em>'}</dd>
           <dt>Delivery Date</dt><dd>${v(o.delivery_date)}</dd>
@@ -866,15 +910,17 @@
         return;
       }
       const today = new Date().toISOString().slice(0, 10); // date column 'YYYY-MM-DD'
+      // Bàn giao ĐẦU TIÊN luôn là "Preview" (yêu cầu nghiệp vụ — không gọi Final/Draft/Demo).
+      // Preview → mở vòng feedback (feedback_status=waiting_feedback). Final → approved.
       const localFields = isFinal
-        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today }
-        : { preview_link: linkVal, delivery_status: 'client_wait', production_status: 'feedback_wait', delivery_date: today };
+        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today, feedback_status: 'approved' }
+        : { preview_link: linkVal, delivery_status: 'client_wait', production_status: 'feedback_wait', delivery_date: today, feedback_status: 'waiting_feedback' };
       Object.assign(currentOrder, localFields, { last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ') });
       persistOrder(currentOrder.order_id, Object.assign({}, localFields, { last_updated: new Date().toISOString() }));
       // Notify client — resolveNotifLink (client role) sẽ mở order drawer trong Client Portal.
       notifyClient(currentOrder, isFinal
-        ? { type: 'delivery_final', title: 'Đã bàn giao final', message: `${currentOrder.order_id} · ${currentOrder.project_name || ''} — File final đã được bàn giao. Vui lòng kiểm tra và đánh giá.`, link: linkVal }
-        : { type: 'delivery_preview', title: 'Đã có bản xem trước', message: `${currentOrder.order_id} · ${currentOrder.project_name || ''} — Bản preview đã sẵn sàng, vui lòng kiểm tra và phản hồi.`, link: linkVal });
+        ? { type: 'delivery_final', title: 'Đã bàn giao Final', message: `${currentOrder.order_id} · ${currentOrder.project_name || ''} — File Final đã được bàn giao. Vui lòng kiểm tra và đánh giá.`, link: linkVal }
+        : { type: 'delivery_preview', title: 'Sản phẩm Preview đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã có bản Preview. Anh/chị vui lòng kiểm tra nội dung, bố cục, hình ảnh và gửi feedback trực tiếp trên hệ thống để team Media tiếp tục hoàn thiện.`, link: linkVal });
       window.MH.toast({ type: 'success', title: isFinal ? 'Đã gửi Final' : 'Đã gửi Preview', message: 'Client đã nhận thông báo + link.' });
       render();
       openDrawer(currentOrder);
@@ -883,6 +929,21 @@
     if (sendPreviewBtn) sendPreviewBtn.addEventListener('click', () => sendDelivery('preview'));
     const sendFinalBtn = document.getElementById('send-final-btn');
     if (sendFinalBtn) sendFinalBtn.addEventListener('click', () => sendDelivery('final'));
+
+    // Order đã đạt 03 vòng → tạo task mới từ feedback (prefill content = feedback gần nhất).
+    const revNewTaskBtn = document.getElementById('btn-revision-newtask');
+    if (revNewTaskBtn) revNewTaskBtn.addEventListener('click', () => {
+      const params = new URLSearchParams();
+      params.set('createTask', '1');
+      params.set('order_id', currentOrder.order_id || '');
+      params.set('project_name', (currentOrder.project_name || '') + ' — Revision ngoài 3 vòng');
+      params.set('task_type', currentOrder.request_type === 'media' ? 'shoot' : (currentOrder.request_type || 'design'));
+      params.set('priority', currentOrder.priority || 'normal');
+      if (currentOrder.production_pic) params.set('production_pic', currentOrder.production_pic);
+      const fb = currentOrder.latest_feedback_note ? `[Feedback vòng 4+ từ client]\n${currentOrder.latest_feedback_note}` : 'Yêu cầu chỉnh sửa phát sinh sau 3 vòng feedback.';
+      params.set('content', fb);
+      location.href = 'production-board.html?' + params.toString();
+    });
 
     // Đọc giá trị form Điều phối → ghi vào currentOrder + write-through Supabase.
     // Dùng chung cho nút "Lưu điều phối" và nút "Xác nhận & Chuyển Production".

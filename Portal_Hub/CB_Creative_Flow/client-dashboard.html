@@ -418,24 +418,32 @@
       <button class="icon-btn" id="feedback-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <div class="field">
-        <label class="label" for="fb-type">Loại phản hồi <span class="req">*</span></label>
-        <select class="select" id="fb-type">
-          <option value="">Chọn loại</option>
-          <option>Sai nội dung</option><option>Sai chính tả</option><option>Sai kích thước</option>
-          <option>Chỉnh màu sắc</option><option>Chỉnh layout</option><option>Thêm/bớt thông tin</option><option>Khác</option>
-        </select>
+      <div class="cl-preview-banner">
+        <span class="cl-round-badge" id="fb-round-badge">Bản Preview</span>
+        <p class="cl-round-help" id="fb-round-help"></p>
       </div>
-      <div class="field">
-        <label class="label" for="fb-content">Nội dung phản hồi <span class="req">*</span></label>
-        <textarea class="input" id="fb-content" rows="4" placeholder="Mô tả chi tiết những gì cần chỉnh sửa..."></textarea>
+      <div id="fb-form">
+        <div class="field">
+          <label class="label" for="fb-type">Loại phản hồi <span class="req">*</span></label>
+          <select class="select" id="fb-type">
+            <option value="">Chọn loại</option>
+            <option>Sai nội dung</option><option>Sai chính tả</option><option>Sai kích thước</option>
+            <option>Chỉnh màu sắc</option><option>Chỉnh layout</option><option>Thêm/bớt thông tin</option><option>Khác</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="fb-content">Nội dung phản hồi <span class="req">*</span></label>
+          <textarea class="input" id="fb-content" rows="4" placeholder="Mô tả chi tiết những gì cần chỉnh sửa..."></textarea>
+        </div>
+        <div class="field">
+          <label class="label" for="fb-priority">Mức độ ưu tiên</label>
+          <select class="select" id="fb-priority"><option>Bình thường</option><option>Gấp</option><option>Rất gấp</option></select>
+        </div>
+        <div class="cl-policy-block" id="fb-policy" hidden></div>
       </div>
-      <div class="field">
-        <label class="label" for="fb-priority">Mức độ ưu tiên</label>
-        <select class="select" id="fb-priority"><option>Bình thường</option><option>Gấp</option><option>Rất gấp</option></select>
-      </div>
-      <div style="padding:var(--space-3);background:rgb(245 158 11 / .1);border-radius:var(--radius);font-size:var(--text-xs);color:var(--text-muted)">
-        Các yêu cầu chỉnh sửa phát sinh ngoài brief ban đầu có thể cần Account xác nhận lại deadline.
+      <div class="cl-round4-block" id="fb-round4-block" hidden>
+        <p id="fb-round4-msg"></p>
+        <button class="btn btn-primary btn-sm" type="button" data-action="new-request">Gửi yêu cầu mới</button>
       </div>
     </div>
     <div class="modal-foot">

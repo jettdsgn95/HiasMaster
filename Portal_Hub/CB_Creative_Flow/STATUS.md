@@ -75,6 +75,7 @@ Status: Done
 - Push validation: confirmed brief + PIC + internal deadline + deliverable + active status.
 - **Push UX (2026-06-03)**: sau Confirm brief, nút **Push → Production giữ sáng** (CTA), chỉ mờ khi đã push (bỏ gate `readyToPush`); validate khi bấm. Thêm nút **"Xác nhận & Chuyển Production"** trong section Điều phối (lưu PIC/deadline rồi push 1 chạm). **Khóa PIC select sau push** (`isOrderPushed()`) + note "đổi PIC ở Task Tracker" (tránh desync order↔task). Hint push media-aware (Quay/Chụp).
 - **Auto-sync Production Status task→order (2026-06-03)**: order.production_status + progress tự đồng bộ theo task (bottleneck = task chậm nhất). Ô Production Status ở order drawer **read-only** (task-driven). Nguồn chính = DB trigger `supabase/sync-order-status-from-tasks.sql` (⚠ cần chạy production 1 lần — SECURITY DEFINER bỏ qua RLS cho design/editor); client-side chỉ admin/account.
+- **Preview → 3 vòng Feedback → Final (2026-06-03)**: bàn giao trong Order drawer (Delivery Log vẫn gỡ; client đọc `orders.preview_link`/`final_delivery_link`). Bàn giao đầu = "Preview"; order design tối đa **03 vòng** feedback (helper text/policy theo vòng ở Client Portal), vòng 4 → tạo task/order mới. Order drawer có panel Feedback/Vòng chỉnh sửa (round X/3, latest feedback, badge giới hạn). Migration `supabase/add-revision-rounds.sql` (⚠ cần chạy) + notif type `client_feedback_received`. Notif: delivery_preview · client_feedback_received · delivery_final · rating_received.
 - 18 mock orders.
 
 ### 4. Task Tracker (Production Board)
