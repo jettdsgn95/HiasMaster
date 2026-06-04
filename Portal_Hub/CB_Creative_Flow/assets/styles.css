@@ -4682,6 +4682,50 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 .rev-panel-dl dd { margin: 0; word-break: break-word; }
 .rev-limit-alert { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius); background: rgb(245 158 11 / .12); border: 1px dashed var(--warning); }
 .rev-limit-alert p { margin: 0 0 8px; font-size: var(--text-xs); }
+.rev-panel-actions { margin-top: 10px; display: flex; justify-content: flex-end; }
+
+/* Links from Task Tracker (Order drawer) — đồng bộ link task vào ô bàn giao, KHÔNG tự gửi client */
+.btn-xs { font-size: 11px; padding: 3px 9px; border-radius: 7px; line-height: 1.3; }
+.tt-links { margin-top: 12px; }
+.tt-links-head { font-weight: 600; font-size: var(--text-sm); margin-bottom: 8px; }
+.tt-link-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; background: var(--surface-2); }
+.tt-link-card-head { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); margin-bottom: 6px; }
+.tt-link-pic { color: var(--text-subtle); font-size: var(--text-xs); }
+.tt-link-row { display: flex; align-items: center; gap: 8px; font-size: var(--text-xs); padding: 2px 0; }
+.tt-link-label { width: 56px; color: var(--text-subtle); flex: none; }
+.tt-link-val { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt-link-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* Task drawer — Client Feedback Round block (đồng bộ feedback từ order liên kết) */
+.tw-feedback { margin-top: 10px; }
+.tw-fb-block { padding: 10px 12px; border-radius: var(--radius); background: var(--info-soft, rgb(59 130 246 / .1)); border-left: 3px solid var(--info); }
+.tw-fb-block.is-fixing { background: rgb(245 158 11 / .1); border-left-color: var(--warning); }
+.tw-fb-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tw-fb-title { font-weight: 600; font-size: var(--text-sm); }
+.tw-fb-fixing { font-size: var(--text-xs); font-weight: 600; padding: 2px 9px; border-radius: 9999px; background: var(--warning); color: #fff; margin-left: auto; }
+.tw-fb-note { font-size: var(--text-sm); margin: 0 0 6px; white-space: pre-wrap; word-break: break-word; }
+.tw-fb-meta { font-size: var(--text-xs); color: var(--text-subtle); margin: 0; }
+
+/* Order Lifecycle Timeline (Order drawer, display-only) — Brief → Production → Preview & Feedback → Final & Rating */
+.order-lifecycle { margin-bottom: var(--space-4); padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.lc-track { display: flex; align-items: flex-start; gap: 4px; flex-wrap: wrap; }
+.lc-node { display: flex; align-items: flex-start; gap: 8px; flex: 1 1 130px; min-width: 124px; }
+.lc-dot { width: 22px; height: 22px; border-radius: 9999px; flex: none; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border); background: var(--surface-2); color: var(--text-subtle); }
+.lc-dot svg { width: 12px; height: 12px; }
+.lc-done .lc-dot { background: #16A34A; border-color: #16A34A; color: #fff; }
+.lc-active .lc-dot { border-color: var(--primary); background: var(--primary-soft); }
+.lc-pulse { width: 8px; height: 8px; border-radius: 9999px; background: var(--primary); animation: lcPulse 1.8s infinite; }
+@keyframes lcPulse { 0% { box-shadow: 0 0 0 0 rgba(25,25,112,.45); } 70% { box-shadow: 0 0 0 6px rgba(25,25,112,0); } 100% { box-shadow: 0 0 0 0 rgba(25,25,112,0); } }
+.lc-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.lc-label { font-size: var(--text-xs); font-weight: 600; color: var(--text); }
+.lc-status { font-size: 11px; color: var(--text-subtle); }
+.lc-active .lc-label { color: var(--primary); }
+.lc-pending .lc-label, .lc-pending .lc-status { opacity: .6; }
+.lc-arrow { flex: none; align-self: center; width: 12px; height: 2px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.lc-summary { margin-top: 12px; padding: 8px 14px; border-radius: 9999px; background: var(--primary-soft); color: var(--primary); font-size: var(--text-sm); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.lc-summary-dot { width: 8px; height: 8px; border-radius: 9999px; background: var(--primary); flex: none; }
+.order-lifecycle.is-cancelled .lc-summary { background: rgb(186 17 15 / .1); color: #BA110F; }
+.order-lifecycle.is-cancelled .lc-summary-dot { background: #BA110F; }
 
 /* Client Portal — Preview/feedback round UI */
 .cl-preview-banner { padding: 12px 14px; border-radius: var(--radius); background: var(--info-soft, rgb(59 130 246 / .1)); border: 1px solid rgb(59 130 246 / .3); margin-bottom: 12px; }

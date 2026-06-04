@@ -346,18 +346,27 @@ function renderActionCenter() {
           <button class="btn btn-secondary btn-sm" data-action="open-order" data-order-id="${o.id}">Xem chi tiết</button>
         </div>
       </div>`;
-    if (a.type === 'preview') return `
+    if (a.type === 'preview') {
+      const approved = o.feedback_status === 'approved';
+      return `
       <div class="action-card ac--preview">
         <div class="action-card-head">
           <div class="action-card-icon ai--preview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <div><div class="action-card-title">Bản Preview chờ feedback</div><div class="action-card-order">${o.id}${appliesRevisionRule(o) ? ` · Feedback Vòng ${Math.min((o.revision_round||0)+1,3)}/${o.revision_limit||3}` : ''}</div></div>
+          <div><div class="action-card-title">${approved ? 'Đã duyệt Preview' : 'Bản Preview chờ feedback'}</div><div class="action-card-order">${o.id}${(!approved && appliesRevisionRule(o)) ? ` · Feedback Vòng ${Math.min((o.revision_round||0)+1,3)}/${o.revision_limit||3}` : ''}</div></div>
         </div>
-        <p>${o.name} — Đã có <b>bản Preview</b> để anh/chị kiểm tra nội dung, bố cục, hình ảnh và gửi feedback.</p>
+        ${approved
+          ? `<p>${o.name} — <b>Bản Preview đã được duyệt.</b> Team Media sẽ chuẩn bị file Final và gửi lại trong thời gian sớm nhất.</p>
         <div class="action-card-btns">
           ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+        </div>`
+          : `<p>${o.name} — Đã có <b>bản Preview</b> để anh/chị kiểm tra nội dung, bố cục, hình ảnh và gửi feedback.</p>
+        <div class="action-card-btns">
+          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+          <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="approve-preview" data-order-id="${o.id}">Duyệt Preview</button>
           <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi feedback</button>
-        </div>
+        </div>`}
       </div>`;
+    }
     if (a.type === 'rating') return `
       <div class="action-card ac--rating">
         <div class="action-card-head">
@@ -520,13 +529,21 @@ function openOrderDrawer(orderId) {
       </div></div>`;
   } else if (o.status === 'feedback_wait') {
     const _round = (o.revision_round || 0), _limit = (o.revision_limit || 3), _design = appliesRevisionRule(o);
-    const _roundTxt = _design ? ` · Feedback Vòng ${Math.min(_round + 1, _limit)}/${_limit}` : '';
-    actionBlock = `<div class="drawer-detail-section"><h4>Bản Preview — chờ feedback${_roundTxt}</h4>
+    const _approved = o.feedback_status === 'approved';
+    const _roundTxt = (!_approved && _design) ? ` · Feedback Vòng ${Math.min(_round + 1, _limit)}/${_limit}` : '';
+    actionBlock = _approved
+      ? `<div class="drawer-detail-section"><h4>Đã duyệt Preview</h4>
+      <div style="padding:var(--space-4);background:rgb(22 163 74 / .1);border-radius:var(--radius);border-left:3px solid var(--success)">
+        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><b>Bản Preview đã được duyệt.</b> Team Media sẽ chuẩn bị file Final và gửi lại trong thời gian sớm nhất.</p>
+        ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+      </div></div>`
+      : `<div class="drawer-detail-section"><h4>Bản Preview — chờ feedback${_roundTxt}</h4>
       <div style="padding:var(--space-4);background:rgb(14 165 233 / .1);border-radius:var(--radius);border-left:3px solid var(--info)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Anh/chị có <b>bản Preview</b> cần kiểm tra nội dung, bố cục, hình ảnh và gửi feedback để team Media tiếp tục hoàn thiện.</p>
+        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Anh/chị có <b>bản Preview</b> cần kiểm tra nội dung, bố cục, hình ảnh. Nếu đạt yêu cầu, hãy bấm <b>Duyệt Preview</b>; nếu cần chỉnh, hãy gửi feedback để team Media tiếp tục hoàn thiện.</p>
         <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
           ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
-          <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Xem Preview &amp; gửi feedback</button>
+          <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="approve-preview" data-order-id="${o.id}">Duyệt Preview</button>
+          <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi feedback</button>
         </div>
       </div></div>`;
   } else if (['delivered','completed'].includes(o.status) && !rt) {
@@ -671,6 +688,54 @@ function openFeedbackModal(orderId) {
 }
 function closeFeedbackModal() { document.getElementById('feedback-modal').classList.remove('is-open'); state.feedbackOrderId = null; }
 
+// Client duyệt Preview → feedback_status=approved + notify Account/Admin chuẩn bị Final.
+// KHÔNG đổi production_status (task-driven) — chỉ đánh dấu preview đã được duyệt.
+async function approvePreview(orderId) {
+  const o = ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  if (o.feedback_status === 'approved') { toast('info', 'Đã duyệt', 'Bản Preview của yêu cầu này đã được duyệt trước đó.'); return; }
+  const by = (user && (user.name || user.email)) || 'Client';
+  const nowIso = new Date().toISOString();
+  // Optimistic UI
+  o.feedback_status = 'approved';
+  o.approved_at = nowIso;
+  o.approved_by = by;
+  renderAll();
+  toast('success', 'Đã duyệt Preview', 'Bản Preview đã được duyệt. Team Media sẽ chuẩn bị file Final và gửi lại trong thời gian sớm nhất.');
+
+  if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+  try {
+    await window.MH.supabaseReady;
+    await window.MH.store.orders.update(o.id, {
+      feedback_status: 'approved',
+      approved_at: nowIso,
+      approved_by: by,
+      last_updated: nowIso
+    });
+    if (o.__raw) Object.assign(o.__raw, { feedback_status: 'approved', approved_at: nowIso, approved_by: by });
+
+    const { data: staff } = await window.MH.supabase
+      .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+    if (Array.isArray(staff) && staff.length) {
+      const payloads = staff.map(function (u) {
+        return {
+          user_id: u.id,
+          type: 'client_preview_approved',
+          title: 'Client đã duyệt Preview',
+          message: `Client đã đồng ý bản Preview của yêu cầu ${o.id}. Vui lòng chuẩn bị và gửi Final Link.`,
+          link: 'database-orders.html?id=' + o.id,
+          related_entity_type: 'orders',
+          related_entity_id: o.id
+        };
+      });
+      await window.MH.supabase.from('notifications').insert(payloads);
+    }
+  } catch (err) {
+    console.warn('[client-dashboard] approve preview failed:', err);
+    toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng thử lại nếu Account chưa nhận thông báo.');
+  }
+}
+
 function openInfoModal(orderId) {
   const o = ORDERS.find(x => x.id === orderId);
   if (!o) return;
@@ -744,6 +809,7 @@ document.addEventListener('click', e => {
   if (action === 'open-order')  openOrderDrawer(orderId);
   else if (action === 'needinfo') openInfoModal(orderId);
   else if (action === 'feedback') openFeedbackModal(orderId);
+  else if (action === 'approve-preview') approvePreview(orderId);
   else if (action === 'rating')   openRatingModal(orderId);
   else if (action === 'preview') {
     const o = ORDERS.find(x => x.id === orderId);

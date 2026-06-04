@@ -200,6 +200,10 @@
           <dt>Lúc</dt><dd>${o.last_feedback_at ? fmtDateTime(o.last_feedback_at) : '<em class="muted">—</em>'}</dd>
           <dt>Bởi</dt><dd>${o.last_feedback_by ? escapeHtml(o.last_feedback_by) : '<em class="muted">—</em>'}</dd>
         </dl>
+        ${(o.latest_feedback_note && canAct && !atLimit) ? `
+          <div class="rev-panel-actions">
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-send-feedback-pic">Gửi feedback này cho PIC</button>
+          </div>` : ''}
         ${atLimit && canAct ? `
           <div class="rev-limit-alert">
             <p><b>Order đã đạt giới hạn 03 vòng chỉnh sửa.</b> Feedback mới (từ vòng 4) hoặc thay đổi vượt brief ban đầu nên tạo task/order mới để team Media xử lý tiếp.</p>
@@ -207,6 +211,106 @@
           </div>` : ''}
       </div>`;
   }
+  // Label ngắn cho task.status (dùng ở section "Links from Task Tracker").
+  const TASK_STATUS_LABEL_SHORT = {
+    pending: 'Chưa nhận', received: 'Nhận task', inprogress: 'Đang thực hiện', review: 'Chờ duyệt nội bộ',
+    revision: 'Chỉnh sửa nội bộ', feedback_wait: 'Chờ client', feedback_fix: 'Chỉnh theo feedback',
+    ready: 'Sẵn sàng bàn giao', delivered: 'Đã bàn giao', completed: 'Hoàn thành', paused: 'Tạm dừng', cancelled: 'Hủy'
+  };
+  let drawerLinkedTasks = null; // cache task liên kết của order đang mở (cho nút gửi feedback / dùng link)
+
+  // Gửi latest_feedback_note của order tới 1 task PIC: comment(type=feedback) + status=feedback_fix
+  // + notify PIC (task_status_changed) + order.feedback_status=revision_in_progress.
+  async function sendFeedbackToTask(task) {
+    if (!task) return;
+    const note = currentOrder.latest_feedback_note || '';
+    if (!note) { window.MH.toast({ type: 'warning', title: 'Chưa có feedback', message: 'Order chưa có feedback từ client để gửi.' }); return; }
+    if (!(window.MH && window.MH.store && window.MH.supabaseEnabled)) { window.MH.toast({ type: 'warning', title: 'Cần Supabase', message: 'Bật Supabase để gửi feedback cho PIC.' }); return; }
+    const nowIso = new Date().toISOString();
+    try {
+      // 1) Comment type=feedback (chỉ field hợp lệ: author/text/type)
+      await window.MH.store.taskComments.add(task.task_id, { author: user.name || 'Account', text: '[Feedback từ client] ' + note, type: 'feedback' }).catch(function (e) { console.warn('[feedback→pic] comment failed:', e); });
+      // 2) Task → feedback_fix (giữ key cũ, không đổi schema)
+      await window.MH.store.tasks.update(task.task_id, { status: 'feedback_fix', last_update: nowIso });
+      // 3) Notify PIC qua luồng task_status_changed
+      const picId = await window.MH.store.notifications.findUserIdByName(task.assigned_to);
+      if (picId) await window.MH.store.notifications.create({
+        user_id: picId, type: 'task_status_changed',
+        title: 'Yêu cầu chỉnh sửa từ Account',
+        message: `${task.task_id} · ${currentOrder.order_id} — Account chuyển feedback client: ${note}`,
+        link: 'production-board.html?id=' + task.task_id,
+        related_entity_type: 'tasks', related_entity_id: task.task_id
+      });
+      // 4) Order → revision_in_progress
+      currentOrder.feedback_status = 'revision_in_progress';
+      currentOrder.last_updated = nowIso.slice(0, 16).replace('T', ' ');
+      persistOrder(currentOrder.order_id, { feedback_status: 'revision_in_progress', last_updated: nowIso });
+      window.MH.toast({ type: 'success', title: 'Đã gửi feedback cho PIC xử lý', message: `${task.task_id} → ${task.assigned_to || 'PIC'} · status: Chỉnh theo feedback` });
+      render(); openDrawer(currentOrder);
+    } catch (e) {
+      console.warn('[feedback→pic] failed:', e);
+      window.MH.toast({ type: 'warning', title: 'Lỗi gửi feedback', message: 'Vui lòng thử lại.' });
+    }
+  }
+
+  // Nút "Gửi feedback này cho PIC" ở revision panel: 1 task → gửi luôn; nhiều → chỉ định ở mục Links.
+  async function onRevisionSendToPic() {
+    let tasks = drawerLinkedTasks;
+    if (!tasks && window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      try { tasks = (await window.MH.store.tasks.list({ order_id: currentOrder.order_id }) || []).filter((t) => !t.is_standalone); } catch (e) { tasks = []; }
+    }
+    tasks = tasks || [];
+    if (!tasks.length) { window.MH.toast({ type: 'warning', title: 'Chưa có task', message: 'Order chưa có task liên kết — dùng "Tạo task mới từ feedback này".' }); return; }
+    if (tasks.length === 1) { sendFeedbackToTask(tasks[0]); return; }
+    window.MH.toast({ type: 'info', title: 'Có nhiều task', message: 'Chọn task cụ thể ở mục "Links from Task Tracker" để gửi feedback.' });
+    const m = document.getElementById('tt-links-mount'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Async load task liên kết → render section "Links from Task Tracker" + wire nút.
+  async function loadTaskLinksIntoDrawer(orderId) {
+    const mount = document.getElementById('tt-links-mount');
+    if (!mount) return;
+    if (!(window.MH && window.MH.store && window.MH.supabaseEnabled)) { mount.innerHTML = ''; return; }
+    let tasks = [];
+    try { tasks = await window.MH.store.tasks.list({ order_id: orderId }); } catch (e) { console.warn('[tt-links] list failed:', e); }
+    tasks = (tasks || []).filter((t) => !t.is_standalone);
+    drawerLinkedTasks = tasks;
+    if (!tasks.length) { mount.innerHTML = `<p class="text-xs muted" style="margin:10px 0 0">Chưa có task liên kết. Push order sang Production để tạo task.</p>`; return; }
+    const linkRow = (label, val) => {
+      const safe = escapeHtml(val || '');
+      return `<div class="tt-link-row"><span class="tt-link-label">${label}</span>${val
+        ? `<a href="${safe}" target="_blank" rel="noopener" class="tt-link-val">${safe}</a><button type="button" class="btn btn-ghost btn-xs" data-copy="${safe}">Copy</button>`
+        : `<span class="tt-link-val muted">Chưa có</span>`}</div>`;
+    };
+    mount.innerHTML = `<div class="tt-links-head">Links from Task Tracker</div>` + tasks.map((t) => `
+      <div class="tt-link-card" data-task-id="${t.task_id}">
+        <div class="tt-link-card-head">
+          <b>${t.task_id}</b>
+          <span class="tt-link-pic">${escapeHtml(t.assigned_to || '— Chưa gán —')}</span>
+          <span class="tb-status s--${t.status}" style="margin-left:auto"><span class="dot"></span>${TASK_STATUS_LABEL_SHORT[t.status] || t.status}</span>
+        </div>
+        ${linkRow('Source', t.link_drive)}
+        ${linkRow('Preview', t.preview_link)}
+        ${linkRow('Final', t.final_link)}
+        <div class="tt-link-actions">
+          <button type="button" class="btn btn-ghost btn-xs" data-use-preview="${escapeHtml(t.preview_link || '')}" ${t.preview_link ? '' : 'disabled'}>Dùng làm Preview</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-use-final="${escapeHtml(t.final_link || '')}" ${t.final_link ? '' : 'disabled'}>Dùng làm Final</button>
+          ${currentOrder.latest_feedback_note ? `<button type="button" class="btn btn-xs btn-secondary" data-send-feedback="${t.task_id}">Gửi feedback cho PIC</button>` : ''}
+        </div>
+      </div>`).join('');
+    // Wire (delegation 1 lần trên mount)
+    mount.onclick = function (e) {
+      const cp = e.target.closest('[data-copy]');
+      if (cp) { const val = cp.getAttribute('data-copy'); if (val && navigator.clipboard) navigator.clipboard.writeText(val).then(() => window.MH.toast({ type: 'success', title: 'Đã copy', message: 'Link đã vào clipboard.' })); return; }
+      const up = e.target.closest('[data-use-preview]');
+      if (up) { const i = document.getElementById('dlv-preview-link'); if (i) { i.value = up.getAttribute('data-use-preview'); window.MH.toast({ type: 'info', title: 'Đã điền Preview Link', message: 'Bấm "Gửi Preview → Client" để bàn giao (chưa gửi tự động).' }); } return; }
+      const uf = e.target.closest('[data-use-final]');
+      if (uf) { const i = document.getElementById('dlv-final-link'); if (i) { i.value = uf.getAttribute('data-use-final'); window.MH.toast({ type: 'info', title: 'Đã điền Final Link', message: 'Bấm "Gửi Final → Client" để bàn giao (chưa gửi tự động).' }); } return; }
+      const sf = e.target.closest('[data-send-feedback]');
+      if (sf) { const id = sf.getAttribute('data-send-feedback'); const t = (drawerLinkedTasks || []).find((x) => x.task_id === id); if (t) sendFeedbackToTask(t); return; }
+    };
+  }
+
   // Render 1 chip PIC: avatar tròn (initials) + tên (+ nhãn phụ Quay/Chụp nếu có).
   function picChip(name, suffix) {
     if (!name) return '';
@@ -598,43 +702,124 @@
     return `<ul class="activity-mini">${acts.slice(-5).reverse().map((a) => `<li><span>${a.label}</span><time>${fmtDateTime(a.time)}</time></li>`).join('')}</ul>`;
   }
 
+  /* ---------- Order Lifecycle (display-only) ----------
+     Suy ra giai đoạn hiện tại của order qua 4 nhóm: Brief → Production →
+     Preview & Feedback → Final & Rating. KHÔNG phải action buttons. */
+  function computeLifecycle(o) {
+    const cancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
+    const briefConfirmed = o.account_status === 'confirmed';
+    const isPushed = !!o.production_status && o.production_status !== 'unassigned' && !cancelled;
+    const hasPreview = !!o.preview_link;
+    const hasFinal = !!o.final_delivery_link;
+    const rated = typeof o.satisfaction_score === 'number' && o.satisfaction_score > 0;
+    const completed = o.production_status === 'completed';
+    const fb = o.feedback_status || '';
+    const round = o.revision_round || 0;
+
+    const briefText = ({ pending: 'Đã nhận yêu cầu', checking: 'Đang kiểm tra brief', needinfo: 'Cần bổ sung brief', confirmed: 'Đã xác nhận brief', rejected: 'Đơn đã hủy' })[o.account_status] || '—';
+    const prodText = ({ unassigned: 'Chưa push Task Tracker', received: 'Production đã nhận task', inprogress: 'Đang sản xuất', review: 'Chờ duyệt nội bộ', revision: 'Cần chỉnh sửa nội bộ', ready: 'Sẵn sàng gửi Preview', delivered: 'Đã bàn giao', completed: 'Hoàn thành', cancelled: 'Đã hủy' })[o.production_status] || '—';
+    let previewText;
+    if (fb === 'approved') previewText = 'Client đã duyệt Preview';
+    else if (fb === 'exceeded_limit') previewText = 'Đã đạt giới hạn chỉnh sửa';
+    else if (fb === 'feedback_received') previewText = `Client đã gửi Feedback Round ${round}`;
+    else if (fb === 'revision_in_progress') previewText = `Đang chỉnh Feedback Round ${round}`;
+    else if (hasPreview) previewText = 'Đã gửi Preview · Chờ Client phản hồi';
+    else previewText = 'Chưa gửi Preview';
+    let finalText;
+    if (completed) finalText = 'Hoàn thành';
+    else if (rated) finalText = 'Client đã đánh giá';
+    else if (hasFinal) finalText = 'Đã gửi Final · Chờ Client đánh giá';
+    else finalText = 'Chưa gửi Final';
+
+    let active, stage;
+    if (cancelled) { active = -1; stage = 'cancelled'; }
+    else if (completed) { active = 3; stage = 'completed'; }
+    else if (rated) { active = 3; stage = 'rated'; }
+    else if (hasFinal) { active = 3; stage = 'final_sent'; }
+    else if (fb === 'approved') { active = 3; stage = 'preview_approved'; }
+    else if (fb === 'exceeded_limit') { active = 2; stage = 'exceeded'; }
+    else if (fb === 'revision_in_progress') { active = 2; stage = 'revising'; }
+    else if (fb === 'feedback_received') { active = 2; stage = 'feedback_received'; }
+    else if (hasPreview) { active = 2; stage = 'preview_sent'; }
+    else if (isPushed) { active = 1; stage = 'production'; }
+    else if (briefConfirmed) { active = 1; stage = 'brief_confirmed'; }
+    else { active = 0; stage = 'brief'; }
+
+    const orderDone = completed || rated;
+    const stateOf = (i) => cancelled ? 'pending' : (orderDone ? 'done' : (i < active ? 'done' : (i === active ? 'active' : 'pending')));
+    const groups = [
+      { label: 'Brief', state: stateOf(0), status: briefText },
+      { label: 'Production', state: stateOf(1), status: prodText },
+      { label: 'Preview & Feedback', state: stateOf(2), status: previewText },
+      { label: 'Final & Rating', state: stateOf(3), status: finalText }
+    ];
+
+    let summary;
+    switch (stage) {
+      case 'cancelled': summary = 'Đơn đã hủy'; break;
+      case 'completed': summary = 'Hoàn thành'; break;
+      case 'rated': summary = 'Client đã đánh giá · Hoàn tất'; break;
+      case 'final_sent': summary = 'Đã gửi Final · Chờ Client đánh giá'; break;
+      case 'preview_approved': summary = 'Client đã duyệt Preview · Chờ gửi Final'; break;
+      case 'exceeded': summary = 'Đã đạt giới hạn chỉnh sửa · Tạo task/order mới'; break;
+      case 'revising': summary = `Đang chỉnh Feedback Round ${round} · PIC xử lý`; break;
+      case 'feedback_received': summary = `Client đã gửi Feedback Round ${round} · Đang chờ gửi cho PIC`; break;
+      case 'preview_sent': summary = 'Đã gửi Preview · Chờ Client phản hồi'; break;
+      case 'production': summary = prodText; break;
+      case 'brief_confirmed': summary = 'Đã xác nhận brief · Chờ push Task Tracker'; break;
+      default: summary = briefText;
+    }
+    return { groups, summary, stage, active, round, cancelled };
+  }
+
+  function buildLifecycleTimeline(o) {
+    const lc = computeLifecycle(o);
+    const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const nodes = lc.groups.map((g, i) => `
+      <div class="lc-node lc-${g.state}">
+        <span class="lc-dot">${g.state === 'done' ? check : (g.state === 'active' ? '<span class="lc-pulse"></span>' : '')}</span>
+        <div class="lc-text"><span class="lc-label">${g.label}</span><span class="lc-status">${escapeHtml(g.status)}</span></div>
+      </div>${i < lc.groups.length - 1 ? '<span class="lc-arrow"></span>' : ''}`).join('');
+    return `
+      <section class="order-lifecycle ${lc.cancelled ? 'is-cancelled' : ''}" aria-label="Tiến trình order">
+        <div class="lc-track">${nodes}</div>
+        <div class="lc-summary"><span class="lc-summary-dot"></span>${escapeHtml(lc.summary)}</div>
+      </section>`;
+  }
+
+  // "Hành động kế tiếp" — suy ra từ lifecycle stage (display-only timeline ở trên).
   function orderNextAction(o) {
-    if (o.account_status === 'pending') {
-      return { title: 'Kiểm tra brief', detail: 'Account cần rà soát thông tin trước khi xác nhận.' };
+    const lc = computeLifecycle(o);
+    const N = lc.round;
+    switch (lc.stage) {
+      case 'cancelled':        return { title: 'Order đã hủy', detail: 'Không còn hành động sản xuất cho order này.' };
+      case 'completed':        return { title: 'Hoàn thành', detail: 'Order đã hoàn tất — Final đã bàn giao và đóng task.' };
+      case 'rated':            return { title: 'Đã có đánh giá', detail: 'Client đã đánh giá. Đóng order/task ở Task Tracker nếu chưa.' };
+      case 'final_sent':       return { title: 'Chờ Client đánh giá', detail: 'Final đã được gửi. Client cần kiểm tra và gửi đánh giá để hoàn tất order.' };
+      case 'preview_approved': return { title: 'Chuẩn bị gửi Final', detail: 'Client đã duyệt bản Preview. Account lấy Final Link từ "Links from Task Tracker" (hoặc yêu cầu PIC xuất Final), rồi gửi Final cho Client.' };
+      case 'exceeded':         return { title: 'Đã đạt giới hạn chỉnh sửa', detail: 'Order đã dùng đủ 03 vòng feedback. Tạo task/order mới từ feedback để team Media xử lý tiếp.' };
+      case 'revising':         return { title: 'PIC đang chỉnh sửa', detail: `Feedback Round ${N} đã chuyển cho PIC. Chờ PIC cập nhật Preview mới rồi gửi lại Client.` };
+      case 'feedback_received':return { title: 'Gửi feedback cho PIC', detail: `Client đã gửi Feedback Round ${N}. Account cần chuyển feedback này cho PIC trong Task Tracker để chỉnh sửa.` };
+      case 'preview_sent':     return { title: 'Chờ Client phản hồi', detail: 'Đã gửi Preview — theo dõi feedback từ Client. Nếu Client duyệt Preview, Account gửi Final. Nếu Client gửi feedback, chuyển feedback cho PIC xử lý.' };
+      case 'production': {
+        if (o.production_status === 'ready')  return { title: 'Bàn giao cho client', detail: 'Task đã sẵn sàng. Lấy Preview Link ở "Links from Task Tracker" → mục Bàn giao → bấm Gửi Preview.' };
+        if (o.production_status === 'review') return { title: 'Duyệt nội bộ', detail: 'Team đã gửi preview/final — mở Task Tracker duyệt (Đạt → Sẵn sàng bàn giao) trước khi gửi Preview.' };
+        return { title: 'Theo dõi sản xuất', detail: 'Mở Task Tracker để xem tiến độ chi tiết của team Media.' };
+      }
+      case 'brief_confirmed': {
+        const noPic = o.request_type === 'media' ? (!o.production_pic_video && !o.production_pic_photo) : !o.production_pic;
+        if (noPic) return o.request_type === 'media'
+          ? { title: 'Gán PIC Quay / Chụp', detail: 'Chọn PIC cho dịch vụ cần thực hiện (Quay và/hoặc Chụp) để sẵn sàng tạo task.' }
+          : { title: 'Gán Production PIC', detail: 'Chọn người phụ trách sản xuất để sẵn sàng tạo task.' };
+        if (!o.internal_deadline) return { title: 'Set Internal Deadline', detail: 'Cần deadline nội bộ trước khi push sang Task Tracker.' };
+        return { title: 'Push sang Task Tracker', detail: 'Brief đã đủ điều kiện, có thể tạo task sản xuất.' };
+      }
+      default: { // brief
+        if (o.account_status === 'checking') return { title: 'Xác nhận hoặc yêu cầu bổ sung', detail: 'Brief đang được kiểm tra, chọn bước phù hợp ở thanh hành động.' };
+        if (o.account_status === 'needinfo') return { title: 'Chờ client bổ sung', detail: 'Theo dõi phản hồi của client trước khi xác nhận brief.' };
+        return { title: 'Kiểm tra brief', detail: 'Account cần rà soát thông tin trước khi xác nhận.' };
+      }
     }
-    if (o.account_status === 'checking') {
-      return { title: 'Xác nhận hoặc yêu cầu bổ sung', detail: 'Brief đang được kiểm tra, chọn bước phù hợp ở thanh hành động.' };
-    }
-    if (o.account_status === 'needinfo') {
-      return { title: 'Chờ client bổ sung', detail: 'Theo dõi phản hồi của client trước khi xác nhận brief.' };
-    }
-    if (o.account_status === 'confirmed' && (o.request_type === 'media' ? (!o.production_pic_video && !o.production_pic_photo) : !o.production_pic)) {
-      return o.request_type === 'media'
-        ? { title: 'Gán PIC Quay / Chụp', detail: 'Chọn PIC cho dịch vụ cần thực hiện (Quay và/hoặc Chụp) để sẵn sàng tạo task.' }
-        : { title: 'Gán Production PIC', detail: 'Chọn người phụ trách sản xuất để sẵn sàng tạo task.' };
-    }
-    if (o.account_status === 'confirmed' && !o.internal_deadline) {
-      return { title: 'Set Internal Deadline', detail: 'Cần deadline nội bộ trước khi push sang Task Tracker.' };
-    }
-    if (o.account_status === 'confirmed' && o.production_status === 'unassigned') {
-      return { title: 'Push sang Task Tracker', detail: 'Brief đã đủ điều kiện, có thể tạo task sản xuất.' };
-    }
-    if (o.production_status === 'received' || o.production_status === 'inprogress') {
-      return { title: 'Theo dõi sản xuất', detail: 'Mở Task Tracker để xem tiến độ chi tiết của team Media.' };
-    }
-    if (o.production_status === 'review') {
-      return { title: 'Duyệt nội bộ', detail: 'Team đã gửi preview/final — mở Task Tracker duyệt (Đạt → Sẵn sàng bàn giao) trước khi bàn giao client.' };
-    }
-    if (o.production_status === 'ready') {
-      return { title: 'Bàn giao cho client', detail: 'Task đã sẵn sàng. Copy link Final/Preview từ Task Tracker → dán vào mục "Bàn giao cho client" bên dưới → bấm Gửi. Client sẽ nhận thông báo + link.' };
-    }
-    if (o.production_status === 'delivered' || o.delivery_status === 'final' || o.delivery_status === 'client_wait') {
-      return { title: 'Chờ client phản hồi', detail: 'Đã bàn giao — theo dõi rating/feedback. Đóng task ở Task Tracker khi client xác nhận xong.' };
-    }
-    if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
-      return { title: 'Order đã hủy', detail: 'Không còn hành động sản xuất cho order này.' };
-    }
-    return { title: 'Theo dõi cập nhật', detail: 'Kiểm tra task, delivery và phản hồi client khi có thay đổi.' };
   }
 
   function openDrawer(o) {
@@ -656,6 +841,7 @@
 
     const nextAction = orderNextAction(o);
     drawerBody.innerHTML = `
+      ${buildLifecycleTimeline(o)}
       <section class="order-summary-grid" aria-label="Tóm tắt order">
         <div class="order-summary-tile">
           <span>Người gửi</span>
@@ -862,6 +1048,7 @@
         </dl>
         `}
         ${buildRevisionPanel(o)}
+        <div id="tt-links-mount" class="tt-links"></div>
         <dl style="margin-top:12px">
           <dt>Delivery Status</dt><dd>${o.delivery_status ? `<span class="tb-status s--${o.delivery_status}"><span class="dot"></span>${PROD_STATUS_LABEL[o.delivery_status] || o.delivery_status}</span>` : '<em class="muted">—</em>'}</dd>
           <dt>Delivery Date</dt><dd>${v(o.delivery_date)}</dd>
@@ -929,6 +1116,13 @@
     if (sendPreviewBtn) sendPreviewBtn.addEventListener('click', () => sendDelivery('preview'));
     const sendFinalBtn = document.getElementById('send-final-btn');
     if (sendFinalBtn) sendFinalBtn.addEventListener('click', () => sendDelivery('final'));
+
+    // Gửi feedback hiện tại cho PIC xử lý (revision panel).
+    const sendFbPicBtn = document.getElementById('btn-send-feedback-pic');
+    if (sendFbPicBtn) sendFbPicBtn.addEventListener('click', onRevisionSendToPic);
+    // Async load "Links from Task Tracker" vào order drawer.
+    drawerLinkedTasks = null;
+    loadTaskLinksIntoDrawer(o.order_id);
 
     // Order đã đạt 03 vòng → tạo task mới từ feedback (prefill content = feedback gần nhất).
     const revNewTaskBtn = document.getElementById('btn-revision-newtask');

@@ -636,10 +636,9 @@
 
   /* ---------- Status transitions ---------- */
   function canTransition(task, newStatus) {
-    // PIC (design/editor) cannot directly move to completed or ready
+    // P.I.C (design/editor) KHÔNG được chuyển sang ready/completed/cancelled/paused (chỉ Account/Admin).
     if (['design', 'editor'].includes(user.role)) {
-      if (newStatus === 'completed') return false;
-      if (newStatus === 'ready' && task.status !== 'review') return false;
+      if (['ready', 'completed', 'cancelled', 'paused'].includes(newStatus)) return false;
     }
     // Ready for delivery requires preview or final link
     if (newStatus === 'ready' && !task.preview_link && !task.final_link) return false;
@@ -647,9 +646,10 @@
     return true;
   }
   function getTransitionError(task, newStatus) {
-    if (['design', 'editor'].includes(user.role) && newStatus === 'completed') return 'P.I.C không thể tự đóng task. Account/Admin sẽ chuyển sau bàn giao.';
+    if (['design', 'editor'].includes(user.role) && ['ready', 'completed', 'cancelled', 'paused'].includes(newStatus)) {
+      return 'P.I.C chỉ gửi task đi duyệt nội bộ. Account/Admin sẽ duyệt, bàn giao, đóng hoặc tạm dừng/hủy task.';
+    }
     if (newStatus === 'ready' && !task.preview_link && !task.final_link) return 'Cần upload Preview hoặc Final link trước.';
-    if (['design', 'editor'].includes(user.role) && newStatus === 'ready' && task.status !== 'review') return 'Task cần qua bước "Chờ duyệt nội bộ" trước.';
     return 'Transition không hợp lệ.';
   }
   /* ---------- Notify khi status task đổi (Account↔Designer handoff) ----------
@@ -690,6 +690,11 @@
   }
 
   function updateStatus(task, newStatus) {
+    // Defense-in-depth: chặn transition không hợp lệ theo role (P.I.C không ready/completed/cancelled/paused).
+    if (!canTransition(task, newStatus)) {
+      window.MH.toast({ type: 'warning', title: 'Không thể chuyển', message: getTransitionError(task, newStatus) });
+      return;
+    }
     const old = task.status;
     task.status = newStatus;
     task.progress = STATUS_PROGRESS[newStatus] ?? task.progress;
@@ -742,6 +747,32 @@
     }).catch((err) => console.warn('[task→order] order update failed:', err));
   }
 
+  const FEEDBACK_STATUS_LABEL = {
+    waiting_feedback: 'Chờ feedback từ client', feedback_received: 'Client đã gửi feedback',
+    revision_in_progress: 'Đang chỉnh theo feedback', approved: 'Client đã duyệt', exceeded_limit: 'Đã đạt giới hạn chỉnh sửa'
+  };
+  // Async: nạp feedback của Client Order liên kết vào task drawer (Round N/3 + note + status).
+  async function loadOrderFeedbackIntoTaskDrawer(orderId, taskStatus) {
+    const mount = document.getElementById('tw-feedback-mount');
+    if (!mount || !orderId || !(window.MH && window.MH.store && window.MH.supabaseEnabled)) return;
+    let order = null;
+    try { order = await window.MH.store.orders.get(orderId); } catch (e) { console.warn('[tw-feedback] order get failed:', e); }
+    const round = order && order.revision_round ? order.revision_round : 0;
+    if (!order || round <= 0) { mount.innerHTML = ''; return; }
+    const limit = order.revision_limit || 3;
+    const fbStatus = order.feedback_status ? (FEEDBACK_STATUS_LABEL[order.feedback_status] || order.feedback_status) : '—';
+    const fixing = taskStatus === 'feedback_fix';
+    mount.innerHTML = `
+      <div class="tw-fb-block ${fixing ? 'is-fixing' : ''}">
+        <div class="tw-fb-head">
+          <span class="tw-fb-title">Client Feedback Round ${round}/${limit}</span>
+          ${fixing ? `<span class="tw-fb-fixing">Đang chỉnh Feedback Round ${round}</span>` : ''}
+        </div>
+        <p class="tw-fb-note">${order.latest_feedback_note ? escapeHtml(order.latest_feedback_note) : '<em class="muted">Chưa có nội dung feedback</em>'}</p>
+        <p class="tw-fb-meta">Feedback status: <b>${fbStatus}</b></p>
+      </div>`;
+  }
+
   /* ---------- Drawer ---------- */
   const drawer = document.getElementById('task-drawer');
   const drawerBd = document.getElementById('drawer-backdrop');
@@ -761,6 +792,7 @@
       }
     }
     if (t.status === 'revision') actions.push({ id: 'review', label: 'Đã chỉnh xong → Review lại', desc: 'Account duyệt lại', cls: '' });
+    if (t.status === 'feedback_fix') actions.push({ id: 'review', label: 'Đã chỉnh Feedback → Review lại', desc: 'Gửi lại Account duyệt', cls: '' });
     if (t.status === 'ready') {
       if (['admin', 'account'].includes(role)) actions.push({ id: 'completed', label: 'Đóng task — Hoàn thành', desc: 'Sau khi đã bàn giao client', cls: 'sa--success' });
     }
@@ -912,6 +944,7 @@
               Mở Order
             </a>
           </div>
+          <div id="tw-feedback-mount" class="tw-feedback"></div>
         ` : `
           <p class="text-xs muted" style="margin:0 0 8px"><span class="worktype-badge worktype-badge--standalone">Standalone Internal Task</span></p>
           <p class="text-xs muted" style="margin:0">Công việc nội bộ độc lập — KHÔNG gắn Client Order. Task do team Media tự khởi tạo cho campaign nội bộ / brand asset / admin workstream.</p>
@@ -1088,10 +1121,15 @@
       });
     }
 
-    // Save meta
+    // Save meta (PIC/deadline/priority) — CHỈ Admin/Account. Field chỉ render cho admin/account,
+    // thêm guard ở handler để chặn cả khi bị trigger qua DOM/console.
     const saveMetaBtn = document.getElementById('save-meta');
     if (saveMetaBtn) {
       saveMetaBtn.addEventListener('click', () => {
+        if (!['admin', 'account'].includes(user.role)) {
+          window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Bạn không có quyền chỉnh sửa thông tin công việc. Vui lòng liên hệ Account/Admin.' });
+          return;
+        }
         currentTask.assigned_to = document.getElementById('edit-pic').value;
         currentTask.internal_deadline = document.getElementById('edit-deadline').value.replace('T', ' ');
         currentTask.priority = document.getElementById('edit-priority').value;
@@ -1271,6 +1309,9 @@
       replyingToId = null;
       render(); openDrawer(currentTask);
     });
+
+    // Async: hiện Client Feedback Round (nếu order liên kết có revision_round > 0)
+    if (t.order_id && !t.is_standalone) loadOrderFeedbackIntoTaskDrawer(t.order_id, t.status);
 
     drawer.classList.add('is-open');
     drawer.setAttribute('aria-hidden', 'false');
@@ -1458,6 +1499,11 @@
   if (tmType) tmType.addEventListener('change', applyLocationUI);
 
   function openTaskModal(prefill, editId) {
+    // Bảo vệ handler (không chỉ ẩn nút): chỉ Admin/Account được SỬA metadata task.
+    if (editId && !['admin', 'account'].includes(user.role)) {
+      window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Bạn không có quyền chỉnh sửa thông tin công việc. Vui lòng liên hệ Account/Admin.' });
+      return;
+    }
     editingTaskId = editId || null;
     modalTitle.textContent = editId ? 'Sửa công việc nội bộ' : 'Giao việc nội bộ mới';
     const p = prefill || {};
@@ -1689,6 +1735,7 @@
   const _origOpenDrawer = openDrawer;
   openDrawer = function (t) {
     _origOpenDrawer(t);
-    if (['admin', 'account'].includes(user.role) || isMyTask(t.assigned_to)) attachDrawerEditButton();
+    // CHỈ Admin/Account được sửa metadata task. P.I.C (design/editor) KHÔNG thấy "Sửa công việc".
+    if (['admin', 'account'].includes(user.role)) attachDrawerEditButton();
   };
 })();
