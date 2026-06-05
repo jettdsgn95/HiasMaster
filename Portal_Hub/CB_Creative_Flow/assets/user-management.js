@@ -36,7 +36,7 @@
   // ROLE_LABEL mở rộng để khớp schema Supabase (admin/account/design/editor/client).
   // Giữ manager/staff cho mock cũ tương thích ngược.
   const ROLE_LABEL = {
-    admin: 'Admin', manager: 'Manager', account: 'Account',
+    admin: 'Admin', manager: 'Manager', account: 'Account', content: 'Content',
     design: 'Design', editor: 'Editor', staff: 'Staff', client: 'Client'
   };
   const STATUS_LABEL = { pending: 'Pending Invite', active: 'Active', inactive: 'Inactive', suspended: 'Suspended', archived: 'Archived' };

@@ -114,6 +114,7 @@ const state = {
   openOrderId: null,
   ratingOrderId: null,
   feedbackOrderId: null,
+  wordingFeedbackOrderId: null,
   infoOrderId: null,
   ratings: {},
   notifRead: new Set(),
@@ -226,6 +227,17 @@ async function loadClientOrdersFromStore() {
         latest_feedback_note: o.latest_feedback_note || '',
         last_feedback_at: o.last_feedback_at || '',
         last_feedback_by: o.last_feedback_by || '',
+        // Phase 4 — Brief Wording (Client confirmation). KHÔNG map internal note (wording_account_note / wording_production_note).
+        brief_wording_status: o.brief_wording_status || 'none',
+        brief_wording_round: o.brief_wording_round || 0,
+        wording_brief: o.wording_brief || '',
+        wording_objective: o.wording_objective || '',
+        wording_core_message: o.wording_core_message || '',
+        wording_required_info: o.wording_required_info || '',
+        wording_tone_style: o.wording_tone_style || '',
+        wording_cta: o.wording_cta || '',
+        wording_approved_at: o.wording_approved_at || '',
+        wording_client_feedback_at: o.wording_client_feedback_at || '',
         __raw: o
       };
     });
@@ -240,8 +252,28 @@ async function loadClientOrdersFromStore() {
 }
 
 /* ===== HELPERS ===== */
-function pubStatus(o) { return PUB_STATUS[o.status] || { label: o.status, cls: '' }; }
-function pubProgress(o) { return PUB_PROGRESS[o.status] ?? 0; }
+// Trạng thái HIỂN THỊ cho Client (timeline/nhãn/%): order đã rating/final → bàn giao/hoàn thành,
+// không kẹt ở feedback_wait. Tránh tình huống order đã đánh giá mà timeline vẫn đứng "Kiểm tra nội bộ".
+function pubEffStatus(o) {
+  if (!o) return 'pending';
+  if (o.status === 'cancelled') return 'cancelled';
+  if (o.rating || o.status === 'completed') return 'completed';
+  if (isFinalDelivered(o)) return 'delivered';
+  return o.status;
+}
+function pubStatus(o) { const s = pubEffStatus(o); return PUB_STATUS[s] || { label: s, cls: '' }; }
+function pubProgress(o) { return PUB_PROGRESS[pubEffStatus(o)] ?? 0; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+// Order đã bàn giao Final khi có final_link / rating (chắc chắn nhất) HOẶC status delivered/completed HOẶC feedback_status=final_sent.
+// Dùng cho Action Center / drawer / bảng để client luôn thấy bảng "đánh giá + tạo Order mới" sau khi nhận Final.
+function isFinalDelivered(o) { return !!(o && (o.rating || o.final_link || ['delivered', 'completed'].includes(o.status) || o.feedback_status === 'final_sent')); }
+function fmtDT(s) {
+  if (!s) return '';
+  const d = new Date(typeof s === 'string' && s.replace ? s.replace(' ', 'T') : s);
+  if (isNaN(d.getTime())) return String(s);
+  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear()
+    + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
 
 function starHtml(n) {
   return Array.from({length:5}, (_,i) =>
@@ -267,9 +299,9 @@ function renderKPIs() {
   const total      = ORDERS.length;
   const inProgress = ORDERS.filter(o => ['pending','checking','confirmed','received','inprogress','review','revision','feedback_fix','ready'].includes(o.status)).length;
   const needInfo   = ORDERS.filter(o => o.status === 'needinfo').length;
-  const awaitFb    = ORDERS.filter(o => o.status === 'feedback_wait').length;
-  const delivered  = ORDERS.filter(o => ['delivered','completed'].includes(o.status)).length;
-  const noRating   = ORDERS.filter(o => ['delivered','completed'].includes(o.status) && !state.ratings[o.id]).length;
+  const awaitFb    = ORDERS.filter(o => o.status === 'feedback_wait' && !isFinalDelivered(o)).length;
+  const delivered  = ORDERS.filter(o => isFinalDelivered(o)).length;
+  const noRating   = ORDERS.filter(o => isFinalDelivered(o) && !state.ratings[o.id]).length;
 
   const ICONS = {
     list:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
@@ -315,7 +347,7 @@ function renderActionCenter() {
   ORDERS.forEach(o => {
     if (o.status === 'needinfo') actions.push({ type:'needinfo', order:o });
     if (shouldShowPreviewAction(o)) actions.push({ type:'preview', order:o });
-    if (['delivered','completed'].includes(o.status) && !state.ratings[o.id]) actions.push({ type:'rating', order:o });
+    if (isFinalDelivered(o) && !state.ratings[o.id]) actions.push({ type:'rating', order:o });
   });
 
   const count = actions.length;
@@ -382,7 +414,7 @@ function renderActionCenter() {
 
 /* ===== RENDER: CURRENT ORDERS ===== */
 function renderCurrentOrders() {
-  const active = ORDERS.filter(o => !['completed','cancelled'].includes(o.status));
+  const active = ORDERS.filter(o => !['completed','cancelled','delivered'].includes(pubEffStatus(o)));
   const grid = document.getElementById('current-orders-grid');
   if (active.length === 0) {
     grid.innerHTML = `<p style="font-size:var(--text-sm);color:var(--text-muted)">Không có yêu cầu nào đang xử lý.</p>`;
@@ -422,10 +454,10 @@ function getFilteredOrders() {
   const s = state.ordersSearch.toLowerCase();
   if (s) list = list.filter(o => o.id.toLowerCase().includes(s) || o.name.toLowerCase().includes(s));
   const fs = state.ordersFilterStatus;
-  if (fs === 'active')    list = list.filter(o => !['completed','cancelled','delivered'].includes(o.status));
+  if (fs === 'active')    list = list.filter(o => !['completed','cancelled'].includes(o.status) && !isFinalDelivered(o));
   else if (fs === 'needinfo')  list = list.filter(o => o.status === 'needinfo');
-  else if (fs === 'feedback')  list = list.filter(o => o.status === 'feedback_wait');
-  else if (fs === 'delivered') list = list.filter(o => ['delivered','completed'].includes(o.status));
+  else if (fs === 'feedback')  list = list.filter(o => o.status === 'feedback_wait' && !isFinalDelivered(o));
+  else if (fs === 'delivered') list = list.filter(o => isFinalDelivered(o));
   else if (fs === 'completed') list = list.filter(o => o.status === 'completed');
   if (state.ordersFilterType) list = list.filter(o => o.type === state.ordersFilterType);
   const PRIO = ['needinfo','feedback_wait','delivered','inprogress','review','confirmed','received','pending','completed','cancelled'];
@@ -437,7 +469,7 @@ function getFilteredOrders() {
 
 function renderOrdersTable() {
   const list = getFilteredOrders();
-  const activeCount = ORDERS.filter(o => !['completed','cancelled'].includes(o.status)).length;
+  const activeCount = ORDERS.filter(o => !['completed','cancelled','delivered'].includes(pubEffStatus(o))).length;
 
   document.getElementById('orders-count-label').textContent = `${list.length} yêu cầu`;
   document.getElementById('nav-active-count').textContent = activeCount;
@@ -450,7 +482,7 @@ function renderOrdersTable() {
     const rt = state.ratings[o.id];
     const ratingCell = rt
       ? `<span style="color:var(--warning)">${starHtml(rt.score)}</span>`
-      : (['delivered','completed'].includes(o.status)
+      : (isFinalDelivered(o)
         ? `<button class="btn btn-ghost btn-sm" data-action="rating" data-order-id="${o.id}" style="font-size:10px;padding:2px 8px">Đánh giá</button>`
         : '—');
     return `
@@ -524,7 +556,7 @@ function openOrderDrawer(orderId) {
         <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0">${o.need_info}</p>
         <button class="btn btn-sm" style="margin-top:var(--space-3);background:var(--warning);color:#fff" data-action="needinfo" data-order-id="${o.id}">Bổ sung ngay</button>
       </div></div>`;
-  } else if (o.status === 'feedback_wait') {
+  } else if (o.status === 'feedback_wait' && !isFinalDelivered(o)) {
     const _design = appliesRevisionRule(o), _limit = (o.revision_limit || 3);
     const roundN = getPreviewRound(o), _submitted = (o.revision_round || 0);
     const _roundTxt = _design ? ` · Feedback Vòng ${roundN}/${_limit}` : '';
@@ -546,18 +578,21 @@ function openOrderDrawer(orderId) {
         ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
       </div></div>`;
     } else {
+      // Vòng cuối (Vòng 3 với order design) → team xử lý xong sẽ bàn giao FINAL, không phải Preview tiếp theo.
+      const _isLastRound = _design && _submitted >= _limit;
+      const _nextArtifact = _isLastRound ? 'bàn giao bản Final' : 'gửi bản Preview tiếp theo';
       const _msg = (fs === 'revision_in_progress')
-        ? 'Team Media đang chỉnh sửa theo feedback của anh/chị và sẽ gửi bản Preview tiếp theo.'
+        ? `Team Media đang chỉnh sửa theo feedback của anh/chị và sẽ ${_nextArtifact}.`
         : (fs === 'exceeded_limit')
           ? 'Đã đạt giới hạn số vòng chỉnh sửa. Team Media sẽ liên hệ để thống nhất hướng xử lý tiếp theo.'
-          : `Anh/chị đã gửi feedback${_design ? ` Vòng ${_submitted}` : ''}. Team Media đang xử lý và sẽ gửi bản Preview tiếp theo.`;
+          : `Anh/chị đã gửi feedback${_design ? ` Vòng ${_submitted}` : ''}. Team Media đang xử lý và sẽ ${_nextArtifact}.`;
       actionBlock = `<div class="drawer-detail-section"><h4>Đã gửi feedback — chờ team xử lý</h4>
       <div style="padding:var(--space-4);background:rgb(100 116 139 / .12);border-radius:var(--radius);border-left:3px solid var(--text-muted)">
         <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">${_msg}</p>
         ${o.preview_link ? `<a class="btn btn-secondary btn-sm" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview gần nhất</a>` : ''}
       </div></div>`;
     }
-  } else if (['delivered','completed'].includes(o.status)) {
+  } else if (isFinalDelivered(o)) {
     const finishedRounds = appliesRevisionRule(o) && (o.revision_round || 0) >= (o.revision_limit || 3);
     const _msg = finishedRounds
       ? 'Yêu cầu đã hoàn tất 03 vòng feedback. Team Media đã xử lý Feedback Vòng 3 và bàn giao bản Final. Anh/chị vui lòng kiểm tra sản phẩm hoàn thiện và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, vui lòng tạo một Order mới từ yêu cầu hiện tại để team tiếp tục xử lý.'
@@ -594,6 +629,48 @@ function openOrderDrawer(orderId) {
     </div>`;
   }
 
+  // Phase 4 — Brief Wording block (Client confirmation). Chỉ hiển thị khi Account đã gửi.
+  let wordingBlock = '';
+  {
+    const ws = o.brief_wording_status || 'none';
+    const wround = o.brief_wording_round || 0;
+    const wrow = (label, val) => val && String(val).trim()
+      ? `<div class="detail-row"><span class="detail-dt">${label}</span><span class="detail-dd" style="white-space:pre-wrap">${esc(val)}</span></div>` : '';
+    if (['sent_to_client', 'client_feedback', 'client_approved', 'completed'].includes(ws)) {
+      const fields = `
+        ${wrow('Brief đã wording', o.wording_brief)}
+        ${wrow('Mục tiêu sau khi chuẩn hóa', o.wording_objective)}
+        ${wrow('Thông điệp chính', o.wording_core_message)}
+        ${wrow('Thông tin bắt buộc', o.wording_required_info)}
+        ${wrow('Tone & style', o.wording_tone_style)}
+        ${wrow('CTA đề xuất', o.wording_cta)}
+        ${wround ? `<div class="detail-row"><span class="detail-dt">Vòng hiện tại</span><span class="detail-dd">Vòng ${wround}</span></div>` : ''}`;
+      let head, banner, actions = '';
+      if (ws === 'sent_to_client') {
+        head = 'Brief đã được chuẩn hóa';
+        banner = `<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Team đã chuẩn hóa nội dung yêu cầu của anh/chị. Vui lòng kiểm tra và <b>xác nhận brief</b> để chuyển sang bước sản xuất, hoặc <b>yêu cầu chỉnh brief</b> nếu cần điều chỉnh.</p>`;
+        actions = `<div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)">
+            <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="approve-wording" data-order-id="${o.id}">Xác nhận brief</button>
+            <button class="btn btn-secondary btn-sm" data-action="wording-feedback" data-order-id="${o.id}">Yêu cầu chỉnh brief</button>
+          </div>`;
+      } else if (ws === 'client_feedback') {
+        head = 'Đã gửi yêu cầu chỉnh brief';
+        banner = `<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Anh/chị đã gửi yêu cầu chỉnh brief${o.wording_client_feedback_at ? ' lúc ' + fmtDT(o.wording_client_feedback_at) : ''}. Team đang điều chỉnh và sẽ gửi lại bản chuẩn hóa để anh/chị xác nhận.</p>`;
+      } else {
+        head = 'Brief đã được xác nhận';
+        banner = `<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><b>Anh/chị đã xác nhận brief đã chuẩn hóa.</b>${o.wording_approved_at ? ' (' + fmtDT(o.wording_approved_at) + ')' : ''} Team đang triển khai sản xuất theo nội dung đã thống nhất.</p>`;
+      }
+      const accent = ws === 'client_approved' || ws === 'completed' ? 'var(--success)'
+        : (ws === 'client_feedback' ? 'var(--warning)' : 'var(--brand-600,#191970)');
+      wordingBlock = `<div class="drawer-detail-section"><h4>${head}</h4>
+        <div style="padding:var(--space-4);background:rgb(25 25 112 / .06);border-radius:var(--radius);border-left:3px solid ${accent}">
+          ${banner}
+          <div>${fields}</div>
+          ${actions}
+        </div></div>`;
+    }
+  }
+
   // Rating block
   let ratingBlock = '';
   if (rt) {
@@ -620,9 +697,9 @@ function openOrderDrawer(orderId) {
     <div class="drawer-detail-section"><h4>Tiến độ</h4>
       <div class="co-progress-bar"><div class="co-progress-fill" style="width:${pg}%"></div></div>
       <div class="co-progress-label" style="margin-top:4px"><span>${st.label}</span><span>${pg}%</span></div>
-      <div class="pub-timeline">${tlHtml(o.status)}</div>
+      <div class="pub-timeline">${tlHtml(pubEffStatus(o))}</div>
     </div>
-    ${actionBlock}${filesBlock}${ratingBlock}
+    ${wordingBlock}${actionBlock}${filesBlock}${ratingBlock}
   </div>`;
 
   document.getElementById('order-drawer').setAttribute('aria-hidden','false');
@@ -641,6 +718,11 @@ function closeDrawer() {
 function openRatingModal(orderId) {
   const o = ORDERS.find(x => x.id === orderId);
   if (!o) return;
+  // Chặn đánh giá trùng: đã có rating (local state hoặc satisfaction_score) → không cho mở lại modal.
+  if (state.ratings[orderId] || o.rating) {
+    toast('info', 'Đã đánh giá', 'Anh/chị đã gửi đánh giá cho yêu cầu này rồi. Cảm ơn anh/chị!');
+    return;
+  }
   state.ratingOrderId = orderId;
   document.getElementById('rating-order-label').textContent = `${o.id} — ${o.name}`;
   document.getElementById('rating-comment').value = '';
@@ -664,6 +746,7 @@ const R3_NOTE = 'Vui lòng gom đầy đủ các nội dung cần chỉnh trong 
 function appliesRevisionRule(o) { return ['design', 'digital'].includes(o.request_type); }
 // Chỉ hiện action "Bản Preview chờ feedback" khi order thực sự đang đợi feedback từ client.
 function shouldShowPreviewAction(o) {
+  if (isFinalDelivered(o)) return false; // đã có Final → không còn ở vòng Preview feedback.
   return o.status === 'feedback_wait' && !!o.preview_link && (!o.feedback_status || o.feedback_status === 'waiting_feedback');
 }
 // Số vòng Preview hiện tại = revision_round + 1, kẹp theo revision_limit.
@@ -671,6 +754,85 @@ function getPreviewRound(o) {
   const round = Number(o.revision_round || 0) + 1;
   const limit = Number(o.revision_limit || 3);
   return Math.min(round, limit);
+}
+
+/* ===== PHASE 4 — Brief Wording confirmation (Client) ===== */
+// Chỉ cho thao tác khi Account thực sự đang chờ Client (brief_wording_status = sent_to_client).
+function wordingActionable(o) { return o && o.brief_wording_status === 'sent_to_client'; }
+
+async function approveWording(orderId) {
+  const o = ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  if (!wordingActionable(o)) {
+    toast('info', 'Đã xử lý', 'Brief wording của yêu cầu này đã được xác nhận hoặc đang chờ team chỉnh.');
+    return;
+  }
+  if (!window.confirm('Anh/chị xác nhận brief đã được chuẩn hóa và đồng ý chuyển sang bước sản xuất?')) return;
+
+  const nowIso = new Date().toISOString();
+  const by = (user && (user.name || user.email)) || 'Client';
+  // Optimistic UI
+  o.brief_wording_status = 'client_approved';
+  o.wording_approved_at = nowIso;
+  if (o.__raw) Object.assign(o.__raw, { brief_wording_status: 'client_approved', wording_approved_at: nowIso, wording_approved_by: by });
+  toast('success', 'Đã xác nhận brief', 'Cảm ơn anh/chị. Team sẽ tiến hành sản xuất theo nội dung đã thống nhất.');
+  renderAll();
+  openOrderDrawer(orderId);
+
+  if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+  try {
+    await window.MH.supabaseReady;
+    await window.MH.store.orders.update(o.id, {
+      brief_wording_status: 'client_approved',
+      wording_approved_at: nowIso,
+      wording_approved_by: by,
+      wording_last_updated_at: nowIso,
+      last_updated: nowIso
+    });
+    const { data: staff } = await window.MH.supabase
+      .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+    if (Array.isArray(staff) && staff.length) {
+      await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
+        return {
+          user_id: u.id,
+          type: 'wording_client_approved',
+          title: 'Client đã xác nhận brief wording',
+          message: `Client đã xác nhận brief wording cho yêu cầu ${o.id} · ${o.name || ''}. Account có thể Confirm Brief và Push Production.`,
+          link: 'database-orders.html?id=' + o.id,
+          related_entity_type: 'orders',
+          related_entity_id: o.id
+        };
+      }));
+    }
+  } catch (err) {
+    console.warn('[client-dashboard] approve wording failed:', err);
+    toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng kiểm tra lại nếu Account chưa nhận thông báo.');
+  }
+}
+
+function openWordingFeedbackModal(orderId) {
+  const o = ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  if (!wordingActionable(o)) {
+    toast('info', 'Đã gửi yêu cầu', 'Anh/chị đã gửi yêu cầu chỉnh brief. Vui lòng chờ team gửi lại bản chuẩn hóa.');
+    return;
+  }
+  state.wordingFeedbackOrderId = orderId;
+  const label = document.getElementById('wfb-order-label');
+  if (label) label.textContent = `${o.id} — ${o.name}`;
+  ['wfb-content', 'wfb-reason', 'wfb-link'].forEach(function (id) { const el = document.getElementById(id); if (el) el.value = ''; });
+  const round = (o.brief_wording_round || 0) + 1;
+  const warn = document.getElementById('wfb-round-warn');
+  if (warn) {
+    if (round > 3) { warn.hidden = false; warn.textContent = 'Brief wording đã qua 3 vòng chỉnh. Team sẽ liên hệ để thống nhất hướng xử lý tiếp theo.'; }
+    else warn.hidden = true;
+  }
+  document.getElementById('wording-feedback-modal').classList.add('is-open');
+}
+function closeWordingFeedbackModal() {
+  const m = document.getElementById('wording-feedback-modal');
+  if (m) m.classList.remove('is-open');
+  state.wordingFeedbackOrderId = null;
 }
 
 function openFeedbackModal(orderId) {
@@ -869,6 +1031,8 @@ document.addEventListener('click', e => {
   if (action === 'open-order')  openOrderDrawer(orderId);
   else if (action === 'needinfo') openInfoModal(orderId);
   else if (action === 'feedback') openFeedbackModal(orderId);
+  else if (action === 'approve-wording') approveWording(orderId);
+  else if (action === 'wording-feedback') openWordingFeedbackModal(orderId);
   else if (action === 'approve-preview') approvePreview(orderId);
   else if (action === 'rating')   openRatingModal(orderId);
   else if (action === 'new-order-from') gotoRevisionForm(ORDERS.find(x => x.id === orderId));
@@ -902,6 +1066,9 @@ document.getElementById('rating-submit').addEventListener('click', async () => {
   const comment = document.getElementById('rating-comment').value.trim();
   const prev = state.ratingOrderId;
   state.ratings[prev] = { score: score, comment: comment };
+  // Sync luôn vào order (mọi mode) để chống đánh giá trùng kể cả khi Supabase tắt.
+  const ratedOrder = ORDERS.find(x => x.id === prev);
+  if (ratedOrder) { ratedOrder.rating = score; ratedOrder.rating_comment = comment; if (ratedOrder.__raw) { ratedOrder.__raw.satisfaction_score = score; ratedOrder.__raw.client_feedback = comment; } }
   closeRatingModal();
 
   // Persist Supabase + notify staff (fire-and-forget). Trước đây chỉ lưu local → mất khi reload.
@@ -912,8 +1079,6 @@ document.getElementById('rating-submit').addEventListener('click', async () => {
         client_feedback: comment || null,
         last_updated: new Date().toISOString()
       });
-      const o = ORDERS.find(x => x.id === prev);
-      if (o) { o.rating = score; o.rating_comment = comment; if (o.__raw) { o.__raw.satisfaction_score = score; o.__raw.client_feedback = comment; } }
       if (window.MH.supabase) {
         const { data: staff } = await window.MH.supabase
           .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
@@ -946,6 +1111,77 @@ document.getElementById('rating-submit').addEventListener('click', async () => {
 document.getElementById('feedback-close').addEventListener('click', closeFeedbackModal);
 document.getElementById('feedback-cancel').addEventListener('click', closeFeedbackModal);
 document.getElementById('feedback-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeFeedbackModal(); });
+
+/* Phase 4 — wording feedback modal wiring */
+(function wireWordingFeedbackModal() {
+  const close = document.getElementById('wfb-close');
+  const cancel = document.getElementById('wfb-cancel');
+  const modal = document.getElementById('wording-feedback-modal');
+  const submit = document.getElementById('wfb-submit');
+  if (close) close.addEventListener('click', closeWordingFeedbackModal);
+  if (cancel) cancel.addEventListener('click', closeWordingFeedbackModal);
+  if (modal) modal.addEventListener('click', e => { if (e.target === e.currentTarget) closeWordingFeedbackModal(); });
+  if (submit) submit.addEventListener('click', async () => {
+    const o = ORDERS.find(x => x.id === state.wordingFeedbackOrderId);
+    if (!o) { closeWordingFeedbackModal(); return; }
+    if (!wordingActionable(o)) {
+      toast('info', 'Đã gửi yêu cầu', 'Anh/chị đã gửi yêu cầu chỉnh brief cho yêu cầu này.');
+      closeWordingFeedbackModal(); return;
+    }
+    const content = (document.getElementById('wfb-content').value || '').trim();
+    const reason = (document.getElementById('wfb-reason').value || '').trim();
+    const link = (document.getElementById('wfb-link').value || '').trim();
+    if (!content) { toast('warning', 'Thiếu thông tin', 'Vui lòng nhập nội dung cần chỉnh.'); return; }
+
+    const nextRound = (o.brief_wording_round || 0) + 1;
+    const by = (user && (user.name || user.email)) || 'Client';
+    const nowIso = new Date().toISOString();
+    const fbText = `[Wording Vòng ${nextRound}] ${content}`
+      + (reason ? `\nLý do: ${reason}` : '')
+      + (link ? `\nTham khảo: ${link}` : '');
+
+    // Optimistic UI
+    o.brief_wording_status = 'client_feedback';
+    o.brief_wording_round = nextRound;
+    o.wording_client_feedback_at = nowIso;
+    if (o.__raw) Object.assign(o.__raw, { brief_wording_status: 'client_feedback', brief_wording_round: nextRound, wording_client_feedback: fbText, wording_client_feedback_at: nowIso });
+    closeWordingFeedbackModal();
+    toast('success', 'Đã gửi yêu cầu chỉnh brief', 'Team sẽ điều chỉnh và gửi lại bản chuẩn hóa để anh/chị xác nhận.');
+    renderAll();
+    openOrderDrawer(o.id);
+
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    try {
+      await window.MH.supabaseReady;
+      await window.MH.store.orders.update(o.id, {
+        brief_wording_status: 'client_feedback',
+        brief_wording_round: nextRound,
+        wording_client_feedback: fbText,
+        wording_client_feedback_at: nowIso,
+        wording_last_updated_at: nowIso,
+        last_updated: nowIso
+      });
+      const { data: staff } = await window.MH.supabase
+        .from('users').select('id').in('role', ['admin', 'account', 'content']).eq('status', 'active');
+      if (Array.isArray(staff) && staff.length) {
+        await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
+          return {
+            user_id: u.id,
+            type: 'wording_client_feedback',
+            title: 'Client yêu cầu chỉnh brief wording',
+            message: `Client yêu cầu chỉnh brief wording (Vòng ${nextRound}) cho yêu cầu ${o.id} · ${o.name || ''}. Content cần chỉnh & gửi lại Account.`,
+            link: 'content-workbench.html?id=' + o.id,
+            related_entity_type: 'orders',
+            related_entity_id: o.id
+          };
+        }));
+      }
+    } catch (err) {
+      console.warn('[client-dashboard] wording feedback failed:', err);
+      toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng thử lại nếu team chưa nhận thông báo.');
+    }
+  });
+})();
 document.getElementById('feedback-submit').addEventListener('click', async () => {
   const o = ORDERS.find(x => x.id === state.feedbackOrderId);
   if (!o) { closeFeedbackModal(); return; }

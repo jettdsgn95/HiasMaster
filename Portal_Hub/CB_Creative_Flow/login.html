@@ -139,7 +139,9 @@
     });
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get('redirect');
-    const defaultRedirect = user.role === 'client' ? 'client-dashboard.html' : 'dashboard.html';
+    // Home theo role: client → Client Portal; content → Content Workbench; còn lại → Master Dashboard.
+    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html' };
+    const defaultRedirect = roleHome[user.role] || 'dashboard.html';
     setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
   }
 

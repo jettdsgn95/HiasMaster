@@ -1838,6 +1838,16 @@ body[data-user-role="account"] .btn[data-show-roles*="account"],
 body[data-user-role="design"]  .btn[data-show-roles*="design"],
 body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline-flex; }
 
+/* Phase 1 — Content role visibility (data-show-roles*="content") */
+body[data-user-role="content"] [data-show-roles*="content"] { display: revert; }
+body[data-user-role="content"] li[data-show-roles*="content"] { display: list-item; }
+body[data-user-role="content"] .kpi[data-show-roles*="content"],
+body[data-user-role="content"] .qa-btn[data-show-roles*="content"],
+body[data-user-role="content"] .dash-card[data-show-roles*="content"],
+body[data-user-role="content"] .hpm-item[data-show-roles*="content"] { display: flex; }
+body[data-user-role="content"] .dash-section[data-show-roles*="content"] { display: block; }
+body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inline-flex; }
+
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }
 .profile-menu {
@@ -1869,6 +1879,7 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 .role-badge.r--account { background: var(--red-50);       color: var(--red-600); }
 .role-badge.r--design  { background: var(--info-soft);    color: var(--info-fg); }
 .role-badge.r--editor  { background: var(--warning-soft); color: var(--warning-fg); }
+.role-badge.r--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
 .role-badge.r--client  { background: var(--success-soft); color: var(--success-fg); }
 [data-theme="dark"] .role-badge.r--account { background: rgb(186 17 15 / 0.18); color: #fca5a5; }
 
@@ -2770,6 +2781,7 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 .role-tag-badge.rt--account { background: var(--red-50);       color: var(--red-600); }
 .role-tag-badge.rt--design  { background: rgb(20 184 166 / 0.15); color: #0d9488; }
 .role-tag-badge.rt--editor  { background: rgb(245 158 11 / 0.15); color: #b45309; }
+.role-tag-badge.rt--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
 .role-tag-badge.rt--staff   { background: var(--warning-soft); color: var(--warning-fg); }
 .role-tag-badge.rt--client  { background: var(--info-soft);    color: var(--info-fg); }
 [data-theme="dark"] .role-tag-badge.rt--account { background: rgb(186 17 15 / 0.18); color: #fca5a5; }
@@ -4651,6 +4663,36 @@ body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline
 .drawer-actions .act-step--4 {
   background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
 }
+/* Phase 2 — Chuyển Content Wording: violet (content) */
+.drawer-actions .act-step--wording {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+/* Phase 2 — Brief Wording Workflow block + status badge */
+.ow-wording .bw-status { font-size: var(--text-sm); color: var(--text-muted); margin: 2px 0 12px; }
+.ow-wording .bw-status b { color: var(--text); }
+.bw-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bw-step { display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); }
+.bw-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex: none; border: 1.5px solid var(--border); color: var(--text-muted); background: var(--surface); }
+.bw-step.bw-done .bw-dot { background: var(--success); border-color: var(--success); color: #fff; }
+.bw-step.bw-active .bw-dot { background: rgb(139 92 246 / 0.15); border-color: #6d28d9; color: #6d28d9; }
+.bw-step.bw-done .bw-label { color: var(--text); }
+.bw-step.bw-active .bw-label { color: var(--text); font-weight: 600; }
+.bw-step.bw-pending .bw-label { color: var(--text-muted); }
+.bw-note { font-size: var(--text-sm); color: var(--text-muted); margin: 12px 0 0; padding: 10px 12px; background: rgb(139 92 246 / 0.06); border-left: 3px solid #8b5cf6; border-radius: var(--radius); }
+.bw-note.bw-ok { background: var(--success-soft); border-left-color: var(--success); }
+.bw-note.bw-warn { background: rgb(245 158 11 / 0.1); border-left-color: var(--warning); color: var(--text); }
+.tb-status.s--wording { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
+
+/* Phase 3 — Content Workbench (stats / filters / snapshot) */
+.cwb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.cwb-stat { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 1px 3px rgb(25 25 112 / 0.05); }
+.cwb-stat-val { font-size: 26px; font-weight: 800; line-height: 1; }
+.cwb-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.cwb-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.cwb-filters .s-wrap { flex: 1; min-width: 220px; }
+.content-wording-drawer .cwb-snapshot dl { margin: 0; }
+.content-wording-drawer .cwb-snapshot { background: rgb(25 25 112 / 0.025); }
 
 /* Nút "Xác nhận & Chuyển Production" trong section Điều phối (ngoài .drawer-actions) — xanh lá như Push step-4 */
 .btn-push-coord {

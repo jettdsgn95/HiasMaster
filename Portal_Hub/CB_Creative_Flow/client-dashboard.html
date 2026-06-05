@@ -454,6 +454,38 @@
   </div>
 </div>
 
+<!-- ===== WORDING FEEDBACK MODAL (Phase 4) ===== -->
+<div class="modal-backdrop" id="wording-feedback-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3>Yêu cầu chỉnh brief</h3>
+        <p style="font-size:var(--text-sm);color:var(--text-muted);margin:4px 0 0" id="wfb-order-label">—</p>
+      </div>
+      <button class="icon-btn" id="wfb-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p class="cl-round-note" id="wfb-round-warn" hidden style="font-size:var(--text-xs);color:var(--warning);margin:0 0 var(--space-3)"></p>
+      <div class="field">
+        <label class="label" for="wfb-content">Nội dung cần chỉnh <span class="req">*</span></label>
+        <textarea class="input" id="wfb-content" rows="4" placeholder="Mô tả nội dung trong brief cần điều chỉnh..."></textarea>
+      </div>
+      <div class="field">
+        <label class="label" for="wfb-reason">Lý do chỉnh</label>
+        <textarea class="input" id="wfb-reason" rows="2" placeholder="Vì sao cần điều chỉnh (không bắt buộc)..."></textarea>
+      </div>
+      <div class="field">
+        <label class="label" for="wfb-link">Link / file tham khảo</label>
+        <input class="input" id="wfb-link" type="text" placeholder="https://... (không bắt buộc)">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" id="wfb-cancel">Hủy</button>
+      <button class="btn btn-primary" id="wfb-submit">Gửi yêu cầu chỉnh brief</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MISSING INFO MODAL ===== -->
 <div class="modal-backdrop" id="info-modal">
   <div class="modal">

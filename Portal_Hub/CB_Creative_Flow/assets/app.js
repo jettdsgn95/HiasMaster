@@ -577,10 +577,26 @@
     if (!user) return;
     refreshProfileChip(user);
   }
+  /* Phase 1 — Content role: thêm nav "Content Wording" vào sidebar nội bộ (idempotent, chỉ role nội bộ).
+     Dùng JS để đồng nhất qua mọi trang nội bộ thay vì sửa từng file HTML; CSS data-show-roles lo phần ẩn/hiện. */
+  function injectContentNav() {
+    var u = getUser();
+    var internal = ['admin', 'account', 'content', 'design', 'editor'];
+    if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
+    var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
+    if (!groups.length) return;
+    var opsUl = groups[0]; // nhóm "Vận hành"
+    if (opsUl.querySelector('a[href="content-workbench.html"]')) return; // đã có (hardcode hoặc inject trước) → không lặp
+    var li = document.createElement('li');
+    li.setAttribute('data-show-roles', 'admin,account,content');
+    li.innerHTML = '<a href="content-workbench.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="13" y2="18"/></svg></span><span>Content Wording</span></a>';
+    if ((location.pathname.split('/').pop() || '') === 'content-workbench.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
+    opsUl.appendChild(li);
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(syncChipFromUser, 0));
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentNav(); }, 0); });
   } else {
-    setTimeout(syncChipFromUser, 0);
+    setTimeout(function () { syncChipFromUser(); injectContentNav(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */

@@ -29,12 +29,15 @@ ALTER TABLE public.orders ADD CONSTRAINT orders_feedback_status_check CHECK (
   )
 );
 
--- 3) Mở rộng notifications.type CHECK: thêm 'client_feedback_received'
+-- 3) Mở rộng notifications.type CHECK — danh sách ĐẦY ĐỦ mọi type app phát ra.
+--    (gồm client_preview_approved + 3 type wording Phase 4 để không vỡ khi đã có row.)
 ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check CHECK (type IN (
   'task_assigned', 'task_status_changed', 'task_comment',
   'order_new', 'order_status_changed', 'order_confirmed', 'order_needinfo', 'order_cancelled',
-  'delivery_preview', 'delivery_final', 'rating_received', 'client_feedback_received',
+  'delivery_preview', 'delivery_final',
+  'rating_received', 'client_feedback_received', 'client_preview_approved',
+  'wording_sent_to_client', 'wording_client_approved', 'wording_client_feedback',
   'system'
 ));
 

@@ -18,7 +18,8 @@ ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_type_ch
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check CHECK (type IN (
   'task_assigned', 'task_status_changed', 'task_comment',
   'order_new', 'order_status_changed', 'order_confirmed', 'order_needinfo', 'order_cancelled',
-  'delivery_preview', 'delivery_final', 'rating_received',
-  'client_feedback_received', 'client_preview_approved',
+  'delivery_preview', 'delivery_final',
+  'rating_received', 'client_feedback_received', 'client_preview_approved',
+  'wording_sent_to_client', 'wording_client_approved', 'wording_client_feedback',
   'system'
 ));

@@ -95,8 +95,19 @@
   /* ---------- Helpers ---------- */
   const ACCOUNT_STATUS_LABEL = {
     pending: 'Chờ xác nhận', checking: 'Đang kiểm tra', needinfo: 'Cần bổ sung',
-    confirmed: 'Đã xác nhận', rejected: 'Hủy đơn'
+    wording: 'Content Wording', confirmed: 'Đã xác nhận', rejected: 'Hủy đơn'
   };
+  // Phase 2 — Brief Wording status (cổng bắt buộc trước Confirm Brief).
+  const WORDING_STATUS_LABEL = {
+    none: 'Chưa chuyển Content Wording', assigned: 'Đã chuyển Content Wording',
+    in_progress: 'Content đang xử lý', submitted_to_account: 'Chờ Account duyệt',
+    account_revision: 'Account yêu cầu Content chỉnh', sent_to_client: 'Chờ Client xác nhận brief wording',
+    client_feedback: 'Client yêu cầu chỉnh brief wording', client_approved: 'Client đã xác nhận brief wording',
+    completed: 'Hoàn tất Content Wording'
+  };
+  // Wording đã được duyệt → cho phép Confirm Brief.
+  function wordingStatusOf(o) { return (o && o.brief_wording_status) || 'none'; }
+  function isWordingApproved(o) { const w = wordingStatusOf(o); return w === 'client_approved' || w === 'completed'; }
   const PROD_STATUS_LABEL = {
     unassigned: 'Chưa phân công', received: 'Nhận task', inprogress: 'Đang thực hiện',
     review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ', ready: 'Sẵn sàng bàn giao',
@@ -671,6 +682,7 @@
 
   function buildPushCheck(o) {
     const checks = [
+      { ok: isWordingApproved(o), label: 'Content Wording đã được Client xác nhận' },
       { ok: o.account_status === 'confirmed', label: 'Brief đã được xác nhận' },
       { ok: o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic, label: o.request_type === 'media' ? 'Đã gán PIC Quay/Chụp' : 'Đã gán P.I.C sản xuất' },
       { ok: !!o.internal_deadline, label: 'Đã set Internal Deadline' },
@@ -687,6 +699,72 @@
         <ul>${checks.map((c) => `<li class="${c.ok ? 'ok' : ''}">${c.label}</li>`).join('')}</ul>
       </div>
     </div>`;
+  }
+
+  // Phase 2 — Brief Wording Workflow block (lifecycle 6 bước + trạng thái wording hiện tại).
+  function buildWordingWorkflow(o) {
+    const ws = wordingStatusOf(o);
+    const round = o.brief_wording_round || 0;
+    const approved = isWordingApproved(o);
+    const cancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
+    const reachedMap = { none: 0, assigned: 2, in_progress: 2, submitted_to_account: 3, account_revision: 3, sent_to_client: 4, client_feedback: 4, client_approved: 5, completed: 6 };
+    const reached = reachedMap[ws] != null ? reachedMap[ws] : 0;
+    const steps = ['Account kiểm tra brief', 'Chuyển Content Wording', 'Content xử lý wording', 'Account gửi Client xác nhận', 'Client xác nhận brief wording', 'Sẵn sàng Confirm Brief'];
+    const li = steps.map(function (s, i) {
+      const st = i < reached ? 'done' : (i === reached ? 'active' : 'pending');
+      return `<li class="bw-step bw-${st}"><span class="bw-dot">${st === 'done' ? '✓' : (i + 1)}</span><span class="bw-label">${s}</span></li>`;
+    }).join('');
+    const note = cancelled ? '' : (ws === 'none'
+      ? '<p class="bw-note">Bấm <b>Chuyển Content Wording</b> khi brief đã đủ thông tin — bắt buộc trước khi Confirm Brief.</p>'
+      : (approved
+        ? '<p class="bw-note bw-ok">Content Wording đã được Client xác nhận — có thể Confirm Brief.</p>'
+        : (ws === 'submitted_to_account'
+          ? '<p class="bw-note">Content đã gửi bản wording — kiểm tra rồi bấm <b>Gửi Client xác nhận Brief</b>.</p>'
+          : (ws === 'sent_to_client'
+            ? '<p class="bw-note">Đã gửi Client — chờ Client xác nhận brief wording trước khi Confirm Brief.</p>'
+            : (ws === 'client_feedback'
+              ? '<p class="bw-note bw-warn">Client yêu cầu chỉnh brief wording — Content cần chỉnh & gửi lại Account trước khi gửi Client lần nữa.</p>'
+              : '<p class="bw-note">Confirm Brief sẽ mở khi Client xác nhận brief wording.</p>')))));
+    // Phase 4 — trạng thái xác nhận của Client.
+    const clientConfText = approved
+      ? `Client đã xác nhận${o.wording_approved_at ? ' · ' + fmtDateTime(o.wording_approved_at) : ''}`
+      : (ws === 'sent_to_client'
+        ? `Đã gửi Client${o.wording_client_sent_at ? ' · ' + fmtDateTime(o.wording_client_sent_at) : ''} · chờ xác nhận`
+        : (ws === 'client_feedback'
+          ? `Client yêu cầu chỉnh${o.wording_client_feedback_at ? ' · ' + fmtDateTime(o.wording_client_feedback_at) : ''}`
+          : 'Chưa gửi Client'));
+    // CTA "Gửi Client xác nhận Brief": chỉ bật khi Content đã submit & có nội dung wording.
+    const canSendClient = !cancelled && ws === 'submitted_to_account' && !!(o.wording_brief && String(o.wording_brief).trim());
+    const showSendBtn = !cancelled && !approved && ['submitted_to_account', 'sent_to_client', 'client_feedback', 'account_revision'].includes(ws);
+    const soft3 = round >= 3 && !approved;
+    return `
+      <section class="drawer-block ow-wording">
+        <div class="drawer-block-head"><span class="block-letter">W</span><h4>Brief Wording Workflow</h4></div>
+        <div class="bw-status">Trạng thái: <b>${WORDING_STATUS_LABEL[ws] || ws}</b>${round ? ' · Vòng ' + round : ''}</div>
+        <ol class="bw-steps">${li}</ol>
+        ${note}
+        ${soft3 ? '<p class="bw-note bw-warn">Brief wording đã qua 3 vòng chỉnh. Account cần xác nhận hướng xử lý tiếp theo.</p>' : ''}
+        ${ws !== 'none' ? `
+        <dl class="bw-summary" style="margin:12px 0 0">
+          <dt>PIC Content</dt><dd>${o.brief_wording_pic ? escapeHtml(o.brief_wording_pic) : '<em class="muted">Chưa gán</em>'}</dd>
+          <dt>Vòng wording</dt><dd>${round || '<em class="muted">—</em>'}</dd>
+          <dt>Gửi Account lúc</dt><dd>${o.wording_submitted_at ? fmtDateTime(o.wording_submitted_at) : '<em class="muted">—</em>'}</dd>
+          <dt>Xác nhận Client</dt><dd>${escapeHtml(clientConfText)}</dd>
+          ${o.wording_brief ? `<dt>Brief đã wording</dt><dd style="white-space:pre-wrap">${escapeHtml(String(o.wording_brief).slice(0, 400))}${String(o.wording_brief).length > 400 ? '…' : ''}</dd>` : ''}
+          ${o.wording_account_note ? `<dt>Ghi chú Account</dt><dd>${escapeHtml(o.wording_account_note)}</dd>` : ''}
+          ${o.wording_client_feedback ? `<dt>Client yêu cầu chỉnh</dt><dd style="white-space:pre-wrap">${escapeHtml(o.wording_client_feedback)}</dd>` : ''}
+        </dl>` : ''}
+        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:12px">
+          ${showSendBtn ? `<button type="button" class="btn btn-primary btn-sm" id="act-send-wording-client" ${canSendClient ? '' : 'disabled'}>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            ${ws === 'sent_to_client' ? 'Đã gửi Client — chờ xác nhận' : 'Gửi Client xác nhận Brief'}
+          </button>` : ''}
+          <a class="btn btn-secondary btn-sm" href="content-workbench.html?id=${escapeHtml(o.order_id)}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            Mở Content Wording
+          </a>
+        </div>
+      </section>`;
   }
 
   function buildActivity(o) {
@@ -715,7 +793,7 @@
     const fb = o.feedback_status || '';
     const round = o.revision_round || 0;
 
-    const briefText = ({ pending: 'Đã nhận yêu cầu', checking: 'Đang kiểm tra brief', needinfo: 'Cần bổ sung brief', confirmed: 'Đã xác nhận brief', rejected: 'Đơn đã hủy' })[o.account_status] || '—';
+    const briefText = ({ pending: 'Đã nhận yêu cầu', checking: 'Đang kiểm tra brief', needinfo: 'Cần bổ sung brief', wording: 'Đang Content Wording', confirmed: 'Đã xác nhận brief', rejected: 'Đơn đã hủy' })[o.account_status] || '—';
     const prodText = ({ unassigned: 'Chưa push Task Tracker', received: 'Production đã nhận task', inprogress: 'Đang sản xuất', review: 'Chờ duyệt nội bộ', revision: 'Cần chỉnh sửa nội bộ', ready: 'Sẵn sàng gửi Preview', delivered: 'Đã bàn giao', completed: 'Hoàn thành', cancelled: 'Đã hủy' })[o.production_status] || '—';
     let previewText;
     if (fb === 'approved') previewText = 'Client đã duyệt Preview';
@@ -786,6 +864,33 @@
       </section>`;
   }
 
+  /* Linked Task card — thông tin task sản xuất liên kết (thay cho dòng "Đã push sang Task Tracker").
+     Informational, KHÔNG phải status chính của order. */
+  function buildLinkedTaskCard(o) {
+    const cancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
+    const isPushed = !!o.production_status && o.production_status !== 'unassigned' && !cancelled;
+    const tasks = tasksForOrder(o.order_id) || [];
+    if (!isPushed && !tasks.length) return ''; // chưa push & chưa có task → không hiện card
+    const rows = tasks.length
+      ? tasks.map((t) => `
+          <div class="lt-row" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 0;border-top:1px solid var(--divider)">
+            <a class="link mono" href="production-board.html?id=${escapeHtml(t.task_id)}" style="font-weight:700">${escapeHtml(t.task_id)}</a>
+            <span class="text-xs muted">${escapeHtml(TYPE_LABEL[t.task_type] || t.task_type || '—')}</span>
+            <span class="text-xs" style="color:var(--brand-600,#191970)">${t.assigned_to ? escapeHtml(t.assigned_to) : '— chưa gán —'}</span>
+            <span class="tb-status s--${t.status}"><span class="dot"></span>${TASK_STATUS_LABEL[t.status] || t.status}</span>
+            <a class="link" href="production-board.html?id=${escapeHtml(t.task_id)}" style="margin-left:auto">Xem task →</a>
+          </div>`).join('')
+      : `<p class="text-xs muted" style="margin:6px 0 0">Đã liên kết task sản xuất — mở <a href="production-board.html?dl=in_production" class="link">Task Tracker</a> để xem chi tiết.</p>`;
+    return `
+      <section class="drawer-block ow-linked-task">
+        <div class="drawer-block-head"><span class="block-letter">T</span><h4>Task Tracker</h4></div>
+        <div class="linked-task-card" style="border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;background:var(--surface-2,#f8f9fd)">
+          <p class="text-xs muted" style="margin:0">Đã liên kết task sản xuất.</p>
+          ${rows}
+        </div>
+      </section>`;
+  }
+
   // "Hành động kế tiếp" — suy ra từ lifecycle stage (display-only timeline ở trên).
   function orderNextAction(o) {
     const lc = computeLifecycle(o);
@@ -814,9 +919,14 @@
         return { title: 'Push sang Task Tracker', detail: 'Brief đã đủ điều kiện, có thể tạo task sản xuất.' };
       }
       default: { // brief
-        if (o.account_status === 'checking') return { title: 'Xác nhận hoặc yêu cầu bổ sung', detail: 'Brief đang được kiểm tra, chọn bước phù hợp ở thanh hành động.' };
-        if (o.account_status === 'needinfo') return { title: 'Chờ client bổ sung', detail: 'Theo dõi phản hồi của client trước khi xác nhận brief.' };
-        return { title: 'Kiểm tra brief', detail: 'Account cần rà soát thông tin trước khi xác nhận.' };
+        if (o.account_status === 'wording') {
+          return isWordingApproved(o)
+            ? { title: 'Xác nhận brief', detail: 'Content Wording đã được Client xác nhận — có thể Confirm Brief.' }
+            : { title: 'Chờ Content Wording', detail: `Order đang ở Content Wording (${WORDING_STATUS_LABEL[wordingStatusOf(o)]}). Confirm Brief mở khi Client xác nhận brief wording.` };
+        }
+        if (o.account_status === 'checking') return { title: 'Chuyển Content Wording hoặc yêu cầu bổ sung', detail: 'Brief đã kiểm tra: nếu đủ thông tin → "Chuyển Content Wording"; nếu thiếu → "Yêu cầu bổ sung".' };
+        if (o.account_status === 'needinfo') return { title: 'Chờ client bổ sung', detail: 'Theo dõi phản hồi của client trước khi chuyển Content Wording.' };
+        return { title: 'Kiểm tra brief', detail: 'Account cần rà soát thông tin trước khi chuyển Content Wording.' };
       }
     }
   }
@@ -841,6 +951,17 @@
     const nextAction = orderNextAction(o);
     drawerBody.innerHTML = `
       ${buildLifecycleTimeline(o)}
+
+      <section class="drawer-block ow-next">
+        <div class="drawer-block-head"><span class="block-letter">N</span><h4>Hành động kế tiếp</h4></div>
+        <div class="order-next-action">
+          <b>${escapeHtml(nextAction.title)}</b>
+          <p>${escapeHtml(nextAction.detail)}</p>
+        </div>
+      </section>
+
+      ${buildLinkedTaskCard(o)}
+
       <section class="order-summary-grid" aria-label="Tóm tắt order">
         <div class="order-summary-tile">
           <span>Người gửi</span>
@@ -861,14 +982,6 @@
           <span>Production PIC</span>
           <b>${v(o.production_pic)}</b>
           <small>${PROD_STATUS_LABEL[o.production_status] || o.production_status}</small>
-        </div>
-      </section>
-
-      <section class="drawer-block ow-next">
-        <div class="drawer-block-head"><span class="block-letter">N</span><h4>Hành động kế tiếp</h4></div>
-        <div class="order-next-action">
-          <b>${escapeHtml(nextAction.title)}</b>
-          <p>${escapeHtml(nextAction.detail)}</p>
         </div>
       </section>
 
@@ -901,6 +1014,8 @@
         </dl>
         ${buildBriefChecklist(o)}
       </section>
+
+      ${buildWordingWorkflow(o)}
 
       <section class="drawer-block ow-internal">
         <div class="drawer-block-head"><span class="block-letter">C</span><h4>Điều phối nội bộ</h4></div>
@@ -1025,13 +1140,14 @@
       <section class="drawer-block ow-delivery">
         <div class="drawer-block-head"><span class="block-letter">D</span><h4>Bàn giao cho client</h4></div>
         ${['admin', 'account'].includes(user.role) ? `
+        ${!o.final_delivery_link ? `
         <div class="edit-row">
           <label>Preview Link</label>
           <input class="input" id="dlv-preview-link" type="url" value="${escapeHtml(o.preview_link || '')}" placeholder="https://drive.google.com/preview..." />
         </div>
         <div class="row" style="justify-content:flex-end; margin:4px 0 12px">
           <button class="btn btn-secondary btn-sm" id="send-preview-btn">Gửi Preview → Client</button>
-        </div>
+        </div>` : ''}
         <div class="edit-row">
           <label>Final Link</label>
           <input class="input" id="dlv-final-link" type="url" value="${escapeHtml(o.final_delivery_link || '')}" placeholder="https://drive.google.com/final..." />
@@ -1197,6 +1313,10 @@
       pushToProduction(currentOrder);
     });
 
+    // Phase 4 — wire "Gửi Client xác nhận Brief" (nằm trong Brief Wording Workflow block).
+    const sendWordingBtn = document.getElementById('act-send-wording-client');
+    if (sendWordingBtn) sendWordingBtn.addEventListener('click', () => sendWordingToClient(currentOrder));
+
     // Update stepper state theo account_status + production_status
     updateStepperState(o);
 
@@ -1212,58 +1332,67 @@
        2. Enable/disable các action button theo account_status + production_status. */
   function updateStepperState(o) {
     if (!o) return;
-    const hint  = document.getElementById('wf-hint');
+    const hint   = document.getElementById('wf-hint');
+    const flow   = document.querySelector('#order-drawer .wf-actions-flow');
+    const danger = document.querySelector('#order-drawer .wf-actions-danger');
     const btnCheck   = document.getElementById('act-checking');
     const btnNeed    = document.getElementById('act-needinfo');
+    const btnWording = document.getElementById('act-wording');
     const btnConfirm = document.getElementById('act-confirm');
     const btnPush    = document.getElementById('act-push');
     const btnCancel  = document.getElementById('act-cancel');
+    const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
 
-    // Reset disabled state
-    [btnCheck, btnNeed, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = false; });
+    // Thông tin "đã push" giờ nằm ở Linked Task card trong body → ẩn dòng wf-hint cũ (tránh trùng status).
+    if (hint) { hint.hidden = true; hint.innerHTML = ''; }
 
     const isCancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
-    const isPushed    = o.production_status && o.production_status !== 'unassigned' && !isCancelled;
+    const isPushed    = !!o.production_status && o.production_status !== 'unassigned' && !isCancelled;
     const isConfirmed = o.account_status === 'confirmed';
-    const isNeedinfo  = o.account_status === 'needinfo';
-    const isChecking  = o.account_status === 'checking';
-    // (Bỏ readyToPush: sau khi confirm brief, Push giữ sáng làm CTA; pushToProduction tự validate khi bấm.)
+    const completed   = o.production_status === 'completed';
+    const rated       = typeof o.satisfaction_score === 'number' && o.satisfaction_score > 0;
+    const hasPreview  = !!o.preview_link;
+    const hasFinal    = !!o.final_delivery_link;
 
-    // Cancelled state — disable mọi action, hide hint
-    if (isCancelled) {
-      if (hint) hint.hidden = true;
-      [btnCheck, btnNeed, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = true; });
-      return;
-    }
+    // Quick Actions theo lifecycle stage (contextual show/hide — không chỉ disable):
+    //  - Brief (chưa confirm/push): Kiểm tra brief · Yêu cầu bổ sung · Xác nhận brief.
+    //  - Brief đã confirm, chưa push: Push → Production.
+    //  - Đã push / có Preview / có Final / hoàn tất: ẩn hết nút brief & push
+    //    (action giai đoạn sau nằm trong body: Bàn giao Preview/Final, Gửi feedback cho PIC, Xem task).
+    const briefStage = !isCancelled && !isConfirmed && !isPushed && !hasPreview && !hasFinal;
+    const pushStage  = !isCancelled && isConfirmed && !isPushed && !hasPreview && !hasFinal;
 
-    // Button enable/disable theo state
-    if (o.account_status === 'pending') {
-      btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
-    } else if (isChecking) {
-      btnPush.disabled = true;
-    } else if (isNeedinfo) {
-      btnPush.disabled = true;
-    } else if (isConfirmed && !isPushed) {
-      // Brief đã xác nhận → Push giữ SÁNG (CTA), validate khi bấm; KHÔNG mờ vì thiếu PIC/deadline.
-      btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true;
-    } else if (isPushed) {
-      btnCheck.disabled = true; btnNeed.disabled = true; btnConfirm.disabled = true; btnPush.disabled = true;
-    }
+    [btnCheck, btnNeed, btnWording, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = false; });
+    show(btnCheck,   briefStage);
+    show(btnNeed,    briefStage);
+    show(btnWording, briefStage);
+    show(btnConfirm, briefStage);
+    show(btnPush,    pushStage);
 
-    // Push status message — chỉ hiện khi đã push
-    if (hint) {
-      if (isPushed) {
-        hint.hidden = false;
-        hint.className = 'wf-hint is-done';
-        const picText = o.request_type === 'media'
-          ? ([o.production_pic_video && ('Quay: ' + o.production_pic_video), o.production_pic_photo && ('Chụp: ' + o.production_pic_photo)].filter(Boolean).join(' · ') || '—')
-          : (o.production_pic || '—');
-        hint.innerHTML = 'Đã push sang Task Tracker. PIC: <b>' + picText + '</b>. <a href="production-board.html?dl=in_production" class="link">Xem task →</a>';
-      } else {
-        hint.hidden = true;
-        hint.innerHTML = '';
+    // Phase 2 — cổng Content Wording:
+    if (briefStage) {
+      const ws = wordingStatusOf(o);
+      const approved = isWordingApproved(o);
+      // 'pending' chưa kiểm tra → chưa cho Bổ sung / Chuyển Wording / Xác nhận.
+      if (o.account_status === 'pending') {
+        if (btnNeed) btnNeed.disabled = true;
+        if (btnWording) btnWording.disabled = true;
+        if (btnConfirm) btnConfirm.disabled = true;
       }
+      // Đã chuyển Content Wording rồi (status khác 'none') → khóa nút "Chuyển Content Wording".
+      if (btnWording && ws !== 'none') btnWording.disabled = true;
+      // Rule 1 — Confirm Brief bị khóa tới khi Content Wording được Client xác nhận.
+      if (btnConfirm && !approved) btnConfirm.disabled = true;
     }
+
+    // Hủy đơn = "Hành động khác", tách riêng; ẩn khi đã hủy / hoàn thành / đã đánh giá.
+    const canCancel = !isCancelled && !completed && !rated;
+    show(btnCancel, canCancel);
+
+    // Ẩn container rỗng để không còn khung/khoảng trắng thừa ở đầu drawer.
+    show(flow, briefStage || pushStage);
+    show(danger, canCancel);
+    show(document.querySelector('#order-drawer .drawer-actions'), briefStage || pushStage || canCancel);
   }
 
   function closeDrawer() {
@@ -1280,6 +1409,7 @@
   /* ---------- Drawer action buttons ---------- */
   document.getElementById('act-checking').addEventListener('click', () => updateStatus(currentOrder, 'checking', 'Đang kiểm tra brief'));
   document.getElementById('act-needinfo').addEventListener('click', () => updateStatus(currentOrder, 'needinfo', 'Yêu cầu bổ sung brief'));
+  document.getElementById('act-wording').addEventListener('click', () => transferToWording(currentOrder));
   document.getElementById('act-confirm').addEventListener('click', () => updateStatus(currentOrder, 'confirmed', 'Đã xác nhận brief'));
   document.getElementById('act-push').addEventListener('click', () => pushToProduction(currentOrder));
   document.getElementById('act-cancel').addEventListener('click', () => openCancelModal(currentOrder));
@@ -1471,6 +1601,11 @@
 
   function updateStatus(o, newStatus, msg) {
     if (!o) return;
+    // Phase 2 Rule 1 — hard gate: không cho Confirm Brief khi Content Wording chưa được Client xác nhận.
+    if (newStatus === 'confirmed' && !isWordingApproved(o)) {
+      window.MH.toast({ type: 'warning', title: 'Chưa thể Confirm Brief', message: 'Order cần hoàn tất Content Wording và được Client xác nhận trước khi Confirm Brief.' });
+      return;
+    }
     o.account_status = newStatus;
     if (newStatus === 'rejected') o.production_status = 'cancelled';
     o.last_updated = new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -1506,11 +1641,77 @@
     openDrawer(o);
   }
 
+  // Phase 2 — Account chuyển order sang Content Wording (cổng bắt buộc trước Confirm Brief).
+  // account_status='wording', brief_wording_status='assigned', round=1 nếu đang 0.
+  function transferToWording(o) {
+    if (!o) return;
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
+      window.MH.toast({ type: 'warning', title: 'Order đã hủy', message: 'Không thể chuyển Content Wording cho order đã hủy.' }); return;
+    }
+    const ws = wordingStatusOf(o);
+    if (isWordingApproved(o)) { window.MH.toast({ type: 'info', title: 'Wording đã hoàn tất', message: 'Content Wording của order này đã được Client xác nhận.' }); return; }
+    if (ws !== 'none') { window.MH.toast({ type: 'info', title: 'Đang Content Wording', message: 'Order đã được chuyển Content Wording (' + (WORDING_STATUS_LABEL[ws] || ws) + ').' }); return; }
+    const nowIso = new Date().toISOString();
+    o.account_status = 'wording';
+    o.brief_wording_status = 'assigned';
+    o.brief_wording_round = (o.brief_wording_round || 0) === 0 ? 1 : o.brief_wording_round;
+    o.wording_last_updated_at = nowIso;
+    o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
+    persistOrder(o.order_id, {
+      account_status: 'wording',
+      brief_wording_status: 'assigned',
+      brief_wording_round: o.brief_wording_round,
+      wording_last_updated_at: nowIso,
+      last_updated: nowIso
+    });
+    window.MH.toast({ type: 'success', title: 'Đã chuyển Content Wording', message: o.order_id + ' — chờ Content xử lý & Client xác nhận brief wording trước khi Confirm Brief.' });
+    render(); openDrawer(o);
+  }
+
+  // Phase 4 — Account gửi bản wording cho Client xác nhận.
+  function sendWordingToClient(o) {
+    if (!o) return;
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
+      window.MH.toast({ type: 'warning', title: 'Order đã hủy', message: 'Không thể gửi Client cho order đã hủy.' }); return;
+    }
+    const ws = wordingStatusOf(o);
+    if (ws !== 'submitted_to_account') {
+      window.MH.toast({ type: 'info', title: 'Chưa thể gửi', message: 'Chỉ gửi Client khi Content đã submit bản wording (Chờ Account duyệt).' }); return;
+    }
+    if (!(o.wording_brief && String(o.wording_brief).trim())) {
+      window.MH.toast({ type: 'warning', title: 'Thiếu nội dung', message: 'Bản wording (Brief đã wording) đang trống — không thể gửi Client.' }); return;
+    }
+    const nowIso = new Date().toISOString();
+    const by = (user && (user.name || user.email)) || 'Account';
+    o.brief_wording_status = 'sent_to_client';
+    o.wording_client_sent_at = nowIso;
+    o.wording_client_sent_by = by;
+    o.wording_last_updated_at = nowIso;
+    o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
+    persistOrder(o.order_id, {
+      brief_wording_status: 'sent_to_client',
+      wording_client_sent_at: nowIso,
+      wording_client_sent_by: by,
+      wording_last_updated_at: nowIso,
+      last_updated: nowIso
+    });
+    // Notify Client của order (fire-and-forget) — dùng helper notifyClient (requester_id/email fallback).
+    notifyClient(o, {
+      type: 'wording_sent_to_client',
+      title: 'Brief đã được chuẩn hóa — chờ anh/chị xác nhận',
+      message: `Yêu cầu ${o.order_id}${o.project_name ? ' · ' + o.project_name : ''} đã được chuẩn hóa nội dung. Vui lòng mở chi tiết để xác nhận hoặc yêu cầu chỉnh brief.`,
+      link: 'client-dashboard.html?id=' + o.order_id
+    });
+    window.MH.toast({ type: 'success', title: 'Đã gửi Client', message: o.order_id + ' — chờ Client xác nhận brief wording.' });
+    render(); openDrawer(o);
+  }
+
   async function pushToProduction(o) {
     if (!o) return;
     const isMedia = o.request_type === 'media';
     const hasPic = isMedia ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
     const checks = {
+      wording: isWordingApproved(o),
       brief: o.account_status === 'confirmed',
       pic: hasPic,
       deadline: !!o.internal_deadline,
@@ -1518,6 +1719,7 @@
       deliverable: o.request_type === 'media' ? true : (o.deliverable_type && o.deliverable_type.length > 0)
     };
     const missing = [];
+    if (!checks.wording) missing.push('Content Wording được Client xác nhận');
     if (!checks.brief) missing.push('xác nhận brief');
     if (!checks.pic) missing.push(isMedia ? 'gán PIC Quay hoặc Chụp' : 'gán P.I.C');
     if (!checks.deadline) missing.push('Internal Deadline');

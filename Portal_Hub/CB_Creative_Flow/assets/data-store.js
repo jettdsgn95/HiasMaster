@@ -40,10 +40,16 @@
     return window.MH.supabase || null;
   }
   function nowIso() { return new Date().toISOString(); }
+  // PGRST204 = "Could not find the 'X' column of '<table>' in the schema cache"
+  // (cột do migration thêm sau nhưng DB chưa chạy). Bóc tên cột để bỏ ra khỏi payload.
   function optionalMissingColumn(error, payload) {
     if (!error || !payload || error.code !== 'PGRST204') return null;
     const msg = [error.message, error.details, error.hint].filter(Boolean).join(' ');
-    const optional = ['shoot_location'];
+    // Generic: lấy tên cột ngay trước chữ "column" trong message.
+    const m = msg.match(/'([^']+)'\s+column/);
+    if (m && Object.prototype.hasOwnProperty.call(payload, m[1])) return m[1];
+    // Fallback allowlist các cột optional đã biết (phòng khi format message khác).
+    const optional = ['shoot_location', 'feedback_status', 'revision_round', 'revision_limit', 'latest_feedback_note', 'last_feedback_at', 'last_feedback_by', 'approved_at', 'approved_by', 'parent_order_id', 'order_origin'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {
@@ -51,7 +57,7 @@
     if (!col) return null;
     const next = Object.assign({}, payload);
     delete next[col];
-    console.warn(label + ' retry without optional column `' + col + '`. Run supabase/add-shoot-location.sql to persist this field.');
+    console.warn(label + ' bỏ cột thiếu `' + col + '` rồi thử lại (DB chưa migrate cột này — chạy migration tương ứng, vd add-revision-rounds.sql, để lưu được field).');
     return next;
   }
 
@@ -116,17 +122,17 @@
     async update(orderId, patch) {
       const s = await sb();
       if (s) {
-        const { data, error } = await s.from('orders').update(patch).eq('order_id', orderId).select().maybeSingle();
-        if (error) {
-          const retryPatch = stripMissingOptionalColumn(patch, error, '[store.orders.update]');
-          if (retryPatch) {
-            const retry = await s.from('orders').update(retryPatch).eq('order_id', orderId).select().maybeSingle();
-            if (retry.error) { console.warn('[store.orders.update]', retry.error); throw retry.error; }
-            return retry.data;
-          }
-          console.warn('[store.orders.update]', error); throw error;
+        // Lặp: nếu lỗi do thiếu cột (DB chưa migrate) → bỏ cột đó rồi thử lại,
+        // để các field cốt lõi (preview_link/final_delivery_link/...) vẫn được lưu.
+        let p = patch;
+        for (let i = 0; i < 12; i++) {
+          const { data, error } = await s.from('orders').update(p).eq('order_id', orderId).select().maybeSingle();
+          if (!error) return data;
+          const reduced = stripMissingOptionalColumn(p, error, '[store.orders.update]');
+          if (!reduced) { console.warn('[store.orders.update]', error); throw error; }
+          p = reduced;
         }
-        return data;
+        throw new Error('[store.orders.update] quá nhiều cột thiếu — kiểm tra migration DB.');
       }
       // Fallback: mutate in-memory mock; persist submitted-orders if matched
       const list = window.MH_MOCK_ORDERS;

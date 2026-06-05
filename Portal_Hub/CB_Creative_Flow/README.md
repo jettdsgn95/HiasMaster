@@ -202,6 +202,7 @@ Project có sẵn `package.json` và `railway.json` để deploy lên [Railway](
 - [x] **Security cleanup**: Demo Accounts section xóa khỏi login. Password 9 user (5 demo `Cbmedia2026` + 4 client test `client@test`) đồng bộ qua SQL.
 - [x] **Demo data cleared**: `supabase/clear-demo.sql` chạy, DB clean cho production test.
 - [x] **Workflow UX upgrade**: 4-step Stepper UI + Push→Production tạo task tự động + Notification cho PIC.
+- [x] **Brief Wording flow (Content Role Phase 1→4)**: role `content` + Content Workbench + cổng bắt buộc wording + Client xác nhận brief trong Portal. ⚠ Chạy 3 migration theo thứ tự: `supabase/add-brief-wording-fields.sql` → `add-brief-wording-workspace-fields.sql` → `add-brief-wording-confirmation.sql` (để wording persist cross-user; chưa chạy thì fallback localStorage same-browser).
 - [ ] Generate `package-lock.json` — cần Node.js local. Chạy `npm install` 1 lần, commit lockfile.
 - [ ] Migrate delivery file upload (preview/final) sang Storage — Phase 2 nice-to-have
 - [ ] Custom SMTP (Resend / Brevo) để vượt free tier 3 email/h cho password recovery
