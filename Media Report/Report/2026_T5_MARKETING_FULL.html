@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Báo cáo Phòng Marketing - Tháng 5/2026</title>
+<meta name="description" content="Báo cáo tổng hợp Phòng Marketing tháng 05/2026 — Team Media & Team Content (Project).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#BA110F;--red-dk:#8C0D0B;--red-lt:#E63836;--red-pale:#FDE8E8;
+  --navy:#191970;--navy-dk:#0F0F50;--navy-md:#222290;--navy-lt:#3333BB;--navy-pale:#EAEAF8;--navy-tint:#F2F2FC;
+  --gold:#C79A2E;--gold-lt:#F6C343;--gold-dk:#9A7416;--gold-pale:#FBF1D6;--gold-tint:#FDF8EC;
+  --bg:#F5F6FA;--surf:#fff;--surf2:#F8F9FD;--border:#E2E5F0;--divider:rgba(25,25,112,.07);
+  --t1:#0D0D30;--t2:#424275;--t3:#8888BB;--green:#0A7A52;--amber:#B07600;--teal:#0E7490;
+  --sh-xs:0 1px 3px rgba(25,25,112,.06);--sh-sm:0 2px 8px rgba(25,25,112,.08);--sh-md:0 4px 20px rgba(25,25,112,.12);
+  --sh-nav:0 4px 16px rgba(25,25,112,.22);--r0:6px;--r1:10px;--r2:16px;--r3:24px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.55;overflow-x:hidden}
+.page{max-width:1440px;margin:0 auto}
+.ico{width:16px;height:16px;display:inline-block;vertical-align:middle;flex:none}
+[data-ic]{display:inline-flex;align-items:center;vertical-align:middle}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:rgba(25,25,112,.25);border-radius:3px}
+
+/* ── HERO ── */
+.dept-hero{background:linear-gradient(120deg,#0F0F50 0%,#191970 46%,#2c2ca0 72%,#7a6a2f 100%);padding:46px 40px 40px;position:relative;overflow:hidden}
+.dept-hero::before{content:'';position:absolute;top:-90px;right:-70px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(246,195,67,.30),transparent 70%);pointer-events:none}
+.dept-hero::after{content:'';position:absolute;bottom:-70px;left:18%;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.06),transparent 70%);pointer-events:none}
+.dh-inner{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.dh-left{flex:1;min-width:280px}
+.dh-kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:50px;padding:5px 16px;margin-bottom:14px;font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.92)}
+.dh-dot{width:6px;height:6px;border-radius:50%;background:var(--gold-lt);box-shadow:0 0 8px var(--gold-lt);animation:blink 2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25;transform:scale(.6)}}
+.dh-title{font-size:clamp(26px,3.4vw,46px);font-weight:900;line-height:1.08;margin-bottom:10px;color:#fff;letter-spacing:-.5px}
+.dh-title .hl{color:var(--gold-lt)}
+.dh-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.66)}
+.dh-sub span{display:inline-flex;align-items:center;gap:6px}.dh-sub .sep{color:rgba(255,255,255,.28)}
+.dh-sub .ico{width:14px;height:14px}
+.dh-teamchips{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.dh-tc{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;padding:5px 13px;border-radius:50px;color:#fff}
+.dh-tc .ico{width:14px;height:14px}
+.dh-tc--media{background:rgba(57,73,179,.55);border:1px solid rgba(120,140,255,.5)}
+.dh-tc--content{background:rgba(199,154,46,.4);border:1px solid rgba(246,195,67,.55)}
+.dh-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.period-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r1);padding:14px 20px;display:flex;align-items:center;gap:12px}
+.pc-icon{color:#fff;display:flex}.pc-icon .ico{width:24px;height:24px}
+.pc-lbl{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.pc-val{font-size:14px;font-weight:800;color:#fff;margin-top:2px}
+.dh-time{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:rgba(255,255,255,.45)}.dh-time .ico{width:14px;height:14px}
+.accent-stripe{height:4px;background:linear-gradient(90deg,var(--navy) 0%,var(--navy-lt) 42%,var(--gold) 75%,var(--gold-lt) 100%)}
+
+/* ── DEPARTMENT OVERVIEW ── */
+.dept-overview{padding:26px 40px 6px}
+.ov-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.ov-head-ic{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--navy),var(--gold));display:flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.ov-head-ic .ico{width:21px;height:21px}
+.ov-title{font-size:17px;font-weight:800;letter-spacing:-.2px}
+.ov-sub{font-size:12px;color:var(--t2);margin-top:2px}
+.ov-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:18px}
+.kpi-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;box-shadow:var(--sh-sm);position:relative;overflow:hidden;transition:.2s}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px}
+.kc1::before{background:linear-gradient(180deg,var(--navy-dk),var(--gold))}
+.kc2::before{background:linear-gradient(180deg,#0A5C3E,#0A7A52)}
+.kc3::before{background:linear-gradient(180deg,var(--navy),var(--navy-lt))}
+.kc4::before{background:linear-gradient(180deg,var(--gold-dk),var(--gold-lt))}
+.kc5::before{background:linear-gradient(180deg,#0C4A6E,#0E7490)}
+.kpi-top{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.kpi-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.kpi-ic .ico{width:19px;height:19px}
+.kc1 .kpi-ic{background:rgba(25,25,112,.1);color:var(--navy)}
+.kc2 .kpi-ic{background:rgba(10,122,82,.1);color:var(--green)}
+.kc3 .kpi-ic{background:rgba(25,25,112,.1);color:var(--navy)}
+.kc4 .kpi-ic{background:rgba(199,154,46,.14);color:var(--gold-dk)}
+.kc5 .kpi-ic{background:rgba(14,116,144,.1);color:var(--teal)}
+.kpi-num{font-size:30px;font-weight:900;line-height:1}
+.kc1 .kpi-num{color:var(--navy)}.kc2 .kpi-num{color:var(--green)}.kc3 .kpi-num{color:var(--navy)}.kc4 .kpi-num{color:var(--gold-dk)}.kc5 .kpi-num{color:var(--teal)}
+.kpi-lbl{font-size:12px;font-weight:600;color:var(--t2)}
+.kpi-hint{font-size:10.5px;color:var(--t3);font-weight:600;margin-top:6px}
+
+/* compare cards */
+.ov-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cmp{background:var(--surf);border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--sh-sm);padding:18px 20px;border-left:5px solid var(--navy)}
+.cmp--content{border-left-color:var(--gold-lt)}
+.cmp-head{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.cmp-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.5px;padding:5px 12px;border-radius:50px;color:#fff}
+.cmp-badge .ico{width:14px;height:14px}
+.cmp--media .cmp-badge{background:var(--navy)}
+.cmp--content .cmp-badge{background:var(--gold-dk)}
+.cmp-scope{font-size:12px;color:var(--t2);font-weight:600}
+.cmp-metrics{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.cmp-m{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--t2);background:var(--surf2);border:1px solid var(--border);padding:4px 10px;border-radius:50px}
+.cmp-m b{color:var(--t1);font-weight:800}
+.cmp-m .ico{width:13px;height:13px;color:var(--navy)}
+.cmp--content .cmp-m .ico{color:var(--gold-dk)}
+.cmp-bar-row{display:flex;align-items:center;gap:11px}
+.cmp-bar-track{flex:1;height:12px;background:var(--surf2);border:1px solid var(--border);border-radius:50px;overflow:hidden}
+.cmp-bar-fill{height:100%;border-radius:50px;width:0;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.cmp--media .cmp-bar-fill{background:linear-gradient(90deg,var(--navy),var(--navy-lt))}
+.cmp--content .cmp-bar-fill{background:linear-gradient(90deg,var(--gold-dk),var(--gold-lt))}
+.cmp-bar-meta{font-size:12.5px;font-weight:800;white-space:nowrap}
+.cmp--media .cmp-bar-meta{color:var(--navy)}
+.cmp--content .cmp-bar-meta{color:var(--gold-dk)}
+.cmp-bar-sub{font-size:11px;color:var(--t3);font-weight:600;margin-top:6px}
+
+/* ── TEAM SWITCH ── */
+.team-switch{position:sticky;top:0;z-index:60;display:flex;gap:10px;padding:16px 40px;background:rgba(245,246,250,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.ts-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-right:4px}
+.ts-btn{display:inline-flex;align-items:center;gap:9px;padding:11px 22px;border-radius:50px;border:1.5px solid var(--border);background:var(--surf);color:var(--t2);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:var(--sh-xs);transition:.18s}
+.ts-btn .ico{width:18px;height:18px}
+.ts-btn:hover{border-color:var(--navy);color:var(--navy)}
+.ts-btn .ts-count{font-size:11px;font-weight:800;padding:2px 8px;border-radius:50px;background:var(--navy-pale);color:var(--navy)}
+.ts-btn[data-team="media"].active{background:linear-gradient(135deg,var(--navy),var(--navy-lt));border-color:transparent;color:#fff;box-shadow:var(--sh-nav)}
+.ts-btn[data-team="content"].active{background:linear-gradient(135deg,var(--gold-dk),var(--gold-lt));border-color:transparent;color:#fff;box-shadow:0 4px 16px rgba(199,154,46,.32)}
+.ts-btn.active .ts-count{background:rgba(255,255,255,.25);color:#fff}
+
+/* ── TEAM FRAME ── */
+.team-frame[hidden]{display:none}
+.team-frame{padding:18px 40px 40px}
+.team-banner{display:flex;align-items:center;gap:12px;border-radius:var(--r1) var(--r1) 0 0;padding:13px 18px;color:#fff;flex-wrap:wrap}
+.team-banner--media{background:linear-gradient(135deg,var(--navy-dk),var(--navy))}
+.team-banner--content{background:linear-gradient(135deg,var(--gold-dk),var(--gold))}
+.tb-badge{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.5px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);padding:4px 12px;border-radius:50px}
+.tb-badge .ico{width:14px;height:14px}
+.tb-scope{font-size:12px;color:rgba(255,255,255,.82);font-weight:600}
+.tb-people{margin-left:auto;font-size:11.5px;color:rgba(255,255,255,.78);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.tb-people .ico{width:13px;height:13px}
+.frame-wrap{border:1px solid var(--border);border-top:0;border-radius:0 0 var(--r1) var(--r1);overflow:hidden;box-shadow:var(--sh-sm);background:var(--surf)}
+.frame-wrap iframe{width:100%;border:0;display:block;height:84vh;background:var(--surf)}
+.frame-note{font-size:11px;color:var(--t3);margin:4px 0 9px;display:flex;align-items:center;gap:6px}
+.frame-note .ico{width:13px;height:13px}
+
+/* ── FOOTER ── */
+footer{background:linear-gradient(135deg,var(--navy-dk),var(--navy));padding:24px 40px;text-align:center;color:rgba(255,255,255,.55);font-size:12.5px;margin-top:8px}
+footer strong{color:rgba(255,255,255,.85)}
+footer .ico{width:14px;height:14px;margin-right:3px}
+
+@media(max-width:980px){
+  .ov-kpi{grid-template-columns:repeat(2,1fr)}
+  .ov-compare{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .dept-hero{padding:30px 20px}
+  .dept-overview,.team-switch,.team-frame{padding-left:20px;padding-right:20px}
+  .dh-right{display:none}
+}
+@media(max-width:540px){.ov-kpi{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═ HERO PHÒNG ═ -->
+  <header class="dept-hero">
+    <div class="dh-inner">
+      <div class="dh-left">
+        <div class="dh-kicker"><span class="dh-dot"></span>Phòng Marketing · Tháng 5 · 2026</div>
+        <h1 class="dh-title">BÁO CÁO PHÒNG MARKETING<br><span class="hl">THÁNG 5 / 2026</span></h1>
+        <div class="dh-sub">
+          <span><span data-ic="building"></span>Phòng Marketing · CB</span><span class="sep">·</span>
+          <span><span data-ic="calendar"></span>Kỳ 01/05 → 31/05/2026</span>
+        </div>
+        <div class="dh-teamchips">
+          <span class="dh-tc dh-tc--media"><span data-ic="camera"></span>Team Media · Sản xuất visual</span>
+          <span class="dh-tc dh-tc--content"><span data-ic="file-text"></span>Team Content · Nội dung &amp; vận hành</span>
+        </div>
+      </div>
+      <div class="dh-right">
+        <div class="period-card">
+          <div class="pc-icon" data-ic="calendar"></div>
+          <div><div class="pc-lbl">Kỳ báo cáo</div><div class="pc-val">01/05/2026 → 31/05/2026</div></div>
+        </div>
+        <div class="dh-time"><span data-ic="clock"></span>Tổng hợp: 01/06/2026</div>
+      </div>
+    </div>
+  </header>
+  <div class="accent-stripe"></div>
+
+  <!-- ═ TỔNG QUAN PHÒNG ═ -->
+  <section class="dept-overview">
+    <div class="ov-head">
+      <div class="ov-head-ic" data-ic="layers"></div>
+      <div>
+        <div class="ov-title">Tổng quan Phòng Marketing — T5/2026</div>
+        <div class="ov-sub">Gộp 2 team: Media (sản xuất visual) &amp; Content (nội dung &amp; vận hành bài). Đơn vị đo của 2 team khác nhau — xem chi tiết trong từng team.</div>
+      </div>
+    </div>
+
+    <div class="ov-kpi">
+      <div class="kpi-card kc1">
+        <div class="kpi-top"><div class="kpi-ic" data-ic="layers"></div><div><div class="kpi-num">436</div></div></div>
+        <div class="kpi-lbl">Tổng đầu việc</div>
+        <div class="kpi-hint">Media 234 · Content 202</div>
+      </div>
+      <div class="kpi-card kc2">
+        <div class="kpi-top"><div class="kpi-ic" data-ic="check-circle"></div><div><div class="kpi-num">332</div></div></div>
+        <div class="kpi-lbl">Hoàn thành</div>
+        <div class="kpi-hint">Media 212 · Content 120</div>
+      </div>
+      <div class="kpi-card kc3">
+        <div class="kpi-top"><div class="kpi-ic" data-ic="users"></div><div><div class="kpi-num">14</div></div></div>
+        <div class="kpi-lbl">Nhân sự</div>
+        <div class="kpi-hint">Media 5 · Content 9</div>
+      </div>
+      <div class="kpi-card kc4">
+        <div class="kpi-top"><div class="kpi-ic" data-ic="briefcase"></div><div><div class="kpi-num">2</div></div></div>
+        <div class="kpi-lbl">Team trong phòng</div>
+        <div class="kpi-hint">Media · Content (Project)</div>
+      </div>
+      <div class="kpi-card kc5">
+        <div class="kpi-top"><div class="kpi-ic" data-ic="image"></div><div><div class="kpi-num">+123</div></div></div>
+        <div class="kpi-lbl">Ảnh social</div>
+        <div class="kpi-hint">Chỉ số phụ — Team Media</div>
+      </div>
+    </div>
+
+    <div class="ov-compare">
+      <div class="cmp cmp--media">
+        <div class="cmp-head">
+          <span class="cmp-badge"><span data-ic="camera"></span>TEAM MEDIA</span>
+          <span class="cmp-scope">Sản xuất visual · Lead: Hòa · Account: Hậu</span>
+        </div>
+        <div class="cmp-metrics">
+          <span class="cmp-m"><span data-ic="layers"></span><b>234</b> đầu việc</span>
+          <span class="cmp-m"><span data-ic="users"></span><b>5</b> người</span>
+          <span class="cmp-m"><span data-ic="briefcase"></span><b>4</b> luồng</span>
+          <span class="cmp-m"><span data-ic="image"></span><b>123</b> ảnh</span>
+        </div>
+        <div class="cmp-bar-row">
+          <div class="cmp-bar-track"><div class="cmp-bar-fill" data-w="91"></div></div>
+          <span class="cmp-bar-meta">91% HT</span>
+        </div>
+        <div class="cmp-bar-sub">212/234 hoàn thành · Thiết kế · Quay chụp · Video · Social</div>
+      </div>
+
+      <div class="cmp cmp--content">
+        <div class="cmp-head">
+          <span class="cmp-badge"><span data-ic="file-text"></span>TEAM CONTENT</span>
+          <span class="cmp-scope">Nội dung, vận hành bài &amp; Ads (Team Project)</span>
+        </div>
+        <div class="cmp-metrics">
+          <span class="cmp-m"><span data-ic="layers"></span><b>202</b> task</span>
+          <span class="cmp-m"><span data-ic="users"></span><b>9</b> người</span>
+          <span class="cmp-m"><span data-ic="briefcase"></span><b>41</b> dự án</span>
+          <span class="cmp-m"><span data-ic="alert-triangle"></span><b>22</b> ưu tiên cao</span>
+          <span class="cmp-m"><span data-ic="megaphone"></span><b>29</b> Ads · 43,7tr đ</span>
+        </div>
+        <div class="cmp-bar-row">
+          <div class="cmp-bar-track"><div class="cmp-bar-fill" data-w="59"></div></div>
+          <span class="cmp-bar-meta">59% HT</span>
+        </div>
+        <div class="cmp-bar-sub">120/202 hoàn thành · tiến độ TB 88% · Ads: 642.896 reach · 195.682 kết quả</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═ CHUYỂN TEAM ═ -->
+  <nav class="team-switch">
+    <span class="ts-label">Xem chi tiết theo team:</span>
+    <button class="ts-btn active" data-team="media"><span data-ic="camera"></span>Team Media<span class="ts-count">5</span></button>
+    <button class="ts-btn" data-team="content"><span data-ic="file-text"></span>Team Content<span class="ts-count">9</span></button>
+  </nav>
+
+  <!-- ═ KHU VỰC TEAM MEDIA ═ -->
+  <section class="team-frame" id="frame-media">
+    <div class="team-banner team-banner--media">
+      <span class="tb-badge"><span data-ic="camera"></span>TEAM MEDIA</span>
+      <span class="tb-scope">Sản xuất visual — Thiết kế · Quay chụp · Video · Social · Đánh giá</span>
+      <span class="tb-people"><span data-ic="users"></span>Hòa (Lead) · Hậu (Account) · Quyên · Vinh · Du</span>
+    </div>
+    <div class="frame-note"><span data-ic="info"></span>Báo cáo đầy đủ của Team Media được nhúng nguyên bản — mọi tab, filter, accordion hoạt động bên trong khung.</div>
+    <div class="frame-wrap">
+      <iframe src="2026_T5_MEDIA_FULL.html" title="Báo cáo Team Media tháng 5/2026" loading="eager"></iframe>
+    </div>
+  </section>
+
+  <!-- ═ KHU VỰC TEAM CONTENT ═ -->
+  <section class="team-frame" id="frame-content" hidden>
+    <div class="team-banner team-banner--content">
+      <span class="tb-badge"><span data-ic="file-text"></span>TEAM CONTENT</span>
+      <span class="tb-scope">Nội dung, vận hành bài &amp; Ads (Team Project) — Theo dự án · Theo PIC · Ads Report · Đang làm · Chi tiết</span>
+      <span class="tb-people"><span data-ic="users"></span>Bảo · Trang · Đăng · Thanh · Duy · Tú · Sơn · Nhi · Thùy</span>
+    </div>
+    <div class="frame-note"><span data-ic="info"></span>Báo cáo đầy đủ của Team Content được nhúng nguyên bản — lưu ý "Duy" (Content) khác với "Du" (Media).</div>
+    <div class="frame-wrap">
+      <iframe src="2026_T5_CONTENT_FULL.html" title="Báo cáo Team Content tháng 5/2026" loading="eager"></iframe>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ── ICONS (minimal line icons, đồng bộ với 2 báo cáo con) ──
+const ICONS={
+  building:'<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+  calendar:'<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  layers:'<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  'check-circle':'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  'trending-up':'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  briefcase:'<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  image:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  'file-text':'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  'alert-triangle':'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  'bar-chart':'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  'arrow-right':'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  megaphone:'<path d="M3 11v3a2 2 0 0 0 2 2h2l4 5v-5l8-3V6l-8-3v8H5a2 2 0 0 0-2 2z"/><path d="M19 6a4 4 0 0 1 0 7"/>'
+};
+function ic(n){return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';}
+function hydrateIcons(){document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML=ic(e.dataset.ic);});}
+
+// ── Auto-fit iframe theo chiều cao nội dung (khi trình duyệt cho phép truy cập) ──
+function fitFrame(fr){
+  try{
+    var d=fr.contentDocument||(fr.contentWindow&&fr.contentWindow.document);
+    if(d&&d.body){
+      var h=Math.max(d.body.scrollHeight,d.documentElement.scrollHeight);
+      if(h>300){fr.style.height=h+'px';return true;}
+    }
+  }catch(e){/* file:// cross-origin → giữ chiều cao mặc định + cuộn trong khung */}
+  return false;
+}
+function watchFrame(fr){
+  fr.addEventListener('load',()=>{
+    fitFrame(fr);
+    // refit định kỳ để bắt thay đổi chiều cao (mở accordion / đổi tab) khi trình duyệt cho phép
+    let n=0;const t=setInterval(()=>{ fitFrame(fr); if(++n>15) clearInterval(t); },1000);
+  });
+  fitFrame(fr);
+}
+
+// ── Chuyển team ──
+const frames={media:document.getElementById('frame-media'),content:document.getElementById('frame-content')};
+document.querySelectorAll('.ts-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.ts-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const t=b.dataset.team;
+  Object.keys(frames).forEach(k=>{frames[k].hidden=(k!==t);});
+  const fr=frames[t].querySelector('iframe');
+  setTimeout(()=>fitFrame(fr),80);
+}));
+
+document.addEventListener('DOMContentLoaded',()=>{
+  hydrateIcons();
+  // animate compare bars
+  requestAnimationFrame(()=>{document.querySelectorAll('.cmp-bar-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});});
+  // watch iframes
+  document.querySelectorAll('.frame-wrap iframe').forEach(watchFrame);
+});
+</script>
+</body>
+</html>

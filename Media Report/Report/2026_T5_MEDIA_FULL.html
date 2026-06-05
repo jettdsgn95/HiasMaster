@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Báo Cáo Tháng 5/2026 – Team Media CB</title>
+<meta name="description" content="Báo cáo tổng hợp tháng 5/2026: Task thiết kế, Lịch quay chụp, Video Checklist và Social Post – Team Media CB.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ═══ BRAND TOKENS #BA110F · #191970 ═══ */
+:root {
+  --red:#BA110F; --red-dk:#8C0D0B; --red-md:#D4140F; --red-lt:#E63836;
+  --red-pale:#FDE8E8; --red-tint:#FFF4F4;
+  --navy:#191970; --navy-dk:#0F0F50; --navy-md:#222290; --navy-lt:#3333BB;
+  --navy-pale:#EAEAF8; --navy-tint:#F2F2FC;
+  --bg:#F5F6FA; --surf:#FFFFFF; --surf2:#F8F9FD;
+  --border:#E2E5F0; --divider:rgba(25,25,112,.07);
+  --t1:#0D0D30; --t2:#424275; --t3:#8888BB;
+  --green:#0A7A52; --amber:#B07600; --orange:#C05000;
+  --violet:#6B21A8; --teal:#0E7490;
+  --sh-xs:0 1px 3px rgba(25,25,112,.06);
+  --sh-sm:0 2px 8px rgba(25,25,112,.08);
+  --sh-md:0 4px 20px rgba(25,25,112,.12);
+  --sh-red:0 4px 16px rgba(186,17,15,.18);
+  --sh-nav:0 4px 16px rgba(25,25,112,.22);
+  --r0:6px; --r1:10px; --r2:16px; --r3:24px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.55;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:rgba(25,25,112,.25);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--navy);}
+.page{max-width:1440px;margin:0 auto;}
+
+/* ═══ HERO ═══ */
+.hero{background:linear-gradient(135deg,var(--navy-dk) 0%,var(--navy) 55%,var(--navy-md) 100%);padding:44px 40px 38px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-80px;right:-80px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(186,17,15,.3) 0%,transparent 70%);pointer-events:none;}
+.hero::after{content:'';position:absolute;bottom:-60px;left:20%;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.05) 0%,transparent 70%);pointer-events:none;}
+.hero-inner{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:24px;}
+.hero-left{flex:1;min-width:280px;}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:50px;padding:5px 16px;margin-bottom:14px;font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.9);}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:#FF6B69;box-shadow:0 0 8px #FF6B69;animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.6)}}
+.hero-title{font-size:clamp(26px,3.5vw,48px);font-weight:900;line-height:1.08;margin-bottom:10px;color:#fff;letter-spacing:-.5px;}
+.hero-title .hl{color:#FF8A88;}
+.hero-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.6);}
+.hero-sub .sep{color:rgba(255,255,255,.25);}
+.hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;}
+.period-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:var(--r1);padding:14px 20px;display:flex;align-items:center;gap:12px;}
+.pc-icon{font-size:24px;}
+.pc-lbl{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.45);}
+.pc-val{font-size:14px;font-weight:800;color:#fff;margin-top:2px;}
+.hero-time{font-size:11.5px;color:rgba(255,255,255,.4);}
+.accent-stripe{height:4px;background:linear-gradient(90deg,var(--red) 0%,var(--red-lt) 30%,var(--navy-lt) 70%,var(--navy) 100%);}
+
+/* ═══ KPI ROW (4 cards) ═══ */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:24px 40px 20px;border-bottom:1px solid var(--divider);}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr);padding:16px;}}
+@media(max-width:540px){.kpi-row{grid-template-columns:1fr;}}
+.kpi-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r2);padding:18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh-sm);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.kpi-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:var(--r2) 0 0 var(--r2);}
+.k-task::before{background:linear-gradient(180deg,var(--navy-dk),var(--navy-lt));}
+.k-shoot::before{background:linear-gradient(180deg,var(--red-dk),var(--red-lt));}
+.k-video::before{background:linear-gradient(180deg,#6B21A8,#A855F7);}
+.k-social::before{background:linear-gradient(180deg,#0E7490,#22D3EE);}
+.kpi-icon{font-size:34px;flex-shrink:0;}
+.kpi-info{flex:1;}
+.kpi-num{font-size:34px;font-weight:900;line-height:1;margin-bottom:4px;}
+.k-task .kpi-num{color:var(--navy);} .k-shoot .kpi-num{color:var(--red);}
+.k-video .kpi-num{color:#7B21A8;} .k-social .kpi-num{color:#0E7490;}
+.kpi-lbl{font-size:12.5px;font-weight:600;color:var(--t2);}
+.kpi-chips{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.chip{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:50px;white-space:nowrap;}
+.chip-g{background:rgba(10,122,82,.1);color:var(--green);border:1px solid rgba(10,122,82,.2);}
+.chip-n{background:var(--navy-pale);color:var(--navy);border:1px solid rgba(25,25,112,.18);}
+.chip-a{background:rgba(176,118,0,.1);color:var(--amber);border:1px solid rgba(176,118,0,.18);}
+.chip-r{background:var(--red-pale);color:var(--red-dk);border:1px solid rgba(186,17,15,.18);}
+.chip-t{background:rgba(14,116,144,.1);color:#0E7490;border:1px solid rgba(14,116,144,.2);}
+
+/* ═══ TABS ═══ */
+.tabs-wrap{padding:20px 40px 0;position:sticky;top:0;z-index:200;background:rgba(245,246,250,.93);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);}
+.tab-nav{display:flex;gap:0;background:var(--surf);border:1px solid var(--border);border-radius:var(--r2);padding:5px;box-shadow:var(--sh-sm);width:fit-content;flex-wrap:wrap;}
+.tab-btn{display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:var(--r1);background:transparent;border:none;color:var(--t2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap;}
+.tab-btn:hover{color:var(--navy);background:var(--navy-tint);}
+.tab-btn.active{background:linear-gradient(135deg,var(--navy),var(--navy-lt));color:#fff;box-shadow:var(--sh-nav);}
+.tab-btn.active.t-red{background:linear-gradient(135deg,var(--red-dk),var(--red-md));box-shadow:var(--sh-red);}
+.tab-btn.active.t-purple{background:linear-gradient(135deg,#6B21A8,#9333EA);box-shadow:0 4px 16px rgba(107,33,168,.25);}
+.tab-btn.active.t-teal{background:linear-gradient(135deg,#0C4A6E,#0E7490);box-shadow:0 4px 16px rgba(14,116,144,.3);}
+.tbadge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:50px;background:var(--navy-pale);color:var(--navy);min-width:20px;text-align:center;}
+.tab-btn.active .tbadge{background:rgba(255,255,255,.25);color:#fff;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeUp .28s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ CONTENT + SCARD GRID ═══ */
+.content{padding:24px 40px 40px;}
+.scard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-bottom:20px;}
+.scard{background:var(--surf);border:1px solid var(--border);border-radius:var(--r1);padding:15px;box-shadow:var(--sh-xs);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;animation:slideUp .38s ease both;}
+.scard:hover{transform:translateY(-3px);box-shadow:var(--sh-sm);}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.scard:nth-child(1){animation-delay:.04s}.scard:nth-child(2){animation-delay:.08s}
+.scard:nth-child(3){animation-delay:.12s}.scard:nth-child(4){animation-delay:.16s}
+.scard:nth-child(5){animation-delay:.20s}.scard:nth-child(6){animation-delay:.24s}
+.scard:nth-child(7){animation-delay:.28s}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r1) var(--r1) 0 0;}
+.scard.cn::before{background:linear-gradient(90deg,var(--navy-dk),var(--navy-lt));}
+.scard.cr::before{background:linear-gradient(90deg,var(--red-dk),var(--red-lt));}
+.scard.cg::before{background:linear-gradient(90deg,#0A5C3E,#0A7A52);}
+.scard.cb::before{background:linear-gradient(90deg,#1D4ED8,#60A5FA);}
+.scard.ca::before{background:linear-gradient(90deg,#92400E,#D97706);}
+.scard.cp::before{background:linear-gradient(90deg,#6B21A8,#A855F7);}
+.scard.ct::before{background:linear-gradient(90deg,#0C4A6E,#0E7490);}
+.scard-icon{font-size:20px;margin-bottom:8px;}
+.scard-val{font-size:28px;font-weight:900;line-height:1;margin-bottom:3px;}
+.scard-lbl{font-size:11px;color:var(--t2);font-weight:500;}
+.scard.cn .scard-val{color:var(--navy);} .scard.cr .scard-val{color:var(--red);}
+.scard.cg .scard-val{color:var(--green);} .scard.cb .scard-val{color:#1D4ED8;}
+.scard.ca .scard-val{color:var(--amber);} .scard.cp .scard-val{color:#7B21A8;}
+.scard.ct .scard-val{color:#0E7490;}
+
+/* ═══ CONTROLS ═══ */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.s-wrap{flex:1;min-width:200px;position:relative;}
+.s-wrap input{width:100%;background:var(--surf);border:1px solid var(--border);border-radius:50px;padding:9px 18px 9px 40px;font-size:13px;font-family:inherit;color:var(--t1);outline:none;box-shadow:var(--sh-xs);transition:border-color .2s,box-shadow .2s;}
+.s-wrap input::placeholder{color:var(--t3);}
+.s-wrap input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(25,25,112,.1);}
+.s-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:13px;}
+.f-group{display:flex;gap:5px;flex-wrap:wrap;}
+.fbtn{padding:7px 14px;border-radius:50px;border:1px solid var(--border);background:var(--surf);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:var(--sh-xs);transition:all .18s;white-space:nowrap;}
+.fbtn:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-tint);}
+.fbtn.active{background:linear-gradient(135deg,var(--navy),var(--navy-lt));border-color:transparent;color:#fff;box-shadow:var(--sh-nav);}
+
+/* ═══ RESULTS BAR ═══ */
+.rbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.rinfo{font-size:12px;color:var(--t2);} .rinfo strong{color:var(--t1);}
+.expand-btn{padding:5px 12px;border-radius:var(--r0);border:1px solid var(--border);background:var(--surf);color:var(--t2);font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:var(--sh-xs);transition:all .18s;}
+.expand-btn:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-tint);}
+
+/* ═══ PROJECT ACCORDION ═══ */
+.proj-list{display:flex;flex-direction:column;gap:9px;}
+.proj-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r1);overflow:hidden;box-shadow:var(--sh-xs);transition:border-color .18s,box-shadow .18s;}
+.proj-card:hover{border-color:rgba(25,25,112,.28);box-shadow:var(--sh-sm);}
+.proj-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;cursor:pointer;gap:12px;user-select:none;transition:background .14s;}
+.proj-head:hover{background:var(--navy-tint);}
+.ph-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
+.ph-num{font-size:9.5px;font-weight:800;letter-spacing:.5px;color:var(--navy);background:var(--navy-pale);border:1px solid rgba(25,25,112,.18);padding:3px 9px;border-radius:50px;flex-shrink:0;}
+.ph-name{font-size:13.5px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ph-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.tc-badge{font-size:11px;color:var(--t2);background:var(--surf2);border:1px solid var(--border);padding:3px 10px;border-radius:50px;white-space:nowrap;}
+.ph-prog{display:flex;align-items:center;gap:7px;min-width:105px;}
+.ph-bar{flex:1;height:5px;background:var(--border);border-radius:50px;overflow:hidden;}
+.ph-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--navy),var(--navy-lt));}
+.ph-pct{font-size:11px;font-weight:700;color:var(--navy);min-width:32px;text-align:right;}
+.chevron{color:var(--t3);font-size:14px;transition:transform .25s;flex-shrink:0;}
+.proj-card.open .chevron{transform:rotate(180deg);}
+.task-wrap{max-height:0;overflow:hidden;transition:max-height .35s ease;border-top:1px solid transparent;}
+.proj-card.open .task-wrap{max-height:4000px;border-top-color:var(--divider);}
+.tt{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tt th{padding:8px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);background:var(--surf2);white-space:nowrap;border-bottom:1px solid var(--border);}
+.tt td{padding:9px 14px;border-top:1px solid var(--divider);vertical-align:middle;}
+.tt tr:hover td{background:var(--navy-tint);}
+.t-name{font-weight:600;color:var(--t1);} .t-pic{color:var(--navy);font-weight:700;font-size:12px;}
+.t-date{color:var(--t2);white-space:nowrap;font-size:11.5px;} .t-date.ext{color:var(--amber);font-weight:600;}
+.sb{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:50px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+.sb.done{background:rgba(10,122,82,.1);color:#0A5C3E;border:1px solid rgba(10,122,82,.18);}
+.sb.doing{background:var(--navy-pale);color:var(--navy);border:1px solid rgba(25,25,112,.18);}
+.sb.late{background:var(--red-pale);color:var(--red-dk);border:1px solid rgba(186,17,15,.18);}
+.sb.paused{background:rgba(176,118,0,.1);color:var(--amber);border:1px solid rgba(176,118,0,.18);}
+.sb.canceled{background:var(--surf2);color:var(--t3);border:1px solid var(--border);}
+.c-wrap{display:inline-flex;align-items:center;gap:5px;}
+.c-bar{width:50px;height:4px;background:var(--border);border-radius:50px;overflow:hidden;}
+.c-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--navy),var(--navy-lt));}
+.c-txt{font-size:11px;color:var(--t2);}
+.pagination{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:20px;flex-wrap:wrap;}
+.pg{min-width:34px;height:34px;padding:0 10px;border-radius:var(--r0);border:1px solid var(--border);background:var(--surf);color:var(--t2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;box-shadow:var(--sh-xs);transition:all .18s;}
+.pg:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-tint);}
+.pg.active{background:linear-gradient(135deg,var(--navy),var(--navy-lt));border-color:transparent;color:#fff;box-shadow:var(--sh-nav);}
+.pg:disabled{opacity:.35;cursor:default;}
+
+/* ═══ SHOOTING SCHEDULE ═══ */
+.shoot-note{display:flex;align-items:flex-start;gap:10px;background:rgba(186,17,15,.05);border:1px solid rgba(186,17,15,.18);border-left:3px solid var(--red);border-radius:var(--r0);padding:12px 16px;font-size:12.5px;color:var(--t2);margin-bottom:18px;}
+.shoot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(295px,1fr));gap:13px;}
+.scard-item{background:var(--surf);border:1px solid var(--border);border-radius:var(--r1);overflow:hidden;box-shadow:var(--sh-xs);transition:transform .2s,box-shadow .2s,border-color .2s;animation:slideUp .38s ease both;}
+.scard-item:hover{transform:translateY(-4px);box-shadow:var(--sh-md);border-color:rgba(186,17,15,.2);}
+.sc-head{display:flex;align-items:center;gap:12px;padding:13px 16px;background:linear-gradient(135deg,var(--navy-tint),var(--red-tint));border-bottom:1px solid var(--border);}
+.sc-num{width:30px;height:30px;border-radius:var(--r0);background:linear-gradient(135deg,var(--navy),var(--navy-lt));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:var(--sh-nav);}
+.sc-title{font-size:12.5px;font-weight:700;color:var(--t1);flex:1;line-height:1.3;}
+.sc-status{flex-shrink:0;}
+.sc-body{padding:12px 16px;display:flex;flex-direction:column;gap:9px;}
+.sc-row{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;}
+.sc-icon{font-size:13px;flex-shrink:0;margin-top:1px;}
+.sc-lbl{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--t3);min-width:55px;}
+.sc-val{color:var(--t2);flex:1;}
+.dt-chip{display:inline-flex;align-items:center;gap:6px;background:var(--navy-pale);border:1px solid rgba(25,25,112,.18);padding:3px 11px;border-radius:50px;font-size:11.5px;font-weight:700;color:var(--navy);}
+.pic-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.pic-chip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:50px;background:var(--red-pale);border:1px solid rgba(186,17,15,.18);color:var(--red-dk);}
+.st-del{background:rgba(10,122,82,.1);color:#0A5C3E;border:1px solid rgba(10,122,82,.18);}
+.st-pnd{background:rgba(176,118,0,.1);color:var(--amber);border:1px solid rgba(176,118,0,.18);}
+.st-tbu{background:var(--surf2);color:var(--t3);border:1px solid var(--border);}
+.st-del,.st-pnd,.st-tbu{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:50px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+
+/* ═══ VIDEO + SOCIAL TABLE (shared) ═══ */
+.vc-wrap{border:1px solid var(--border);border-radius:var(--r1);overflow:hidden;overflow-x:auto;box-shadow:var(--sh-sm);}
+.vc-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:880px;}
+.vc-table thead tr{background:linear-gradient(135deg,var(--navy-dk),var(--navy));}
+.vc-table th{padding:11px 14px;text-align:left;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.7);white-space:nowrap;}
+.vc-table td{padding:9px 14px;border-top:1px solid var(--divider);vertical-align:middle;background:var(--surf);}
+.vc-table tr:hover td{background:var(--navy-tint);}
+.vc-stt{color:var(--t3);font-size:11px;text-align:center;}
+.vc-da{font-weight:700;color:var(--navy);max-width:220px;}
+.vc-vid{font-weight:500;color:var(--t1);}
+.vc-pic{color:var(--red);font-weight:700;}
+.vc-date{color:var(--t2);font-size:11.5px;white-space:nowrap;}
+.vc-dl{color:var(--red-dk);font-size:11.5px;white-space:nowrap;font-weight:600;}
+.vc-done{color:var(--green);font-size:11.5px;white-space:nowrap;}
+.prog-line{display:flex;align-items:center;gap:6px;min-width:85px;}
+.prog-line .pb{flex:1;height:5px;background:var(--border);border-radius:50px;overflow:hidden;}
+.prog-line .pf{height:100%;border-radius:50px;}
+.prog-line .pt{font-size:11px;color:var(--t2);min-width:28px;text-align:right;font-weight:600;}
+.vs-done{background:rgba(10,122,82,.1);color:#0A5C3E;border:1px solid rgba(10,122,82,.18);}
+.vs-doing{background:var(--navy-pale);color:var(--navy);border:1px solid rgba(25,25,112,.18);}
+.vs-pend{background:var(--surf2);color:var(--t3);border:1px solid var(--border);}
+.vs-urgent{background:var(--red-pale);color:var(--red-dk);border:1px solid rgba(186,17,15,.18);}
+.vs-done,.vs-doing,.vs-pend,.vs-urgent{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:50px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+
+/* ═══ SOCIAL POST – Loại badges ═══ */
+.loai-cd{background:rgba(186,17,15,.1);color:var(--red-dk);border:1px solid rgba(186,17,15,.2);}
+.loai-ads{background:var(--navy-pale);color:var(--navy);border:1px solid rgba(25,25,112,.2);}
+.loai-web{background:rgba(14,116,144,.1);color:#0C4A6E;border:1px solid rgba(14,116,144,.2);}
+.loai-post{background:rgba(10,122,82,.1);color:#0A5C3E;border:1px solid rgba(10,122,82,.2);}
+.loai-form{background:rgba(107,33,168,.1);color:var(--violet);border:1px solid rgba(107,33,168,.2);}
+.loai-cover{background:rgba(176,118,0,.1);color:var(--amber);border:1px solid rgba(176,118,0,.2);}
+.loai-other{background:var(--surf2);color:var(--t3);border:1px solid var(--border);}
+.loai-cd,.loai-ads,.loai-web,.loai-post,.loai-form,.loai-cover,.loai-other{
+  display:inline-flex;align-items:center;padding:2px 9px;border-radius:50px;
+  font-size:10.5px;font-weight:700;white-space:nowrap;
+}
+
+/* SL ảnh counter */
+.anh-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:50px;
+  font-size:11px;font-weight:700;
+  background:rgba(14,116,144,.1);color:#0C4A6E;
+  border:1px solid rgba(14,116,144,.2);
+  white-space:nowrap;
+}
+.anh-badge.inferred{
+  background:rgba(176,118,0,.08);color:var(--amber);
+  border-color:rgba(176,118,0,.18);
+  font-style:italic;
+}
+
+/* ═══ FOOTER ═══ */
+footer{background:linear-gradient(135deg,var(--navy-dk),var(--navy));padding:24px 40px;text-align:center;color:rgba(255,255,255,.5);font-size:12.5px;margin-top:44px;}
+footer strong{color:rgba(255,255,255,.8);}
+.no-res{text-align:center;padding:52px 20px;color:var(--t3);font-size:15px;}
+.no-res .nr-icon{font-size:48px;display:block;margin-bottom:12px;}
+
+@media(max-width:900px){
+  .ph-prog{display:none;}
+  .tt th:nth-child(n+4),.tt td:nth-child(n+4){display:none;}
+  .tab-btn .tb-txt{display:none;}
+  .hero{padding:30px 20px;}
+  .kpi-row,.content,.tabs-wrap{padding-left:20px;padding-right:20px;}
+}
+@media(max-width:640px){
+  .hero-right{display:none;}
+  .shoot-grid{grid-template-columns:1fr;}
+}
+
+/* ═══ ICON SYSTEM — minimal Lucide-style line icons ═══ */
+.ico{width:16px;height:16px;display:inline-block;vertical-align:middle;flex:none;}
+[data-ic]{display:inline-flex;align-items:center;vertical-align:middle;}
+.ic-xs{width:12px;height:12px;}
+
+/* KPI big icon → rounded tinted container */
+.kpi-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:0;flex-shrink:0;}
+.kpi-icon .ico{width:28px;height:28px;}
+.k-task .kpi-icon{background:rgba(25,25,112,.10);color:var(--navy);}
+.k-shoot .kpi-icon{background:rgba(186,17,15,.10);color:var(--red);}
+.k-video .kpi-icon{background:rgba(107,33,168,.10);color:#6B21A8;}
+.k-social .kpi-icon{background:rgba(14,116,144,.10);color:#0E7490;}
+
+/* KPI share subline */
+.kpi-share{margin-top:6px;font-size:11px;color:var(--t3);font-weight:600;}
+
+/* KPI chips inline icon */
+.chip{display:inline-flex;align-items:center;gap:4px;}
+.chip .ico{width:14px;height:14px;}
+
+/* scard icon → tinted container */
+.scard-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:0;}
+.scard-icon .ico{width:19px;height:19px;}
+.scard.cn .scard-icon{background:rgba(25,25,112,.10);color:var(--navy);}
+.scard.cr .scard-icon{background:rgba(186,17,15,.10);color:var(--red);}
+.scard.cg .scard-icon{background:rgba(10,122,82,.10);color:#0A7A52;}
+.scard.cb .scard-icon{background:rgba(29,78,216,.10);color:#1D4ED8;}
+.scard.ca .scard-icon{background:rgba(176,118,0,.10);color:#B07600;}
+.scard.cp .scard-icon{background:rgba(107,33,168,.10);color:#6B21A8;}
+.scard.ct .scard-icon{background:rgba(14,116,144,.10);color:#0E7490;}
+
+/* search input icon */
+.s-ico{display:flex;align-items:center;}
+.s-ico .ico{width:15px;height:15px;}
+
+/* filter buttons + expand button */
+.fbtn{display:inline-flex;align-items:center;gap:6px;}
+.fbtn .ico{width:14px;height:14px;}
+.expand-btn{display:inline-flex;align-items:center;gap:6px;}
+.expand-btn .ico{width:13px;height:13px;}
+
+/* tabs */
+.tab-btn .ico{width:17px;height:17px;}
+
+/* status / loai / misc badges */
+.loai-cd,.loai-ads,.loai-web,.loai-post,.loai-form,.loai-cover,.loai-other{gap:4px;}
+.sb .ico,.st-del .ico,.st-pnd .ico,.st-tbu .ico,.vs-done .ico,.vs-doing .ico,.vs-pend .ico,.vs-urgent .ico,.loai-cd .ico,.loai-ads .ico,.loai-web .ico,.loai-post .ico,.loai-form .ico,.loai-cover .ico,.loai-other .ico,.anh-badge .ico,.tc-badge .ico{width:13px;height:13px;}
+.pic-chip{display:inline-flex;align-items:center;gap:5px;}
+.pic-chip .ico{width:13px;height:13px;}
+.t-date .ico{width:12px;height:12px;}
+
+/* shoot card rows */
+.sc-icon{color:var(--navy);display:flex;align-items:flex-start;}
+.sc-icon .ico{width:16px;height:16px;}
+
+/* chevron */
+.chevron{display:inline-flex;align-items:center;}
+.chevron .ico{width:16px;height:16px;}
+
+/* hero + footer inline icons */
+.hero-sub span{display:inline-flex;align-items:center;gap:6px;}
+.hero-sub .ico{width:14px;height:14px;}
+.pc-icon{display:flex;align-items:center;justify-content:center;color:#fff;}
+.pc-icon .ico{width:24px;height:24px;}
+.hero-time{display:inline-flex;align-items:center;gap:6px;}
+.hero-time .ico{width:14px;height:14px;}
+footer p .ico{width:14px;height:14px;margin-right:3px;}
+
+/* notes */
+.shoot-note .note-ic{display:inline-flex;align-items:flex-start;}
+.shoot-note .note-ic .ico{width:18px;height:18px;}
+
+/* empty state */
+.no-res .nr-icon{display:flex;justify-content:center;margin-bottom:12px;color:var(--t3);}
+.no-res .nr-icon .ico{width:44px;height:44px;}
+
+/* ═══ WORKLOAD OVERVIEW ═══ */
+.workload-overview{margin:24px 40px 4px;background:var(--surf);border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--sh-sm);padding:22px 26px;}
+.wl-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.wl-head-ic{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--navy),var(--navy-lt));display:flex;align-items:center;justify-content:center;color:#fff;flex:none;}
+.wl-head-ic .ico{width:21px;height:21px;}
+.wl-title{font-size:16px;font-weight:800;color:var(--t1);letter-spacing:-.2px;}
+.wl-sub{font-size:12px;color:var(--t2);margin-top:2px;}
+.wl-main{display:grid;grid-template-columns:auto 1fr;gap:34px;align-items:center;}
+.wl-donut-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.wl-donut{width:188px;height:188px;}
+.wl-donut text{font-family:'Inter',system-ui,sans-serif;}
+.wl-donut .wl-seg{transition:stroke-dashoffset .6s ease;}
+.wl-donut-legend{font-size:11.5px;color:var(--t2);font-weight:600;text-align:center;}
+.wl-donut-legend strong{color:var(--green);}
+.wl-bars{display:flex;flex-direction:column;gap:13px;}
+.wl-bar-row{display:grid;grid-template-columns:150px 1fr 92px;align-items:center;gap:12px;}
+.wl-bar-label{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--t1);min-width:0;}
+.wl-bar-label .wl-dot{width:9px;height:9px;border-radius:3px;flex:none;}
+.wl-bar-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wl-bar-track{height:11px;background:var(--surf2);border:1px solid var(--border);border-radius:50px;overflow:hidden;}
+.wl-bar-fill{height:100%;border-radius:50px;width:0;transition:width .7s cubic-bezier(.4,0,.2,1);}
+.wl-bar-meta{font-size:12px;font-weight:700;color:var(--t2);text-align:right;white-space:nowrap;}
+.wl-bar-meta b{color:var(--t1);}
+.wl-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px;padding-top:20px;border-top:1px solid var(--divider);}
+.wl-sum-card{display:flex;align-items:center;gap:11px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r1);padding:13px 15px;}
+.wl-sum-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;}
+.wl-sum-ic .ico{width:18px;height:18px;}
+.wl-sum-val{font-size:21px;font-weight:900;line-height:1;color:var(--t1);}
+.wl-sum-lbl{font-size:11px;color:var(--t2);font-weight:500;margin-top:3px;}
+@media(max-width:860px){
+  .wl-main{grid-template-columns:1fr;gap:22px;}
+  .wl-summary{grid-template-columns:repeat(2,1fr);}
+  .workload-overview{margin:20px;}
+}
+@media(max-width:540px){
+  .wl-bar-row{grid-template-columns:118px 1fr 70px;gap:8px;}
+  .wl-summary{grid-template-columns:1fr;}
+}
+
+/* ═══ ĐÁNH GIÁ NHÂN SỰ ═══ */
+.tab-btn.active.t-green{background:linear-gradient(135deg,#0A5C3E,#0A7A52);box-shadow:0 4px 16px rgba(10,122,82,.28);}
+.eval-h{font-size:14px;font-weight:800;color:var(--t1);margin:6px 0 14px;display:flex;align-items:center;gap:8px;}
+.eval-h .ico{width:18px;height:18px;color:var(--green);}
+.eval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:13px;margin-bottom:26px;}
+.person-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r1);box-shadow:var(--sh-xs);padding:15px 16px;transition:transform .18s,box-shadow .18s;}
+.person-card:hover{transform:translateY(-3px);box-shadow:var(--sh-sm);}
+.pcard-head{display:flex;align-items:center;gap:11px;margin-bottom:11px;}
+.pcard-av{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13.5px;color:#fff;flex:none;letter-spacing:.5px;}
+.pcard-name{font-size:14.5px;font-weight:800;color:var(--t1);}
+.pcard-role{font-size:11px;color:var(--t2);font-weight:600;margin-top:1px;}
+.pcard-tag{margin-left:auto;font-size:10px;font-weight:700;padding:3px 10px;border-radius:50px;white-space:nowrap;align-self:flex-start;}
+.pcard-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.pm{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--t2);background:var(--surf2);border:1px solid var(--border);padding:3px 9px;border-radius:50px;}
+.pm .ico{width:13px;height:13px;color:var(--navy);}
+.pm b{color:var(--t1);font-weight:800;}
+.pcard-note{font-size:12px;color:var(--t2);line-height:1.55;border-top:1px solid var(--divider);padding-top:9px;}
+.eval-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.eval-col{background:var(--surf);border:1px solid var(--border);border-radius:var(--r1);box-shadow:var(--sh-xs);padding:16px 18px;}
+.eval-col-head{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:800;margin-bottom:13px;}
+.eval-col-head .ico{width:18px;height:18px;}
+.eval-pro .eval-col-head{color:var(--green);}
+.eval-con .eval-col-head{color:var(--red);}
+.eval-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.eval-list li{display:flex;gap:9px;font-size:12.5px;color:var(--t2);line-height:1.5;}
+.eval-list li .ico{width:15px;height:15px;flex:none;margin-top:2px;}
+.eval-pro .eval-list li .ico{color:var(--green);}
+.eval-con .eval-list li .ico{color:var(--amber);}
+.eval-note{font-size:11.5px;color:var(--t3);font-style:italic;margin-top:18px;text-align:center;}
+@media(max-width:760px){.eval-cols{grid-template-columns:1fr;}}
+
+/* Báo cáo chi tiết từng P.I.C */
+.eval-h-hint{font-size:11px;font-weight:600;color:var(--t3);}
+.pic-report{display:flex;flex-direction:column;gap:9px;margin-bottom:26px;}
+.pic-card .task-wrap{transition:max-height .4s ease;}
+.pic-card.open .task-wrap{max-height:20000px;}
+.pic-av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff;flex:none;letter-spacing:.5px;}
+.pic-role-inline{color:var(--t2);font-weight:600;}
+.pic-sub{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--t3);padding:12px 14px 4px;display:flex;align-items:center;gap:7px;}
+.pic-sub .ico{width:14px;height:14px;color:var(--navy);}
+.pic-card .tt{margin-bottom:2px;}
+.pic-card .tt .t-pic{color:var(--navy);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═ HERO ═ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-kicker"><span class="hero-dot"></span>Tháng 5 · 2026 · Team Media</div>
+      <h1 class="hero-title">BÁO CÁO CÔNG VIỆC<br><span class="hl">THÁNG 5 / 2026</span></h1>
+      <div class="hero-sub">
+        <span><span data-ic="users"></span>Team Media</span><span class="sep">·</span>
+        <span><span data-ic="building"></span>Phòng Marketing</span><span class="sep">·</span>
+        <span><span data-ic="map-pin"></span>HIAS Master · CB</span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="period-card">
+        <div class="pc-icon" data-ic="calendar"></div>
+        <div><div class="pc-lbl">Kỳ báo cáo</div><div class="pc-val">01/05/2026 → 31/05/2026</div></div>
+      </div>
+      <div class="hero-time"><span data-ic="clock"></span>Xuất: 06:32 – 01/06/2026</div>
+    </div>
+  </div>
+</div>
+<div class="accent-stripe"></div>
+
+<!-- ═ KPI ROW ═ -->
+<div class="kpi-row">
+  <div class="kpi-card k-task">
+    <div class="kpi-icon" data-ic="palette"></div>
+    <div class="kpi-info">
+      <div class="kpi-num">119</div>
+      <div class="kpi-lbl">Task thiết kế</div>
+      <div class="kpi-chips">
+        <span class="chip chip-g"><span data-ic="check-circle"></span>109 HT</span>
+        <span class="chip chip-n"><span data-ic="loader"></span>10 Đang</span>
+      </div>
+      <div class="kpi-share">50.9% tổng workload</div>
+    </div>
+  </div>
+  <div class="kpi-card k-shoot">
+    <div class="kpi-icon" data-ic="camera"></div>
+    <div class="kpi-info">
+      <div class="kpi-num">14</div>
+      <div class="kpi-lbl">Lịch quay chụp</div>
+      <div class="kpi-chips">
+        <span class="chip chip-g"><span data-ic="check-circle"></span>11 Giao</span>
+        <span class="chip chip-a"><span data-ic="clock"></span>3 Chờ</span>
+      </div>
+      <div class="kpi-share">6.0% tổng workload</div>
+    </div>
+  </div>
+  <div class="kpi-card k-video">
+    <div class="kpi-icon" data-ic="clapperboard"></div>
+    <div class="kpi-info">
+      <div class="kpi-num">38</div>
+      <div class="kpi-lbl">Video Checklist</div>
+      <div class="kpi-chips">
+        <span class="chip chip-g"><span data-ic="check-circle"></span>32 HT</span>
+        <span class="chip chip-n"><span data-ic="loader"></span>1 Đang</span>
+      </div>
+      <div class="kpi-share">16.2% tổng workload</div>
+    </div>
+  </div>
+  <div class="kpi-card k-social">
+    <div class="kpi-icon" data-ic="smartphone"></div>
+    <div class="kpi-info">
+      <div class="kpi-num">63</div>
+      <div class="kpi-lbl">Social Posts</div>
+      <div class="kpi-chips">
+        <span class="chip chip-g"><span data-ic="check-circle"></span>60 HT</span>
+        <span class="chip chip-r"><span data-ic="zap"></span>2 Gấp</span>
+        <span class="chip chip-t"><span data-ic="image"></span>123 ảnh</span>
+      </div>
+      <div class="kpi-share">26.9% tổng workload</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═ WORKLOAD OVERVIEW ═ -->
+<section class="workload-overview" id="workloadOverview"></section>
+
+<!-- ═ TABS ═ -->
+<div class="tabs-wrap">
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tab-tasks" onclick="sw('tasks')">
+      <span data-ic="palette"></span> <span class="tb-txt">Công việc chính</span> <span class="tbadge">119</span>
+    </button>
+    <button class="tab-btn t-red" id="tab-shoot" onclick="sw('shoot')">
+      <span data-ic="camera"></span> <span class="tb-txt">Lịch quay chụp</span> <span class="tbadge">14</span>
+    </button>
+    <button class="tab-btn t-purple" id="tab-video" onclick="sw('video')">
+      <span data-ic="clapperboard"></span> <span class="tb-txt">Video Checklist</span> <span class="tbadge">38</span>
+    </button>
+    <button class="tab-btn t-teal" id="tab-social" onclick="sw('social')">
+      <span data-ic="smartphone"></span> <span class="tb-txt">Social Posts</span> <span class="tbadge">63</span>
+    </button>
+    <button class="tab-btn t-green" id="tab-eval" onclick="sw('eval')">
+      <span data-ic="award"></span> <span class="tb-txt">Đánh giá</span> <span class="tbadge">5</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═ PANEL: TASKS ═ -->
+<div class="tab-panel active content" id="panel-tasks">
+  <div class="scard-grid" id="tStats"></div>
+  <div class="controls">
+    <div class="s-wrap"><span class="s-ico" data-ic="search"></span><input type="text" id="tSearch" placeholder="Tìm dự án, công việc, nhân sự..."></div>
+    <div class="f-group" id="tFilters">
+      <button class="fbtn active" data-f="all">Tất cả</button>
+      <button class="fbtn" data-f="Hoàn thành"><span data-ic="check-circle"></span>Hoàn thành</button>
+      <button class="fbtn" data-f="Đang làm"><span data-ic="loader"></span>Đang làm</button>
+      <button class="fbtn" data-f="Hoãn"><span data-ic="pause-circle"></span>Hoãn</button>
+    </div>
+  </div>
+  <div class="rbar">
+    <div class="rinfo" id="tInfo"></div>
+    <button class="expand-btn" id="expandBtn" onclick="toggleAll()"><span data-ic="maximize-2"></span>Mở rộng tất cả</button>
+  </div>
+  <div class="proj-list" id="projList"></div>
+  <div class="pagination" id="tPager"></div>
+</div>
+
+<!-- ═ PANEL: SHOOT ═ -->
+<div class="tab-panel content" id="panel-shoot">
+  <div class="scard-grid" id="sStats"></div>
+  <div class="shoot-note">
+    <span class="note-ic" data-ic="alert-triangle" style="color:var(--red)"></span>
+    <div><strong style="color:var(--red)">Lưu ý:</strong> Source hình ảnh bàn giao trong <strong>1 ngày</strong> kể từ khi kết thúc sự kiện.</div>
+  </div>
+  <div class="controls">
+    <div class="s-wrap"><span class="s-ico" data-ic="search"></span><input type="text" id="sSearch" placeholder="Tìm sự kiện, địa điểm, phụ trách..."></div>
+    <div class="f-group" id="sFilters">
+      <button class="fbtn active" data-f="all">Tất cả</button>
+      <button class="fbtn" data-f="del"><span data-ic="check-circle"></span>Đã bàn giao</button>
+      <button class="fbtn" data-f="pnd"><span data-ic="clock"></span>Chưa / TBU</button>
+    </div>
+  </div>
+  <div class="rbar"><div class="rinfo" id="sInfo"></div></div>
+  <div class="shoot-grid" id="shootGrid"></div>
+</div>
+
+<!-- ═ PANEL: VIDEO ═ -->
+<div class="tab-panel content" id="panel-video">
+  <div class="scard-grid" id="vStats"></div>
+  <div class="controls">
+    <div class="s-wrap"><span class="s-ico" data-ic="search"></span><input type="text" id="vSearch" placeholder="Tìm dự án, video, kịch bản, PIC..."></div>
+    <div class="f-group" id="vFilters">
+      <button class="fbtn active" data-f="all">Tất cả</button>
+      <button class="fbtn" data-f="Hoàn thành"><span data-ic="check-circle"></span>Hoàn thành</button>
+      <button class="fbtn" data-f="Đang làm"><span data-ic="loader"></span>Đang làm</button>
+      <button class="fbtn" data-f="pend"><span data-ic="clock"></span>Chờ xử lý</button>
+    </div>
+  </div>
+  <div class="rbar"><div class="rinfo" id="vInfo"></div></div>
+  <div class="vc-wrap">
+    <table class="vc-table">
+      <thead><tr>
+        <th style="text-align:center">#</th>
+        <th>Dự án / CN</th><th>Video</th><th>Kịch bản</th>
+        <th>Nhận order</th><th>Ngày quay</th><th>Deadline</th>
+        <th>PIC</th><th>Tiến độ</th><th>Tình trạng</th><th>Hoàn thành</th>
+      </tr></thead>
+      <tbody id="vBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═ PANEL: SOCIAL ═ -->
+<div class="tab-panel content" id="panel-social">
+  <div class="scard-grid" id="spStats"></div>
+
+  <div class="shoot-note" style="background:rgba(14,116,144,.05);border-color:rgba(14,116,144,.2);border-left-color:#0E7490;">
+    <span class="note-ic" data-ic="info" style="color:#0E7490"></span>
+    <div>
+      <strong style="color:#0C4A6E">Lưu ý SL ảnh:</strong>
+      Nếu cột <em>SL Ảnh</em> để trống thì <strong>số lượng ảnh = số bài post</strong>.
+      Số in nghiêng màu cam = giá trị được tự suy (inferred).
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="s-wrap"><span class="s-ico" data-ic="search"></span><input type="text" id="spSearch" placeholder="Tìm nội dung post, loại, content, media..."></div>
+    <div class="f-group" id="spFilters">
+      <button class="fbtn active" data-f="all">Tất cả</button>
+      <button class="fbtn" data-f="Chiến Dịch"><span data-ic="megaphone"></span>Chiến Dịch</button>
+      <button class="fbtn" data-f="Ads"><span data-ic="target"></span>Ads</button>
+      <button class="fbtn" data-f="Web"><span data-ic="globe"></span>Web</button>
+      <button class="fbtn" data-f="Post Đơn"><span data-ic="file-text"></span>Post Đơn</button>
+      <button class="fbtn" data-f="other"><span data-ic="package"></span>Khác</button>
+    </div>
+    <div class="f-group" id="spTTFilters">
+      <button class="fbtn active" data-tf="all">Mọi TT</button>
+      <button class="fbtn" data-tf="Hoàn thành"><span data-ic="check-circle"></span>HT</button>
+      <button class="fbtn" data-tf="Gấp"><span data-ic="zap"></span>Gấp</button>
+      <button class="fbtn" data-tf="pending"><span data-ic="clock"></span>Chờ</button>
+    </div>
+  </div>
+
+  <div class="rbar"><div class="rinfo" id="spInfo"></div></div>
+
+  <div class="vc-wrap">
+    <table class="vc-table" style="min-width:1000px">
+      <thead><tr>
+        <th style="text-align:center">#</th>
+        <th>Nội dung (Post)</th>
+        <th>Loại</th>
+        <th style="text-align:center">SL Bài</th>
+        <th style="text-align:center">SL Ảnh</th>
+        <th>Ngày đăng</th>
+        <th>Content</th>
+        <th>Media</th>
+        <th>Link sản phẩm</th>
+        <th>Tình trạng</th>
+      </tr></thead>
+      <tbody id="spBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═ PANEL: ĐÁNH GIÁ ═ -->
+<div class="tab-panel content" id="panel-eval">
+  <div class="scard-grid">
+    <div class="scard cb"><div class="scard-icon"><span data-ic="clipboard"></span></div><div class="scard-val">234</div><div class="scard-lbl">Tổng đầu việc</div></div>
+    <div class="scard cg"><div class="scard-icon"><span data-ic="check-circle"></span></div><div class="scard-val">212</div><div class="scard-lbl">Hoàn thành</div></div>
+    <div class="scard cp"><div class="scard-icon"><span data-ic="trending-up"></span></div><div class="scard-val">91%</div><div class="scard-lbl">Tỉ lệ hoàn thành</div></div>
+    <div class="scard ct"><div class="scard-icon"><span data-ic="image"></span></div><div class="scard-val">123</div><div class="scard-lbl">Ảnh social</div></div>
+    <div class="scard cn"><div class="scard-icon"><span data-ic="users"></span></div><div class="scard-val">5</div><div class="scard-lbl">Nhân sự · 1 Lead + 4</div></div>
+  </div>
+
+  <h3 class="eval-h"><span data-ic="award"></span>Hiệu suất theo nhân sự</h3>
+  <div class="eval-grid">
+
+    <div class="person-card">
+      <div class="pcard-head">
+        <div class="pcard-av" style="background:#191970">QU</div>
+        <div><div class="pcard-name">Quyên</div><div class="pcard-role">Thiết kế &amp; Social visual</div></div>
+        <span class="pcard-tag" style="background:rgba(25,25,112,.1);color:var(--navy)">Trụ cột visual</span>
+      </div>
+      <div class="pcard-metrics">
+        <span class="pm"><span data-ic="palette"></span><b>48</b> task (42 HT · 6 đang)</span>
+        <span class="pm"><span data-ic="image"></span><b>29</b> bài / 51 ảnh</span>
+      </div>
+      <div class="pcard-note">Khối lượng thiết kế lớn nhất team, gánh phần lớn ảnh social. 6 task đang chạy chủ yếu là cụm NEXTGEN dồn cuối tháng.</div>
+    </div>
+
+    <div class="person-card">
+      <div class="pcard-head">
+        <div class="pcard-av" style="background:linear-gradient(135deg,#191970,#BA110F)">VI</div>
+        <div><div class="pcard-name">Vinh</div><div class="pcard-role">Đa năng · Design / Quay / Video / Social</div></div>
+        <span class="pcard-tag" style="background:rgba(186,17,15,.1);color:var(--red)">Đa năng</span>
+      </div>
+      <div class="pcard-metrics">
+        <span class="pm"><span data-ic="palette"></span><b>42</b> task (41 HT)</span>
+        <span class="pm"><span data-ic="camera"></span><b>7</b> buổi</span>
+        <span class="pm"><span data-ic="clapperboard"></span><b>11</b> video (10 HT)</span>
+        <span class="pm"><span data-ic="image"></span><b>16</b> bài / 42 ảnh</span>
+      </div>
+      <div class="pcard-note">Phủ cả 4 mảng, hoàn thành ~98%. Chủ lực của team nhưng cũng là điểm phụ thuộc cần san sẻ bớt.</div>
+    </div>
+
+    <div class="person-card">
+      <div class="pcard-head">
+        <div class="pcard-av" style="background:#0E7490">HÂ</div>
+        <div><div class="pcard-name">Hậu</div><div class="pcard-role">Account · Tiếp nhận &amp; điều phối order</div></div>
+        <span class="pcard-tag" style="background:#0E7490;color:#fff">Account</span>
+      </div>
+      <div class="pcard-metrics">
+        <span class="pm"><span data-ic="clipboard"></span>Phụ trách <b>29</b> đầu việc (26 HT · 3 đang)</span>
+      </div>
+      <div class="pcard-note">Account của team — tiếp nhận order từ chi nhánh / hệ thống → Lead duyệt → điều phối cho thiết kế xử lý. Theo sát 29 đầu việc, 26 đã hoàn thành.</div>
+    </div>
+
+    <div class="person-card">
+      <div class="pcard-head">
+        <div class="pcard-av" style="background:linear-gradient(135deg,#0F0F50,#3849b3)">HO</div>
+        <div><div class="pcard-name">Hòa</div><div class="pcard-role">Trưởng nhóm Media · Điều phối &amp; nghiệm thu</div></div>
+        <span class="pcard-tag" style="background:var(--navy);color:#fff">Team Lead</span>
+      </div>
+      <div class="pcard-metrics">
+        <span class="pm"><span data-ic="users"></span>Quản lý <b>234</b> đầu việc · 91%</span>
+        <span class="pm"><span data-ic="palette"></span>Trực tiếp <b>17</b> task (17 HT)</span>
+        <span class="pm"><span data-ic="image"></span><b>5</b> bài / 17 ảnh</span>
+      </div>
+      <div class="pcard-note">Phụ trách &amp; nghiệm thu toàn bộ đầu ra của team; đồng thời trực tiếp hỗ trợ thiết kế &amp; social, hoàn thành 100% phần tự làm.</div>
+    </div>
+
+    <div class="person-card">
+      <div class="pcard-head">
+        <div class="pcard-av" style="background:#6B21A8">DU</div>
+        <div><div class="pcard-name">Du</div><div class="pcard-role">Quay/Dựng video + Chụp ảnh</div></div>
+        <span class="pcard-tag" style="background:rgba(107,33,168,.1);color:#6B21A8">Khối lượng cao</span>
+      </div>
+      <div class="pcard-metrics">
+        <span class="pm"><span data-ic="camera"></span><b>7</b> buổi (7 giao)</span>
+        <span class="pm"><span data-ic="clapperboard"></span><b>24</b> video (20 HT)</span>
+      </div>
+      <div class="pcard-note">Gánh chính sản xuất video + quay hiện trường. ~83% hoàn thành, đã bàn giao đủ các buổi quay; còn vài series dài đang chạy.</div>
+    </div>
+
+  </div>
+
+  <h3 class="eval-h"><span data-ic="clipboard"></span>Báo cáo chi tiết từng P.I.C <span class="eval-h-hint">— bấm để mở danh sách đầu việc</span></h3>
+  <div class="pic-report" id="picReport"></div>
+
+  <div class="eval-cols">
+    <div class="eval-col eval-pro">
+      <div class="eval-col-head"><span data-ic="thumbs-up"></span>Thuận lợi</div>
+      <ul class="eval-list">
+        <li><span data-ic="check-circle"></span>Tỉ lệ hoàn thành chung cao (89%); thiết kế &amp; social gần như cán đích.</li>
+        <li><span data-ic="check-circle"></span>Đội ngũ đa năng — Vinh + Quyên cân được khối lượng visual lớn; Du chủ động cả quay lẫn dựng.</li>
+        <li><span data-ic="check-circle"></span>Phần content social được hỗ trợ từ bộ phận ngoài team — Media tập trung nguồn lực cho sản xuất visual.</li>
+        <li><span data-ic="check-circle"></span>Mảng thiết kế gần như xong (91.6%), Hòa/Vinh không tồn đọng.</li>
+      </ul>
+    </div>
+    <div class="eval-col eval-con">
+      <div class="eval-col-head"><span data-ic="alert-triangle"></span>Khó khăn &amp; Rủi ro</div>
+      <ul class="eval-list">
+        <li><span data-ic="alert-triangle"></span>Phụ thuộc cao vào Vinh (chạy cả 4 mảng) → rủi ro nghẽn việc nếu vắng.</li>
+        <li><span data-ic="alert-triangle"></span>Quyên quá tải (48 task + 29 bài social); cụm NEXTGEN dồn cuối tháng dễ trượt tiến độ.</li>
+        <li><span data-ic="alert-triangle"></span>Video còn vài series dài đang chạy (Du ~83%) → cần chia nhỏ kịch bản / thêm hỗ trợ dựng.</li>
+        <li><span data-ic="alert-triangle"></span>Quay chụp 79% — còn 3 buổi phụ thuộc lịch sự kiện (TBU / chưa chốt cuối tháng).</li>
+        <li><span data-ic="alert-triangle"></span>Vài bài Ads "Gấp" của Bảo → áp lực deadline khai giảng chi nhánh.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="eval-note">Lưu ý: số liệu phản ánh khối lượng + trạng thái hoàn thành, chưa tính độ khó / chất lượng từng đầu việc.</p>
+</div>
+
+<!-- ═ FOOTER ═ -->
+<footer>
+  <p><span data-ic="bar-chart"></span>Báo cáo tháng 5/2026 &nbsp;·&nbsp; <strong>01/05 – 31/05/2026</strong> &nbsp;·&nbsp; Team Media · CB Media Production Team · HIAS Master</p>
+  <p style="margin-top:6px">Xuất lúc: 06:32 – 01/06/2026</p>
+</footer>
+</div>
+
+<script>
+const PROJ  = [{"id": "134", "name": "Hè 2026: CB Summer Adventure: Break the Limits", "tasks": [{"tt": "        ※12", "name": "Tờ rơi Hè Revised 4 | KG - MCN", "pic": "Quyên, Hậu", "start": "2026-05-02", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※13", "name": "Vouchers Hè", "pic": "Quyên", "start": "2026-05-04", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※14", "name": "Khung check-in", "pic": "Quyên", "start": "2026-05-05", "end": "2026-05-08", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※15", "name": "Khung check-in RV1", "pic": "Quyên, Hậu", "start": "2026-05-21", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※16", "name": "Khung check-in RV2", "pic": "Quyên, Hậu", "start": "2026-05-21", "end": "2026-05-22", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※19", "name": "Standee RV2", "pic": "Quyên, Hậu", "start": "2026-05-08", "end": "2026-05-08", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※20", "name": "Standee RV3", "pic": "Quyên, Hậu", "start": "2026-05-08", "end": "2026-05-08", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※23", "name": "Banner RV2", "pic": "Quyên, Hậu", "start": "2026-05-11", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※24", "name": "Banner RV2", "pic": "Hậu, Quyên", "start": "2026-05-21", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※30", "name": "RV1", "pic": "Quyên, Hậu", "start": "2026-05-14", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※31", "name": "RV2", "pic": "Hậu", "start": "2026-05-20", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※33", "name": "Convert kích thước backdrop", "pic": "Quyên", "start": "2026-05-11", "end": "2026-05-12", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "138", "name": "Họp đối tác KV Sóc Trăng 09.05", "tasks": [{"tt": "        ※5", "name": "Visualize Backdrop v2", "pic": "Vinh", "start": "2026-05-02", "end": "2026-05-04", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※9", "name": "Slide giới thiệu Thầy", "pic": "Vinh", "start": "2026-04-11", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※10", "name": "Background Led", "pic": "Vinh", "start": "2026-04-11", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※11", "name": "Bìa MC A5 KV", "pic": "Vinh", "start": "2026-05-06", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※12", "name": "Formex text CB SÓC TRĂNG", "pic": "Vinh", "start": "2026-05-07", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※13", "name": "Revised 1", "pic": "Vinh", "start": "2026-05-07", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "139", "name": "Họp Phụ Huynh 10.05_TTC Palace", "tasks": [{"tt": "        ※8", "name": "Phiếu Rút thăm", "pic": "Hòa", "start": "2026-04-11", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※14", "name": "Visualize Backdrop v1", "pic": "Vinh", "start": "2026-05-02", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※17", "name": "Bảng trao học bổng khuyến học", "pic": "Vinh", "start": "2026-05-05", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※18", "name": "Led trao HB", "pic": "Vinh", "start": "2026-04-15", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※19", "name": "Background Tổng giải", "pic": "Vinh", "start": "2026-04-15", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※20", "name": "Background Từng giải", "pic": "Vinh", "start": "2026-04-15", "end": "2026-05-05", "extended": "2026-05-05", "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※21", "name": "Viusual Cam kết (hand connection)", "pic": "Vinh", "start": "2026-04-15", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※22", "name": "Viusual Cam kết Revised 1", "pic": "Vinh", "start": "2026-05-07", "end": "2026-05-08", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※23", "name": "Bảng trao giải đặc biệt", "pic": "Vinh", "start": "2026-05-05", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※24", "name": "Bảng trao giải Nhất", "pic": "Vinh", "start": "2026-05-05", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "144", "name": "CB Wonder", "tasks": [{"tt": "        ※5", "name": "Revised 4", "pic": "Quyên", "start": "2026-05-05", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※6", "name": "Convert địa chỉ cho CN", "pic": "Quyên", "start": "2026-04-25", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※7", "name": "Banner CB Wonder", "pic": "Quyên", "start": "2026-04-23", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※8", "name": "RV banner CB wonder", "pic": "Quyên", "start": "2026-05-15", "end": "2026-05-19", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "149", "name": "SBU_IELTS", "tasks": [{"tt": "        ※1", "name": "Banner Lợi ich", "pic": "Quyên", "start": "2026-04-18", "end": "2026-05-04", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Revised 1", "pic": "Quyên", "start": "2026-05-11", "end": "2026-05-12", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Revised 2", "pic": "Quyên", "start": "2026-05-15", "end": "2026-05-16", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "150", "name": "SBU_WorldReady", "tasks": [{"tt": "        ※1", "name": "Convert Banner Cái Bè", "pic": "Quyên", "start": "2026-04-21", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Convert Banner IELTS", "pic": "Quyên", "start": "2026-04-21", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Convert Banner MCB", "pic": "Quyên", "start": "2026-04-21", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "Revised 1", "pic": "Quyên, Hòa", "start": "2026-05-30", "end": "2026-06-02", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "Convert Banner Ba Tri", "pic": "Quyên", "start": "2026-04-21", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※6", "name": "Convert Banner Giồng Trôm", "pic": "Quyên", "start": "2026-04-21", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※7", "name": "Convert Banner Chợ Gạo Cs1", "pic": "Quyên", "start": "2026-04-21", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "151", "name": "BOD_Presentation", "tasks": [{"tt": "        ※2", "name": "Họp Phụ Huynh", "pic": "Hòa", "start": "2026-04-20", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "152", "name": "Phôi Schooling", "tasks": [{"tt": "        ※1", "name": "Xử lý Phôi chứng nhận (13 mẫu)", "pic": "Vinh", "start": "2026-04-25", "end": "2026-05-04", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "153", "name": "CB Tân Đông", "tasks": [{"tt": "        ※1", "name": "Đổi thông tin bảng hiệu", "pic": "Hậu", "start": "2026-05-04", "end": "2026-05-04", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "KV text điểm cao", "pic": "Hòa", "start": "2026-05-04", "end": "2026-05-04", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "KV text điểm cao RV1", "pic": "Vinh", "start": "2026-05-04", "end": "2026-05-12", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "KV text điểm cao RV2", "pic": "Vinh", "start": "2026-05-15", "end": "2026-05-15", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "RV kích thước và điều chỉnh nội dung", "pic": "Vinh", "start": "2026-05-15", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "154", "name": "CB Châu Thành_Điều chỉnh Vouchers", "tasks": [{"tt": "        ※1", "name": "Điều chỉnh điều kiện áp dụng", "pic": "Hòa", "start": "2026-05-04", "end": "2026-05-04", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "155", "name": "[+] CB Futura", "tasks": [{"tt": "        ※1", "name": "Banner_tại Mekong", "pic": "Quyên", "start": "2026-05-05", "end": "2026-05-11", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "156", "name": "CB Thừa Đức", "tasks": [{"tt": "        ※1", "name": "Tờ rơi + standee chiêu sinh", "pic": "Hậu", "start": "2026-05-05", "end": "2026-05-05", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Tờ rơi ", "pic": "Vinh", "start": "2026-05-05", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "RV 1", "pic": "Vinh, Hậu", "start": "2026-05-08", "end": "2026-05-09", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "RV 2", "pic": "Vinh, Hậu", "start": "2026-05-09", "end": "2026-05-10", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "RV 3", "pic": "Vinh, Hậu", "start": "2026-05-11", "end": "2026-05-11", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※6", "name": "RV4", "pic": "Vinh, Hậu", "start": "2026-05-12", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※7", "name": "Standee", "pic": "Vinh", "start": "2026-05-05", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "157", "name": "CB IELTS", "tasks": [{"tt": "        ※1", "name": "Voucher 500k, 1 triệu", "pic": "Hậu", "start": "2026-05-06", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Vouchers 500", "pic": "Hòa", "start": "2026-05-06", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Vouchers 1M", "pic": "Hòa", "start": "2026-05-06", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "158", "name": "CB kiên Giang", "tasks": [{"tt": "        ※1", "name": "Chỉnh REFERRAL voucher", "pic": "Hậu", "start": "2026-05-07", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Vouchers", "pic": "Hòa", "start": "2026-05-07", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Revised 1", "pic": "Hòa, Hậu", "start": "2026-05-07", "end": "2026-05-07", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "Revised 2", "pic": "Hòa, Hậu", "start": "2026-05-07", "end": "2026-05-09", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "159", "name": "CB WorldReady", "tasks": [{"tt": "        ※1", "name": "Banner đầu xe", "pic": "Hòa", "start": "2026-05-06", "end": "2026-05-06", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Hashtah STT xe", "pic": "Hòa", "start": "2026-05-06", "end": "2026-05-08", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Thư cảm ơn", "pic": "Hòa", "start": "2026-05-06", "end": "2026-05-11", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "160", "name": "Tạo mã QR chi nhánh", "tasks": [{"tt": "        ※1", "name": "Tạo lại mã QR chi nhánh", "pic": "Hậu", "start": "2026-05-07", "end": "2026-05-08", "extended": null, "completion": 0, "state": "Đang làm", "cancel": null}]}, {"id": "161", "name": "CBAS_Sóc Trăng", "tasks": [{"tt": "        ※1", "name": "Điều chỉnh tờ rơi", "pic": "Vinh", "start": "2026-05-08", "end": "2026-05-11", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Badge", "pic": "Vinh", "start": "2026-05-08", "end": "2026-05-11", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Badge Rv1", "pic": null, "start": "2026-05-11", "end": "2026-05-12", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "162", "name": "CB Tân Đông", "tasks": [{"tt": "        ※1", "name": "POSM khai trương", "pic": "Hậu", "start": "2026-05-11", "end": "2026-05-13", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Tờ rơi", "pic": "Quyên", "start": "2026-05-11", "end": "2026-05-15", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "RV1", "pic": "Hậu", "start": "2026-05-18", "end": "2026-05-19", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "Phướn đường", "pic": "Quyên", "start": "2026-05-11", "end": "2026-05-15", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "Banner", "pic": "Quyên", "start": "2026-05-11", "end": "2026-05-14", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※6", "name": "Thư mời", "pic": "Vinh", "start": "2026-05-19", "end": "2026-05-22", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※7", "name": "Banner mặt tiền", "pic": "Quyên", "start": "2026-05-19", "end": "2026-05-23", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※8", "name": "Cột", "pic": "Quyên", "start": "2026-05-19", "end": "2026-05-25", "extended": null, "completion": 0, "state": "Đang làm", "cancel": null}, {"tt": "        ※9", "name": "Hộp đèn Lộ trình", "pic": "Vinh", "start": "2026-05-19", "end": "2026-05-23", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "163", "name": "Ngoại khóa hè 1/6", "tasks": [{"tt": "        ※1", "name": "Set POSM 1/6", "pic": "Hậu", "start": "2026-05-12", "end": "2026-05-12", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Poster 1/6", "pic": "Vinh", "start": "2026-05-12", "end": "2026-05-16", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Poster Green Week", "pic": "Quyên", "start": "2026-05-12", "end": "2026-05-16", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "RV 1", "pic": "Hậu", "start": "2026-05-18", "end": "2026-05-18", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "Revised 1", "pic": "Quyên", "start": "2026-05-18", "end": "2026-05-18", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※6", "name": "Standee 1/6", "pic": "Vinh", "start": "2026-05-12", "end": "2026-05-18", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※7", "name": "Bảng theo dõi Green Week", "pic": "Quyên", "start": "2026-05-12", "end": "2026-05-18", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "164", "name": "POSM \"vẽ xanh yêu thương\"", "tasks": [{"tt": "        ※1", "name": "Order Bộ Posm", "pic": "Hậu", "start": "2026-05-13", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Poster thông báo A4", "pic": "Quyên, Hòa", "start": "2026-05-14", "end": "2026-05-16", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Poster thông báo FB", "pic": "Quyên, Hòa", "start": "2026-05-13", "end": "2026-05-15", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "Standee", "pic": "Hòa", "start": "2026-05-13", "end": "2026-05-16", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "Rv1", "pic": "Hậu, Hòa", "start": "2026-05-18", "end": null, "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "166", "name": "SBU IELTS", "tasks": [{"tt": "        ※1", "name": "Tờ rơi A4 gập 2 (4 mặt A5)", "pic": "Quyên", "start": "2026-05-16", "end": "2026-05-20", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "167", "name": "NEXTGEN", "tasks": [{"tt": "        ※1", "name": "Convert KV", "pic": "Quyên", "start": "2026-05-16", "end": "2026-05-19", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Revise 1", "pic": "Quyên", "start": "2026-05-27", "end": "2026-06-01", "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}, {"tt": "        ※3", "name": "backdrop", "pic": "Quyên", "start": "2026-05-27", "end": "2026-06-02", "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}, {"tt": "        ※4", "name": "Standee", "pic": "Quyên", "start": "2026-05-27", "end": "2026-06-02", "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}, {"tt": "        ※5", "name": "Huy hiệu", "pic": "Quyên", "start": "2026-05-27", "end": "2026-06-02", "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}]}, {"id": "168", "name": "Standee check in giấy khen", "tasks": [{"tt": "        ※1", "name": "Standee", "pic": "Hậu", "start": "2026-05-18", "end": null, "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}, {"tt": "        ※2", "name": "Standee Giấy khen", "pic": "Vinh", "start": "2026-05-19", "end": "2026-05-20", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "169", "name": "CB Mỹ Tho", "tasks": [{"tt": "        ※1", "name": "Bảng vinh danh", "pic": "Hậu", "start": "2026-05-19", "end": "2026-05-25", "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}, {"tt": "        ※2", "name": "Bảng Vinh Danh", "pic": "Vinh", "start": null, "end": "2026-05-25", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "170", "name": "CB Mỹ Tho", "tasks": [{"tt": "        ※1", "name": "Điều chỉnh backdrop", "pic": "Hậu", "start": "2026-05-20", "end": "2026-05-20", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "backdrop IELTS", "pic": "Vinh", "start": "2026-05-20", "end": "2026-05-20", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "171", "name": "Hội thi Hùng Biện x Tỉnh Đ Tháp 30.05.2026", "tasks": [{"tt": "        ※1", "name": "Vouchers", "pic": "Vinh", "start": "2026-05-21", "end": "2026-05-23", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Bảng Trao thưởng", "pic": "Vinh", "start": "2026-05-21", "end": "2026-05-23", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Revised 1", "pic": "Vinh", "start": "2026-05-25", "end": "2026-05-25", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "172", "name": "CB Mekong_Backdrop Tổng kết x TH Bến Tre", "tasks": [{"tt": "        ※1", "name": "Điều chỉnh Backdrop", "pic": "Vinh", "start": "2026-05-25", "end": "2026-05-26", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Revised 1", "pic": "Vinh", "start": "2026-05-26", "end": "2026-05-26", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Revised 2", "pic": "Vinh", "start": "2026-05-26", "end": "2026-05-26", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}, {"id": "173", "name": "CB WorldReady_Tour EmasiPlus", "tasks": [{"tt": "        ※1", "name": "Banner đầu xe", "pic": "Quyên", "start": "2026-05-26", "end": "2026-05-28", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Revised 1", "pic": "Quyên", "start": "2026-05-28", "end": "2026-06-01", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※3", "name": "Thư cảm ơn", "pic": "Quyên", "start": "2026-05-26", "end": "2026-05-28", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※4", "name": "Banner chụp ảnh", "pic": "Quyên", "start": "2026-05-27", "end": "2026-06-01", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※5", "name": "Banner RV1", "pic": "Quyên", "start": "2026-05-29", "end": "2026-06-01", "extended": null, "completion": 0.1, "state": "Đang làm", "cancel": null}]}, {"id": "174", "name": "CB IELTS_Decal kính MCB", "tasks": [{"tt": "        ※1", "name": "Decal IELTS của kính", "pic": "Vinh", "start": "2026-05-26", "end": "2026-05-29", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}, {"tt": "        ※2", "name": "Decal Revised 1", "pic": "Vinh", "start": "2026-05-29", "end": null, "extended": null, "completion": 0, "state": "Đang làm", "cancel": null}]}, {"id": "175", "name": "Sales Toolkit_Cập nhật 05.2026", "tasks": [{"tt": "        ※1", "name": "Cập nhật lộ trình bộ Sale Toolkit", "pic": "Quyên", "start": "2026-05-27", "end": "2026-05-29", "extended": null, "completion": 1.0, "state": "Hoàn thành", "cancel": null}]}];
+const SHOOT = [{"stt": 1, "ten": "Hội nghị Đối tác 2026", "yc": "Event (Ms.Quyên)", "dd": "Thiên Hộ Plaza", "thu": "Chủ Nhật", "ngay": "03/05", "gio": "TBU", "pt": "Du, Vinh", "tt": "Đã bàn giao"}, {"stt": 2, "ten": "Họp Phụ huynh KV Sóc Trăng", "yc": "Event (Ms.Quyên)", "dd": "Sóc Trăng", "thu": "Thứ 7", "ngay": "09/05", "gio": "TBU", "pt": "", "tt": "Đã bàn giao"}, {"stt": 3, "ten": "Họp Phụ huynh KV Vĩnh Long", "yc": "Event (Ms.Quyên)", "dd": "TTC Palace", "thu": "Chủ Nhật", "ngay": "10/05", "gio": "TBU", "pt": "Vinh, Du", "tt": "Đã bàn giao"}, {"stt": 4, "ten": "Khai trương Gò Công Đông", "yc": "Event (Ms.Quyên)", "dd": "CB Gò Công Đông", "thu": "TBU", "ngay": "TBU", "gio": "TBU", "pt": "", "tt": ""}, {"stt": 5, "ten": "Hội thảo 'Chương trình làm quen tiếng Anh'", "yc": "MKT (Mr.Phong)", "dd": "TBU", "thu": "Thứ 4", "ngay": "06/05", "gio": "Sáng - TBU", "pt": "Vinh", "tt": "Đã bàn giao"}, {"stt": 6, "ten": "SaiGon x Emasi Tour", "yc": "SBU WR (Ms.Thu)", "dd": "Emasi – SG", "thu": "Thứ 5", "ngay": "14/05", "gio": "TBU", "pt": "Vinh", "tt": ""}, {"stt": 7, "ten": "Store – Set up đèn quay phim", "yc": "SBU Store (Ms.Trang)", "dd": "Studio", "thu": "Thứ 6", "ngay": "15/05", "gio": "Chiều 4:00", "pt": "Du", "tt": "Đã bàn giao"}, {"stt": 8, "ten": "CB Mỹ Tho – Ngoại khóa tại trường", "yc": "CB Mỹ Tho (Mr.Hoàng)", "dd": "Trường TH Thiên Hộ Dương CS1", "thu": "Thứ 2", "ngay": "18/05", "gio": "Sáng 7:00", "pt": "Du", "tt": "Đã bàn giao"}, {"stt": 9, "ten": "CB Mỹ Tho – RCV tại trường", "yc": "CB Mỹ Tho (Mr.Hoàng)", "dd": "Trường THPT Trần Hưng Đạo", "thu": "Thứ 5", "ngay": "21/05", "gio": "Sáng 7:00", "pt": "Vinh", "tt": "Đã bàn giao"}, {"stt": 10, "ten": "Chụp ảnh lớp học CB Mekong", "yc": "Media (Mr.Hòa)", "dd": "CB Mekong", "thu": "Thứ 7", "ngay": "23/05", "gio": "Sáng 9:15", "pt": "Vinh", "tt": "Đã bàn giao"}, {"stt": 11, "ten": "Chụp ảnh lớp học CB Mỹ Tho", "yc": "Media (Mr.Hòa)", "dd": "CB Mỹ Tho", "thu": "Thứ 7", "ngay": "23/05", "gio": "Chiều 3:00", "pt": "Du", "tt": "Đã bàn giao"}, {"stt": 12, "ten": "Quay source giới thiệu Futura", "yc": "SBU FTR (Mr.Duy)", "dd": "CB Mekong", "thu": "Thứ 6", "ngay": "29/05", "gio": "Chiều 2:00", "pt": "Du", "tt": "Đã bàn giao"}, {"stt": 13, "ten": "Hội thi Hùng biện tiếng Anh x Đồng Tháp", "yc": "SBU FTR (Mr.Duy)", "dd": "CB Mekong", "thu": "Thứ 7", "ngay": "30/05", "gio": "TBU", "pt": "Vinh, Du", "tt": "Đã bàn giao"}, {"stt": 14, "ten": "Store – Set up quay/chụp SP", "yc": "SBU Store (Ms.Trang)", "dd": "Studio", "thu": "Thứ 3", "ngay": "26/05", "gio": "Chiều 3:30", "pt": "", "tt": ""}];
+const VIDS  = [{"stt": 36, "da": "CB Adventures", "vid": "Giới thiệu Chương trình hè", "kb": "Kịch bản video – CT hè", "ord": "05/05", "quay": "", "dl": "16/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "16/05"}, {"stt": 37, "da": "CB Wonders", "vid": "Giới thiệu Chương trình học", "kb": "Kịch bản video – CT hè", "ord": "05/05", "quay": "", "dl": "16/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "16/05"}, {"stt": 38, "da": "CB Mỹ Tho", "vid": "Animation Ads PreS", "kb": "Video ads mỹ tho", "ord": "05/05", "quay": "", "dl": "11/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "11/05"}, {"stt": 39, "da": "CB Mỹ Tho", "vid": "Animation Ads PreS – Revised 1", "kb": "Video ads mỹ tho", "ord": "11/05", "quay": "", "dl": "12/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "12/05"}, {"stt": 40, "da": "CB Mỹ Tho", "vid": "Animation Ads YLE", "kb": "Video ads mỹ tho", "ord": "05/05", "quay": "", "dl": "09/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "09/05"}, {"stt": 41, "da": "CB WorldReady", "vid": "Tour Sing", "kb": "CB Worldready – SG Tour", "ord": "05/05", "quay": "", "dl": "08/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "08/05"}, {"stt": 42, "da": "CB WorldReady", "vid": "Tour Emasi", "kb": "CB Worldready – Emasi Tour", "ord": "05/05", "quay": "", "dl": "09/05", "pic": "", "pct": 100, "tt": "Hoàn thành", "done": "08/05"}, {"stt": 43, "da": "CB Adventures", "vid": "Animation (hè)", "kb": "KB Video animation hè", "ord": "05/05", "quay": "", "dl": "", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 44, "da": "Hội thảo", "vid": "Bộ quà tổng Hộp bút – Revised", "kb": "Cắt video phỏng vấn", "ord": "29/05", "quay": "", "dl": "29/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "29/05"}, {"stt": 45, "da": "Hội thảo", "vid": "Cut raw", "kb": "Cắt video phỏng vấn", "ord": "05/05", "quay": "", "dl": "13/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "12/05"}, {"stt": 46, "da": "Hội thảo", "vid": "Short PV", "kb": "Cắt video phỏng vấn", "ord": "05/05", "quay": "", "dl": "15/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "13/05"}, {"stt": 47, "da": "CX – Khi Cici | CB talk", "vid": "Ep1 – Char", "kb": "", "ord": "", "quay": "", "dl": "", "pic": "Du", "pct": 0, "tt": "", "done": ""}, {"stt": 48, "da": "CX – Khi Cici | CB talk", "vid": "Ep1 – Storyboard", "kb": "", "ord": "", "quay": "", "dl": "", "pic": "Du", "pct": 0, "tt": "", "done": ""}, {"stt": 49, "da": "CX – Khi Cici | CB talk", "vid": "Ep1 – Demo", "kb": "", "ord": "", "quay": "", "dl": "", "pic": "Du", "pct": 0, "tt": "", "done": ""}, {"stt": 50, "da": "CB NEWS", "vid": "#143", "kb": "CB News 143", "ord": "12/05", "quay": "", "dl": "16/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "16/05"}, {"stt": 51, "da": "CB NEWS", "vid": "Voice thông báo CB Summer", "kb": "", "ord": "", "quay": "", "dl": "", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "16/05"}, {"stt": 52, "da": "Họp Phụ Huynh 2026", "vid": "Recap sự kiện họp PH TTC", "kb": "", "ord": "", "quay": "", "dl": "", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "15/05"}, {"stt": 53, "da": "CB WorldReady", "vid": "Voice thông báo Tour Sing", "kb": "CB Worldready – Phát thanh", "ord": "19/05", "quay": "19/05", "dl": "", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "19/05"}, {"stt": 54, "da": "CB WorldReady", "vid": "Voice thông báo Tour Emasi", "kb": "CB Worldready – Phát thanh", "ord": "19/05", "quay": "19/05", "dl": "", "pic": "", "pct": 0, "tt": "", "done": ""}, {"stt": 55, "da": "CB Chợ Gao", "vid": "Ads PreS", "kb": "Đổi địa chỉ 2 CS", "ord": "19/05", "quay": "", "dl": "20/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "20/05"}, {"stt": 56, "da": "CB Chợ Gao", "vid": "Ads YLE", "kb": "Đổi địa chỉ 2 CS", "ord": "19/05", "quay": "", "dl": "20/05", "pic": "", "pct": 100, "tt": "Hoàn thành", "done": "20/05"}, {"stt": 57, "da": "Về Xanh yêu Thương", "vid": "Voice thông báo", "kb": "Phát thanh 2026", "ord": "19/05", "quay": "", "dl": "19/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "19/05"}, {"stt": 58, "da": "CB Thừa Đức", "vid": "Ads YLE", "kb": "CB Khai trường TH Thừa Đức", "ord": "19/05", "quay": "", "dl": "31/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "21/05"}, {"stt": 59, "da": "Series Phụ huynh nói gì?", "vid": "Phụ huynh: Diễm Thúy", "kb": "Series PH CB nói gì?", "ord": "21/05", "quay": "", "dl": "26/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "01/06"}, {"stt": 60, "da": "Series Phụ huynh nói gì?", "vid": "Phụ huynh: Khánh Linh", "kb": "Series PH CB nói gì?", "ord": "21/05", "quay": "", "dl": "26/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 61, "da": "Series HV nói gì?", "vid": "Hải Phong", "kb": "", "ord": "21/05", "quay": "", "dl": "26/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 62, "da": "Series HV nói gì?", "vid": "Khánh Vy", "kb": "Series HV CB nói gì?", "ord": "21/05", "quay": "", "dl": "28/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 63, "da": "Series HV nói gì?", "vid": "Nhú Uyên", "kb": "Series HV CB nói gì?", "ord": "21/05", "quay": "", "dl": "28/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 64, "da": "Series HV nói gì?", "vid": "Bảo Lam", "kb": "Series HV CB nói gì?", "ord": "21/05", "quay": "", "dl": "28/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 65, "da": "Series HV nói gì?", "vid": "Ngọc Hân", "kb": "Series HV CB nói gì?", "ord": "21/05", "quay": "", "dl": "28/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 66, "da": "Series HV nói gì?", "vid": "Hữu Vĩnh", "kb": "Series HV CB nói gì?", "ord": "21/05", "quay": "", "dl": "28/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 67, "da": "Series HV nói gì?", "vid": "Ngọc Thiện", "kb": "Series HV CB nói gì?", "ord": "21/05", "quay": "", "dl": "28/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": ""}, {"stt": 68, "da": "CB Gò Công", "vid": "Ads PreS", "kb": "Đổi địa chỉ Gò Công", "ord": "26/05", "quay": "", "dl": "27/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "27/05"}, {"stt": 69, "da": "CB Gò Công", "vid": "Ads YLE", "kb": "Đổi địa chỉ Gò Công", "ord": "26/05", "quay": "", "dl": "27/05", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "27/05"}, {"stt": 70, "da": "Hệ thống", "vid": "Ads PreS", "kb": "Hotline + web hệ thống", "ord": "26/05", "quay": "", "dl": "26/05", "pic": "Vinh", "pct": 100, "tt": "Hoàn thành", "done": "27/05"}, {"stt": 71, "da": "Hệ thống", "vid": "Ads YLE", "kb": "Hotline + web hệ thống", "ord": "26/05", "quay": "", "dl": "26/05", "pic": "Vinh", "pct": 100, "tt": "", "done": ""}, {"stt": 72, "da": "Hội thi HBTA tỉnh Đồng Tháp", "vid": "Recap", "kb": "Recap", "ord": "26/05", "quay": "", "dl": "05/06", "pic": "Du", "pct": 10, "tt": "Đang làm", "done": ""}, {"stt": 73, "da": "CB Futura Ads", "vid": "Futura Q2", "kb": "Ads Futura Quý 2", "ord": "26/05", "quay": "29/05", "dl": "", "pic": "Du", "pct": 100, "tt": "Hoàn thành", "done": "01/06"}];
+const SOCIAL = [{"stt": 1, "nd": "CB SUMMER OF WONDERS 2026 – HÈ VUI KHÁM PHÁ, MỞ LỐI TƯƠNG LAI", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "04/05/2026", "cnt": "Tú", "media": "Quyên", "link": "CB Wonders", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 2, "nd": "6 TUẦN HÈ CB SUMMER OF WONDERS – CON KHÁM PHÁ ĐIỀU GÌ?", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "06/05/2026", "cnt": "Vinh", "media": "Quyên", "link": "6 Tuần hè, Con K...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 3, "nd": "CON HỌC GÌ TẠI SUMMER OF WONDER THEO ĐỘ TUỔI", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "08/05/2026", "cnt": "Tú", "media": "Quyên", "link": "summer of wonder", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 4, "nd": "CB SUMMER ADVENTURES – BREAK THE LIMITS", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "09/05/2026", "cnt": "Tú", "media": "Quyên", "link": "CB SUMMER ADVE...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 5, "nd": "Cover CB Summer Adventure – Break the Limits (2 KT: Fanpage + Website)", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "05/05/2026", "cnt": "Tú", "media": "Quyên", "link": "Cover adventure", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 6, "nd": "BÀ MẸ CÓ CON CHUẨN BỊ VÀO LỚP 1 ĐỪNG BỎ QUA!", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "05/05/2026", "cnt": "Bảo", "media": "", "link": "Lịch KG CB Tiên Tr...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 7, "nd": "CON HỌC TIẾNG ANH NHƯNG VẪN KHÔNG NÓI ĐƯỢC?", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "05/05/2026", "cnt": "Bảo", "media": "", "link": "Lịch KG CB Tiên Tr...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 8, "nd": "Bản tin CB T4", "loai": "", "sl_bai": 1, "sl_anh": 1, "ngay": "11/05/2026", "cnt": "Bảo", "media": "", "link": "bản tin", "tt": "", "sl_anh_display": 1}, {"stt": 9, "nd": "CB Summer of Wonder 2026", "loai": "Web", "sl_bai": 2, "sl_anh": 2, "ngay": "07/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "web", "tt": "Hoàn thành", "sl_anh_display": 2}, {"stt": 10, "nd": "CB Summer Adventures 2026 – Học Hè Bứt Phá Cho Con", "loai": "Web", "sl_bai": 1, "sl_anh": 1, "ngay": "08/05/2026", "cnt": "Vinh", "media": "", "link": "CB Summer Adven...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 11, "nd": "CON HỌC ĐÚNG LỘ TRÌNH, KHÔNG LẠC MẠN", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "15/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "Học đúng lộ trình", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 12, "nd": "CHÀO ĐÓN 3 CHI NHÁNH MỚI", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 1, "ngay": "12/05/2026", "cnt": "Thanh", "media": "Quyên", "link": "CHÀO ĐÓN 3 CHI...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 13, "nd": "LÀM SAO ĐỂ GIÚP CON VƯỢT QUA NỖI SỢ \"NÓI TIẾNG ANH\"?", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 1, "ngay": "12/05/2026", "cnt": "Thanh", "media": "Quyên", "link": "LÀM SAO ĐỂ GIÚP...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 14, "nd": "Chào đón 3 chi nhánh mới", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 1, "ngay": "12/05/2026", "cnt": "Thanh", "media": "Quyên", "link": "CHÀO ĐÓN 3 CHI...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 15, "nd": "KHỞI ĐỘNG NHẸ NHÀNG – VỮNG VÀNG HỌC TẬP", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "18/05/2026", "cnt": "Tú", "media": "Quyên", "link": "KHỞI ĐỘNG NHẸ...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 16, "nd": "CB SUMMER ADVENTURE (tùy chỉnh mẫu các chi nhánh)", "loai": "Ads", "sl_bai": 4, "sl_anh": 4, "ngay": "14/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "ads", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 17, "nd": "KHAI TRƯƠNG VUI HẾT NẤC – ĐÈN CB TÂN ĐỒNG NHẬN QUÀ NGAY", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "18/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "CB Centres khai tr...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 18, "nd": "KHAI TRƯƠNG CB TÂN ĐỒNG – NHẬN ƯU ĐÃI CỰC HOT", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "16/05/2026", "cnt": "Bảo", "media": "", "link": "KHAI TRƯƠNG CB...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 19, "nd": "MUỐN CON TIẾU HỌC GIỎI TIẾNG ANH – ĐỪNG BỎ QUA CB TÂN ĐỒNG", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "18/05/2026", "cnt": "Bảo", "media": "", "link": "4.đb", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 20, "nd": "Cover CB Summer Adventure – Break the Limits – MCN (bộ tour trải nghiệm)", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "11/05/2026", "cnt": "Tú", "media": "Quyên", "link": "CB CENTRES_Cov...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 21, "nd": "Chào đón 3 chi nhánh mới ver.2", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 1, "ngay": "13/05/2026", "cnt": "Thanh", "media": "", "link": "Post khai trương", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 22, "nd": "HINT về xanh yêu thương", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "14/05/2026", "cnt": "Thanh", "media": "Hòa", "link": "Post_vẽ-xanh.jpg", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 23, "nd": "KHÓA TIẾNG ANH THỪA ĐỨC – NHẬN ƯU ĐÃI ĐẾN 10%", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "14/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "KHAI TRƯƠNG CB...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 24, "nd": "CHÍNH THỨC KHAI TRƯƠNG CB THỪA ĐỨC", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "18/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "CHÍNH THỨC KHA...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 25, "nd": "LỘ TRÌNH HỌC TIẾNG ANH HÈ CÁ NHÂN HÓA CHO CON", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "18/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "LỊCH KG CB TIẾN T...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 26, "nd": "CON HỌC TIẾNG ANH HÈ TẠI CB – BA MẸ AN TÂM TRỌN VẸN", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "19/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "CON HỌC TIẾNG...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 27, "nd": "CB Summer of Wonders – Khóa Học Tiếng Anh Hè Giúp Con Tự Tin Hội Nhập", "loai": "Web", "sl_bai": 3, "sl_anh": 3, "ngay": "21/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "web adventure", "tt": "Hoàn thành", "sl_anh_display": 3}, {"stt": 28, "nd": "Phiếu đăng ký học trải nghiệm CB Tân Đồng", "loai": "Form cover", "sl_bai": 1, "sl_anh": 1, "ngay": "14/05/2026", "cnt": "Trang", "media": "Hòa", "link": "Cover GG Form", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 29, "nd": "Trải nghiệm hè bung nở – ngóng trăm quà tổng", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 4, "ngay": "20/05/2026", "cnt": "Tú", "media": "Vinh", "link": "SẴN SÀNG TRẢI...", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 30, "nd": "Cover Summer of Wonders (resize từ banner Wonders) – KT website", "loai": "Web", "sl_bai": 1, "sl_anh": 4, "ngay": "16/05/2026", "cnt": "Tú", "media": "Vinh", "link": "Cover CB Wo...", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 31, "nd": "Happy Children's Day 1/6", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 4, "ngay": "", "cnt": "Thanh", "media": "Quyên", "link": "Childrenday", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 32, "nd": "LÊN THCS, THPT – TIẾNG ANH KHÔNG THỂ HỌC \"ĐỐI PHÓ\"", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "", "cnt": "Bảo", "media": "Vinh", "link": "GIÚP VIÊN T...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 33, "nd": "Về xanh – Hướng dẫn tham gia", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 8, "ngay": "22/05/2026", "cnt": "Thanh", "media": "Hòa", "link": "Về Xanh_HDTG", "tt": "Hoàn thành", "sl_anh_display": 8}, {"stt": 34, "nd": "Giày khen trên tay – quá xịn ao ngay", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 4, "ngay": "23/05/2026", "cnt": "Tú", "media": "Vinh", "link": "KHOE GIÀY KHEN...", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 35, "nd": "Ads YLE – Kiên Giang (tùy chỉnh mẫu)", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "22/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "CB Centres kiên Gi...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 36, "nd": "Ba mẹ Tân Đồng", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "22/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "ĐỪNG BỎ LỠ \"Đ...\"", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 37, "nd": "Ads Ba Trị – Giồng Trôm – Gò Công (tùy chỉnh mẫu có sẵn)", "loai": "Ads", "sl_bai": 1, "sl_anh": 2, "ngay": "22/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "ĐỪNG BỎ LỠ \"Đ...\"", "tt": "Hoàn thành", "sl_anh_display": 2}, {"stt": 38, "nd": "Ads Kiên Giang – Cái Bè – Long Trung – Cai Lậy (tùy chỉnh mẫu có sẵn)", "loai": "Ads", "sl_bai": 1, "sl_anh": 4, "ngay": "22/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "ĐỪNG BỎ LỠ \"Đ...\"", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 39, "nd": "BÍ QUYẾT GIÚP TRẺ YÊU TIẾNG ANH", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 1, "ngay": "25/05/2026", "cnt": "Thanh", "media": "Hòa", "link": "Phương pháp TPR", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 40, "nd": "Tổng kết năm học", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 5, "ngay": "", "cnt": "Thanh", "media": "Quyên", "link": "Tổng kết năm học", "tt": "Hoàn thành", "sl_anh_display": 5}, {"stt": 41, "nd": "HÀNG TRĂM BA MẸ CHỌN KHÓA HỌC TIẾNG ANH TẠI CB MỎ CÀY NAM", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "25/05/2026", "cnt": "Bảo", "media": "", "link": "Lịch Khai giảng C...", "tt": "Gấp", "sl_anh_display": 1}, {"stt": 42, "nd": "LỊCH KHAI GIẢNG LỚP TIẾNG ANH – CB MỎ CÀY NAM", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "25/05/2026", "cnt": "Bảo", "media": "", "link": "Lịch Khai giảng C...", "tt": "Gấp", "sl_anh_display": 1}, {"stt": 43, "nd": "Vì sao ba mẹ cho con học tiếng Anh tại CB Bình Đại? (theo mẫu sẵn)", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "", "cnt": "Bảo", "media": "", "link": "Lịch Khai giảng C...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 44, "nd": "CB Huỳnh Tấn Phát giúp HV tiếp thu kiến thức nhanh chóng – theo mẫu", "loai": "Ads", "sl_bai": 1, "sl_anh": 4, "ngay": "25/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "Lịch Khai giảng M...", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 45, "nd": "ĐẦU TƯ TIẾNG ANH NGAY TỪ SỚM – MÓN QUÀ GIÁ TRỊ BA MẸ TRAO CON", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "25/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "TIẾNG ANH...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 46, "nd": "LỊCH KHAI GIẢNG LỚP TIẾNG ANH – CB MỎ CÀY NAM (ver 2)", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "27/05/2026", "cnt": "Bảo", "media": "", "link": "lịch khai giảng MC...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 47, "nd": "BÀ MẸ ĐI CÀY NHỚ BỔN PHẬN \"ĐỐI VÀNG\" học tiếng Anh cho con", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "27/05/2026", "cnt": "Bảo", "media": "", "link": "MCN-01.jpg", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 48, "nd": "Thông báo cuộc thi Speak to Shine", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "25/05/2026", "cnt": "Trang", "media": "Quyên", "link": "Speak to shine", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 49, "nd": "Thông báo cuộc thi Speak to Shine (Cover)", "loai": "Cover", "sl_bai": 1, "sl_anh": 1, "ngay": "25/05/2026", "cnt": "Trang", "media": "Quyên", "link": "COVER PAGE SPE...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 50, "nd": "Thông báo cuộc thi Speak to Shine (Web)", "loai": "Web", "sl_bai": 1, "sl_anh": 1, "ngay": "26/05/2026", "cnt": "Trang", "media": "Quyên", "link": "Web SPEAKTOSHI...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 51, "nd": "CÙNG CÚC KHÁM PHÁ THÊM 6 TỪ VỰNG", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 7, "ngay": "", "cnt": "Thanh", "media": "Vinh", "link": "6 TỪ VỰNG...", "tt": "Hoàn thành", "sl_anh_display": 7}, {"stt": 52, "nd": "Gợi ý chủ đề về xanh yêu thương", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 6, "ngay": "28/05/2026", "cnt": "Thanh", "media": "Hòa", "link": "CB CENTRES-KHỔ...", "tt": "Hoàn thành", "sl_anh_display": 6}, {"stt": 53, "nd": "Phát động cuộc thi Speak to Shine", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "28/05/2026", "cnt": "Trang", "media": "Quyên", "link": "CB Trang", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 54, "nd": "3 lỗi phổ biến khiến bài thi Speak to Shine không hợp lệ", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 4, "ngay": "29/05/2026", "cnt": "Trang", "media": "Quyên", "link": "3 lỗi phổ biến", "tt": "Hoàn thành", "sl_anh_display": 4}, {"stt": 55, "nd": "Những điểm khác biệt của Speak to Shine kỳ 6", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "30/05/2026", "cnt": "Trang", "media": "Quyên", "link": "Những điểm khác biệt", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 56, "nd": "Khám phá từng hạng mục giải thưởng Speak to Shine", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 7, "ngay": "01/06/2026", "cnt": "Trang", "media": "Quyên", "link": "Điểm khác biệt", "tt": "Hoàn thành", "sl_anh_display": 7}, {"stt": 57, "nd": "Intro + Outro Speak to Shine", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "01/06/2026", "cnt": "Trang", "media": "Quyên", "link": "Intro + Outro Spe...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 58, "nd": "5 tuần hè tại CB Centres có gì khác biệt?", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 5, "ngay": "28/05/2026", "cnt": "Tú", "media": "Vinh", "link": "5 TUẦN HÈ TẠI C...", "tt": "Hoàn thành", "sl_anh_display": 5}, {"stt": 59, "nd": "LỘ TRÌNH HỌC TIẾNG ANH CÁ NHÂN HÓA CHO TRẺ 7-11 TUỔI", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "29/05/2026", "cnt": "Bảo", "media": "Quyên", "link": "CB CENTRES_LỘ...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 60, "nd": "EXPLORE VIETNAM THIS SUMMER WITH CICI", "loai": "Post Đơn", "sl_bai": 1, "sl_anh": 1, "ngay": "29/05/2026", "cnt": "Thanh", "media": "Quyên", "link": "Cùng Cici vi vu Vie...", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 61, "nd": "MUỐN CON TIẾU HỌC GIỎI TIẾNG ANH – ĐỪNG BỎ QUA CB GÒ CÔNG (MCN)", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "28/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "Gò Công.jpg", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 62, "nd": "Hàng trăm ba mẹ chọn lớp tiếng Anh tại CB Gò Công – tùy chỉnh mẫu MCN", "loai": "Ads", "sl_bai": 1, "sl_anh": 1, "ngay": "28/05/2026", "cnt": "Bảo", "media": "Vinh", "link": "", "tt": "Hoàn thành", "sl_anh_display": 1}, {"stt": 63, "nd": "1 DAY LEFT – READY FOR CHILDREN'S DAY?", "loai": "Chiến Dịch", "sl_bai": 1, "sl_anh": 1, "ngay": "", "cnt": "Thanh", "media": "", "link": "1 DAY LEFT – REA...", "tt": "Hoàn thành", "sl_anh_display": 1}];
+
+// ── ICONS (Lucide-style minimal line icons) ──
+const ICONS={
+  palette:'<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2Z"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  clapperboard:'<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  smartphone:'<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  'check-circle':'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  loader:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  zap:'<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+  image:'<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  folder:'<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  clipboard:'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+  'map-pin':'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  calendar:'<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  'alert-triangle':'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  'file-text':'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  package:'<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  'pause-circle':'<circle cx="12" cy="12" r="10"/><line x1="10" x2="10" y1="15" y2="9"/><line x1="14" x2="14" y1="15" y2="9"/>',
+  ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  'trending-up':'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  building:'<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+  'bar-chart':'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  'chevron-down':'<path d="m6 9 6 6 6-6"/>',
+  'maximize-2':'<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/>',
+  'minimize-2':'<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" x2="21" y1="10" y2="3"/><line x1="3" x2="10" y1="21" y2="14"/>',
+  'arrow-up-right':'<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  award:'<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+  'thumbs-up':'<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>'
+};
+function ic(n,cls){
+  return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';
+}
+function hydrateIcons(root){
+  (root||document).querySelectorAll('[data-ic]').forEach(e=>{ e.innerHTML=ic(e.dataset.ic); });
+}
+
+// ── WORKLOAD OVERVIEW (donut + proportional bars + summary) ──
+function renderWorkload(){
+  const el=document.getElementById('workloadOverview');
+  if(!el)return;
+  const data=[
+    {label:'Task thiết kế',  value:119, done:109, color:'#191970', ic:'palette'},
+    {label:'Lịch quay chụp', value:14,  done:11,  color:'#BA110F', ic:'camera'},
+    {label:'Video Checklist',value:38,  done:32,  color:'#6B21A8', ic:'clapperboard'},
+    {label:'Social Posts',   value:63,  done:60,  color:'#0E7490', ic:'smartphone'}
+  ];
+  const total=data.reduce((a,d)=>a+d.value,0);      // 234
+  const doneTot=data.reduce((a,d)=>a+d.done,0);      // 212
+  const pend=total-doneTot;                          // 22
+  const rate=Math.round(doneTot/total*100);          // 91
+  const ANH=123;                                     // ảnh social (chỉ số phụ)
+
+  // Donut segments
+  const R=78, C=2*Math.PI*R;
+  let acc=0;
+  const segs=data.map(d=>{
+    const len=d.value/total*C, off=-acc; acc+=len;
+    return `<circle class="wl-seg" cx="100" cy="100" r="${R}" fill="none" stroke="${d.color}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 100 100)"/>`;
+  }).join('');
+
+  // Bars (sorted desc by volume → real proportions, not equal)
+  const bars=[...data].sort((a,b)=>b.value-a.value).map(d=>{
+    const share=d.value/total*100;
+    return `<div class="wl-bar-row">
+      <div class="wl-bar-label"><span class="wl-dot" style="background:${d.color}"></span><span>${d.label}</span></div>
+      <div class="wl-bar-track"><div class="wl-bar-fill" data-w="${share.toFixed(1)}" style="background:${d.color}"></div></div>
+      <div class="wl-bar-meta"><b>${d.value}</b> · ${share.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+
+  const sum=[
+    {ic:'check-circle', color:'#0A7A52', bg:'rgba(10,122,82,.10)',  val:doneTot,   lbl:'Tổng hoàn thành'},
+    {ic:'trending-up',  color:'#191970', bg:'rgba(25,25,112,.10)',  val:rate+'%',  lbl:'Tỷ lệ hoàn thành'},
+    {ic:'loader',       color:'#B07600', bg:'rgba(176,118,0,.10)',  val:pend,      lbl:'Đang xử lý / chờ'},
+    {ic:'image',        color:'#0E7490', bg:'rgba(14,116,144,.10)', val:ANH,       lbl:'Ảnh social'}
+  ].map(s=>`<div class="wl-sum-card"><div class="wl-sum-ic" style="background:${s.bg};color:${s.color}">${ic(s.ic)}</div><div><div class="wl-sum-val">${s.val}</div><div class="wl-sum-lbl">${s.lbl}</div></div></div>`).join('');
+
+  el.innerHTML=`
+    <div class="wl-head">
+      <div class="wl-head-ic">${ic('bar-chart')}</div>
+      <div>
+        <div class="wl-title">Tổng quan khối lượng tháng 5/2026</div>
+        <div class="wl-sub">Tổng <strong>${total}</strong> đầu việc · Hoàn thành ${doneTot} (${rate}%) · +${ANH} ảnh social</div>
+      </div>
+    </div>
+    <div class="wl-main">
+      <div class="wl-donut-wrap">
+        <svg class="wl-donut" viewBox="0 0 200 200" role="img" aria-label="Tỷ trọng khối lượng theo nhóm: tổng ${total} đầu việc">
+          <circle cx="100" cy="100" r="${R}" fill="none" stroke="#EDEFF6" stroke-width="22"/>
+          ${segs}
+          <text x="100" y="94" text-anchor="middle" font-size="42" font-weight="900" fill="#191970">${total}</text>
+          <text x="100" y="116" text-anchor="middle" font-size="11" font-weight="600" fill="#8888BB">Tổng khối lượng</text>
+        </svg>
+        <div class="wl-donut-legend">Hoàn thành <strong>${doneTot}/${total}</strong> · ${rate}%</div>
+      </div>
+      <div class="wl-bars">${bars}</div>
+    </div>
+    <div class="wl-summary">${sum}</div>`;
+
+  // animate bars from 0 → real proportion
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('.wl-bar-fill').forEach(f=>{ f.style.width=f.dataset.w+'%'; });
+  });
+}
+
+// ── BÁO CÁO CHI TIẾT TỪNG P.I.C ──
+const PIC_ORDER=['Quyên','Vinh','Hậu','Hòa','Du'];
+const PIC_ROLE={'Quyên':'Thiết kế & Social visual','Vinh':'Đa năng · Design/Quay/Video/Social','Hậu':'Account · Tiếp nhận & điều phối order','Hòa':'Trưởng nhóm Media · Điều phối & nghiệm thu','Du':'Quay/Dựng video + Chụp ảnh','Bảo':'Content · Ads','Thanh':'Content · Post/Chiến dịch','Tú':'Content · Campaign','Trang':'Content · Speak to Shine'};
+const PIC_BG={'Quyên':'#191970','Vinh':'linear-gradient(135deg,#191970,#BA110F)','Hậu':'#0E7490','Hòa':'linear-gradient(135deg,#0F0F50,#3849b3)','Du':'#6B21A8','Bảo':'#0E7490','Thanh':'#0E7490','Tú':'#0E7490','Trang':'#0E7490'};
+function picHas(field,name){return (field||'').split(',').map(s=>s.trim()).includes(name);}
+function vsBadge(tt){
+  const cls=tt==='Hoàn thành'?'vs-done':tt==='Gấp'?'vs-urgent':tt==='Đang làm'?'vs-doing':tt?'vs-doing':'vs-pend';
+  const lbl=tt==='Hoàn thành'?ic('check-circle')+' Hoàn thành':tt==='Gấp'?ic('zap')+' Gấp':tt==='Đang làm'?ic('loader')+' Đang làm':tt?tt:ic('clock')+' Chờ';
+  return `<span class="${cls}">${lbl}</span>`;
+}
+function renderPicReport(){
+  const el=document.getElementById('picReport'); if(!el)return;
+  el.innerHTML=PIC_ORDER.map((name,idx)=>{
+    const tasks=[]; PROJ.forEach(p=>p.tasks.forEach(t=>{ if(picHas(t.pic,name)) tasks.push({proj:p.name,t}); }));
+    const shoots=SHOOT.filter(s=>picHas(s.pt,name));
+    const videos=VIDS.filter(v=>(v.pic||'').trim()===name);
+    const sMedia=SOCIAL.filter(s=>(s.media||'').trim()===name);
+    const sCont=SOCIAL.filter(s=>(s.cnt||'').trim()===name);
+    const total=tasks.length+shoots.length+videos.length+sMedia.length+sCont.length;
+    if(!total)return'';
+    let done=tasks.filter(x=>sc(x.t.state,x.t.cancel)==='done').length
+      +shoots.filter(s=>s.tt==='Đã bàn giao').length
+      +videos.filter(v=>v.tt==='Hoàn thành').length
+      +sMedia.filter(s=>s.tt==='Hoàn thành').length
+      +sCont.filter(s=>s.tt==='Hoàn thành').length;
+    const pctv=Math.round(done/total*100);
+    const ini=name.substring(0,2).toUpperCase();
+
+    let body='';
+    if(tasks.length){
+      body+=`<div class="pic-sub">${ic('palette')} Thiết kế · ${tasks.length}</div>
+      <table class="tt"><thead><tr><th>Dự án</th><th>Công việc</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th>% HT</th></tr></thead><tbody>`
+      +tasks.map(x=>`<tr><td class="t-pic">${x.proj}</td><td class="t-name">${x.t.name||''}</td><td class="t-date">${fd(x.t.start)}</td><td class="t-date${x.t.extended?' ext':''}">${fd(x.t.extended||x.t.end)}</td><td><span class="sb ${sc(x.t.state,x.t.cancel)}">${sl(x.t.state,x.t.cancel)}</span></td><td><div class="c-wrap"><div class="c-bar"><div class="c-fill" style="width:${Math.round((x.t.completion||0)*100)}%"></div></div><span class="c-txt">${Math.round((x.t.completion||0)*100)}%</span></div></td></tr>`).join('')
+      +`</tbody></table>`;
+    }
+    if(shoots.length){
+      body+=`<div class="pic-sub">${ic('camera')} Quay chụp · ${shoots.length}</div>
+      <table class="tt"><thead><tr><th>Sự kiện</th><th>Địa điểm</th><th>Ngày</th><th>Trạng thái</th></tr></thead><tbody>`
+      +shoots.map(s=>{const b=s.tt==='Đã bàn giao'?'<span class="st-del">'+ic('check-circle')+' Đã bàn giao</span>':s.ngay==='TBU'?'<span class="st-tbu">'+ic('calendar')+' TBU</span>':'<span class="st-pnd">'+ic('clock')+' Chờ</span>';return `<tr><td class="t-name">${s.ten}</td><td class="t-date">${s.dd}</td><td class="t-date">${s.ngay}</td><td>${b}</td></tr>`;}).join('')
+      +`</tbody></table>`;
+    }
+    if(videos.length){
+      body+=`<div class="pic-sub">${ic('clapperboard')} Video · ${videos.length}</div>
+      <table class="tt"><thead><tr><th>Dự án</th><th>Video</th><th>Deadline</th><th>Tiến độ</th><th>Tình trạng</th></tr></thead><tbody>`
+      +videos.map(v=>`<tr><td class="t-pic">${v.da}</td><td class="t-name">${v.vid}</td><td class="t-date">${v.dl||'–'}</td><td><span class="c-txt">${v.pct}%</span></td><td>${vsBadge(v.tt)}</td></tr>`).join('')
+      +`</tbody></table>`;
+    }
+    if(sMedia.length){
+      body+=`<div class="pic-sub">${ic('image')} Social – Thiết kế · ${sMedia.length}</div>
+      <table class="tt"><thead><tr><th>Nội dung</th><th>Loại</th><th>Ảnh</th><th>Tình trạng</th></tr></thead><tbody>`
+      +sMedia.map(s=>`<tr><td class="t-name">${s.nd}</td><td>${loaiBadge(s.loai)}</td><td class="t-date">${s.sl_anh}</td><td>${vsBadge(s.tt)}</td></tr>`).join('')
+      +`</tbody></table>`;
+    }
+    if(sCont.length){
+      body+=`<div class="pic-sub">${ic('file-text')} Social – Content · ${sCont.length}</div>
+      <table class="tt"><thead><tr><th>Nội dung</th><th>Loại</th><th>Ngày đăng</th><th>Tình trạng</th></tr></thead><tbody>`
+      +sCont.map(s=>`<tr><td class="t-name">${s.nd}</td><td>${loaiBadge(s.loai)}</td><td class="t-date">${s.ngay||'–'}</td><td>${vsBadge(s.tt)}</td></tr>`).join('')
+      +`</tbody></table>`;
+    }
+
+    return `<div class="proj-card pic-card" id="pic-${idx}">
+      <div class="proj-head" onclick="togglePic(${idx})">
+        <div class="ph-left"><span class="pic-av" style="background:${PIC_BG[name]}">${ini}</span><span class="ph-name">${name} · <span class="pic-role-inline">${PIC_ROLE[name]}</span></span></div>
+        <div class="ph-right">
+          <span class="tc-badge">${total} mục · ${done} HT</span>
+          <div class="ph-prog"><div class="ph-bar"><div class="ph-fill" style="width:${pctv}%"></div></div><span class="ph-pct">${pctv}%</span></div>
+          <span class="chevron">${ic('chevron-down')}</span>
+        </div>
+      </div>
+      <div class="task-wrap">${body}</div>
+    </div>`;
+  }).join('');
+}
+function togglePic(idx){document.getElementById('pic-'+idx).classList.toggle('open');}
+
+// ── TABS ──
+function sw(id) {
+  ['tasks','shoot','video','social','eval'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.remove('active');
+    document.getElementById('panel-'+t).classList.remove('active');
+  });
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+// ── HELPERS ──
+function sc(state,cancel){
+  if(cancel)return'canceled';if(!state)return'doing';
+  if(state.includes('Hoàn thành'))return'done';
+  if(state.includes('Hoãn'))return'paused';
+  if(state.includes('Quá hạn'))return'late';
+  return'doing';
+}
+function sl(state,cancel){
+  if(cancel)return ic('ban')+' '+cancel;if(!state)return ic('loader')+' Đang làm';
+  if(state.includes('Hoàn thành'))return ic('check-circle')+' Hoàn thành';
+  if(state.includes('Hoãn'))return ic('pause-circle')+' Hoãn';
+  if(state.includes('Quá hạn'))return ic('alert-triangle')+' Quá hạn';
+  return ic('loader')+' Đang làm';
+}
+function pct(p){
+  if(!p.tasks.length)return 0;
+  return Math.round(p.tasks.filter(t=>sc(t.state,t.cancel)==='done').length/p.tasks.length*100);
+}
+function fd(d){
+  if(!d)return'–';const pts=d.split('-');
+  return pts.length===3?pts[2]+'/'+pts[1]:d;
+}
+
+// ══ TASKS ══
+const PAGE=20;let tFil='all',tSrch='',tPage=1,tFiltd=[],allOpen=false;
+function renderTaskStats(){
+  let tot=0,done=0,doing=0,paused=0;
+  PROJ.forEach(p=>p.tasks.forEach(t=>{
+    tot++;const s=sc(t.state,t.cancel);
+    if(s==='done')done++;else if(s==='doing')doing++;else if(s==='paused'||s==='canceled')paused++;
+  }));
+  const p=tot?Math.round(done/tot*100):0;
+  document.getElementById('tStats').innerHTML=[
+    {v:PROJ.length,l:'Dự án',c:'cn',i:ic('folder')},{v:tot,l:'Công việc',c:'cb',i:ic('clipboard')},
+    {v:done,l:'Hoàn thành',c:'cg',i:ic('check-circle')},{v:doing,l:'Đang thực hiện',c:'cn',i:ic('loader')},
+    {v:paused,l:'Hoãn / Huỷ',c:'ca',i:ic('pause-circle')},{v:p+'%',l:'Tỉ lệ HT',c:'cp',i:ic('trending-up')},
+  ].map(s=>`<div class="scard ${s.c}"><div class="scard-icon">${s.i}</div><div class="scard-val">${s.v}</div><div class="scard-lbl">${s.l}</div></div>`).join('');
+}
+function getFiltd(){
+  return PROJ.filter(p=>{
+    const mF=tFil==='all'||p.tasks.some(t=>(t.state||'').includes(tFil));
+    const q=tSrch.toLowerCase();
+    const mS=!q||p.name.toLowerCase().includes(q)||p.tasks.some(t=>(t.name||'').toLowerCase().includes(q)||(t.pic||'').toLowerCase().includes(q));
+    return mF&&mS;
+  });
+}
+function renderProjs(){
+  tFiltd=getFiltd();
+  const totT=tFiltd.reduce((s,p)=>s+p.tasks.length,0);
+  document.getElementById('tInfo').innerHTML=`Hiển thị <strong>${tFiltd.length}</strong> dự án · <strong>${totT}</strong> công việc`;
+  const start=(tPage-1)*PAGE,page=tFiltd.slice(start,start+PAGE);
+  document.getElementById('projList').innerHTML=page.length?page.map((p,i)=>renderPC(p,start+i)).join(''):'<div class="no-res"><span class="nr-icon">'+ic('search')+'</span><p>Không tìm thấy kết quả</p></div>';
+  renderTPager(tFiltd.length);
+}
+function renderPC(p,idx){
+  const pct2=pct(p),done=p.tasks.filter(t=>sc(t.state,t.cancel)==='done').length;
+  return`<div class="proj-card" id="pc-${idx}">
+    <div class="proj-head" onclick="toggleP(${idx})">
+      <div class="ph-left"><span class="ph-num">#${p.id||idx+1}</span><span class="ph-name" title="${p.name}">${p.name}</span></div>
+      <div class="ph-right">
+        <span class="tc-badge">${done}/${p.tasks.length} việc</span>
+        <div class="ph-prog"><div class="ph-bar"><div class="ph-fill" style="width:${pct2}%"></div></div><span class="ph-pct">${pct2}%</span></div>
+        <span class="chevron">${ic('chevron-down')}</span>
+      </div>
+    </div>
+    <div class="task-wrap">
+      <table class="tt">
+        <thead><tr><th>Công việc</th><th>PIC</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th>% HT</th></tr></thead>
+        <tbody>${p.tasks.map(t=>`<tr>
+          <td class="t-name">${t.name||''}</td><td class="t-pic">${t.pic||'–'}</td>
+          <td class="t-date">${fd(t.start)}</td>
+          <td class="t-date${t.extended?' ext':''}">${fd(t.extended||t.end)}${t.extended?' '+ic('arrow-up-right'):''}</td>
+          <td><span class="sb ${sc(t.state,t.cancel)}">${sl(t.state,t.cancel)}</span></td>
+          <td><div class="c-wrap"><div class="c-bar"><div class="c-fill" style="width:${Math.round((t.completion||0)*100)}%"></div></div><span class="c-txt">${Math.round((t.completion||0)*100)}%</span></div></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+function toggleP(idx){document.getElementById('pc-'+idx).classList.toggle('open');}
+function toggleAll(){
+  allOpen=!allOpen;
+  document.querySelectorAll('#projList .proj-card').forEach(c=>c.classList.toggle('open',allOpen));
+  document.getElementById('expandBtn').innerHTML=allOpen?ic('minimize-2')+'Thu gọn tất cả':ic('maximize-2')+'Mở rộng tất cả';
+}
+function renderTPager(tot){
+  const pages=Math.ceil(tot/PAGE);
+  if(pages<=1){document.getElementById('tPager').innerHTML='';return;}
+  let h='';
+  if(tPage>1)h+=`<button class="pg" onclick="goTP(${tPage-1})">←</button>`;
+  for(let p=1;p<=pages;p++){
+    if(p===1||p===pages||Math.abs(p-tPage)<=1)h+=`<button class="pg${p===tPage?' active':''}" onclick="goTP(${p})">${p}</button>`;
+    else if(h.slice(-10)!=='>…</button>')h+=`<button class="pg" disabled>…</button>`;
+  }
+  if(tPage<pages)h+=`<button class="pg" onclick="goTP(${tPage+1})">→</button>`;
+  document.getElementById('tPager').innerHTML=h;
+}
+function goTP(p){tPage=p;renderProjs();window.scrollTo({top:0,behavior:'smooth'});}
+
+// ══ SHOOT ══
+let sFil='all',sSrch='';
+function renderShootStats(){
+  const tot=SHOOT.length,del=SHOOT.filter(s=>s.tt==='Đã bàn giao').length;
+  document.getElementById('sStats').innerHTML=[
+    {v:tot,l:'Lịch quay chụp',c:'cr',i:ic('camera')},
+    {v:del,l:'Đã bàn giao',c:'cg',i:ic('check-circle')},
+    {v:tot-del,l:'Chờ / TBU',c:'ca',i:ic('clock')},
+  ].map(s=>`<div class="scard ${s.c}"><div class="scard-icon">${s.i}</div><div class="scard-val">${s.v}</div><div class="scard-lbl">${s.l}</div></div>`).join('');
+}
+function getSFiltd(){
+  return SHOOT.filter(s=>{
+    const mF=sFil==='all'||(sFil==='del'&&s.tt==='Đã bàn giao')||(sFil==='pnd'&&s.tt!=='Đã bàn giao');
+    const q=sSrch.toLowerCase();
+    return mF&&(!q||s.ten.toLowerCase().includes(q)||s.dd.toLowerCase().includes(q)||s.pt.toLowerCase().includes(q)||s.yc.toLowerCase().includes(q));
+  });
+}
+function renderShoot(){
+  const list=getSFiltd();
+  document.getElementById('sInfo').innerHTML=`Hiển thị <strong>${list.length}</strong> / ${SHOOT.length} lịch`;
+  if(!list.length){document.getElementById('shootGrid').innerHTML='<div class="no-res" style="grid-column:1/-1"><span class="nr-icon">'+ic('camera')+'</span><p>Không tìm thấy</p></div>';return;}
+  document.getElementById('shootGrid').innerHTML=list.map((s,i)=>{
+    const stB=s.tt==='Đã bàn giao'?'<span class="st-del">'+ic('check-circle')+' Đã bàn giao</span>':s.ngay==='TBU'?'<span class="st-tbu">'+ic('calendar')+' TBU</span>':'<span class="st-pnd">'+ic('clock')+' Chờ</span>';
+    const picH=s.pt?s.pt.split(',').map(n=>`<span class="pic-chip">${ic('user')} ${n.trim()}</span>`).join(''):'<span style="color:var(--t3);font-size:12px">Chưa phân công</span>';
+    return`<div class="scard-item" style="animation-delay:${i*.04}s">
+      <div class="sc-head"><div class="sc-num">${s.stt}</div><div class="sc-title">${s.ten}</div><div class="sc-status">${stB}</div></div>
+      <div class="sc-body">
+        <div class="sc-row"><span class="sc-icon">${ic('clipboard')}</span><div><div class="sc-lbl">Yêu cầu</div><div class="sc-val">${s.yc}</div></div></div>
+        <div class="sc-row"><span class="sc-icon">${ic('map-pin')}</span><div><div class="sc-lbl">Địa điểm</div><div class="sc-val">${s.dd}</div></div></div>
+        <div class="sc-row"><span class="sc-icon">${ic('calendar')}</span><div><div class="sc-lbl">Thời gian</div><span class="dt-chip">${s.ngay}/2026 · ${s.gio} (${s.thu})</span></div></div>
+        <div class="sc-row"><span class="sc-icon">${ic('user')}</span><div><div class="sc-lbl">Phụ trách</div><div class="pic-chips">${picH}</div></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══ VIDEO ══
+let vFil='all',vSrch='';
+function renderVideoStats(){
+  const tot=VIDS.length,done=VIDS.filter(v=>v.tt==='Hoàn thành').length,doing=VIDS.filter(v=>v.tt==='Đang làm').length;
+  document.getElementById('vStats').innerHTML=[
+    {v:tot,l:'Tổng video',c:'cp',i:ic('clapperboard')},{v:done,l:'Hoàn thành',c:'cg',i:ic('check-circle')},
+    {v:doing,l:'Đang xử lý',c:'cn',i:ic('loader')},{v:tot-done-doing,l:'Chờ xử lý',c:'ca',i:ic('clock')},
+    {v:tot?Math.round(done/tot*100)+'%':'0%',l:'Tỉ lệ HT',c:'cr',i:ic('trending-up')},
+  ].map(s=>`<div class="scard ${s.c}"><div class="scard-icon">${s.i}</div><div class="scard-val">${s.v}</div><div class="scard-lbl">${s.l}</div></div>`).join('');
+}
+function getVFiltd(){
+  return VIDS.filter(v=>{
+    const mF=vFil==='all'||(vFil==='Hoàn thành'&&v.tt==='Hoàn thành')||(vFil==='Đang làm'&&v.tt==='Đang làm')||(vFil==='pend'&&v.tt!=='Hoàn thành'&&v.tt!=='Đang làm');
+    const q=vSrch.toLowerCase();
+    return mF&&(!q||v.da.toLowerCase().includes(q)||v.vid.toLowerCase().includes(q)||(v.kb||'').toLowerCase().includes(q)||(v.pic||'').toLowerCase().includes(q));
+  });
+}
+function renderVideos(){
+  const list=getVFiltd();
+  document.getElementById('vInfo').innerHTML=`Hiển thị <strong>${list.length}</strong> / ${VIDS.length} video`;
+  const pc=p=>p===100?'linear-gradient(90deg,#0A7A52,#10B981)':p>0?'linear-gradient(90deg,var(--navy),var(--navy-lt))':'var(--border)';
+  document.getElementById('vBody').innerHTML=list.map(v=>{
+    const cls=v.tt==='Hoàn thành'?'vs-done':v.tt==='Đang làm'?'vs-doing':'vs-pend';
+    const lbl=v.tt==='Hoàn thành'?ic('check-circle')+' Hoàn thành':v.tt==='Đang làm'?ic('loader')+' Đang làm':v.tt?v.tt:ic('clock')+' Chờ xử lý';
+    return`<tr>
+      <td class="vc-stt">${v.stt}</td><td class="vc-da">${v.da}</td><td class="vc-vid">${v.vid}</td>
+      <td style="color:var(--t2);font-size:11.5px">${v.kb||'–'}</td>
+      <td class="vc-date">${v.ord||'–'}</td><td class="vc-date">${v.quay||'–'}</td>
+      <td class="vc-dl">${v.dl||'–'}</td><td class="vc-pic">${v.pic||'–'}</td>
+      <td><div class="prog-line"><div class="pb"><div class="pf" style="width:${v.pct}%;background:${pc(v.pct)}"></div></div><span class="pt">${v.pct}%</span></div></td>
+      <td><span class="${cls}">${lbl}</span></td>
+      <td class="vc-done">${v.done||'–'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══ SOCIAL POST ══
+let spFil='all', spTTFil='all', spSrch='';
+
+function renderSocialStats(){
+  const tot=SOCIAL.length;
+  const done=SOCIAL.filter(s=>s.tt==='Hoàn thành').length;
+  const urgent=SOCIAL.filter(s=>s.tt==='Gấp').length;
+  const pend=SOCIAL.filter(s=>s.tt!=='Hoàn thành'&&s.tt!=='Gấp').length;
+  const totalBai=SOCIAL.reduce((a,s)=>a+s.sl_bai,0);
+  const totalAnh=SOCIAL.reduce((a,s)=>a+s.sl_anh,0);
+  // by type
+  const cd=SOCIAL.filter(s=>s.loai==='Chiến Dịch').length;
+  const ads=SOCIAL.filter(s=>s.loai==='Ads').length;
+
+  document.getElementById('spStats').innerHTML=[
+    {v:tot,   l:'Tổng bài post', c:'ct',i:ic('smartphone')},
+    {v:done,  l:'Hoàn thành',    c:'cg',i:ic('check-circle')},
+    {v:urgent,l:'Gấp',           c:'cr',i:ic('zap')},
+    {v:pend,  l:'Chờ xử lý',     c:'ca',i:ic('clock')},
+    {v:totalBai,l:'Tổng SL bài', c:'cn',i:ic('file-text')},
+    {v:totalAnh,l:'Tổng SL ảnh', c:'cb',i:ic('image')},
+    {v:cd,    l:'Chiến Dịch',    c:'cr',i:ic('megaphone')},
+    {v:ads,   l:'Ads',           c:'cn',i:ic('target')},
+  ].map(s=>`<div class="scard ${s.c}"><div class="scard-icon">${s.i}</div><div class="scard-val">${s.v}</div><div class="scard-lbl">${s.l}</div></div>`).join('');
+}
+
+function loaiBadge(loai){
+  if(!loai)return'<span class="loai-other">—</span>';
+  if(loai==='Chiến Dịch')return`<span class="loai-cd">${ic('megaphone')} ${loai}</span>`;
+  if(loai==='Ads')return`<span class="loai-ads">${ic('target')} Ads</span>`;
+  if(loai==='Web')return`<span class="loai-web">${ic('globe')} Web</span>`;
+  if(loai==='Post Đơn')return`<span class="loai-post">${ic('file-text')} Post Đơn</span>`;
+  if(loai==='Form cover')return`<span class="loai-form">${ic('clipboard')} Form cover</span>`;
+  if(loai==='Cover')return`<span class="loai-cover">${ic('image')} Cover</span>`;
+  return`<span class="loai-other">${loai}</span>`;
+}
+
+function getSPFiltd(){
+  return SOCIAL.filter(s=>{
+    const mF=spFil==='all'
+      ||(spFil==='other'&&s.loai!=='Chiến Dịch'&&s.loai!=='Ads'&&s.loai!=='Web'&&s.loai!=='Post Đơn')
+      ||(s.loai===spFil);
+    const mTT=spTTFil==='all'
+      ||(spTTFil==='Hoàn thành'&&s.tt==='Hoàn thành')
+      ||(spTTFil==='Gấp'&&s.tt==='Gấp')
+      ||(spTTFil==='pending'&&s.tt!=='Hoàn thành'&&s.tt!=='Gấp');
+    const q=spSrch.toLowerCase();
+    const mS=!q||s.nd.toLowerCase().includes(q)||(s.loai||'').toLowerCase().includes(q)||
+             (s.cnt||'').toLowerCase().includes(q)||(s.media||'').toLowerCase().includes(q);
+    return mF&&mTT&&mS;
+  });
+}
+
+function renderSocial(){
+  const list=getSPFiltd();
+  const totAnh=list.reduce((a,s)=>a+s.sl_anh,0);
+  document.getElementById('spInfo').innerHTML=`Hiển thị <strong>${list.length}</strong> / ${SOCIAL.length} bài · <strong>${ic('image')} ${totAnh}</strong> ảnh thiết kế`;
+
+  document.getElementById('spBody').innerHTML=list.map(s=>{
+    // tt badge
+    const ttCls=s.tt==='Hoàn thành'?'vs-done':s.tt==='Gấp'?'vs-urgent':s.tt?'vs-doing':'vs-pend';
+    const ttLbl=s.tt==='Hoàn thành'?ic('check-circle')+' Hoàn thành':s.tt==='Gấp'?ic('zap')+' Gấp':s.tt?s.tt:ic('clock')+' Chờ';
+    // anh badge – inferred if originally null (we set sl_anh_display same but track via comparison)
+    const isInferred=(s.sl_anh===s.sl_bai);
+    const anhClass=isInferred?'anh-badge inferred':'anh-badge';
+    const anhTitle=isInferred?('title="Inferred từ SL Bài ('+s.sl_bai+')"') : '';
+    return`<tr>
+      <td class="vc-stt">${s.stt}</td>
+      <td class="vc-da" style="max-width:260px;white-space:normal;line-height:1.4;">${s.nd}</td>
+      <td>${loaiBadge(s.loai)}</td>
+      <td style="text-align:center;font-weight:700;color:var(--t1)">${s.sl_bai}</td>
+      <td style="text-align:center"><span class="${anhClass}" ${anhTitle}>${ic('image')} ${s.sl_anh}</span></td>
+      <td class="vc-date">${s.ngay||'–'}</td>
+      <td style="color:var(--navy);font-weight:600">${s.cnt||'–'}</td>
+      <td class="vc-pic">${s.media||'–'}</td>
+      <td style="color:var(--t2);font-size:11.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.link}">${s.link||'–'}</td>
+      <td><span class="${ttCls}">${ttLbl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══ INIT ══
+document.addEventListener('DOMContentLoaded',()=>{
+  renderWorkload();
+  renderTaskStats();renderShootStats();renderVideoStats();renderSocialStats();
+  renderProjs();renderShoot();renderVideos();renderSocial();
+  renderPicReport();
+  hydrateIcons();
+
+  // task
+  document.querySelectorAll('#tFilters .fbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#tFilters .fbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');tFil=b.dataset.f;tPage=1;renderProjs();
+  }));
+  let tt;document.getElementById('tSearch').addEventListener('input',e=>{
+    clearTimeout(tt);tt=setTimeout(()=>{tSrch=e.target.value.trim();tPage=1;renderProjs();},220);
+  });
+  // shoot
+  document.querySelectorAll('#sFilters .fbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#sFilters .fbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');sFil=b.dataset.f;renderShoot();
+  }));
+  let st;document.getElementById('sSearch').addEventListener('input',e=>{
+    clearTimeout(st);st=setTimeout(()=>{sSrch=e.target.value.trim();renderShoot();},220);
+  });
+  // video
+  document.querySelectorAll('#vFilters .fbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#vFilters .fbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');vFil=b.dataset.f;renderVideos();
+  }));
+  let vt;document.getElementById('vSearch').addEventListener('input',e=>{
+    clearTimeout(vt);vt=setTimeout(()=>{vSrch=e.target.value.trim();renderVideos();},220);
+  });
+  // social – type filter
+  document.querySelectorAll('#spFilters .fbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#spFilters .fbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');spFil=b.dataset.f;renderSocial();
+  }));
+  // social – tt filter
+  document.querySelectorAll('#spTTFilters .fbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#spTTFilters .fbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');spTTFil=b.dataset.tf;renderSocial();
+  }));
+  let spt;document.getElementById('spSearch').addEventListener('input',e=>{
+    clearTimeout(spt);spt=setTimeout(()=>{spSrch=e.target.value.trim();renderSocial();},220);
+  });
+});
+</script>
+</body>
+</html>
