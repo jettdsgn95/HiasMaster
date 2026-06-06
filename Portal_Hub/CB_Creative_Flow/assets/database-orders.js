@@ -707,7 +707,7 @@
     const round = o.brief_wording_round || 0;
     const approved = isWordingApproved(o);
     const cancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
-    const reachedMap = { none: 0, assigned: 2, in_progress: 2, submitted_to_account: 3, account_revision: 3, sent_to_client: 4, client_feedback: 4, client_approved: 5, completed: 6 };
+    const reachedMap = { none: 0, assigned: 2, in_progress: 2, submitted_to_account: 3, account_revision: 3, sent_to_client: 4, client_feedback: 4, client_approved: 6, completed: 6 };
     const reached = reachedMap[ws] != null ? reachedMap[ws] : 0;
     const steps = ['Account kiểm tra brief', 'Chuyển Content Wording', 'Content xử lý wording', 'Account gửi Client xác nhận', 'Client xác nhận brief wording', 'Sẵn sàng Confirm Brief'];
     const li = steps.map(function (s, i) {
@@ -1391,8 +1391,9 @@
 
     // Ẩn container rỗng để không còn khung/khoảng trắng thừa ở đầu drawer.
     show(flow, briefStage || pushStage);
+    // Hủy đơn giờ ở footer dưới cùng drawer (tách khỏi .drawer-actions trên cùng).
     show(danger, canCancel);
-    show(document.querySelector('#order-drawer .drawer-actions'), briefStage || pushStage || canCancel);
+    show(document.querySelector('#order-drawer .drawer-actions'), briefStage || pushStage);
   }
 
   function closeDrawer() {

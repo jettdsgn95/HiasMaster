@@ -12,6 +12,7 @@ const PUB_STATUS = {
   pending:       { label: 'Đã nhận yêu cầu',            cls: 's--pending' },
   checking:      { label: 'Đang kiểm tra thông tin',     cls: 's--checking' },
   needinfo:      { label: 'Cần bổ sung brief',           cls: 's--needinfo' },
+  wording:       { label: 'Chuẩn hóa brief',             cls: 's--wording' },
   confirmed:     { label: 'Đã tiếp nhận',                cls: 's--confirmed' },
   received:      { label: 'Đang xử lý',                  cls: 's--inprogress' },
   inprogress:    { label: 'Đang sản xuất',               cls: 's--inprogress' },
@@ -27,14 +28,15 @@ const PUB_STATUS = {
 };
 
 const PUB_PROGRESS = {
-  pending:10, checking:15, needinfo:15, confirmed:20,
-  received:30, inprogress:50, review:75, revision:75,
-  feedback_wait:90, feedback_fix:85, ready:90, delivered:95,
+  // Ladder Client (tăng đều theo 6 mốc timeline): gửi đơn 5% → Account kiểm tra 10% → … → 100%.
+  pending:5, checking:10, needinfo:10, wording:15, confirmed:25,
+  received:35, inprogress:55, revision:60, review:70,
+  feedback_wait:80, feedback_fix:85, ready:90, delivered:95,
   completed:100, paused:0, cancelled:0,
 };
 
 const TL_STAGES = [
-  { label:'Đã nhận',           statuses:['pending','checking','needinfo'] },
+  { label:'Đã nhận',           statuses:['pending','checking','needinfo','wording'] },
   { label:'Đã tiếp nhận',      statuses:['confirmed'] },
   { label:'Đang xử lý',        statuses:['received','inprogress','revision','feedback_fix'] },
   { label:'Kiểm tra nội bộ',   statuses:['review','feedback_wait','ready'] },
@@ -374,7 +376,7 @@ function renderActionCenter() {
         </div>
         <p>${o.name} — Team Media cần thêm thông tin để tiếp tục xử lý.</p>
         <div class="action-card-btns">
-          <button class="btn btn-sm" style="background:var(--warning);color:#fff" data-action="needinfo" data-order-id="${o.id}">Bổ sung ngay</button>
+          <button class="btn btn-warning btn-sm" data-action="needinfo" data-order-id="${o.id}">Bổ sung ngay</button>
           <button class="btn btn-secondary btn-sm" data-action="open-order" data-order-id="${o.id}">Xem chi tiết</button>
         </div>
       </div>`;
@@ -389,8 +391,8 @@ function renderActionCenter() {
         </div>
         <p>${o.name} — Đã có <b>bản Preview lần ${roundN}</b> để anh/chị kiểm tra nội dung, bố cục, hình ảnh và gửi feedback.</p>
         <div class="action-card-btns">
-          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
-          <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="approve-preview" data-order-id="${o.id}">Duyệt Preview</button>
+          ${o.preview_link ? `<a class="btn btn-info btn-sm" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+          <button class="btn btn-success btn-sm" data-action="approve-preview" data-order-id="${o.id}">Duyệt Preview</button>
           <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi feedback</button>
         </div>
       </div>`;
@@ -404,7 +406,7 @@ function renderActionCenter() {
         <p>${o.name} — Sản phẩm đã bàn giao. Hãy đánh giá để team cải thiện chất lượng. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, anh/chị có thể tạo một Order mới từ yêu cầu này.</p>
         <div class="action-card-btns">
           ${o.final_link ? `<a class="btn btn-secondary btn-sm" href="${o.final_link}" target="_blank" rel="noopener">Xem Final</a>` : ''}
-          <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="rating" data-order-id="${o.id}">Đánh giá</button>
+          <button class="btn btn-success btn-sm" data-action="rating" data-order-id="${o.id}">Đánh giá</button>
           <button class="btn btn-secondary btn-sm" data-action="new-order-from" data-order-id="${o.id}">Tạo Order mới</button>
         </div>
       </div>`;
@@ -436,12 +438,12 @@ function renderCurrentOrders() {
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${o.type}</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>HSD ${o.deadline}</span>
         </div>
-        <div>
+        <div class="co-card-prog">
           <div class="co-progress-bar"><div class="co-progress-fill" style="width:${pg}%"></div></div>
           <div class="co-progress-label"><span>${st.label}</span><span>${pg}%</span></div>
         </div>
         <div class="co-card-foot">
-          <span style="font-size:var(--text-xs);color:var(--text-muted)">PIC: ${o.pic}</span>
+          <span style="font-size:var(--text-xs);color:var(--text-muted)">PIC: ${o.pic || '—'}</span>
           <span style="font-size:var(--text-xs);color:var(--primary);font-weight:600">Chi tiết →</span>
         </div>
       </div>`;
@@ -551,10 +553,10 @@ function openOrderDrawer(orderId) {
   let actionBlock = '';
   if (o.status === 'needinfo') {
     actionBlock = `<div class="drawer-detail-section"><h4>Cần bổ sung</h4>
-      <div style="padding:var(--space-4);background:rgb(245 158 11 / .1);border-radius:var(--radius);border-left:3px solid var(--warning)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-2)">Team Media cần bạn bổ sung thêm thông tin để tiếp tục xử lý:</p>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0">${o.need_info}</p>
-        <button class="btn btn-sm" style="margin-top:var(--space-3);background:var(--warning);color:#fff" data-action="needinfo" data-order-id="${o.id}">Bổ sung ngay</button>
+      <div class="dw-callout dw--warning">
+        <p>Team Media cần bạn bổ sung thêm thông tin để tiếp tục xử lý:</p>
+        <p class="dw-meta">${o.need_info}</p>
+        <div class="dw-actions"><button class="btn btn-warning btn-sm" data-action="needinfo" data-order-id="${o.id}">Bổ sung ngay</button></div>
       </div></div>`;
   } else if (o.status === 'feedback_wait' && !isFinalDelivered(o)) {
     const _design = appliesRevisionRule(o), _limit = (o.revision_limit || 3);
@@ -563,19 +565,19 @@ function openOrderDrawer(orderId) {
     const fs = o.feedback_status || '';
     if (shouldShowPreviewAction(o)) {
       actionBlock = `<div class="drawer-detail-section"><h4>Bản Preview lần ${roundN} — chờ feedback${_roundTxt}</h4>
-      <div style="padding:var(--space-4);background:rgb(14 165 233 / .1);border-radius:var(--radius);border-left:3px solid var(--info)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Anh/chị có <b>bản Preview lần ${roundN}</b> cần kiểm tra nội dung, bố cục, hình ảnh. Nếu đạt yêu cầu, hãy bấm <b>Duyệt Preview</b>; nếu cần chỉnh, hãy gửi feedback để team Media tiếp tục hoàn thiện.</p>
-        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
-          ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
-          <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="approve-preview" data-order-id="${o.id}">Duyệt Preview</button>
+      <div class="dw-callout dw--info">
+        <p>Anh/chị có <b>bản Preview lần ${roundN}</b> cần kiểm tra nội dung, bố cục, hình ảnh. Nếu đạt yêu cầu, hãy bấm <b>Duyệt Preview</b>; nếu cần chỉnh, hãy gửi feedback để team Media tiếp tục hoàn thiện.</p>
+        <div class="dw-actions">
+          ${o.preview_link ? `<a class="btn btn-info btn-sm" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+          <button class="btn btn-success btn-sm" data-action="approve-preview" data-order-id="${o.id}">Duyệt Preview</button>
           <button class="btn btn-secondary btn-sm" data-action="feedback" data-order-id="${o.id}">Gửi feedback</button>
         </div>
       </div></div>`;
     } else if (fs === 'approved') {
       actionBlock = `<div class="drawer-detail-section"><h4>Đã duyệt Preview</h4>
-      <div style="padding:var(--space-4);background:rgb(22 163 74 / .1);border-radius:var(--radius);border-left:3px solid var(--success)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><b>Bản Preview đã được duyệt.</b> Team Media đang chuẩn bị file Final và sẽ gửi lại trong thời gian sớm nhất.</p>
-        ${o.preview_link ? `<a class="btn btn-sm" style="background:var(--info);color:#fff" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a>` : ''}
+      <div class="dw-callout dw--success">
+        <p><b>Bản Preview đã được duyệt.</b> Team Media đang chuẩn bị file Final và sẽ gửi lại trong thời gian sớm nhất.</p>
+        ${o.preview_link ? `<div class="dw-actions"><a class="btn btn-info btn-sm" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview</a></div>` : ''}
       </div></div>`;
     } else {
       // Vòng cuối (Vòng 3 với order design) → team xử lý xong sẽ bàn giao FINAL, không phải Preview tiếp theo.
@@ -587,9 +589,9 @@ function openOrderDrawer(orderId) {
           ? 'Đã đạt giới hạn số vòng chỉnh sửa. Team Media sẽ liên hệ để thống nhất hướng xử lý tiếp theo.'
           : `Anh/chị đã gửi feedback${_design ? ` Vòng ${_submitted}` : ''}. Team Media đang xử lý và sẽ ${_nextArtifact}.`;
       actionBlock = `<div class="drawer-detail-section"><h4>Đã gửi feedback — chờ team xử lý</h4>
-      <div style="padding:var(--space-4);background:rgb(100 116 139 / .12);border-radius:var(--radius);border-left:3px solid var(--text-muted)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">${_msg}</p>
-        ${o.preview_link ? `<a class="btn btn-secondary btn-sm" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview gần nhất</a>` : ''}
+      <div class="dw-callout dw--muted">
+        <p>${_msg}</p>
+        ${o.preview_link ? `<div class="dw-actions"><a class="btn btn-secondary btn-sm" href="${o.preview_link}" target="_blank" rel="noopener">Xem Preview gần nhất</a></div>` : ''}
       </div></div>`;
     }
   } else if (isFinalDelivered(o)) {
@@ -598,12 +600,12 @@ function openOrderDrawer(orderId) {
       ? 'Yêu cầu đã hoàn tất 03 vòng feedback. Team Media đã xử lý Feedback Vòng 3 và bàn giao bản Final. Anh/chị vui lòng kiểm tra sản phẩm hoàn thiện và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, vui lòng tạo một Order mới từ yêu cầu hiện tại để team tiếp tục xử lý.'
       : 'Sản phẩm đã được bàn giao. Anh/chị vui lòng kiểm tra và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm, có thể tạo một Order mới từ yêu cầu hiện tại.';
     actionBlock = `<div class="drawer-detail-section"><h4>${finishedRounds ? 'Đã bàn giao Final' : 'Đánh giá sản phẩm'}</h4>
-      <div style="padding:var(--space-4);background:rgb(22 163 74 / .1);border-radius:var(--radius);border-left:3px solid var(--success)">
-        <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">${_msg}</p>
-        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+      <div class="dw-callout dw--success">
+        <p>${_msg}</p>
+        <div class="dw-actions">
           ${o.final_link ? `<a class="btn btn-secondary btn-sm" href="${o.final_link}" target="_blank" rel="noopener">Xem Final</a>` : ''}
-          ${!rt ? `<button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="rating" data-order-id="${o.id}">Đánh giá</button>` : ''}
-          <button class="btn btn-sm" style="background:var(--brand-600,#191970);color:#fff" data-action="new-order-from" data-order-id="${o.id}">Tạo Order mới từ yêu cầu này</button>
+          ${!rt ? `<button class="btn btn-success btn-sm" data-action="rating" data-order-id="${o.id}">Đánh giá</button>` : ''}
+          <button class="btn btn-primary btn-sm" data-action="new-order-from" data-order-id="${o.id}">Tạo Order mới từ yêu cầu này</button>
         </div>
       </div></div>`;
   }
@@ -635,7 +637,7 @@ function openOrderDrawer(orderId) {
     const ws = o.brief_wording_status || 'none';
     const wround = o.brief_wording_round || 0;
     const wrow = (label, val) => val && String(val).trim()
-      ? `<div class="detail-row"><span class="detail-dt">${label}</span><span class="detail-dd" style="white-space:pre-wrap">${esc(val)}</span></div>` : '';
+      ? `<div class="dw-detail"><span class="dw-dt">${label}</span><span class="dw-dd" style="white-space:pre-wrap">${esc(val)}</span></div>` : '';
     if (['sent_to_client', 'client_feedback', 'client_approved', 'completed'].includes(ws)) {
       const fields = `
         ${wrow('Brief đã wording', o.wording_brief)}
@@ -644,26 +646,24 @@ function openOrderDrawer(orderId) {
         ${wrow('Thông tin bắt buộc', o.wording_required_info)}
         ${wrow('Tone & style', o.wording_tone_style)}
         ${wrow('CTA đề xuất', o.wording_cta)}
-        ${wround ? `<div class="detail-row"><span class="detail-dt">Vòng hiện tại</span><span class="detail-dd">Vòng ${wround}</span></div>` : ''}`;
-      let head, banner, actions = '';
+        ${wround ? `<div class="dw-detail"><span class="dw-dt">Vòng hiện tại</span><span class="dw-dd">Vòng ${wround}</span></div>` : ''}`;
+      let head, tone, banner, actions = '';
       if (ws === 'sent_to_client') {
-        head = 'Brief đã được chuẩn hóa';
-        banner = `<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Team đã chuẩn hóa nội dung yêu cầu của anh/chị. Vui lòng kiểm tra và <b>xác nhận brief</b> để chuyển sang bước sản xuất, hoặc <b>yêu cầu chỉnh brief</b> nếu cần điều chỉnh.</p>`;
-        actions = `<div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)">
-            <button class="btn btn-sm" style="background:var(--success);color:#fff" data-action="approve-wording" data-order-id="${o.id}">Xác nhận brief</button>
+        head = 'Brief đã được chuẩn hóa'; tone = 'dw--brand';
+        banner = `<p>Team đã chuẩn hóa nội dung yêu cầu của anh/chị. Vui lòng kiểm tra và <b>xác nhận brief</b> để chuyển sang bước sản xuất, hoặc <b>yêu cầu chỉnh brief</b> nếu cần điều chỉnh.</p>`;
+        actions = `<div class="dw-actions">
+            <button class="btn btn-success btn-sm" data-action="approve-wording" data-order-id="${o.id}">Xác nhận brief</button>
             <button class="btn btn-secondary btn-sm" data-action="wording-feedback" data-order-id="${o.id}">Yêu cầu chỉnh brief</button>
           </div>`;
       } else if (ws === 'client_feedback') {
-        head = 'Đã gửi yêu cầu chỉnh brief';
-        banner = `<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)">Anh/chị đã gửi yêu cầu chỉnh brief${o.wording_client_feedback_at ? ' lúc ' + fmtDT(o.wording_client_feedback_at) : ''}. Team đang điều chỉnh và sẽ gửi lại bản chuẩn hóa để anh/chị xác nhận.</p>`;
+        head = 'Đã gửi yêu cầu chỉnh brief'; tone = 'dw--warning';
+        banner = `<p>Anh/chị đã gửi yêu cầu chỉnh brief${o.wording_client_feedback_at ? ' lúc ' + fmtDT(o.wording_client_feedback_at) : ''}. Team đang điều chỉnh và sẽ gửi lại bản chuẩn hóa để anh/chị xác nhận.</p>`;
       } else {
-        head = 'Brief đã được xác nhận';
-        banner = `<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><b>Anh/chị đã xác nhận brief đã chuẩn hóa.</b>${o.wording_approved_at ? ' (' + fmtDT(o.wording_approved_at) + ')' : ''} Team đang triển khai sản xuất theo nội dung đã thống nhất.</p>`;
+        head = 'Brief đã được xác nhận'; tone = 'dw--success';
+        banner = `<p><b>Anh/chị đã xác nhận brief đã chuẩn hóa.</b>${o.wording_approved_at ? ' (' + fmtDT(o.wording_approved_at) + ')' : ''} Team đang triển khai sản xuất theo nội dung đã thống nhất.</p>`;
       }
-      const accent = ws === 'client_approved' || ws === 'completed' ? 'var(--success)'
-        : (ws === 'client_feedback' ? 'var(--warning)' : 'var(--brand-600,#191970)');
       wordingBlock = `<div class="drawer-detail-section"><h4>${head}</h4>
-        <div style="padding:var(--space-4);background:rgb(25 25 112 / .06);border-radius:var(--radius);border-left:3px solid ${accent}">
+        <div class="dw-callout ${tone}">
           ${banner}
           <div>${fields}</div>
           ${actions}
@@ -1044,8 +1044,9 @@ document.addEventListener('click', e => {
 // Tab buttons
 document.querySelectorAll('.client-tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 
-// Notif bell → notif tab
-document.getElementById('notif-btn').addEventListener('click', () => switchTab('notif'));
+// Chuông (#notif-btn) CHỈ mở dropdown thông báo — dropdown do app.js (buildDropdown) wire sẵn
+// trên mọi button[aria-label="Thông báo"]. KHÔNG switchTab ở đây (gây nhảy tab khi bấm chuông).
+// Xem danh sách đầy đủ qua sidebar / tab "Thông báo".
 
 // Drawer
 document.getElementById('drawer-close').addEventListener('click', closeDrawer);

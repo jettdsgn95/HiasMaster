@@ -256,6 +256,12 @@ h4 { font-size: 1.125rem; }
 
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-danger:hover { background: #b91c1c; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #15803d; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { background: #d97706; }
+.btn-info { background: var(--info); color: #fff; }
+.btn-info:hover { background: #0284c7; }
 
 .btn-sm { height: 36px; padding-inline: var(--space-5); font-size: var(--text-xs); }
 .btn-lg { height: 52px; padding-inline: var(--space-7); font-size: var(--text-base); }
@@ -3666,22 +3672,22 @@ body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inlin
 }
 .order-workbench .order-next-action {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-1);
 }
 .order-workbench .order-next-action b {
   display: block;
   color: var(--primary);
-  font-size: var(--text-lg);
-  line-height: 1.25;
+  font-size: var(--text-base);
+  font-weight: 700;
+  line-height: 1.3;
 }
 .order-workbench .order-next-action p {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--text-sm);
   line-height: 1.55;
-  max-width: 680px;
+  max-width: 640px;
 }
 .order-workbench .ow-comment-help {
   margin: 0 0 var(--space-3);
@@ -3711,9 +3717,6 @@ body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inlin
   }
   .order-workbench .order-summary-grid {
     grid-template-columns: 1fr;
-  }
-  .order-workbench .order-next-action {
-    display: grid;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -4623,6 +4626,14 @@ body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inlin
   padding-top: var(--space-3);
   border-top: 1px dashed var(--border);
 }
+/* Hủy đơn dời xuống footer dưới cùng drawer (sibling sau .drawer-body, .drawer = flex-column). */
+.drawer-foot {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-6);
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.drawer-foot.wf-actions-danger { padding-top: var(--space-3); border-top: 1px solid var(--border); justify-content: space-between; }
 .wf-danger-label {
   font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.08em;
@@ -4673,18 +4684,44 @@ body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inlin
 /* Phase 2 — Brief Wording Workflow block + status badge */
 .ow-wording .bw-status { font-size: var(--text-sm); color: var(--text-muted); margin: 2px 0 12px; }
 .ow-wording .bw-status b { color: var(--text); }
-.bw-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.bw-step { display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); }
-.bw-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex: none; border: 1.5px solid var(--border); color: var(--text-muted); background: var(--surface); }
-.bw-step.bw-done .bw-dot { background: var(--success); border-color: var(--success); color: #fff; }
-.bw-step.bw-active .bw-dot { background: rgb(139 92 246 / 0.15); border-color: #6d28d9; color: #6d28d9; }
+/* Wording Lifecycle — flow dọc có đường nối, dùng màu brand navy (done = nền navy, active = viền navy + glow). */
+.bw-steps { list-style: none; margin: 0; padding: 0; }
+.bw-step { position: relative; display: flex; align-items: flex-start; gap: var(--space-3); padding-bottom: var(--space-4); }
+.bw-step:last-child { padding-bottom: 0; }
+.bw-step:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 26px; bottom: 0; width: 2px; background: var(--border); border-radius: 2px; }
+.bw-step.bw-done:not(:last-child)::before { background: var(--primary); }
+.bw-dot { position: relative; z-index: 1; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex: none; border: 2px solid var(--border); color: var(--text-muted); background: var(--surface); transition: box-shadow .2s var(--ease-out), background .2s var(--ease-out); }
+.bw-step.bw-done .bw-dot { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+.bw-step.bw-active .bw-dot { border-color: var(--primary); color: var(--primary); background: var(--surface); box-shadow: 0 0 0 4px var(--primary-soft); }
+.bw-label { font-size: var(--text-sm); padding-top: 3px; color: var(--text-muted); }
 .bw-step.bw-done .bw-label { color: var(--text); }
-.bw-step.bw-active .bw-label { color: var(--text); font-weight: 600; }
+.bw-step.bw-active .bw-label { color: var(--primary); font-weight: 700; }
 .bw-step.bw-pending .bw-label { color: var(--text-muted); }
+/* Tag "đã gửi — chờ duyệt" cho Content khi không còn nút thao tác. */
+.wf-wait-tag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); font-weight: 600; color: var(--warning-fg); background: var(--warning-soft); padding: 6px 12px; border-radius: var(--radius-pill); }
 .bw-note { font-size: var(--text-sm); color: var(--text-muted); margin: 12px 0 0; padding: 10px 12px; background: rgb(139 92 246 / 0.06); border-left: 3px solid #8b5cf6; border-radius: var(--radius); }
 .bw-note.bw-ok { background: var(--success-soft); border-left-color: var(--success); }
 .bw-note.bw-warn { background: rgb(245 158 11 / 0.1); border-left-color: var(--warning); color: var(--text); }
 .tb-status.s--wording { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
+
+/* ===== Drawer callout — 1 component dùng chung cho mọi khối "action/banner/wording" trong drawer.
+   Token-only (màu theo --*-soft/--*-accent, cỡ chữ theo type scale) → bỏ inline rgb() hardcoded. ===== */
+.dw-callout { padding: var(--space-4); border-radius: var(--radius);
+  border-left: 3px solid var(--cl-accent, var(--primary));
+  background: var(--cl-bg, var(--surface-2)); color: var(--text); font-size: var(--text-sm); }
+.dw-callout > :last-child { margin-bottom: 0; }
+.dw-callout h5 { font-size: var(--text-sm); font-weight: 700; margin: 0 0 var(--space-2); color: var(--text); }
+.dw-callout p { font-size: var(--text-sm); line-height: 1.55; margin: 0 0 var(--space-3); color: var(--text); }
+.dw-callout .dw-meta { font-size: var(--text-xs); color: var(--text-muted); }
+.dw-callout .dw-detail { display: flex; gap: var(--space-3); padding: var(--space-1) 0; font-size: var(--text-sm); }
+.dw-callout .dw-detail dt, .dw-callout .dw-detail .dw-dt { width: 150px; flex-shrink: 0; color: var(--text-muted); font-weight: 500; }
+.dw-callout .dw-detail dd, .dw-callout .dw-detail .dw-dd { flex: 1; min-width: 0; font-weight: 500; }
+.dw-callout .dw-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+.dw--info    { --cl-bg: var(--info-soft);    --cl-accent: var(--info); }
+.dw--success { --cl-bg: var(--success-soft); --cl-accent: var(--success); }
+.dw--warning { --cl-bg: var(--warning-soft); --cl-accent: var(--warning); }
+.dw--brand   { --cl-bg: var(--primary-soft); --cl-accent: var(--primary); }
+.dw--muted   { --cl-bg: var(--surface-2);    --cl-accent: var(--border-strong); }
 
 /* Phase 3 — Content Workbench (stats / filters / snapshot) */
 .cwb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -4781,25 +4818,22 @@ body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inlin
 .cl-round4-block { padding: 12px 14px; border-radius: var(--radius); background: rgb(245 158 11 / .12); border: 1px dashed var(--warning); }
 .cl-round4-block p { font-size: var(--text-sm); margin: 0 0 10px; }
 
-/* Hủy đơn: gradient đỏ brand, nằm trong .wf-actions-danger row riêng (tách khỏi flow 4 steps) */
-.drawer-actions .act-cancel {
-  background: linear-gradient(135deg, #E53935 0%, #BA110F 100%);
-  color: #fff;
+/* Hủy đơn (footer drawer): nút danger — icon + chữ ĐỎ brand, nền đỏ nhạt, hover đậm hơn. */
+.act-cancel {
+  background: var(--accent-soft);
+  color: var(--accent);
   border: 1px solid transparent;
-  box-shadow: 0 1px 3px rgba(186, 17, 15, 0.28);
-  transition: filter 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
-.drawer-actions .act-cancel:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(186, 17, 15, 0.3);
+.act-cancel:hover:not(:disabled) {
+  background: var(--red-100);
+  border-color: var(--accent);
 }
-.drawer-actions .act-cancel:disabled {
+.act-cancel:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  box-shadow: none;
 }
-.drawer-actions .act-cancel .icon { color: #fff; stroke: #fff; }
+.act-cancel .icon { color: var(--accent); stroke: var(--accent); }
 
 /* Dark mode tinh chỉnh độ tương phản */
 [data-theme="dark"] .drawer-actions .act-step--1 {

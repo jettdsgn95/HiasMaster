@@ -23,6 +23,10 @@
   const isAdmin = user.role === 'admin';
   const isAccountAdmin = ['admin', 'account'].indexOf(user.role) >= 0;
   const canEditWording = isContent || isAdmin; // Account: read-only workspace (role matrix)
+  // Content chỉ được chỉnh/gửi khi wording đang ở pha của Content. Khi đã 'submitted_to_account'
+  // (chờ Account duyệt) / 'sent_to_client' / 'client_approved' / 'completed' → khóa, tránh gửi lại.
+  const WS_CONTENT_EDITABLE = ['none', 'assigned', 'in_progress', 'account_revision', 'client_feedback'];
+  function contentEditable(o) { return canEditWording && WS_CONTENT_EDITABLE.indexOf((o && o.brief_wording_status) || 'none') >= 0; }
 
   (function () {
     const n = document.getElementById('hpc-name'); if (n) n.textContent = user.name || 'User';
@@ -79,7 +83,7 @@
     { k: 'wording_internal_link', label: 'Internal wording link' }
   ];
   const LIFE = ['Assigned', 'Content Working', 'Submitted to Account', 'Account Review', 'Client Confirmation', 'Approved'];
-  const LIFE_REACHED = { none: 0, assigned: 1, in_progress: 1, account_revision: 1, submitted_to_account: 3, sent_to_client: 4, client_feedback: 4, client_approved: 5, completed: 6 };
+  const LIFE_REACHED = { none: 0, assigned: 1, in_progress: 1, account_revision: 1, submitted_to_account: 3, sent_to_client: 4, client_feedback: 4, client_approved: 6, completed: 6 };
 
   /* ---------- LocalStorage cache (đảm bảo draft persist khi reload kể cả chưa migrate) ---------- */
   const WCACHE_KEY = 'mh-wording-drafts';
@@ -156,14 +160,17 @@
   function buildActions(o) {
     const ws = o.brief_wording_status || 'none';
     const btns = [];
-    if (canEditWording) {
+    if (contentEditable(o)) {
       if (ws === 'assigned' || ws === 'client_feedback') btns.push('<button class="btn btn-secondary btn-sm" id="w-start">' + (ws === 'client_feedback' ? 'Chỉnh theo Client' : 'Bắt đầu xử lý') + '</button>');
       btns.push('<button class="btn btn-secondary btn-sm" id="w-save">Lưu nháp</button>');
       btns.push('<button class="btn btn-primary btn-sm" id="w-submit">Gửi Account duyệt</button>');
+    } else if (isContent && ws === 'submitted_to_account') {
+      // Content đã gửi — chờ Account duyệt: không cho gửi lại, chỉ hiện trạng thái.
+      btns.push('<span class="wf-wait-tag">Đã gửi Account — chờ duyệt</span>');
     }
     if (isAccountAdmin) {
-      if (['submitted_to_account', 'sent_to_client', 'client_feedback'].indexOf(ws) >= 0) btns.push('<button class="btn btn-sm" style="background:var(--warning);color:#fff" id="w-return">Trả Content chỉnh</button>');
-      if (ws === 'submitted_to_account') btns.push('<button class="btn btn-sm" style="background:var(--info);color:#fff" id="w-toclient">Gửi Client xác nhận</button>');
+      if (['submitted_to_account', 'sent_to_client', 'client_feedback'].indexOf(ws) >= 0) btns.push('<button class="btn btn-warning btn-sm" id="w-return">Trả Content chỉnh</button>');
+      if (ws === 'submitted_to_account') btns.push('<button class="btn btn-info btn-sm" id="w-toclient">Gửi Client xác nhận</button>');
     }
     return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div></div>' : '';
   }
@@ -171,7 +178,15 @@
   function buildBody(o) {
     const ws = o.brief_wording_status || 'none';
     const cl = parseChecklist(o.wording_content_checklist);
-    const ro = canEditWording ? '' : 'readonly';
+    const editable = contentEditable(o);
+    const ro = editable ? '' : 'readonly';
+    // Ghi chú khóa workspace: phân biệt khóa do role (account) vs do pha wording (đã gửi/đã chuyển).
+    const lockNote = editable ? '' : '<p class="text-xs muted" style="margin:0 0 8px">'
+      + (!canEditWording ? 'Chỉ Content/Admin chỉnh sửa — bạn đang xem chế độ chỉ đọc.'
+        : (ws === 'submitted_to_account' ? 'Đã gửi Account duyệt — đang chờ Account xử lý, không thể chỉnh.'
+          : (ws === 'sent_to_client' ? 'Đã gửi Client xác nhận — chế độ chỉ đọc.'
+            : ((ws === 'client_approved' || ws === 'completed') ? 'Brief wording đã hoàn tất — chế độ chỉ đọc.' : 'Chế độ chỉ đọc.'))))
+      + '</p>';
     const v = function (x) { return x ? esc(x) : '<em class="muted">—</em>'; };
     const arr = function (a) { return (Array.isArray(a) && a.length) ? a.map(function (x) { return '<span class="chip-mini">' + esc(x) + '</span>'; }).join('') : '<em class="muted">—</em>'; };
     const link = function (u) { return u ? '<a class="link" href="' + esc(u) + '" target="_blank" rel="noopener">Mở link</a>' : '<em class="muted">—</em>'; };
@@ -181,13 +196,13 @@
       const st = i < reached ? 'done' : (i === reached ? 'active' : 'pending');
       return '<li class="bw-step bw-' + st + '"><span class="bw-dot">' + (st === 'done' ? '✓' : (i + 1)) + '</span><span class="bw-label">' + s + '</span></li>';
     }).join('');
-    const revisionNote = (ws === 'account_revision' && o.wording_account_note) ? '<div class="bw-note" style="border-left-color:var(--warning);background:rgb(245 158 11 / .08)"><b>Account yêu cầu chỉnh:</b> ' + esc(o.wording_account_note) + '</div>' : '';
+    const revisionNote = (ws === 'account_revision' && o.wording_account_note) ? '<div class="dw-callout dw--warning" style="margin-top:var(--space-3)"><p><b>Account yêu cầu chỉnh:</b> ' + esc(o.wording_account_note) + '</p></div>' : '';
 
     const wf = WFIELDS.map(function (f) {
       return '<div class="field"><label class="label">' + f.label + (f.req ? ' <span class="req" style="color:var(--danger)">*</span>' : '') + '</label><textarea class="textarea cwb-field" id="w-' + f.k + '" rows="' + f.rows + '" ' + ro + ' placeholder="...">' + esc(o[f.k] || '') + '</textarea></div>';
     }).join('');
     const clHtml = CHECKLIST.map(function (c) {
-      return '<label class="checkbox"><input type="checkbox" class="cwb-check" id="cl-' + c.k + '" ' + (cl[c.k] ? 'checked' : '') + ' ' + (canEditWording ? '' : 'disabled') + ' /><div><span class="checkbox-text">' + c.label + '</span></div></label>';
+      return '<label class="checkbox"><input type="checkbox" class="cwb-check" id="cl-' + c.k + '" ' + (cl[c.k] ? 'checked' : '') + ' ' + (editable ? '' : 'disabled') + ' /><div><span class="checkbox-text">' + c.label + '</span></div></label>';
     }).join('');
     const lk = LINKS.map(function (f) {
       return '<div class="field"><label class="label">' + f.label + '</label><input class="input cwb-field" type="url" id="w-' + f.k + '" ' + ro + ' value="' + esc(o[f.k] || '') + '" placeholder="https://..." /></div>';
@@ -201,14 +216,14 @@
 
     var clientInner;
     if (ws === 'client_feedback' && o.wording_client_feedback) {
-      clientInner = '<div class="bw-note" style="border-left-color:var(--danger);background:rgb(186 17 15 / .06)"><b>Client yêu cầu chỉnh — Vòng ' + (o.brief_wording_round || 0) + '</b>'
-        + (o.wording_client_feedback_at ? ' <span class="text-xs muted">· ' + fmtDT(o.wording_client_feedback_at) + '</span>' : '')
-        + '<div style="white-space:pre-wrap;margin-top:6px">' + esc(o.wording_client_feedback) + '</div></div>';
+      clientInner = '<div class="dw-callout dw--warning"><p><b>Client yêu cầu chỉnh — Vòng ' + (o.brief_wording_round || 0) + '</b>'
+        + (o.wording_client_feedback_at ? ' <span class="dw-meta">· ' + fmtDT(o.wording_client_feedback_at) + '</span>' : '') + '</p>'
+        + '<p style="white-space:pre-wrap">' + esc(o.wording_client_feedback) + '</p></div>';
     } else if (ws === 'sent_to_client') {
-      clientInner = '<p class="text-xs muted" style="margin:0">Đã gửi Client — chờ Client xác nhận brief wording.</p>';
+      clientInner = '<div class="dw-callout dw--brand"><p>Đã gửi Client — chờ Client xác nhận brief wording.</p></div>';
     } else if (ws === 'client_approved' || ws === 'completed') {
-      clientInner = '<div class="bw-note" style="border-left-color:var(--success);background:rgb(22 163 74 / .08)"><b>Client đã xác nhận brief wording.</b>'
-        + (o.wording_approved_at ? ' <span class="text-xs muted">· ' + fmtDT(o.wording_approved_at) + '</span>' : '') + '</div>';
+      clientInner = '<div class="dw-callout dw--success"><p><b>Client đã xác nhận brief wording.</b>'
+        + (o.wording_approved_at ? ' <span class="dw-meta">· ' + fmtDT(o.wording_approved_at) + '</span>' : '') + '</p></div>';
     } else {
       clientInner = '<p class="text-xs muted" style="margin:0">Chưa gửi Client.</p>';
     }
@@ -233,8 +248,8 @@
         + '<dt>Source link</dt><dd>' + link(o.source_link) + '</dd>'
         + '<dt>Client deadline</dt><dd>' + v(o.requested_deadline) + '</dd>'
       + '</dl></section>'
-      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">W</span><h4>Wording Workspace</h4></div>' + (canEditWording ? '' : '<p class="text-xs muted" style="margin:0 0 8px">Chỉ Content/Admin chỉnh sửa — bạn đang xem chế độ chỉ đọc.</p>') + wf + '</section>'
-      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Checklist trách nhiệm Content</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>' + (canEditWording ? '<p class="text-xs muted" style="margin:10px 0 0">Bắt buộc tích đủ + điền các trường (*) trước khi "Gửi Account duyệt".</p>' : '') + '</section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">W</span><h4>Wording Workspace</h4></div>' + lockNote + wf + '</section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Checklist trách nhiệm Content</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>' + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Bắt buộc tích đủ + điền các trường (*) trước khi "Gửi Account duyệt".</p>' : '') + '</section>'
       + acctPanel
       + clientPanel
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">F</span><h4>Files / Links</h4></div>' + lk + '</section>'
@@ -302,7 +317,7 @@
   }
 
   async function saveDraft() {
-    if (!canEditWording) return;
+    if (!contentEditable(current)) return;
     const data = collectForm();
     const nowIso = new Date().toISOString();
     const patch = Object.assign({}, data, { wording_last_updated_at: nowIso });
@@ -312,7 +327,7 @@
     reloadAndReopen();
   }
   async function startWork() {
-    if (!canEditWording) return;
+    if (!contentEditable(current)) return;
     if (['assigned', 'account_revision', 'client_feedback'].indexOf(current.brief_wording_status) < 0) return;
     const startMsg = current.brief_wording_status === 'client_feedback' ? 'Content chỉnh theo Client' : 'Content bắt đầu xử lý';
     await persist(current, { brief_wording_status: 'in_progress', wording_last_updated_at: new Date().toISOString() }, startMsg);
@@ -320,7 +335,8 @@
     reloadAndReopen();
   }
   async function submitToAccount() {
-    if (!canEditWording) return;
+    if (!contentEditable(current)) return;
+    if (current.brief_wording_status === 'submitted_to_account') { toast('info', 'Đã gửi', current.order_id + ' — bản wording đã gửi Account, đang chờ duyệt.'); return; }
     if (!isValidForSubmit()) { toast('warning', 'Chưa đủ điều kiện', 'Hoàn tất các trường bắt buộc (*) + toàn bộ checklist trước khi gửi.'); return; }
     const data = collectForm();
     const nowIso = new Date().toISOString();
