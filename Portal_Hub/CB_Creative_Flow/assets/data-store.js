@@ -142,6 +142,23 @@
       }
       return null;
     },
+    // Ghi field wording qua RPC update_brief_wording (SECURITY DEFINER, whitelist cột).
+    // Đường ghi orders DUY NHẤT cho role content/client (không có UPDATE trực tiếp dưới RLS).
+    async updateWording(orderId, patch) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.rpc('update_brief_wording', { p_order_id: orderId, p_patch: patch || {} });
+        if (error) { console.warn('[store.orders.updateWording]', error); throw error; }
+        return data; // RPC RETURNS public.orders → row object
+      }
+      // Fallback mock (Supabase off): mutate in-memory như update().
+      const list = window.MH_MOCK_ORDERS;
+      if (list) {
+        const idx = list.findIndex((o) => o.order_id === orderId);
+        if (idx >= 0) { list[idx] = Object.assign({}, list[idx], patch); return list[idx]; }
+      }
+      return null;
+    },
     async create(payload) {
       const s = await sb();
       if (s) {

@@ -283,7 +283,8 @@
     setCache(o.order_id, patch);
     if (activity) pushActivity(o.order_id, activity);
     if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
-      try { await window.MH.store.orders.update(o.order_id, patch); } catch (e) { console.warn('[cwb] persist failed:', e); }
+      // Ghi qua RPC update_brief_wording (content KHÔNG có UPDATE orders trực tiếp dưới RLS).
+      try { await window.MH.store.orders.updateWording(o.order_id, patch); } catch (e) { console.warn('[cwb] persist failed:', e); }
     } else {
       // localStorage-only: cập nhật mh-submitted-orders nếu có
       try {

@@ -782,12 +782,11 @@ async function approveWording(orderId) {
   if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
   try {
     await window.MH.supabaseReady;
-    await window.MH.store.orders.update(o.id, {
+    // Ghi qua RPC update_brief_wording (client KHÔNG có UPDATE orders trực tiếp dưới RLS).
+    await window.MH.store.orders.updateWording(o.id, {
       brief_wording_status: 'client_approved',
       wording_approved_at: nowIso,
-      wording_approved_by: by,
-      wording_last_updated_at: nowIso,
-      last_updated: nowIso
+      wording_approved_by: by
     });
     const { data: staff } = await window.MH.supabase
       .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
@@ -1153,13 +1152,12 @@ document.getElementById('feedback-modal').addEventListener('click', e => { if (e
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
     try {
       await window.MH.supabaseReady;
-      await window.MH.store.orders.update(o.id, {
+      // Ghi qua RPC update_brief_wording (client KHÔNG có UPDATE orders trực tiếp dưới RLS).
+      await window.MH.store.orders.updateWording(o.id, {
         brief_wording_status: 'client_feedback',
         brief_wording_round: nextRound,
         wording_client_feedback: fbText,
-        wording_client_feedback_at: nowIso,
-        wording_last_updated_at: nowIso,
-        last_updated: nowIso
+        wording_client_feedback_at: nowIso
       });
       const { data: staff } = await window.MH.supabase
         .from('users').select('id').in('role', ['admin', 'account', 'content']).eq('status', 'active');

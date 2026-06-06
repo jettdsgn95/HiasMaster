@@ -477,6 +477,8 @@ h4 { font-size: 1.125rem; }
 }
 
 .checkbox, .radio { display: inline-flex; align-items: flex-start; gap: var(--space-3); cursor: pointer; user-select: none; }
+/* [hidden] phải thắng display:inline-flex ở trên (vd checkbox xác nhận revision chỉ hiện ở order chỉnh sửa). */
+.checkbox[hidden], .radio[hidden] { display: none !important; }
 .checkbox input, .radio input {
   appearance: none; width: 20px; height: 20px; margin-top: 2px;
   border: 1.5px solid var(--border-strong); border-radius: 5px;
