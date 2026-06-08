@@ -119,7 +119,21 @@
       try { list = JSON.parse(localStorage.getItem('mh-submitted-orders') || '[]'); } catch (e) { list = []; }
     }
     const cache = loadCache();
-    list = list.map(function (o) { return Object.assign({}, o, cache[o.order_id] || {}); });
+    // Cache localStorage chỉ để PRESERVE bản nháp content (text/checklist/links/activity).
+    // KHI Supabase bật → DB là NGUỒN THẬT cho lifecycle/status: KHÔNG để cache cũ đè
+    // (Account/Client tiến order ở DB, không ghi vào cache content → tránh desync stage).
+    const DB_AUTH = ['brief_wording_status', 'brief_wording_round', 'wording_last_updated_at',
+      'wording_submitted_at', 'wording_submitted_by', 'wording_client_sent_at', 'wording_client_sent_by',
+      'wording_approved_at', 'wording_client_feedback', 'wording_client_feedback_at',
+      'wording_account_note', 'wording_deadline', 'account_status', 'production_status'];
+    const sbOn = !!(window.MH && window.MH.supabaseEnabled);
+    list = list.map(function (o) {
+      const c = cache[o.order_id];
+      if (!c) return o;
+      const merged = Object.assign({}, o, c);
+      if (sbOn) DB_AUTH.forEach(function (k) { merged[k] = o[k]; }); // DB thắng cho status/lifecycle
+      return merged;
+    });
     window.__CWB_ALL = list; // giữ full list cho auto-open theo ?id
     ORDERS = list.filter(function (o) { return ENGAGED.indexOf(o.brief_wording_status || 'none') >= 0; });
     if (!deptFilled) { fillDeptOptions(); deptFilled = true; }
