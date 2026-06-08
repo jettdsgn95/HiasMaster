@@ -39,6 +39,16 @@
   function toast(t, ti, m) { if (window.MH && window.MH.toast) window.MH.toast({ type: t, title: ti, message: m }); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
   function fmtDT(s) { if (!s) return '—'; s = String(s); const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z'); if (isNaN(d.getTime())) return s; const p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  // Trễ hạn wording: có wording_deadline, chưa duyệt/hoàn tất, chưa hủy, đã quá hạn.
+  function isWordingOverdue(o) {
+    if (!o || !o.wording_deadline) return false;
+    const ws = o.brief_wording_status || 'none';
+    if (ws === 'client_approved' || ws === 'completed') return false;
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled') return false;
+    const s = String(o.wording_deadline);
+    const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z');
+    return !isNaN(d.getTime()) && d.getTime() < Date.now();
+  }
 
   const WSTATUS = {
     none: 'Chưa chuyển Content Wording', assigned: 'Đã chuyển Content Wording', in_progress: 'Content đang xử lý',
@@ -148,12 +158,13 @@
         + '<td><span class="text-xs">' + esc(TYPE_LABEL[o.request_type] || o.request_type || '—') + '</span></td>'
         + '<td><span class="priority-pill p--' + (o.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_LABEL[o.priority] || o.priority || '—') + '</span></td>'
         + '<td><span class="text-xs">' + esc(o.requested_deadline || '—') + '</span></td>'
+        + '<td><span class="text-xs' + (isWordingOverdue(o) ? ' cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + (isWordingOverdue(o) ? ' ⚠' : '') + '</span></td>'
         + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(WSTATUS[ws] || ws) + '</span></td>'
         + '<td><span class="text-xs">' + (o.brief_wording_round || 0) + '</span></td>'
         + '<td><span class="text-xs">' + esc(o.brief_wording_pic || '—') + '</span></td>'
         + '<td><button class="btn btn-secondary btn-sm" data-open="' + esc(o.order_id) + '">Mở Wording Drawer</button></td>'
         + '</tr>';
-    }).join('') : '<tr><td colspan="10" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có order nào cần Content Wording.</td></tr>';
+    }).join('') : '<tr><td colspan="11" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có order nào cần Content Wording.</td></tr>';
   }
 
   /* ---------- Drawer ---------- */
@@ -247,6 +258,7 @@
         + '<dt>File brief</dt><dd>' + link(o.file_brief_url) + '</dd>'
         + '<dt>Source link</dt><dd>' + link(o.source_link) + '</dd>'
         + '<dt>Client deadline</dt><dd>' + v(o.requested_deadline) + '</dd>'
+        + '<dt>Hạn wording</dt><dd>' + (o.wording_deadline ? '<span class="' + (isWordingOverdue(o) ? 'cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + '</span>' + (isWordingOverdue(o) ? ' · ⚠ trễ' : '') : '<em class="muted">— (Account chưa đặt)</em>') + '</dd>'
       + '</dl></section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">W</span><h4>Wording Workspace</h4></div>' + lockNote + wf + '</section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Checklist trách nhiệm Content</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>' + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Bắt buộc tích đủ + điền các trường (*) trước khi "Gửi Account duyệt".</p>' : '') + '</section>'

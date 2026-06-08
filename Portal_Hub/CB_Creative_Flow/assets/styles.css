@@ -1846,6 +1846,9 @@ body[data-user-role="account"] .btn[data-show-roles*="account"],
 body[data-user-role="design"]  .btn[data-show-roles*="design"],
 body[data-user-role="editor"]  .btn[data-show-roles*="editor"] { display: inline-flex; }
 
+/* Hạn wording trễ hạn — tô đỏ (dùng ở Order drawer + Content Wording table/drawer) */
+.cwb-overdue { color: var(--danger); font-weight: 700; }
+
 /* Phase 1 — Content role visibility (data-show-roles*="content") */
 body[data-user-role="content"] [data-show-roles*="content"] { display: revert; }
 body[data-user-role="content"] li[data-show-roles*="content"] { display: list-item; }
@@ -1855,6 +1858,14 @@ body[data-user-role="content"] .dash-card[data-show-roles*="content"],
 body[data-user-role="content"] .hpm-item[data-show-roles*="content"] { display: flex; }
 body[data-user-role="content"] .dash-section[data-show-roles*="content"] { display: block; }
 body[data-user-role="content"] .btn[data-show-roles*="content"] { display: inline-flex; }
+/* Content role: tạm ẩn nav của team Production (Content là team tách biệt, không xem KPI
+   tổng hợp Production). Master Dashboard + Task Dashboard + Internal Task Tracker KHÔNG có
+   data-show-roles (mặc định hiện mọi role) → ẩn bằng :has() theo href. Áp dụng MỌI trang nội
+   bộ vì sidebar dùng markup chung; không cần sửa từng HTML. Content chỉ còn Content Wording
+   (+ Calendar/AI Tools/Chatbot). Sau này có workflow riêng cho team Content sẽ mở lại tương ứng. */
+body[data-user-role="content"] .dash-nav li:has(> a[href="dashboard.html"]),
+body[data-user-role="content"] .dash-nav li:has(> a[href="task-dashboard.html"]),
+body[data-user-role="content"] .dash-nav li:has(> a[href="production-board.html"]) { display: none !important; }
 
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }

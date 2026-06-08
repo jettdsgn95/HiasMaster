@@ -108,6 +108,14 @@
   // Wording đã được duyệt → cho phép Confirm Brief.
   function wordingStatusOf(o) { return (o && o.brief_wording_status) || 'none'; }
   function isWordingApproved(o) { const w = wordingStatusOf(o); return w === 'client_approved' || w === 'completed'; }
+  // Trễ hạn wording: có wording_deadline, chưa duyệt/hoàn tất, chưa hủy, và đã quá hạn.
+  function isWordingOverdue(o) {
+    if (!o || !o.wording_deadline) return false;
+    if (isWordingApproved(o)) return false;
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled') return false;
+    const d = new Date(String(o.wording_deadline).replace(' ', 'T'));
+    return !isNaN(d.getTime()) && d.getTime() < Date.now();
+  }
   const PROD_STATUS_LABEL = {
     unassigned: 'Chưa phân công', received: 'Nhận task', inprogress: 'Đang thực hiện',
     review: 'Chờ duyệt nội bộ', revision: 'Chỉnh sửa nội bộ', ready: 'Sẵn sàng bàn giao',
@@ -737,16 +745,30 @@
     const canSendClient = !cancelled && ws === 'submitted_to_account' && !!(o.wording_brief && String(o.wording_brief).trim());
     const showSendBtn = !cancelled && !approved && ['submitted_to_account', 'sent_to_client', 'client_feedback', 'account_revision'].includes(ws);
     const soft3 = round >= 3 && !approved;
+    const overdue = isWordingOverdue(o);
+    // Hạn hoàn thành wording — Account đặt khi/ sau khi Chuyển Content Wording (đặt nhanh).
+    const deadlineEditable = !cancelled && !approved;
+    const deadlineField = `
+        <div class="bw-deadline-field" style="margin-top:12px">
+          <label class="label" for="ow-wording-deadline">Hạn hoàn thành wording</label>
+          <div class="row" style="gap:8px; align-items:center">
+            <input class="input" type="datetime-local" id="ow-wording-deadline" value="${toLocalInput(o.wording_deadline)}" ${deadlineEditable ? '' : 'disabled'} style="max-width:230px" />
+            <button type="button" class="btn btn-secondary btn-sm" id="act-save-wording-deadline" ${deadlineEditable ? '' : 'disabled'}>Lưu hạn</button>
+          </div>
+          ${o.wording_deadline ? `<p class="text-xs ${overdue ? 'cwb-overdue' : 'muted'}" style="margin:6px 0 0">Hạn wording: <b>${fmtDateTime(o.wording_deadline)}</b>${overdue ? ' · ⚠ Đã trễ hạn' : ''}</p>` : `<p class="text-xs muted" style="margin:6px 0 0">${ws === 'none' ? 'Đặt hạn rồi bấm "Chuyển Content Wording" — hạn sẽ đi kèm.' : 'Chưa đặt hạn wording.'}</p>`}
+        </div>`;
     return `
       <section class="drawer-block ow-wording">
         <div class="drawer-block-head"><span class="block-letter">W</span><h4>Brief Wording Workflow</h4></div>
         <div class="bw-status">Trạng thái: <b>${WORDING_STATUS_LABEL[ws] || ws}</b>${round ? ' · Vòng ' + round : ''}</div>
         <ol class="bw-steps">${li}</ol>
         ${note}
+        ${deadlineField}
         ${soft3 ? '<p class="bw-note bw-warn">Brief wording đã qua 3 vòng chỉnh. Account cần xác nhận hướng xử lý tiếp theo.</p>' : ''}
         ${ws !== 'none' ? `
         <dl class="bw-summary" style="margin:12px 0 0">
           <dt>PIC Content</dt><dd>${o.brief_wording_pic ? escapeHtml(o.brief_wording_pic) : '<em class="muted">Chưa gán</em>'}</dd>
+          <dt>Hạn wording</dt><dd>${o.wording_deadline ? `<span class="${overdue ? 'cwb-overdue' : ''}">${fmtDateTime(o.wording_deadline)}</span>${overdue ? ' · ⚠ trễ' : ''}` : '<em class="muted">—</em>'}</dd>
           <dt>Vòng wording</dt><dd>${round || '<em class="muted">—</em>'}</dd>
           <dt>Gửi Account lúc</dt><dd>${o.wording_submitted_at ? fmtDateTime(o.wording_submitted_at) : '<em class="muted">—</em>'}</dd>
           <dt>Xác nhận Client</dt><dd>${escapeHtml(clientConfText)}</dd>
@@ -1317,6 +1339,10 @@
     const sendWordingBtn = document.getElementById('act-send-wording-client');
     if (sendWordingBtn) sendWordingBtn.addEventListener('click', () => sendWordingToClient(currentOrder));
 
+    // Wire "Lưu hạn" — Account đặt/sửa Hạn hoàn thành wording.
+    const saveDlBtn = document.getElementById('act-save-wording-deadline');
+    if (saveDlBtn) saveDlBtn.addEventListener('click', () => saveWordingDeadline(currentOrder));
+
     // Update stepper state theo account_status + production_status
     updateStepperState(o);
 
@@ -1658,15 +1684,36 @@
     o.brief_wording_round = (o.brief_wording_round || 0) === 0 ? 1 : o.brief_wording_round;
     o.wording_last_updated_at = nowIso;
     o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
-    persistOrder(o.order_id, {
+    const patch = {
       account_status: 'wording',
       brief_wording_status: 'assigned',
       brief_wording_round: o.brief_wording_round,
       wording_last_updated_at: nowIso,
       last_updated: nowIso
-    });
-    window.MH.toast({ type: 'success', title: 'Đã chuyển Content Wording', message: o.order_id + ' — chờ Content xử lý & Client xác nhận brief wording trước khi Confirm Brief.' });
+    };
+    // Kèm "Hạn hoàn thành wording" nếu Account đã nhập ô deadline trong block.
+    const dlEl = document.getElementById('ow-wording-deadline');
+    if (dlEl && dlEl.value) {
+      const iso = new Date(dlEl.value).toISOString();
+      o.wording_deadline = iso; patch.wording_deadline = iso;
+    }
+    persistOrder(o.order_id, patch);
+    window.MH.toast({ type: 'success', title: 'Đã chuyển Content Wording', message: o.order_id + (o.wording_deadline ? ' · Hạn wording ' + fmtDateTime(o.wording_deadline) : '') + ' — chờ Content xử lý & Client xác nhận brief wording.' });
     render(); openDrawer(o);
+  }
+
+  // Account đặt/sửa "Hạn hoàn thành wording" (đặt nhanh, không cần chuyển lại).
+  function saveWordingDeadline(o) {
+    if (!o) return;
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
+      window.MH.toast({ type: 'warning', title: 'Order đã hủy', message: 'Không thể đặt hạn wording cho order đã hủy.' }); return;
+    }
+    const dlEl = document.getElementById('ow-wording-deadline');
+    const iso = (dlEl && dlEl.value) ? new Date(dlEl.value).toISOString() : null;
+    o.wording_deadline = iso;
+    persistOrder(o.order_id, { wording_deadline: iso });
+    window.MH.toast({ type: 'success', title: 'Đã lưu hạn wording', message: o.order_id + (iso ? ' · ' + fmtDateTime(iso) : ' · đã xóa hạn') });
+    openDrawer(o);
   }
 
   // Phase 4 — Account gửi bản wording cho Client xác nhận.

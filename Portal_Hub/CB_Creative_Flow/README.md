@@ -120,6 +120,7 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 9. [`add-media-pics.sql`](supabase/add-media-pics.sql) — request_type CHECK thêm `'media'` (Quay/Chụp gộp) + orders.production_pic_video / production_pic_photo (BẮT BUỘC cho order type media)
 10. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
 11. [`add-shoot-date.sql`](supabase/add-shoot-date.sql) — orders/tasks.shoot_date + shoot_time (cho Calendar chấm lịch quay/chụp; order-form lưu media_date→shoot_date, push kế thừa sang task)
+12. [`add-wording-deadline.sql`](supabase/add-wording-deadline.sql) — orders.wording_deadline (Hạn hoàn thành wording; Account đặt ở Order drawer, Content Wording hiển thị + tô đỏ khi trễ)
 
 ### Order ↔ Task ↔ Delivery relationship
 
