@@ -12,8 +12,9 @@
      - content          → order đang ở wording active + lịch quay/chụp của
                           order đó (phạm vi "liên quan" cho role wording).
 
-   Demo "hôm nay" = new Date('2026-05-13') — thống nhất với reports/board
-   để event demo hiện đúng tháng (xem _hot.md mục Data Conventions).
+   "Hôm nay" = ngày THẬT (new Date()) — lịch phản ánh đúng thực tế, mặc định
+   mở tháng hiện tại. Đồng bộ realtime: Supabase Realtime trên orders/tasks
+   (best-effort) + poll 60s + reload khi quay lại tab.
    ===================================================================== */
 (function () {
   'use strict';
@@ -28,7 +29,9 @@
   const IS_CONTENT = ROLE === 'content';
 
   /* ---------- Hằng số ---------- */
-  const TODAY = new Date('2026-05-13'); // demo anchor (đồng bộ reports/board)
+  // "Hôm nay" = ngày THẬT (không hardcode demo anchor) — lịch phản ánh đúng thực tế.
+  // Tính theo local midnight để so khớp theo NGÀY, không lệch vì giờ/giây.
+  const TODAY = (function () { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); })();
   const TODAY_KEY = dayKey(TODAY);
   const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']; // Monday-first (giống ref)
   const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
@@ -403,7 +406,8 @@
   }
 
   /* ---------- Load ---------- */
-  async function load() {
+  // silent=true → refresh ngầm (realtime/poll), không bật lại spinner, giữ nguyên view/cursor/filter.
+  async function load(silent) {
     setScopeNote();
     let tasks = [], orders = [];
     try {
@@ -422,9 +426,40 @@
       console.warn('[calendar] load failed:', e);
     }
     allEvents = buildEvents(tasks, orders);
-    if (elLoading) elLoading.hidden = true;
-    if (elSurface) elSurface.hidden = false;
+    if (!silent) {
+      if (elLoading) elLoading.hidden = true;
+      if (elSurface) elSurface.hidden = false;
+    }
     render();
+  }
+
+  /* ---------- Đồng bộ realtime ----------
+     1) Supabase Realtime trên orders/tasks (best-effort — chỉ fire nếu 2 bảng
+        đã được ADD vào publication; nếu chưa, poll 60s lo phần còn lại).
+     2) Poll 60s fallback. 3) Reload khi quay lại tab (visibilitychange).
+     Mọi reload là silent (không nháy spinner, giữ nguyên tháng/view/filter). */
+  let reloadTimer = null;
+  function scheduleReload() {
+    if (reloadTimer) clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(() => { reloadTimer = null; load(true); }, 600); // debounce burst thay đổi
+  }
+  function startRealtime() {
+    // 2) Poll fallback
+    setInterval(() => { if (!document.hidden) load(true); }, 60000);
+    // 3) Reload khi tab được focus lại
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) load(true); });
+    // 1) Supabase Realtime (nếu có client)
+    try {
+      const sbc = window.MH && window.MH.supabase;
+      if (!sbc || typeof sbc.channel !== 'function') return;
+      const ch = sbc.channel('cal-sync-' + (USER.id || USER.email || 'anon'));
+      if (!IS_CONTENT) ch.on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, scheduleReload);
+      if (!IS_PRODUCTION) ch.on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, scheduleReload);
+      ch.subscribe();
+      window.addEventListener('beforeunload', () => { try { sbc.removeChannel(ch); } catch (e) {} });
+    } catch (e) {
+      console.warn('[calendar] realtime subscribe failed (poll vẫn chạy):', e);
+    }
   }
 
   /* ---------- esc ---------- */
@@ -433,9 +468,10 @@
   }
 
   /* ---------- Boot ---------- */
+  function boot() { wire(); load().then(startRealtime); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { wire(); load(); });
+    document.addEventListener('DOMContentLoaded', boot);
   } else {
-    wire(); load();
+    boot();
   }
 })();

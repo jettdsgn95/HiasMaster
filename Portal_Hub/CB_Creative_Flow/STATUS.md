@@ -177,7 +177,7 @@ Status: Done (2026-06-08)
 - **Role filter** (yêu cầu nghiệp vụ): admin/account = FULL (mọi task+order) · design/editor = CHỈ task `isMyTask(assigned_to)` (deadline+shoot của task mình, không xem order-level) · content = order đang wording active.
 - **Read-only**: click event → popover (ngày/giờ/PIC/trạng thái) → "Mở chi tiết" navigate `production-board.html?id=` (task) / `database-orders.html?id=` (order admin/account) / `content-workbench.html?order=` (content). Task vẫn tạo/sửa ở Task Tracker.
 - **Shoot date**: cột mới `orders/tasks.shoot_date`+`shoot_time` (migration `add-shoot-date.sql` ⚠ pending). `order-form.js` lưu `media_date`→`shoot_date`; `database-orders.js pushToProduction` kế thừa sang task quay/chụp. calendar.js fallback regex bóc `Ngày: YYYY-MM-DD` từ content_brief khi chưa migrate.
-- Nav "Lịch" inject 1 chỗ qua `app.js injectCalendarNav()` → hiện trên mọi trang nội bộ. "Hôm nay" = `new Date('2026-05-13')` (demo anchor đồng bộ board/reports). CSS `.cal-*` cuối `styles.css`.
+- Nav "Lịch" inject 1 chỗ qua `app.js injectCalendarNav()` → hiện trên mọi trang nội bộ. **"Hôm nay" = `new Date()` ngày THẬT** (mặc định mở tháng hiện tại). **Đồng bộ realtime**: Supabase Realtime orders/tasks (best-effort) + poll 60s + reload khi quay lại tab (silent, giữ view/filter). CSS `.cal-*` cuối `styles.css`.
 
 ---
 
