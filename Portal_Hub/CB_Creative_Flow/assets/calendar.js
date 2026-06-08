@@ -39,9 +39,11 @@
   const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao' };
 
   /* ---------- State ---------- */
-  let cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng đang xem
-  let view = 'month'; // month | week | agenda
+  let cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng đang xem (Month/Week)
+  let view = 'month'; // month | week | day
   let weekRef = new Date(TODAY); // ngày tham chiếu cho week view
+  let selectedDay = new Date(TODAY); // ngày đang mở ở Day view
+  let miniCursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng hiển thị ở mini-calendar
   let allEvents = [];
   const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery']);
 
@@ -50,7 +52,7 @@
   const elTitle = $('cal-title');
   const elWeekdays = $('cal-weekdays');
   const elGrid = $('cal-grid');
-  const elAgenda = $('cal-agenda');
+  const elDay = $('cal-day');
   const elEmpty = $('cal-empty');
   const elLoading = $('cal-loading');
   const elSurface = $('cal-surface');
@@ -212,7 +214,7 @@
   }
 
   function renderMonth() {
-    elWeekdays.hidden = false; elGrid.hidden = false; elAgenda.hidden = true;
+    elWeekdays.hidden = false; elGrid.hidden = false; elDay.hidden = true;
     elTitle.textContent = MONTHS[cursor.getMonth()] + ', ' + cursor.getFullYear();
     elWeekdays.innerHTML = WEEKDAYS.map((w) => '<div class="cal-wd">' + w + '</div>').join('');
 
@@ -231,7 +233,7 @@
       const shown = dayEvts.slice(0, MAX).map(chipHtml).join('');
       const more = dayEvts.length > MAX ? '<button class="cal-more" data-more-key="' + key + '">+' + (dayEvts.length - MAX) + ' khác</button>' : '';
       cells += '<div class="cal-cell' + (inMonth ? '' : ' is-out') + (isToday ? ' is-today' : '') + '" data-day="' + key + '">' +
-        '<div class="cal-cell-head"><span class="cal-cell-num">' + d.getDate() + '</span></div>' +
+        '<div class="cal-cell-head"><button class="cal-cell-num" data-open-day="' + key + '" title="Xem chi tiết ngày">' + d.getDate() + '</button></div>' +
         '<div class="cal-cell-evts">' + shown + more + '</div></div>';
     }
     elGrid.className = 'cal-grid';
@@ -240,7 +242,7 @@
   }
 
   function renderWeek() {
-    elWeekdays.hidden = false; elGrid.hidden = false; elAgenda.hidden = true;
+    elWeekdays.hidden = false; elGrid.hidden = false; elDay.hidden = true;
     const ws = startOfWeek(weekRef);
     const we = new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + 6);
     elTitle.textContent = ws.getDate() + '/' + (ws.getMonth() + 1) + ' – ' + we.getDate() + '/' + (we.getMonth() + 1) + '/' + we.getFullYear();
@@ -265,29 +267,63 @@
     elEmpty.hidden = visibleEvents().length > 0;
   }
 
-  function renderAgenda() {
-    elWeekdays.hidden = true; elGrid.hidden = true; elAgenda.hidden = false;
-    elTitle.textContent = MONTHS[cursor.getMonth()] + ', ' + cursor.getFullYear();
-    // Sự kiện trong tháng đang xem, sắp theo ngày.
-    const inMonth = visibleEvents().filter((e) => e.date.getMonth() === cursor.getMonth() && e.date.getFullYear() === cursor.getFullYear());
-    inMonth.sort((a, b) => a.date - b.date || a.type.localeCompare(b.type));
-    if (!inMonth.length) { elAgenda.innerHTML = ''; elEmpty.hidden = false; return; }
-    elEmpty.hidden = true;
-    const byDay = groupByDay(inMonth);
-    const keys = Object.keys(byDay).sort();
-    elAgenda.innerHTML = keys.map((k) => {
-      const d = byDay[k][0].date;
-      const rows = byDay[k].map((ev) =>
-        '<button class="cal-ag-row" data-evt-id="' + ev._idx + '">' +
+  /* ---------- DAY VIEW (ref-style: mini-calendar trái + danh sách task của ngày phải) ---------- */
+  const WEEKDAYS_FULL = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+  function renderDay() {
+    elWeekdays.hidden = true; elGrid.hidden = true; elDay.hidden = false;
+    elEmpty.hidden = true; // Day view có empty-state riêng trong panel phải
+    const selKey = dayKey(selectedDay);
+    elTitle.textContent = WEEKDAYS_FULL[selectedDay.getDay()] + ', ' +
+      String(selectedDay.getDate()).padStart(2, '0') + '/' + String(selectedDay.getMonth() + 1).padStart(2, '0') + '/' + selectedDay.getFullYear();
+
+    elDay.innerHTML = '<div class="cal-mini">' + miniCalHtml(selKey) + '</div>' +
+      '<div class="cal-day-panel">' +
+        '<div class="cal-day-h"><b>' + WEEKDAYS_FULL[selectedDay.getDay()] + '</b>' +
+        '<span>' + String(selectedDay.getDate()).padStart(2, '0') + '/' + String(selectedDay.getMonth() + 1).padStart(2, '0') + '/' + selectedDay.getFullYear() + '</span></div>' +
+        dayListHtml(selKey) +
+      '</div>';
+  }
+
+  // Lưới mini-calendar cho tháng miniCursor; đánh dấu today / selected / có-event.
+  function miniCalHtml(selKey) {
+    const evByDay = groupByDay(visibleEvents());
+    const head = '<div class="cal-mini-head">' +
+      '<button class="cal-mini-nav" data-mini-nav="prev" aria-label="Tháng trước">‹</button>' +
+      '<span class="cal-mini-title">' + MONTHS[miniCursor.getMonth()] + ', ' + miniCursor.getFullYear() + '</span>' +
+      '<button class="cal-mini-nav" data-mini-nav="next" aria-label="Tháng sau">›</button></div>';
+    const wd = '<div class="cal-mini-wd">' + WEEKDAYS.map((w) => '<span>' + w + '</span>').join('') + '</div>';
+    const gridStart = startOfWeek(new Date(miniCursor.getFullYear(), miniCursor.getMonth(), 1));
+    let cells = '';
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      const key = dayKey(d);
+      const cls = ['cal-mini-day'];
+      if (d.getMonth() !== miniCursor.getMonth()) cls.push('is-out');
+      if (key === TODAY_KEY) cls.push('is-today');
+      if (key === selKey) cls.push('is-selected');
+      if ((evByDay[key] || []).length) cls.push('has-evt');
+      cells += '<button class="' + cls.join(' ') + '" data-open-day="' + key + '">' + d.getDate() + '</button>';
+    }
+    return head + wd + '<div class="cal-mini-grid">' + cells + '</div>';
+  }
+
+  // Danh sách đầy đủ event của ngày selKey (đã lọc theo activeTypes).
+  function dayListHtml(selKey) {
+    const list = (groupByDay(visibleEvents())[selKey] || []);
+    if (!list.length) return '<div class="cal-day-empty">Không có sự kiện trong ngày này.</div>';
+    return '<div class="cal-day-list">' + list.map((ev) => {
+      const av = ev.pic ? '<span class="cal-day-pic" title="' + esc(ev.pic) + '">' + esc(initials(ev.pic)) + '</span>' : '';
+      const who = ev.pic ? '<span class="cal-day-who">' + esc(ev.pic) + '</span>' : '';
+      const time = ev.time ? '<span class="cal-day-time">' + ev.time + '</span>' : '';
+      return '<button class="cal-day-row" data-evt-id="' + ev._idx + '">' +
         '<span class="cal-dot cal-dot--' + dotClass(ev.type) + '"></span>' +
-        '<span class="cal-ag-time">' + (ev.time || '') + '</span>' +
-        '<span class="cal-ag-title">' + esc(ev.title) + '</span>' +
-        '<span class="cal-ag-tag">' + EVENT_LABEL[ev.type] + '</span>' +
-        (ev.pic ? '<span class="cal-chip-pic">' + esc(initials(ev.pic)) + '</span>' : '') +
-        '</button>'
-      ).join('');
-      return '<div class="cal-ag-day' + (k === TODAY_KEY ? ' is-today' : '') + '"><div class="cal-ag-date">' + fmtDayLabel(d) + '</div>' + rows + '</div>';
-    }).join('');
+        time +
+        '<span class="cal-day-main"><span class="cal-day-title">' + esc(ev.title) + '</span>' +
+        '<span class="cal-day-sub">' + EVENT_LABEL[ev.type] + (ev.sub ? ' · ' + esc(ev.sub) : '') + '</span></span>' +
+        who + av +
+        '</button>';
+    }).join('') + '</div>';
   }
 
   function dotClass(type) {
@@ -308,7 +344,7 @@
     if (elCount) elCount.textContent = String(visibleEvents().length);
     if (view === 'month') renderMonth();
     else if (view === 'week') renderWeek();
-    else renderAgenda();
+    else renderDay();
   }
 
   /* ---------- Popover ---------- */
@@ -355,8 +391,29 @@
       if (ev) openPop(ev, evtBtn.getBoundingClientRect());
       return;
     }
-    const moreBtn = e.target.closest('[data-more-key]');
-    if (moreBtn) { weekRef = parseDate(moreBtn.getAttribute('data-more-key')); view = 'week'; syncViewButtons(); render(); }
+    // Mini-calendar đổi tháng (không đổi ngày đang chọn)
+    const miniNav = e.target.closest('[data-mini-nav]');
+    if (miniNav) {
+      const dir = miniNav.getAttribute('data-mini-nav') === 'next' ? 1 : -1;
+      miniCursor = new Date(miniCursor.getFullYear(), miniCursor.getMonth() + dir, 1);
+      render();
+      return;
+    }
+    // "+N khác" hoặc click số ngày → mở Day view của đúng ngày đó
+    const openDay = e.target.closest('[data-more-key], [data-open-day]');
+    if (openDay) {
+      const key = openDay.getAttribute('data-more-key') || openDay.getAttribute('data-open-day');
+      gotoDay(parseDate(key));
+    }
+  }
+
+  // Mở Day view tại 1 ngày: đồng bộ selectedDay + miniCursor + cursor.
+  function gotoDay(d) {
+    if (!d) return;
+    selectedDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    miniCursor = new Date(d.getFullYear(), d.getMonth(), 1);
+    cursor = new Date(d.getFullYear(), d.getMonth(), 1);
+    view = 'day'; syncViewButtons(); render();
   }
 
   function syncViewButtons() {
@@ -366,13 +423,23 @@
   function wire() {
     $('cal-prev').addEventListener('click', () => { shiftPeriod(-1); render(); });
     $('cal-next').addEventListener('click', () => { shiftPeriod(1); render(); });
-    $('cal-today').addEventListener('click', () => { cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); weekRef = new Date(TODAY); render(); });
+    $('cal-today').addEventListener('click', () => {
+      cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+      weekRef = new Date(TODAY); selectedDay = new Date(TODAY); miniCursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+      render();
+    });
     document.querySelectorAll('.cal-view-btn').forEach((b) => b.addEventListener('click', () => {
       view = b.getAttribute('data-view'); syncViewButtons();
+      const cursorHasToday = cursor.getFullYear() === TODAY.getFullYear() && cursor.getMonth() === TODAY.getMonth();
       if (view === 'week') {
         // Vào week: nếu đang xem tháng của "hôm nay" → tuần chứa hôm nay; else giữa tháng đang xem.
-        weekRef = (cursor.getFullYear() === TODAY.getFullYear() && cursor.getMonth() === TODAY.getMonth())
-          ? new Date(TODAY) : new Date(cursor.getFullYear(), cursor.getMonth(), 15);
+        weekRef = cursorHasToday ? new Date(TODAY) : new Date(cursor.getFullYear(), cursor.getMonth(), 15);
+      } else if (view === 'day') {
+        // Vào day: nếu selectedDay không thuộc tháng đang xem → chọn hôm nay (nếu cùng tháng) hoặc mùng 1.
+        if (selectedDay.getFullYear() !== cursor.getFullYear() || selectedDay.getMonth() !== cursor.getMonth()) {
+          selectedDay = cursorHasToday ? new Date(TODAY) : new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        }
+        miniCursor = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1);
       }
       render();
     }));
@@ -391,6 +458,11 @@
     if (view === 'week') {
       weekRef = new Date(weekRef.getFullYear(), weekRef.getMonth(), weekRef.getDate() + dir * 7);
       cursor = new Date(weekRef.getFullYear(), weekRef.getMonth(), 1);
+    } else if (view === 'day') {
+      // Day view: ‹ › dịch ±1 NGÀY; đồng bộ mini-calendar + cursor theo tháng của ngày mới.
+      selectedDay = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), selectedDay.getDate() + dir);
+      miniCursor = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1);
+      cursor = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1);
     } else {
       cursor = new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1);
     }

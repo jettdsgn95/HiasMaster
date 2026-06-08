@@ -117,7 +117,7 @@
       <div class="cal-view-toggle" id="cal-view-toggle" role="tablist" aria-label="Chế độ xem">
         <button class="cal-view-btn is-active" data-view="month" role="tab">Tháng</button>
         <button class="cal-view-btn" data-view="week" role="tab">Tuần</button>
-        <button class="cal-view-btn" data-view="agenda" role="tab">Danh sách</button>
+        <button class="cal-view-btn" data-view="day" role="tab">Ngày</button>
       </div>
     </div>
 
@@ -138,8 +138,8 @@
         <!-- Month + Week share the weekday header + grid -->
         <div class="cal-weekdays" id="cal-weekdays"></div>
         <div class="cal-grid" id="cal-grid"></div>
-        <!-- Agenda list -->
-        <div class="cal-agenda" id="cal-agenda" hidden></div>
+        <!-- Day view (mini-calendar + danh sách task của ngày) -->
+        <div class="cal-day" id="cal-day" hidden></div>
         <div class="cal-empty" id="cal-empty" hidden>Không có sự kiện nào trong khoảng này.</div>
       </div>
     </section>
