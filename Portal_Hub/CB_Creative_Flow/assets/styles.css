@@ -6067,6 +6067,10 @@ body[data-user-role="content"] .cal-chip[data-show-roles*="content"] { display: 
 .cal-dot--order    { background: var(--warning); }
 .cal-dot--shoot    { background: var(--red-600); }
 .cal-dot--delivery { background: var(--success); }
+.cal-dot--wording  { background: #6B21A8; }
+/* Calendar role Content: chỉ chip "Hạn Wording" (ẩn 2 chip không có data-show-roles) */
+body[data-user-role="content"] .cal-chip[data-type="task-deadline"],
+body[data-user-role="content"] .cal-chip[data-type="shoot"] { display: none !important; }
 
 /* Calendar surface */
 .cal-card { padding: 0; overflow: hidden; }
@@ -6139,6 +6143,7 @@ body[data-user-role="content"] .cal-chip[data-show-roles*="content"] { display: 
 .cal-evt--order-deadline { border-left-color: var(--warning);   background: color-mix(in srgb, var(--warning) 12%, var(--surface)); }
 .cal-evt--shoot          { border-left-color: var(--red-600);   background: color-mix(in srgb, var(--red-600) 10%, var(--surface)); }
 .cal-evt--delivery       { border-left-color: var(--success);   background: color-mix(in srgb, var(--success) 12%, var(--surface)); }
+.cal-evt--wording-deadline { border-left-color: #6B21A8;        background: color-mix(in srgb, #6B21A8 10%, var(--surface)); }
 .cal-more {
   border: 0; background: transparent; cursor: pointer;
   font-size: 10px; font-weight: 700; color: var(--brand-600);

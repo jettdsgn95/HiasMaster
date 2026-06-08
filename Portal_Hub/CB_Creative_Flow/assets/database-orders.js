@@ -1698,8 +1698,36 @@
       o.wording_deadline = iso; patch.wording_deadline = iso;
     }
     persistOrder(o.order_id, patch);
+    notifyContentWording(o); // báo team Content có order cần wording (kèm hạn nếu có)
     window.MH.toast({ type: 'success', title: 'Đã chuyển Content Wording', message: o.order_id + (o.wording_deadline ? ' · Hạn wording ' + fmtDateTime(o.wording_deadline) : '') + ' — chờ Content xử lý & Client xác nhận brief wording.' });
     render(); openDrawer(o);
+  }
+
+  // Notify TẤT CẢ content user (active) khi Account chuyển order sang Content Wording.
+  // Pattern giống order-form.js notify staff: bulk INSERT notifications (fire-and-forget).
+  // Dùng type 'task_assigned' (đã có trong CHECK constraint) + link content-workbench
+  // (resolveNotifLink ưu tiên field link nên content mở đúng trang, không lệch database-orders).
+  async function notifyContentWording(o) {
+    if (!o || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    try {
+      const { data: contents } = await window.MH.supabase
+        .from('users').select('id, name')
+        .eq('role', 'content').eq('status', 'active');
+      if (Array.isArray(contents) && contents.length) {
+        const payloads = contents.map(function (u) {
+          return {
+            user_id: u.id,
+            type: 'task_assigned',
+            title: '📝 Order cần Content Wording',
+            message: (o.order_id || '') + ' · ' + (o.project_name || 'Untitled') + (o.wording_deadline ? ' · Hạn wording: ' + fmtDateTime(o.wording_deadline) : ''),
+            link: 'content-workbench.html?id=' + (o.order_id || ''),
+            related_entity_type: 'orders',
+            related_entity_id: o.order_id
+          };
+        });
+        await window.MH.supabase.from('notifications').insert(payloads);
+      }
+    } catch (e) { console.warn('[db-orders] notify content wording failed:', e); }
   }
 
   // Account đặt/sửa "Hạn hoàn thành wording" (đặt nhanh, không cần chuyển lại).

@@ -36,7 +36,7 @@
   const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']; // Monday-first (giống ref)
   const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
   const TYPE_LABEL = { media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', slide: 'Slide', ads: 'Ads / Post', other: 'Khác' };
-  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao' };
+  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording' };
 
   /* ---------- State ---------- */
   let cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng đang xem (Month/Week)
@@ -45,7 +45,7 @@
   let selectedDay = new Date(TODAY); // ngày đang mở ở Day view
   let miniCursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng hiển thị ở mini-calendar
   let allEvents = [];
-  const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery']);
+  const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery', 'wording-deadline']);
 
   /* ---------- DOM ---------- */
   const $ = (id) => document.getElementById(id);
@@ -161,9 +161,18 @@
       // Phạm vi role:
       if (IS_PRODUCTION) return; // design/editor không xem order-level
       if (IS_CONTENT) {
+        // Content CHỈ thấy "Hạn Content Wording" (Account đã đặt) — ẩn deadline order + shoot.
         const ws = o.brief_wording_status;
         const active = ws && ws !== 'none' && ws !== 'completed' && ws !== 'client_approved';
-        if (!active) return; // content chỉ thấy order đang wording
+        if (!active || !o.wording_deadline) return;
+        const wd = parseDate(o.wording_deadline);
+        if (wd) {
+          events.push(makeEvent(wd, 'wording-deadline', o.project_name || o.order_id, {
+            pic: o.brief_wording_pic, sub: (o.order_id || '') + ' · Hạn wording',
+            refKind: 'order', refId: o.order_id, status: ws
+          }));
+        }
+        return; // content dừng tại đây, không tạo order-deadline/shoot/delivery
       }
 
       const typeLbl = TYPE_LABEL[o.request_type] || o.request_type || '';
@@ -327,7 +336,7 @@
   }
 
   function dotClass(type) {
-    return type === 'task-deadline' ? 'task' : type === 'order-deadline' ? 'order' : type === 'shoot' ? 'shoot' : 'delivery';
+    return type === 'task-deadline' ? 'task' : type === 'order-deadline' ? 'order' : type === 'shoot' ? 'shoot' : type === 'wording-deadline' ? 'wording' : 'delivery';
   }
 
   function groupByDay(events) {
@@ -378,7 +387,7 @@
     if (ev.refKind === 'task') return 'production-board.html?id=' + encodeURIComponent(ev.refId);
     if (ev.refKind === 'order') {
       if (IS_FULL) return 'database-orders.html?id=' + encodeURIComponent(ev.refId);
-      if (IS_CONTENT) return 'content-workbench.html?order=' + encodeURIComponent(ev.refId);
+      if (IS_CONTENT) return 'content-workbench.html?id=' + encodeURIComponent(ev.refId);
     }
     return '';
   }
@@ -473,7 +482,7 @@
     if (!elScopeNote) return;
     if (IS_FULL) elScopeNote.textContent = 'Bạn đang xem TOÀN BỘ lịch của team (Admin/Account).';
     else if (IS_PRODUCTION) elScopeNote.textContent = 'Chỉ hiển thị task bạn đang phụ trách (P.I.C).';
-    else if (IS_CONTENT) elScopeNote.textContent = 'Chỉ hiển thị order đang trong giai đoạn chuẩn hoá wording.';
+    else if (IS_CONTENT) elScopeNote.textContent = 'Chỉ hiển thị Hạn Content Wording (do Account đặt).';
     else elScopeNote.textContent = '';
   }
 
