@@ -593,10 +593,33 @@
     if ((location.pathname.split('/').pop() || '') === 'content-workbench.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
     opsUl.appendChild(li);
   }
+  /* Calendar / Lịch: thêm nav "Lịch" vào sidebar nội bộ (idempotent, mọi role nội bộ).
+     Cùng pattern injectContentNav — inject 1 chỗ thay vì sửa sidebar 11 file HTML;
+     CSS data-show-roles lo ẩn/hiện theo role (mọi role nội bộ đều thấy, lọc event ở calendar.js). */
+  function injectCalendarNav() {
+    var u = getUser();
+    var internal = ['admin', 'account', 'content', 'design', 'editor'];
+    if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
+    var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
+    if (!groups.length) return;
+    var opsUl = groups[0]; // nhóm "Vận hành"
+    if (opsUl.querySelector('a[href="calendar.html"]')) return; // đã có → không lặp
+    var li = document.createElement('li');
+    li.setAttribute('data-show-roles', 'admin,account,design,editor,content');
+    li.innerHTML = '<a href="calendar.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Lịch</span></a>';
+    if ((location.pathname.split('/').pop() || '') === 'calendar.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
+    // Chèn sau "Internal Task Tracker" (production-board) cho gần nhóm task; không có thì append.
+    var anchor = opsUl.querySelector('a[href="production-board.html"]');
+    if (anchor && anchor.parentElement && anchor.parentElement.parentElement === opsUl) {
+      anchor.parentElement.insertAdjacentElement('afterend', li);
+    } else {
+      opsUl.appendChild(li);
+    }
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentNav(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentNav(); injectCalendarNav(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); injectContentNav(); }, 0);
+    setTimeout(function () { syncChipFromUser(); injectContentNav(); injectCalendarNav(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */

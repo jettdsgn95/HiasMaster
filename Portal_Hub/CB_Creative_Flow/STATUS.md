@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-06-05 · Project state: Production-ready beta · Content Role Phase 1+2+3+4 DONE (Brief Wording: role → gate → Content Workbench → **Client confirm**; ⚠ chạy `add-brief-wording-fields.sql` + `add-brief-wording-workspace-fields.sql` + `add-brief-wording-confirmation.sql`) · **Workflow notifications khép kín** (order → PIC → duyệt nội bộ → bàn giao → rating) · **Bàn giao Preview/Final trong Order drawer** (trang Delivery Log ĐÃ GỠ) · **Order type `media` "Quay/Chụp" gộp → Push tách 2 task (PIC Quay + PIC Chụp)** (`add-media-pics.sql` đã chạy production 2026-06-03) · Order Form rút gọn theo type (media skip mục 4,5 + đánh số liền mạch; video gộp 1 ô nội dung+định hướng; slide thả link Google Doc; **bỏ wording toàn bộ**) · Master Dashboard "New Orders" card + animation + NEW badge ở Client Orders · notif-icons shared module · fix date/timezone (deadline không mất) · **Order drawer**: Push CTA giữ sáng + nút "Xác nhận & Chuyển Production" + khóa PIC sau push + ô Production Status read-only + banner next-step (review/ready/delivered) · **Auto-sync Production Status task→order** (bottleneck rule; ⚠ chạy `sync-order-status-from-tasks.sql`) · **🐛 FIX: task status/link không lưu** (persistTask partial-upsert vi phạm NOT NULL → đổi sang `tasks.update`) · List mới-nhất-trước · **Preview → 3 vòng Feedback → Final + Approve Preview + Link sync Task↔Order** (⚠ chạy `add-revision-rounds.sql` + `add-preview-approval.sql`) · **Order Lifecycle Timeline** (Brief→Production→Preview&Feedback→Final&Rating, display-only) · **Task Tracker: "Sửa công việc" chỉ Admin/Account** (P.I.C chỉ Files&Links + status flow review) · ⚠ **3 SQL pending**: `sync-order-status-from-tasks` · `add-revision-rounds` · `add-preview-approval` · **16 HTML · 13 JS** · Railway deploy LIVE ✓*
+> *Last updated: 2026-06-08 · Project state: Production-ready beta · **📅 Calendar / Lịch DONE** (`calendar.html`+`calendar.js`: Month/Week/Agenda read-only; chấm deadline task/order + lịch quay/chụp + bàn giao; **role-filtered** admin/account full · design/editor chỉ task PIC · content chỉ order wording; click event→popover→drawer; nav inject `app.js injectCalendarNav()`; ⚠ chạy `add-shoot-date.sql`) · Content Role Phase 1+2+3+4 DONE (Brief Wording: role → gate → Content Workbench → **Client confirm**; ⚠ chạy `add-brief-wording-fields.sql` + `add-brief-wording-workspace-fields.sql` + `add-brief-wording-confirmation.sql`) · **Workflow notifications khép kín** (order → PIC → duyệt nội bộ → bàn giao → rating) · **Bàn giao Preview/Final trong Order drawer** (trang Delivery Log ĐÃ GỠ) · **Order type `media` "Quay/Chụp" gộp → Push tách 2 task (PIC Quay + PIC Chụp)** (`add-media-pics.sql` đã chạy production 2026-06-03) · Order Form rút gọn theo type (media skip mục 4,5 + đánh số liền mạch; video gộp 1 ô nội dung+định hướng; slide thả link Google Doc; **bỏ wording toàn bộ**) · Master Dashboard "New Orders" card + animation + NEW badge ở Client Orders · notif-icons shared module · fix date/timezone (deadline không mất) · **Order drawer**: Push CTA giữ sáng + nút "Xác nhận & Chuyển Production" + khóa PIC sau push + ô Production Status read-only + banner next-step (review/ready/delivered) · **Auto-sync Production Status task→order** (bottleneck rule; ⚠ chạy `sync-order-status-from-tasks.sql`) · **🐛 FIX: task status/link không lưu** (persistTask partial-upsert vi phạm NOT NULL → đổi sang `tasks.update`) · List mới-nhất-trước · **Preview → 3 vòng Feedback → Final + Approve Preview + Link sync Task↔Order** (⚠ chạy `add-revision-rounds.sql` + `add-preview-approval.sql`) · **Order Lifecycle Timeline** (Brief→Production→Preview&Feedback→Final&Rating, display-only) · **Task Tracker: "Sửa công việc" chỉ Admin/Account** (P.I.C chỉ Files&Links + status flow review) · ⚠ **4 SQL pending**: `sync-order-status-from-tasks` · `add-revision-rounds` · `add-preview-approval` · `add-shoot-date` · **17 HTML · 14 JS** · Railway deploy LIVE ✓*
 
 ---
 
@@ -22,8 +22,9 @@
 | 9 | AI Tools | Done | `ai-tools.html`, `ai-tools.js` | [09](../Brief_Wflow/CB_Creative_Flow_09_ai_tools_module.md) |
 | 10 | Chatbot | Done | `chatbot.html`, `chatbot.js` | [10](../Brief_Wflow/CB_Creative_Flow_10_chatbot_module.md) |
 | 11 | Client Portal | Done | `client-dashboard.html`, `client-dashboard.js` | [11](../Brief_Wflow/CB_Creative_Flow_11_Client_Portal_YeuCauSangTao_module.md) |
+| 12 | Calendar / Lịch | Done | `calendar.html`, `calendar.js` | — (2026-06-08) |
 
-**Overall**: 11/11 internal modules done · 5/5 public pages done · 0 module pending.
+**Overall**: 12/12 internal modules done · 5/5 public pages done · 0 module pending.
 
 ---
 
@@ -166,6 +167,18 @@ Status: Done
 - Profile tab: view/edit name, initials, title, avatar, phone, department, bio — persists to `mh-user`.
 - Demo account: `client@cb.vn` / `cb2026` → redirect to `client-dashboard.html`.
 
+### 12. Calendar / Lịch
+
+Status: Done (2026-06-08)
+
+- `calendar.html` + `assets/calendar.js` (clone cấu trúc `task-dashboard.html`). Internal page; client → redirect `client-dashboard.html`.
+- **3 view**: Month (mặc định, lưới 7 cột Monday-first giống ref) · Week · Agenda (danh sách theo ngày). Nav tháng ‹ › + Hôm nay + toggle view + lọc loại sự kiện.
+- **4 loại event** chấm theo ngày, màu theo brand token: `task-deadline` (navy, `tasks.internal_deadline`) · `order-deadline` (amber, `orders.requested_deadline`→fallback `internal_deadline`) · `shoot` (đỏ, lịch quay/chụp) · `delivery` (green, `orders.delivery_date`/final).
+- **Role filter** (yêu cầu nghiệp vụ): admin/account = FULL (mọi task+order) · design/editor = CHỈ task `isMyTask(assigned_to)` (deadline+shoot của task mình, không xem order-level) · content = order đang wording active.
+- **Read-only**: click event → popover (ngày/giờ/PIC/trạng thái) → "Mở chi tiết" navigate `production-board.html?id=` (task) / `database-orders.html?id=` (order admin/account) / `content-workbench.html?order=` (content). Task vẫn tạo/sửa ở Task Tracker.
+- **Shoot date**: cột mới `orders/tasks.shoot_date`+`shoot_time` (migration `add-shoot-date.sql` ⚠ pending). `order-form.js` lưu `media_date`→`shoot_date`; `database-orders.js pushToProduction` kế thừa sang task quay/chụp. calendar.js fallback regex bóc `Ngày: YYYY-MM-DD` từ content_brief khi chưa migrate.
+- Nav "Lịch" inject 1 chỗ qua `app.js injectCalendarNav()` → hiện trên mọi trang nội bộ. "Hôm nay" = `new Date('2026-05-13')` (demo anchor đồng bộ board/reports). CSS `.cal-*` cuối `styles.css`.
+
 ---
 
 ## Pending Modules
@@ -182,7 +195,12 @@ No pending MVP modules. Remaining work is production integration:
 
 ## File Inventory
 
-Build total: **16 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 8 Supabase SQL migrations**. (Delivery Log page removed 2026-06-03.)
+Build total: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations**. (Delivery Log page removed 2026-06-03; Calendar/Lịch added 2026-06-08.)
+
+New files 2026-06-08 (Calendar / Lịch):
+- `calendar.html` — Lịch / Calendar internal page (Month/Week/Agenda, role-filtered)
+- `assets/calendar.js` — calendar logic, event build + role filter, popover→drawer
+- `supabase/add-shoot-date.sql` — orders/tasks.shoot_date + shoot_time (⚠ pending)
 
 New file 2026-06-02:
 - `assets/notif-icons.js` — Shared notification icon module (`window.MH.notifIcons`), single source of truth dùng bởi app.js bell + client-dashboard.js panel. Load trước app.js trên 12 page có chuông/panel.

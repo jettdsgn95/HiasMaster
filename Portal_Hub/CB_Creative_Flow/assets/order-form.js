@@ -766,6 +766,11 @@
             const summary = '[Buổi Quay / Chụp] ' + parts.join(' · ');
             row.content_brief = row.content_brief ? (summary + '\n\n' + row.content_brief) : summary;
           }
+          // Ngày/giờ buổi quay vào cột riêng để Calendar chấm lịch quay/chụp đúng ngày
+          // (khác internal_deadline). Vẫn giữ trong content_brief ở trên để hiển thị.
+          // data-store tự bóc cột nếu DB chưa chạy add-shoot-date.sql (PGRST204).
+          if (orderPayload.media_date) row.shoot_date = orderPayload.media_date;
+          if (orderPayload.media_time) row.shoot_time = orderPayload.media_time;
         }
         // Video / Motion: nội dung & định hướng gộp trong video_brief; thêm link kịch bản + source.
         if (['video', 'motion'].includes(row.request_type)) {

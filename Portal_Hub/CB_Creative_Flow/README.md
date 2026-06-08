@@ -36,6 +36,7 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 | Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile |
 | Internal ops | Done | Dashboard, orders, production, reports, AI, chatbot, users, settings; Order Workbench + Task Workbench drawers. _(Delivery Log đã gỡ 2026-06-03 — bàn giao Preview/Final trong Order drawer; Production Status order tự sync theo task.)_ |
 | Preview → Feedback → Final | Done | Bàn giao **trong Order drawer** (Client Portal đọc `orders.preview_link` / `orders.final_delivery_link`). Bàn giao đầu luôn là **"Preview"**; order **design** tối đa **03 vòng feedback** (Vòng 1 ~60% · Vòng 2 ~30% · Vòng 3 chỉ chỉnh nhỏ), **vòng 4** → ghi nhận thành task/order mới. Client có nút **"Duyệt Preview"**. Order drawer: **Order Lifecycle Timeline** (Brief → Production → Preview & Feedback → Final & Rating, display-only) + **"Gửi feedback cho PIC"** + **"Links from Task Tracker"** (Dùng làm Preview/Final — chỉ điền ô, không tự gửi). Task drawer hiện **Client Feedback Round N/3**. Chỉ Account/Admin gửi Preview/Final. Notif: `delivery_preview` · `client_feedback_received` · `client_preview_approved` · `delivery_final` · `rating_received`. SQL: `add-revision-rounds.sql` + `add-preview-approval.sql`. _(KHÔNG khôi phục Delivery Log; KHÔNG dùng bảng `deliveries`; KHÔNG lộ Task Tracker cho client.)_ |
+| Calendar / Lịch | Done | `calendar.html` — Month/Week/Agenda. Chấm 4 loại sự kiện theo ngày: **Deadline Task** (`tasks.internal_deadline`) · **Deadline Order** (`orders.requested_deadline`) · **Lịch quay/chụp** (`shoot_date`, fallback parse `content_brief`) · **Bàn giao** (`delivery_date`/final). **Role-filtered**: admin/account thấy full; design/editor chỉ task mình PIC (`isMyTask`); content chỉ order đang wording. Read-only — click sự kiện → popover → mở `production-board.html?id=` / `database-orders.html?id=`. Nav inject qua `app.js injectCalendarNav()`. ⚠ cần `add-shoot-date.sql` để shoot_date lưu cột thật. |
 | AI Tools | Done | 13 mini apps (gồm AI Voice / Supertonic on-device TTS), workspace form, output panel, usage log demo |
 | Dashboards | Wired LIVE | **Master Dashboard** (Module 5 — 4 sections separated: Client Orders Overview 8 metrics / Internal Tasks Overview 8 metrics / Alerts 5 categories / Team Workload 6-PIC bar) · **Orders Dashboard** (13 KPI Client Order lifecycle: Intake / Production Flow / Feedback & Completion + 6 breakdowns) · **Task Dashboard** (17 KPI Internal workload: Volume / Workload / Deadline / Status / Performance + 6-PIC bar chart). Master Dashboard refresh button fetches Supabase again, polls every 60s, and listens to orders/tasks realtime when publication is enabled. Drilldown click-through tới database-orders.html / production-board.html với filter chính xác |
 | Chatbot | Done | Dedicated page + floating widget trên internal/public pages khi đã login |
@@ -80,6 +81,7 @@ CB_Creative_Flow/
 ├── task-dashboard.html   Task-level / internal production KPI dashboard
 ├── database-orders.html  Orders table, drawer, push-to-prod
 ├── production-board.html Task Tracker (Production Board) — Table / Kanban / My Tasks
+├── calendar.html         Lịch / Calendar — deadline task/order + lịch quay/chụp (role-filtered)
 ├── reports.html          KPI, charts, export
 ├── ai-tools.html         12 AI mini apps
 ├── chatbot.html          CB Assistant dedicated page
@@ -94,6 +96,7 @@ CB_Creative_Flow/
     ├── client-dashboard.js   client-dashboard.html — Client Portal logic
     ├── database-orders.js
     ├── production-board.js
+    ├── calendar.js              calendar.html — month/week/agenda, role-filtered events, popover→drawer
     ├── reports.js
     ├── ai-tools.js
     ├── chatbot.js
@@ -101,7 +104,7 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **16 HTML pages · 13 JS files · 1 CSS file · 1 logo asset · 8 Supabase SQL migrations**. (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
+Build hiện tại: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations** (Calendar/Lịch thêm 2026-06-08). (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
 
 Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN). Shared UI module: `assets/notif-icons.js` (`window.MH.notifIcons` — single source of truth cho icon thông báo, dùng bởi bell dropdown + client panel).
 
@@ -116,6 +119,7 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 8. [`add-shoot-location.sql`](supabase/add-shoot-location.sql) — orders/tasks.shoot_location
 9. [`add-media-pics.sql`](supabase/add-media-pics.sql) — request_type CHECK thêm `'media'` (Quay/Chụp gộp) + orders.production_pic_video / production_pic_photo (BẮT BUỘC cho order type media)
 10. [`clear-demo.sql`](supabase/clear-demo.sql) — utility wipe seed data trước production test
+11. [`add-shoot-date.sql`](supabase/add-shoot-date.sql) — orders/tasks.shoot_date + shoot_time (cho Calendar chấm lịch quay/chụp; order-form lưu media_date→shoot_date, push kế thừa sang task)
 
 ### Order ↔ Task ↔ Delivery relationship
 

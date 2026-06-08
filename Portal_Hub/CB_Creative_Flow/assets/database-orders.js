@@ -1791,6 +1791,11 @@
             last_update: new Date().toISOString()
           };
           if (['media', 'photo', 'shoot'].includes(o.request_type) && o.shoot_location) taskPayload.shoot_location = o.shoot_location;
+          // Kế thừa ngày/giờ buổi quay sang task để Calendar chấm lịch quay/chụp theo task.
+          if (['media', 'photo', 'shoot'].includes(o.request_type)) {
+            if (o.shoot_date) taskPayload.shoot_date = o.shoot_date;
+            if (o.shoot_time) taskPayload.shoot_time = o.shoot_time;
+          }
           await window.MH.store.tasks.upsert(taskPayload);
           createdTaskIds.push(taskId);
           // Notify PIC (lookup user_id qua name, fuzzy match)
