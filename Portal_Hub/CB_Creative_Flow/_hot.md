@@ -181,6 +181,10 @@ Client Portal gồm: xem orders của mình, order status tracking, tạo yêu c
 - ✅ Hero content, CTA, character asset và flow không đổi. Mobile/tablet nhỏ stack CTA full-width, hide bớt decorative panels để tránh overflow.
 - ✅ 2026-05-29 copy update: Homepage hero chuyển wording từ "khách hàng" sang "Nội bộ CB Centres" để đúng audience nội bộ.
 
+**🎬 Homepage GSAP motion (2026-06-11):**
+- ✅ `assets/home-motion.js` (MỚI) + nạp **GSAP 3.12.5** (gsap + ScrollTrigger, CDN cdnjs) ở cuối `index.html`. Thêm: count-up số liệu hero (`[data-countup]` trên `.hero-meta strong`), scroll-reveal `.quick-card`/`.wf-step`/`.lookup-card`/`.faq-item`/`.support-strip`, parallax `.hero-bg`/`.hero-graphic-wrap`, thanh tiến trình cuộn `#gsap-progress`, header `.is-scrolled` đổ bóng, hover nâng thẻ + icon pop, magnetic `.btn-hero`. **KHÔNG đụng hero entrance `.fade-up` (CSS) — GSAP chỉ bổ sung, tránh chạy 2 lần.** Bọc trong `gsap.matchMedia()` → `prefers-reduced-motion` hiện full trạng thái cuối; guard `if(!window.gsap)return` nên CDN fail thì trang vẫn hiện đủ nội dung (opacity:1). CSS helper (#gsap-progress + .site-header.is-scrolled + .btn-hero will-change) inline trong `<head>` index.html (scoped riêng trang chủ, KHÔNG đụng `styles.css`). **Flow trang chủ/đăng nhập GIỮ NGUYÊN gốc** (nút "Đăng nhập" như cũ; KHÔNG session-aware — đã thử & rollback theo yêu cầu).
+- 📄 Bản thử nghiệm độc lập (KHÔNG ảnh hưởng production, prefix `_`): `_gsap-demo.html` (dashboard demo) + `_index-gsap-demo.html` (nháp trang chủ trước khi áp). Có thể xóa bất cứ lúc nào.
+
 **Order Form smart flow stepper (2026-05-26):**
 - ✅ `request.html` sidebar stepper A-G đổi sang timeline 1-7 có icon, mô tả ngắn từng bước, progress bar và trạng thái active/done để thể hiện flow kế tiếp rõ hơn.
 - ✅ `assets/order-form.js` sync active step theo scroll/click bằng `IntersectionObserver`; done state vẫn dựa vào completion thật của từng section.

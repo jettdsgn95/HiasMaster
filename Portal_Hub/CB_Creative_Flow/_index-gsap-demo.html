@@ -1,23 +1,41 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" class="gsap-demo">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CB Media Hub — Cổng dịch vụ sáng tạo</title>
-<meta name="description" content="Cổng dịch vụ CB Media Hub: gửi yêu cầu thiết kế / video, tra cứu tiến độ, nhận file bàn giao và phản hồi nhanh — chuyên nghiệp, minh bạch." />
+<title>CB Media Hub — Trang chủ (GSAP Demo)</title>
+<meta name="description" content="Bản demo độc lập: trang chủ CB Media Hub gắn GSAP micro-interaction + ScrollTrigger. KHÔNG ảnh hưởng production." />
 <meta name="theme-color" content="#191970" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<!-- Dùng CHÍNH design system của trang chủ thật -->
 <link rel="stylesheet" href="assets/styles.css" />
 <style>
-  /* Homepage motion helpers (GSAP) — scoped trong trang chủ */
-  #gsap-progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%;
+  /* GSAP làm chủ entrance hero → tắt fade-up CSS để khỏi chạy 2 lần.
+     Nếu GSAP không load (mất mạng), opacity mặc định = 1 nên vẫn thấy nội dung. */
+  .gsap-demo .fade-up { animation: none; }
+
+  /* Header nâng bóng khi cuộn */
+  .gsap-demo .site-header { transition: box-shadow .35s ease, backdrop-filter .35s ease; }
+  .gsap-demo .site-header.is-scrolled { box-shadow: var(--shadow-md); }
+
+  /* Thanh tiến trình cuộn trên cùng */
+  #gsap-progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 100%;
     transform: scaleX(0); transform-origin: left;
-    background: var(--grad-navy, linear-gradient(135deg,#191970,#3849b3)); z-index: 9999; }
-  .site-header { transition: box-shadow .35s ease; }
-  .site-header.is-scrolled { box-shadow: var(--shadow-md); }
-  .btn-hero { will-change: transform; }
+    background: var(--grad-navy, linear-gradient(135deg,#191970,#3849b3));
+    z-index: 9999;
+  }
+  /* Nhãn demo */
+  .gsap-demo-tag {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 9998;
+    background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-md);
+    padding: 8px 16px; border-radius: 999px; color: var(--text-muted);
+    font: 600 13px/1 'Inter', system-ui, sans-serif; display: flex; gap: 8px; align-items: center;
+  }
+  .gsap-demo-tag b { color: var(--text); }
+  .gsap-demo .btn-hero { will-change: transform; }
 </style>
 </head>
 <body>
@@ -38,12 +56,11 @@
       <a href="index.html">Trang chủ</a>
       <a href="request.html">Gửi yêu cầu</a>
       <a href="tracking.html">Tra cứu</a>
-
       <a href="help.html">Hướng dẫn</a>
     </nav>
 
     <div class="header-actions">
-      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối" data-i18n-aria="aria.theme">
+      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
         <span class="theme-toggle-thumb">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -66,15 +83,9 @@
     <span class="hero-bg-orb hero-bg-orb--red"></span>
     <span class="hero-bg-line hero-bg-line--left"></span>
     <span class="hero-bg-line hero-bg-line--right"></span>
-    <span class="hero-bg-panel hero-bg-panel--brief">
-      <span class="hero-bg-thumb hero-bg-thumb--doc"></span>
-    </span>
-    <span class="hero-bg-panel hero-bg-panel--preview">
-      <span class="hero-bg-thumb hero-bg-thumb--gallery"></span>
-    </span>
-    <span class="hero-bg-panel hero-bg-panel--final">
-      <span class="hero-bg-thumb hero-bg-thumb--stack"></span>
-    </span>
+    <span class="hero-bg-panel hero-bg-panel--brief"><span class="hero-bg-thumb hero-bg-thumb--doc"></span></span>
+    <span class="hero-bg-panel hero-bg-panel--preview"><span class="hero-bg-thumb hero-bg-thumb--gallery"></span></span>
+    <span class="hero-bg-panel hero-bg-panel--final"><span class="hero-bg-thumb hero-bg-thumb--stack"></span></span>
   </div>
   <div class="container">
     <div class="hero-content">
@@ -102,7 +113,6 @@
         </div>
       </div>
 
-      <!-- Hero visual: CB character + floating icons -->
       <div class="hero-visual">
         <div class="hero-graphic-wrap">
           <img src="assets/hero/cb_character_cutout.png" class="hero-character" alt="CB Media Hub creative team" />
@@ -215,7 +225,6 @@
   </div>
 </section>
 
-
 <!-- ===== FAQ Preview ===== -->
 <section class="section section--tight">
   <div class="container container--narrow">
@@ -299,42 +308,130 @@
     </div>
     <div class="footer-bottom">
       <span>© <span data-year>2026</span> CB Media Hub. Creative Service Portal.</span>
-      <span class="text-xs muted">v0.1 · MVP</span>
+      <span class="text-xs muted">v0.1 · MVP · GSAP demo</span>
     </div>
   </div>
 </footer>
 
+<div class="gsap-demo-tag">⚡ <b>GSAP demo</b> · cuộn xuống xem reveal &amp; parallax</div>
+
+<!-- App scripts thật (theme toggle, mobile nav…) — config trống nên không gọi network -->
 <script src="assets/config.js"></script>
-<script src="assets/supabase-client.js"></script>
-<script src="assets/data-store.js"></script>
 <script src="assets/app.js"></script>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
-  // Fill tracking code from example chips
+  // Điền mã tra cứu khi click chip ví dụ (giữ từ trang chủ thật)
   document.querySelectorAll('[data-fill]').forEach((el) => {
     el.addEventListener('click', () => {
-      const target = document.querySelector('input[name="code"]');
-      if (target) { target.value = el.getAttribute('data-fill'); target.focus(); }
+      const t = document.querySelector('input[name="code"]');
+      if (t) { t.value = el.getAttribute('data-fill'); t.focus(); }
     });
   });
 
-  // Trust strip — stagger reveal on scroll
-  (function () {
-    const strip = document.getElementById('trust-strip');
-    if (!strip) return;
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        strip.classList.add('is-in');
-        io.disconnect();
+  if (!window.gsap) { document.querySelector('.gsap-demo-tag').textContent = '⚠ GSAP chưa load — kiểm tra mạng'; }
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Đếm số có giữ phần đuôi (h / % / +) và số thập phân
+  function countUp(el, play) {
+    const raw = el.dataset.final || el.textContent.trim();
+    el.dataset.final = raw;
+    const m = raw.match(/^([\d.]+)(.*)$/);
+    if (!m) return;
+    const end = parseFloat(m[1]);
+    const suffix = m[2];
+    const dec = (m[1].split('.')[1] || '').length;
+    if (!play) { el.textContent = raw; return; }
+    const o = { v: 0 };
+    gsap.to(o, {
+      v: end, duration: 1.5, ease: 'power2.out',
+      scrollTrigger: { trigger: el, start: 'top 92%' },
+      onUpdate() { el.textContent = o.v.toFixed(dec) + suffix; }
+    });
+  }
+
+  gsap.matchMedia().add({
+    full: '(prefers-reduced-motion: no-preference)',
+    reduce: '(prefers-reduced-motion: reduce)'
+  }, (ctx) => {
+    const full = ctx.conditions.full;
+
+    // Đếm số hero-meta (chạy ở cả 2 chế độ, reduce thì hiện luôn giá trị cuối)
+    document.querySelectorAll('[data-countup]').forEach(el => countUp(el, full));
+
+    // ----- Reduce motion: hiện mọi thứ ở trạng thái cuối, không animate -----
+    if (!full) {
+      document.querySelector('#trust-strip')?.classList.add('is-in');
+      gsap.set('#gsap-progress', { scaleX: 0 });
+      return;
+    }
+
+    // 1) Hero entrance timeline (thay cho .fade-up đã tắt)
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    tl.from('.site-header', { y: -24, opacity: 0, duration: .6 })
+      .from('.badge-primary', { y: 14, opacity: 0, duration: .5 }, '-=.2')
+      .from('h1.delay-1',     { y: 26, opacity: 0, duration: .7 }, '-=.15')
+      .from('.lead.delay-2',  { y: 20, opacity: 0, duration: .6 }, '-=.4')
+      .from('.hero-cta',      { y: 18, opacity: 0, duration: .55 }, '-=.35')
+      .from('.hero-meta div', { y: 16, opacity: 0, duration: .5, stagger: .12 }, '-=.3')
+      .from('.hero-visual',   { x: 40, opacity: 0, duration: .9, ease: 'power2.out' }, '-=.9')
+      .from('.hero-floating-icon', { scale: 0, opacity: 0, duration: .6, stagger: .12, ease: 'back.out(1.7)' }, '-=.5');
+
+    // 2) Trust strip: tái dùng stagger CSS (.is-in) qua ScrollTrigger
+    const strip = document.querySelector('#trust-strip');
+    if (strip) ScrollTrigger.create({ trigger: strip, start: 'top 85%', once: true, onEnter: () => strip.classList.add('is-in') });
+
+    // 3) Quick cards: reveal stagger + hover nâng mạnh hơn + icon pop
+    gsap.from('.quick-card', {
+      y: 40, opacity: 0, duration: .6, stagger: .1,
+      scrollTrigger: { trigger: '.quick-grid', start: 'top 80%' }
+    });
+    document.querySelectorAll('.quick-card').forEach(card => {
+      const icon = card.querySelector('.quick-icon');
+      card.addEventListener('mouseenter', () => {
+        gsap.to(card, { y: -8, duration: .3, ease: 'power2.out', overwrite: true });
+        gsap.to(icon, { scale: 1.12, rotate: -4, duration: .35, ease: 'back.out(2)' });
       });
-    }, { threshold: 0.35 });
-    io.observe(strip);
-})();
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, { y: 0, duration: .4, ease: 'power3.out', overwrite: true });
+        gsap.to(icon, { scale: 1, rotate: 0, duration: .35, ease: 'power2.out' });
+      });
+    });
+
+    // 4) Workflow: các bước trượt lên lần lượt khi cuộn tới
+    gsap.from('.wf-step', {
+      y: 36, opacity: 0, duration: .55, stagger: .12,
+      scrollTrigger: { trigger: '.workflow', start: 'top 82%' }
+    });
+
+    // 5) Lookup card + FAQ + support strip reveal
+    gsap.from('.lookup-card', { y: 40, opacity: 0, duration: .7, scrollTrigger: { trigger: '.lookup-card', start: 'top 85%' } });
+    gsap.from('.faq-item', { y: 24, opacity: 0, duration: .5, stagger: .12, scrollTrigger: { trigger: '.faq-list', start: 'top 85%' } });
+    gsap.from('.support-strip', { y: 40, opacity: 0, scale: .98, duration: .7, scrollTrigger: { trigger: '.support-strip', start: 'top 85%' } });
+
+    // 6) Parallax nền hero (lớp trang trí trôi chậm khi cuộn)
+    gsap.to('.hero-bg', { yPercent: 18, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .4 } });
+    gsap.to('.hero-graphic-wrap', { yPercent: -8, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .6 } });
+
+    // 7) Thanh tiến trình cuộn
+    gsap.to('#gsap-progress', { scaleX: 1, ease: 'none', scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: .3 } });
+
+    // 8) Header nâng bóng khi rời đỉnh trang
+    ScrollTrigger.create({ start: 'top -8', onUpdate: self => document.querySelector('.site-header').classList.toggle('is-scrolled', self.scroll() > 8) });
+
+    // 9) Micro-interaction: nút CTA chính "hút" nhẹ theo con trỏ (magnetic)
+    const magnet = document.querySelector('.btn-hero');
+    if (magnet) {
+      magnet.addEventListener('mousemove', (e) => {
+        const r = magnet.getBoundingClientRect();
+        gsap.to(magnet, { x: (e.clientX - r.left - r.width / 2) * .3, y: (e.clientY - r.top - r.height / 2) * .4, duration: .4, ease: 'power3.out' });
+      });
+      magnet.addEventListener('mouseleave', () => gsap.to(magnet, { x: 0, y: 0, duration: .5, ease: 'elastic.out(1,.4)' }));
+    }
+  });
 </script>
-<script src="assets/chatbot.js"></script>
-<!-- GSAP homepage motion (guard fallback nếu CDN/JS fail → trang vẫn hiện đầy đủ) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="assets/home-motion.js"></script>
 </body>
 </html>

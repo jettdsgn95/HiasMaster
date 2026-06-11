@@ -34,7 +34,7 @@
 
 Status: Done
 
-- `index.html`: hero, quick actions, workflow overview, tracking lookup, FAQ preview, support strip.
+- `index.html`: hero, quick actions, workflow overview, tracking lookup, FAQ preview, support strip. **GSAP motion (2026-06-11)** via `assets/home-motion.js` (count-up, scroll-reveal, parallax, scroll-progress, header shadow, hover, magnetic CTA) — additive, `prefers-reduced-motion` + fallback an toàn, KHÔNG đụng `.fade-up`. _(Flow trang chủ/đăng nhập giữ nguyên gốc.)_
 - `login.html`: 5 demo account tiles (click-to-fill credentials), password show/hide, role-based redirect after login, `?redirect=` param support to return to original page after auth.
 - `request.html`: 7-section order form (requester → brief → type → content → assets → deadline → confirm), conditional service sub-forms, autosave draft, preview, success state. Auth-gated: blocks submit if not logged in, auto-fills requester info from session, redirects to `login.html?redirect=request.html` preserving draft.
 - `tracking.html`: search by `MEDIA-*` code, client-scope guard, mock order timeline, progress, feedback modal.
