@@ -1,7 +1,9 @@
 /* =====================================================================
    CB Media Hub — Reports module logic
    - Auth guard: admin/account
-   - Mock aggregated metrics (would come from /api/reports/* in production)
+   - LIVE data từ Supabase qua MH.store.orders/tasks/users (wired 2026-06-12).
+     Supabase chưa enabled → empty state (zero-build fallback, không mock).
+   - Filters (period/role/PIC/branch/type) recompute client-side từ RAW snapshot.
    - Render: 12 KPI cards, 6 charts (line SVG, donut, h-bars, stacked, heatmap, quality)
    -         Delivery funnel, rating distribution, SLA
    - Tables: PIC KPI · Overdue Risk · Feedback Rating
@@ -30,51 +32,344 @@
   if (sbt) sbt.addEventListener('click', () => { sb.classList.add('is-open'); sbd.classList.add('is-open'); });
   if (sbd) sbd.addEventListener('click', () => { sb.classList.remove('is-open'); sbd.classList.remove('is-open'); });
 
-  /* ---------- Mock report data ---------- */
-  // Task trend — last 14 days (with realistic curve)
+  /* ---------- Report data (LIVE từ Supabase — computeReportData() điền) ---------- */
   const TREND_DAYS = 14;
-  function genTrend() {
-    const today = new Date('2026-05-13');
-    const data = [];
-    for (let i = TREND_DAYS - 1; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-      const base = isWeekend ? 2 : 7;
-      const noise = () => Math.floor(Math.random() * 4);
-      data.push({
-        date: d,
-        label: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`,
-        orders: base + noise() + (i < 5 ? 3 : 0),
-        tasks: base + 3 + noise() + (i < 5 ? 4 : 0),
-        completed: Math.max(1, base + noise() - 1),
-        overdue: i < 3 ? noise() : 0
-      });
-    }
-    return data;
-  }
-  // Mock data cleared — Reports sẽ render empty state cho đến khi có data thật.
-  // Phase 3 task: wire Reports load dynamic từ Supabase (MH.store.orders/tasks/deliveries/aiUsage).
-  const TREND = [];
-  const TYPES = [];
-  const ROLES = [];
-  const PICS = [];
-  const HEATMAP = [];
-  const FUNNEL = [];
-  const RATINGS = [];
-  const PIC_KPI = [];
-  const OVERDUE = [];
-  const FEEDBACK = [];
+  let TREND = [];
+  let TYPES = [];
+  let ROLES = [];
+  let PICS = [];
+  let HEATMAP = [];
+  let FUNNEL = [];
+  let RATINGS = [];
+  let PIC_KPI = [];
+  let OVERDUE = [];
+  let FEEDBACK = [];
 
   const KPI_AGG = {
     orders: 0, tasks: 0, completed: 0, progress: 0, ontime: 0, overdue: 0,
     rating: 0, ratedCount: 0, coverage: 0, ratedTotal: 0,
-    revision: 0, reopened: 0, briefNeed: 0, delivery: 0,
+    revision: 0, reopened: 0, briefNeed: 0, briefOk: 0, delivery: 0,
     dlOntrack: 0, dlSoon: 0, dlToday: 0, dlLate: 0, avgCompletion: 0
   };
+
+  // Snapshot orders/tasks/users từ store — filter chỉ recompute từ đây, không refetch
+  const RAW = { orders: [], tasks: [], users: [] };
+
+  const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide', media: 'Quay / Chụp', other: 'Khác' };
+  const TYPE_COLOR = { design: '#191970', digital: '#3849b3', video: '#BA110F', motion: '#d62a28', shoot: '#f59e0b', photo: '#10b981', ads: '#0ea5e9', slide: '#6c5ec0', media: '#f59e0b', other: '#94a3b8' };
+  // Vị trí đảm nhiệm suy từ task_type — khớp value của #filter-role (design/editor/shoot)
+  const ROLE_OF_TASK_TYPE = { design: 'design', digital: 'design', ads: 'design', slide: 'design', video: 'editor', motion: 'editor', shoot: 'shoot', photo: 'shoot' };
+  const ROLE_BAR_LABEL = { design: 'Design', editor: 'Editor (Video)', shoot: 'Media (Quay/Chụp)' };
+  const TASK_STATUS_LABEL = { pending: 'Chờ nhận', received: 'Đã nhận', inprogress: 'Đang xử lý', review: 'Chờ duyệt', revision: 'Chỉnh sửa', feedback_wait: 'Chờ feedback', feedback_fix: 'Sửa feedback', ready: 'Sẵn sàng', delivered: 'Đã bàn giao', completed: 'Hoàn thành', paused: 'Tạm dừng', cancelled: 'Đã hủy' };
 
   /* ---------- Helpers ---------- */
   function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+  function emptyState(msg) { return `<div style="padding:24px 12px;text-align:center;color:var(--text-muted);font-size:12px">${escapeHtml(msg)}</div>`; }
+  function parseDate(s) {
+    if (!s) return null;
+    const d = new Date(typeof s === 'string' ? s.replace(' ', 'T') : s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function diffDaysFromNow(deadline) {
+    const d = parseDate(deadline);
+    if (!d) return null;
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dlStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return Math.round((dlStart - dayStart) / 86400000);
+  }
+  function isOverdueD(deadline, isCompleted) {
+    if (!deadline || isCompleted) return false;
+    const d = parseDate(deadline);
+    return d ? d.getTime() < Date.now() : false;
+  }
+  function isCompletedStatus(s) { return s === 'completed' || s === 'delivered'; }
+  function isOpenStatus(s) { return !isCompletedStatus(s) && s !== 'cancelled' && s !== 'paused'; }
+  function fmtDM(d) { return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`; }
+
+  /* ---------- Load + filter (LIVE) ---------- */
+  async function loadReportsFromStore() {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
+      console.warn('[reports] Supabase chưa enabled — giữ empty state.');
+      return;
+    }
+    try {
+      await window.MH.supabaseReady;
+      const [orders, tasks, users] = await Promise.all([
+        window.MH.store.orders.list(),
+        window.MH.store.tasks.list(),
+        window.MH.store.users.list().catch(() => [])
+      ]);
+      RAW.orders = Array.isArray(orders) ? orders : [];
+      RAW.tasks = Array.isArray(tasks) ? tasks : [];
+      RAW.users = Array.isArray(users) ? users : [];
+      populatePicFilter();
+      recompute();
+    } catch (e) {
+      console.warn('[reports] load failed:', e);
+    }
+  }
+
+  function populatePicFilter() {
+    const sel = document.getElementById('filter-pic');
+    if (!sel) return;
+    const cur = sel.value;
+    const names = new Set();
+    RAW.tasks.forEach((t) => { if (t.assigned_to) names.add(t.assigned_to); });
+    RAW.orders.forEach((o) => { [o.production_pic, o.production_pic_video, o.production_pic_photo].forEach((p) => { if (p) names.add(p); }); });
+    sel.innerHTML = '<option value="">Mọi PIC</option>' + [...names].sort().map((n) => `<option${n === cur ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
+  }
+
+  function periodStart(period) {
+    const now = new Date();
+    if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+    if (period === 'quarter') return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+    const days = parseInt(period, 10) || 30;
+    return new Date(Date.now() - days * 86400000);
+  }
+
+  function applyFilters() {
+    const period = document.getElementById('filter-period').value;
+    const role = document.getElementById('filter-role').value;
+    const pic = document.getElementById('filter-pic').value;
+    const dept = document.getElementById('filter-department').value;
+    const type = document.getElementById('filter-type').value;
+
+    const from = periodStart(period).getTime();
+    const inPeriod = (iso) => { const d = parseDate(iso); return !d || d.getTime() >= from; }; // thiếu created_at → giữ lại
+
+    let orders = RAW.orders.filter((o) => inPeriod(o.created_at));
+    let tasks = RAW.tasks.filter((t) => inPeriod(t.created_at));
+
+    if (dept) orders = orders.filter((o) => (o.department || '').includes(dept));
+    if (type) {
+      tasks = tasks.filter((t) => t.task_type === type);
+      // order media gộp Quay/Chụp → vẫn khớp khi lọc shoot/photo
+      orders = orders.filter((o) => o.request_type === type || (o.request_type === 'media' && (type === 'shoot' || type === 'photo')));
+    }
+    // role 'account' không gán task → giữ toàn hệ thống
+    if (role && role !== 'account') tasks = tasks.filter((t) => (ROLE_OF_TASK_TYPE[t.task_type] || 'design') === role);
+    if (pic) {
+      tasks = tasks.filter((t) => (t.assigned_to || '').includes(pic));
+      orders = orders.filter((o) => [o.production_pic, o.production_pic_video, o.production_pic_photo, o.account_pic].some((p) => (p || '').includes(pic)));
+    }
+    return { orders, tasks };
+  }
+
+  function recompute() {
+    const f = applyFilters();
+    computeReportData(f.orders, f.tasks, RAW.users);
+    renderAll();
+  }
+
+  /* ---------- Aggregate orders/tasks → KPI_AGG + chart/table arrays ---------- */
+  function computeReportData(orders, tasks, users) {
+    // Match word-boundary để "Du" không khớp nhầm "Duy Trần" (Du=Media ≠ Duy=Design)
+    const userRoleFor = (n) => {
+      const u = (users || []).find((x) => x.name && (x.name === n || x.name.startsWith(n + ' ') || n.startsWith(x.name + ' ')));
+      return u ? u.role : null;
+    };
+    const orderById = {};
+    orders.forEach((o) => { orderById[o.order_id] = o; });
+
+    const completedT = tasks.filter((t) => isCompletedStatus(t.status));
+    const openT = tasks.filter((t) => isOpenStatus(t.status));
+    const overdueOpen = openT.filter((t) => isOverdueD(t.internal_deadline, false));
+    const rated = orders.filter((o) => o.satisfaction_score != null);
+    const deliveredO = orders.filter((o) => !!o.final_delivery_link || ['final', 'rated', 'completed'].includes(o.delivery_status) || ['delivered', 'completed'].includes(o.production_status));
+
+    /* KPI */
+    KPI_AGG.orders = orders.length;
+    KPI_AGG.tasks = tasks.length;
+    KPI_AGG.completed = completedT.length;
+    KPI_AGG.progress = openT.filter((t) => t.status !== 'pending').length;
+    const eligible = completedT.length + overdueOpen.length;
+    KPI_AGG.ontime = eligible === 0 ? 0 : Math.round((completedT.length / eligible) * 100);
+    KPI_AGG.overdue = overdueOpen.length;
+    KPI_AGG.ratedCount = rated.length;
+    KPI_AGG.ratedTotal = deliveredO.length;
+    KPI_AGG.rating = rated.length ? +(rated.reduce((s, o) => s + o.satisfaction_score, 0) / rated.length).toFixed(1) : 0;
+    KPI_AGG.coverage = deliveredO.length ? Math.round((rated.length / deliveredO.length) * 100) : 0;
+    // revision_round có sau migration add-revision-rounds.sql — chưa chạy thì undefined → 0
+    const previewed = orders.filter((o) => !!o.preview_link);
+    KPI_AGG.revision = previewed.length ? +(previewed.reduce((s, o) => s + (o.revision_round || 0), 0) / previewed.length).toFixed(1) : 0;
+    KPI_AGG.reopened = orders.filter((o) => o.delivery_status === 'reopened').length;
+    KPI_AGG.briefNeed = orders.filter((o) => o.account_status === 'needinfo').length;
+    KPI_AGG.briefOk = orders.filter((o) => o.account_status === 'confirmed').length;
+    KPI_AGG.delivery = deliveredO.length;
+
+    let ontrack = 0, soon = 0, today = 0, late = 0;
+    openT.forEach((t) => {
+      if (!t.internal_deadline) return;
+      const days = diffDaysFromNow(t.internal_deadline);
+      if (days === null) return;
+      if (isOverdueD(t.internal_deadline, false)) late++;
+      else if (days === 0) today++;
+      else if (days <= 3) soon++;
+      else ontrack++;
+    });
+    KPI_AGG.dlOntrack = ontrack; KPI_AGG.dlSoon = soon; KPI_AGG.dlToday = today; KPI_AGG.dlLate = late;
+
+    const cw = completedT.filter((t) => parseDate(t.created_at) && parseDate(t.completed_at || t.last_update));
+    KPI_AGG.avgCompletion = cw.length
+      ? +(cw.reduce((s, t) => s + Math.max(0, parseDate(t.completed_at || t.last_update) - parseDate(t.created_at)), 0) / cw.length / 86400000).toFixed(1)
+      : 0;
+
+    /* TREND — 14 ngày gần nhất */
+    const sameDay = (iso, d) => { const x = parseDate(iso); return !!x && x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth() && x.getDate() === d.getDate(); };
+    TREND = [];
+    for (let i = TREND_DAYS - 1; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      TREND.push({
+        date: d,
+        label: fmtDM(d),
+        orders: orders.filter((o) => sameDay(o.created_at, d)).length,
+        tasks: tasks.filter((t) => sameDay(t.created_at, d)).length,
+        completed: tasks.filter((t) => isCompletedStatus(t.status) && sameDay(t.completed_at || t.last_update, d)).length,
+        overdue: tasks.filter((t) => isOpenStatus(t.status) && sameDay(t.internal_deadline, d) && isOverdueD(t.internal_deadline, false)).length
+      });
+    }
+    if (!TREND.some((d) => d.orders || d.tasks || d.completed || d.overdue)) TREND = [];
+
+    /* TYPES — donut theo task_type */
+    const typeCounts = {};
+    tasks.forEach((t) => { const k = t.task_type || 'other'; typeCounts[k] = (typeCounts[k] || 0) + 1; });
+    TYPES = Object.keys(typeCounts)
+      .map((k) => ({ label: TYPE_LABEL[k] || k, color: TYPE_COLOR[k] || '#94a3b8', count: typeCounts[k] }))
+      .sort((a, b) => b.count - a.count);
+
+    /* ROLES — theo vị trí suy từ task_type */
+    const roleAgg = {};
+    tasks.forEach((t) => {
+      const r = ROLE_OF_TASK_TYPE[t.task_type] || 'design';
+      if (!roleAgg[r]) roleAgg[r] = { total: 0, completed: 0, scores: [] };
+      roleAgg[r].total++;
+      if (isCompletedStatus(t.status)) roleAgg[r].completed++;
+      const o = t.order_id && orderById[t.order_id];
+      if (o && o.satisfaction_score != null) roleAgg[r].scores.push(o.satisfaction_score);
+    });
+    ROLES = Object.keys(roleAgg).map((r) => ({
+      label: ROLE_BAR_LABEL[r] || r,
+      cls: 'role--' + r,
+      total: roleAgg[r].total,
+      completed: roleAgg[r].completed,
+      rating: roleAgg[r].scores.length ? +(roleAgg[r].scores.reduce((s, v) => s + v, 0) / roleAgg[r].scores.length).toFixed(1) : '–'
+    })).sort((a, b) => b.total - a.total);
+
+    /* PIC aggregate — dùng chung cho stacked bar + bảng KPI */
+    const picAgg = {};
+    tasks.forEach((t) => {
+      const name = t.assigned_to || '— Chưa gán —';
+      if (!picAgg[name]) picAgg[name] = { total: 0, done: 0, ontime: 0, soon: 0, overdue: 0, rev: 0, scores: [], compMs: [], types: {} };
+      const a = picAgg[name];
+      const r = ROLE_OF_TASK_TYPE[t.task_type] || 'design';
+      a.total++;
+      a.types[r] = (a.types[r] || 0) + 1;
+      if (isCompletedStatus(t.status)) {
+        a.done++;
+        const doneAt = parseDate(t.completed_at || t.last_update);
+        if (!t.internal_deadline || (doneAt && doneAt <= parseDate(t.internal_deadline))) a.ontime++;
+        if (parseDate(t.created_at) && doneAt) a.compMs.push(Math.max(0, doneAt - parseDate(t.created_at)));
+      } else if (isOpenStatus(t.status)) {
+        if (isOverdueD(t.internal_deadline, false)) a.overdue++;
+        else { const days = diffDaysFromNow(t.internal_deadline); if (days !== null && days <= 3) a.soon++; }
+      }
+      if (t.status === 'revision' || t.status === 'feedback_fix') a.rev++;
+      const o = t.order_id && orderById[t.order_id];
+      if (o && o.satisfaction_score != null) a.scores.push(o.satisfaction_score);
+    });
+    PICS = Object.keys(picAgg)
+      .map((n) => ({ name: n, total: picAgg[n].total, ontime: picAgg[n].ontime, soon: picAgg[n].soon, overdue: picAgg[n].overdue, done: picAgg[n].done }))
+      .sort((a, b) => b.total - a.total).slice(0, 8);
+
+    /* HEATMAP — orders+tasks tạo theo thứ trong tuần */
+    const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const dowCounts = [0, 0, 0, 0, 0, 0, 0];
+    orders.forEach((o) => { const d = parseDate(o.created_at); if (d) dowCounts[d.getDay()]++; });
+    tasks.forEach((t) => { const d = parseDate(t.created_at); if (d) dowCounts[d.getDay()]++; });
+    const dowMax = Math.max(1, ...dowCounts);
+    HEATMAP = dowCounts.some((c) => c > 0)
+      ? [1, 2, 3, 4, 5, 6, 0].map((i) => ({ day: DOW[i], count: dowCounts[i], intensity: Math.min(4, Math.ceil((dowCounts[i] / dowMax) * 4)) }))
+      : [];
+
+    /* FUNNEL — lifecycle order: Tiếp nhận → ... → Đánh giá */
+    const cProd = orders.filter((o) => o.production_status && o.production_status !== 'unassigned').length;
+    const cFeedback = orders.filter((o) => (o.revision_round || 0) > 0 || !!o.client_feedback).length;
+    FUNNEL = orders.length === 0 ? [] : [
+      { label: 'Tiếp nhận', count: orders.length },
+      { label: 'Brief xác nhận', count: KPI_AGG.briefOk },
+      { label: 'Sản xuất', count: cProd },
+      { label: 'Preview', count: previewed.length },
+      { label: 'Feedback', count: cFeedback },
+      { label: 'Final', count: orders.filter((o) => !!o.final_delivery_link).length },
+      { label: 'Đánh giá', count: rated.length }
+    ].map((s) => ({ ...s, pct: Math.round((s.count / orders.length) * 100) }));
+
+    /* RATINGS — phân bố 5→1 sao */
+    RATINGS = rated.length
+      ? [5, 4, 3, 2, 1].map((stars) => ({ stars, count: rated.filter((o) => o.satisfaction_score === stars).length }))
+      : [];
+
+    /* PIC_KPI — bảng xếp hạng nhân sự */
+    const ROLE_TITLE = { admin: 'Admin', account: 'Account', design: 'Design', editor: 'Editor', content: 'Content', lead_content: 'Lead Content' };
+    PIC_KPI = Object.keys(picAgg).filter((n) => n !== '— Chưa gán —').map((n) => {
+      const a = picAgg[n];
+      const eligiblePic = a.done + a.overdue;
+      const ontimePct = eligiblePic ? Math.round((a.ontime / eligiblePic) * 100) : 0;
+      const rating = a.scores.length ? +(a.scores.reduce((s, v) => s + v, 0) / a.scores.length).toFixed(1) : null;
+      const avgMs = a.compMs.length ? a.compMs.reduce((s, v) => s + v, 0) / a.compMs.length : null;
+      // KPI composite: 60% on-time + 25% rating (chưa có rating → 70 neutral) + 15% ít revision
+      const kpi = Math.round(0.6 * ontimePct + 0.25 * (rating != null ? (rating / 5) * 100 : 70) + 0.15 * Math.max(0, 100 - (a.rev / Math.max(1, a.total)) * 100));
+      const domRole = Object.keys(a.types).sort((x, y) => a.types[y] - a.types[x])[0];
+      return {
+        role: ROLE_TITLE[userRoleFor(n)] || ROLE_BAR_LABEL[domRole] || '—',
+        name: n, total: a.total, done: a.done, ontime: ontimePct, late: a.overdue, rev: a.rev,
+        rating: rating != null ? rating : '–',
+        time: avgMs != null ? (avgMs / 86400000).toFixed(1) + 'd' : '—',
+        kpi
+      };
+    }).sort((a, b) => b.kpi - a.kpi);
+
+    /* OVERDUE & risk — task open trễ hạn hoặc còn ≤2 ngày */
+    OVERDUE = openT.filter((t) => {
+      if (!t.internal_deadline) return false;
+      const days = diffDaysFromNow(t.internal_deadline);
+      return isOverdueD(t.internal_deadline, false) || (days !== null && days <= 2);
+    }).map((t) => {
+      const days = diffDaysFromNow(t.internal_deadline);
+      const over = isOverdueD(t.internal_deadline, false);
+      const dl = parseDate(t.internal_deadline);
+      return {
+        task: t.task_id,
+        order: t.order_id || 'Standalone',
+        project: t.project_name || '—',
+        type: TYPE_LABEL[t.task_type] || t.task_type || '—',
+        pic: t.assigned_to || '—',
+        account: (t.order_id && orderById[t.order_id] && orderById[t.order_id].account_pic) || '—',
+        priority: t.priority || 'normal',
+        deadline: dl ? `${fmtDM(dl)} ${String(dl.getHours()).padStart(2, '0')}:${String(dl.getMinutes()).padStart(2, '0')}` : '—',
+        overdue: over ? (days === 0 ? 'Trễ hôm nay' : `Trễ ${-days} ngày`) : (days === 0 ? 'Còn hôm nay' : `Còn ${days} ngày`),
+        status: t.status,
+        _days: over ? Math.min(days, -0.5) : days
+      };
+    }).sort((a, b) => a._days - b._days).slice(0, 10);
+
+    /* FEEDBACK — top 6 rating gần nhất */
+    FEEDBACK = rated.slice()
+      .sort((a, b) => (parseDate(b.last_updated) || 0) - (parseDate(a.last_updated) || 0))
+      .slice(0, 6)
+      .map((o) => {
+        const d = parseDate(o.last_updated);
+        return {
+          order: o.order_id, project: o.project_name || '—', requester: o.requester_name || '—',
+          account: o.account_pic || '—',
+          pic: o.production_pic || o.production_pic_video || o.production_pic_photo || '—',
+          rating: o.satisfaction_score, fb: o.client_feedback || '—', cats: [],
+          date: d ? `${fmtDM(d)}/${d.getFullYear()}` : '—'
+        };
+      });
+  }
 
   /* ---------- Render KPI ---------- */
   function renderKPI() {
@@ -104,6 +399,7 @@
   /* ---------- Chart 1: Line chart (SVG) ---------- */
   function renderLineChart() {
     const wrap = document.getElementById('line-chart-wrap');
+    if (!TREND.length) { wrap.innerHTML = emptyState('Chưa có hoạt động trong 14 ngày gần nhất.'); return; }
     const W = 800, H = 240, P = { l: 36, r: 12, t: 16, b: 28 };
     const innerW = W - P.l - P.r;
     const innerH = H - P.t - P.b;
@@ -115,7 +411,7 @@
       { key: 'overdue',   color: '#BA110F',     fill: '#BA110F' }
     ];
     const maxY = Math.max(...TREND.flatMap((d) => series.map((s) => d[s.key]))) + 2;
-    const step = innerW / (TREND.length - 1);
+    const step = innerW / Math.max(1, TREND.length - 1);
 
     function x(i) { return P.l + i * step; }
     function y(v) { return P.t + innerH - (v / maxY) * innerH; }
@@ -166,6 +462,11 @@
   function renderTypeDonut() {
     const total = TYPES.reduce((s, t) => s + t.count, 0);
     setText('type-total', total);
+    if (!total) {
+      document.getElementById('type-donut').style.background = 'var(--surface-2)';
+      document.getElementById('type-legend').innerHTML = emptyState('Chưa có task trong kỳ.');
+      return;
+    }
     // conic gradient
     let acc = 0;
     const stops = TYPES.map((t) => {
@@ -185,6 +486,7 @@
 
   /* ---------- Chart 3: Role performance (horizontal bar) ---------- */
   function renderRoleBars() {
+    if (!ROLES.length) { document.getElementById('role-bars').innerHTML = emptyState('Chưa có dữ liệu.'); return; }
     const maxTotal = Math.max(...ROLES.map((r) => r.total));
     document.getElementById('role-bars').innerHTML = ROLES.map((r) => {
       const pct = (r.total / maxTotal) * 100;
@@ -204,6 +506,7 @@
 
   /* ---------- Chart 4: PIC stacked bar ---------- */
   function renderPICBars() {
+    if (!PICS.length) { document.getElementById('pic-bars').innerHTML = emptyState('Chưa có dữ liệu.'); return; }
     const maxTotal = Math.max(...PICS.map((p) => p.total));
     document.getElementById('pic-bars').innerHTML = PICS.map((p) => {
       const tot = p.total;
@@ -228,6 +531,7 @@
 
   /* ---------- Chart 5: Heatmap ---------- */
   function renderHeatmap() {
+    if (!HEATMAP.length) { document.getElementById('heatmap').innerHTML = emptyState('Chưa có dữ liệu.'); return; }
     let html = '<div class="hm-rowlabel"></div>';
     HEATMAP.forEach((d) => html += `<div class="hm-collabel">${d.day}</div>`);
     html += `<div class="hm-rowlabel">Workload</div>`;
@@ -239,6 +543,7 @@
 
   /* ---------- Funnel ---------- */
   function renderFunnel() {
+    if (!FUNNEL.length || !FUNNEL[0].count) { document.getElementById('funnel').innerHTML = emptyState('Chưa có order trong kỳ.'); return; }
     const max = FUNNEL[0].count;
     const colors = [
       'linear-gradient(135deg, #191970 0%, #3849b3 100%)',
@@ -257,7 +562,8 @@
 
   /* ---------- Rating distribution ---------- */
   function renderRatingDist() {
-    const max = Math.max(...RATINGS.map((r) => r.count));
+    if (!RATINGS.length) { document.getElementById('rating-dist').innerHTML = emptyState('Chưa có đánh giá từ client.'); return; }
+    const max = Math.max(1, ...RATINGS.map((r) => r.count));
     document.getElementById('rating-dist').innerHTML = RATINGS.map((r) => {
       const w = (r.count / max) * 100;
       const lowCls = r.stars <= 2 ? 'rd--low' : '';
@@ -272,7 +578,7 @@
 
   /* ---------- Quality cells ---------- */
   function renderQuality() {
-    setText('q-brief-ok', 78);
+    setText('q-brief-ok', KPI_AGG.briefOk);
     setText('q-brief-bad', KPI_AGG.briefNeed);
     setText('q-rated', KPI_AGG.ratedCount);
     setText('q-norate', KPI_AGG.ratedTotal - KPI_AGG.ratedCount);
@@ -291,6 +597,10 @@
   }
 
   function renderPICTable() {
+    if (!PIC_KPI.length) {
+      document.getElementById('pic-table-body').innerHTML = `<tr><td colspan="10">${emptyState('Chưa có task được gán PIC trong kỳ.')}</td></tr>`;
+      return;
+    }
     document.getElementById('pic-table-body').innerHTML = PIC_KPI.map((p, i) => {
       const init = p.name.substring(0, 2).toUpperCase();
       const alt = i % 2 === 1 ? 'has-red' : '';
@@ -310,6 +620,10 @@
   }
 
   function renderOverdueTable() {
+    if (!OVERDUE.length) {
+      document.getElementById('overdue-table-body').innerHTML = `<tr><td colspan="10">${emptyState('Không có task rủi ro deadline — tốt!')}</td></tr>`;
+      return;
+    }
     document.getElementById('overdue-table-body').innerHTML = OVERDUE.map((t) => {
       const picInit = t.pic.substring(0, 2).toUpperCase();
       const accInit = t.account.substring(0, 2).toUpperCase();
@@ -324,8 +638,8 @@
         <td><span class="priority-pill p--${t.priority}"><span class="dot"></span>${t.priority === 'critical' ? 'Rất gấp' : t.priority === 'urgent' ? 'Gấp' : 'Bình thường'}</span></td>
         <td><span class="mono text-xs">${t.deadline.split(' ')[0]}</span></td>
         <td><b style="color:${isOverdue ? 'var(--red-600)' : 'var(--warning-fg)'}">${t.overdue}</b></td>
-        <td><span class="tb-status s--${t.status}"><span class="dot"></span>${t.status === 'inprogress' ? 'Đang xử lý' : t.status === 'review' ? 'Chờ duyệt' : 'Chỉnh sửa'}</span></td>
-        <td><a class="btn btn-ghost btn-sm" href="production-board.html">Mở</a></td>
+        <td><span class="tb-status s--${t.status}"><span class="dot"></span>${TASK_STATUS_LABEL[t.status] || t.status}</span></td>
+        <td><a class="btn btn-ghost btn-sm" href="production-board.html?id=${encodeURIComponent(t.task)}">Mở</a></td>
       </tr>`;
     }).join('');
   }
@@ -333,6 +647,10 @@
   function renderFeedbackTable() {
     const FB_LABEL = { quality: 'Chất lượng', timing: 'Tiến độ', coord: 'Phối hợp', content: 'Nội dung', file: 'File' };
     const FB_CLS = { quality: 'is-quality', timing: 'is-timing', coord: 'is-coord', content: 'is-content', file: 'is-file' };
+    if (!FEEDBACK.length) {
+      document.getElementById('feedback-table-body').innerHTML = `<tr><td colspan="9">${emptyState('Chưa có rating/feedback từ client trong kỳ.')}</td></tr>`;
+      return;
+    }
     document.getElementById('feedback-table-body').innerHTML = FEEDBACK.map((f) => {
       const accInit = f.account.substring(0, 2).toUpperCase();
       const picInit = f.pic.substring(0, 2).toUpperCase();
@@ -354,7 +672,7 @@
     }).join('');
   }
 
-  /* ---------- Filter handlers (visual only — no backend recompute) ---------- */
+  /* ---------- Filter handlers — recompute từ RAW snapshot ---------- */
   function updateFilterSummary() {
     const period = document.getElementById('filter-period').selectedOptions[0].textContent;
     const role = document.getElementById('filter-role').value;
@@ -369,8 +687,8 @@
   ['filter-period', 'filter-role', 'filter-pic', 'filter-department', 'filter-type'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       updateFilterSummary();
-      // In production, refetch /api/reports/* with new params
-      window.MH.toast({ type: 'info', title: 'Đã áp dụng bộ lọc', message: 'Demo — kết nối API thực tế để cập nhật số liệu.' });
+      recompute();
+      window.MH.toast({ type: 'info', title: 'Đã áp dụng bộ lọc', message: `${KPI_AGG.orders} order · ${KPI_AGG.tasks} task trong kỳ.` });
     });
   });
 
@@ -429,17 +747,24 @@
   });
 
   /* ---------- Init ---------- */
-  renderKPI();
-  renderLineChart();
-  renderTypeDonut();
-  renderRoleBars();
-  renderPICBars();
-  renderHeatmap();
-  renderFunnel();
-  renderRatingDist();
-  renderQuality();
-  renderPICTable();
-  renderOverdueTable();
-  renderFeedbackTable();
+  function renderAll() {
+    renderKPI();
+    renderLineChart();
+    renderTypeDonut();
+    renderRoleBars();
+    renderPICBars();
+    renderHeatmap();
+    renderFunnel();
+    renderRatingDist();
+    renderQuality();
+    renderPICTable();
+    renderOverdueTable();
+    renderFeedbackTable();
+  }
+  renderAll();
   updateFilterSummary();
+  loadReportsFromStore();
+  // Giữ số liệu tươi khi tab mở lâu — pattern Master Dashboard (poll 60s + reload khi quay lại tab)
+  setInterval(loadReportsFromStore, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) loadReportsFromStore(); });
 })();
