@@ -608,6 +608,38 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && previewModal.classList.contains('is-open')) closePreview(); });
 
   /* ---------- Submit ---------- */
+  /* Refill SÂU form revision từ order gốc → client chỉ bổ sung/điều chỉnh nội dung mới, không nhập lại từ đầu. */
+  function prefillFromOrder(o) {
+    if (!o) return;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val != null && String(val).trim() !== '') el.value = val; };
+    const esc = (s) => String(s).replace(/"/g, '\\"');
+    const setChips = (groupId, arr) => { if (!Array.isArray(arr)) return; arr.forEach((val) => { const el = document.querySelector(`#${groupId} input[value="${esc(val)}"]`); if (el) el.checked = true; }); };
+    const setChecks = (name, arr) => { if (!Array.isArray(arr)) return; arr.forEach((val) => { const el = document.querySelector(`input[name="${name}"][value="${esc(val)}"]`); if (el) el.checked = true; }); };
+    setVal('campaign_code', o.campaign_code);
+    setVal('project_purpose', o.project_purpose);
+    setChips('target_audience', o.target_audience);
+    setChips('usage_channels', o.usage_channels);
+    setChecks('deliverable_type', o.deliverable_type);
+    setVal('content_brief', o.content_brief);
+    setVal('main_headline', o.main_headline);
+    setVal('cta', o.cta);
+    setVal('mandatory_info', o.mandatory_info);
+    setVal('creative_direction', o.creative_direction);
+    setVal('reference_link', o.reference_link);
+    // Đồng bộ lại chip + conditional trước, rồi xử lý size sau cùng (tránh bị syncCustomSize xoá).
+    document.querySelectorAll('.chips').forEach(syncChips);
+    if (typeof updateConditional === 'function') updateConditional();
+    const szEl = document.getElementById('size_ratio');
+    if (szEl && o.size_ratio) {
+      const preset = [...szEl.options].find((op) => op.value === o.size_ratio);
+      if (preset) { szEl.value = o.size_ratio; if (typeof syncCustomSize === 'function') syncCustomSize(); }
+      else { // kích thước custom → chọn option "Khác…" + điền vào ô custom_size
+        const khac = [...szEl.options].find((op) => /^Khác/.test(op.value));
+        if (khac) { szEl.value = khac.value; if (typeof syncCustomSize === 'function') syncCustomSize(); const cs = document.getElementById('custom_size'); if (cs) cs.value = o.size_ratio; }
+      }
+    }
+  }
+
   /* ===== Revision mode: request.html?mode=revision&ref_order=MEDIA-... ===== */
   function initRevisionMode() {
     const sp = new URLSearchParams(location.search);
@@ -646,7 +678,8 @@
             const r = form.querySelector(`input[name="request_type"][value="${o.request_type}"]`);
             if (r && !r.checked) { r.checked = true; if (typeof updateConditional === 'function') updateConditional(); }
           }
-          window.MH.toast({ type: 'info', title: 'Đã tải Order gốc', message: `${ref} — đã điền sẵn thông tin cơ bản. Vui lòng nhập nội dung chỉnh sửa/phát sinh.` });
+          prefillFromOrder(o); // refill SÂU toàn bộ brief từ order gốc
+          window.MH.toast({ type: 'info', title: 'Đã tải Order gốc', message: `${ref} — đã điền sẵn brief cũ. Anh/chị chỉ cần bổ sung / điều chỉnh nội dung phát sinh mới.` });
         } catch (e) { console.warn('[order-form] revision prefill failed:', e); }
       })();
     }

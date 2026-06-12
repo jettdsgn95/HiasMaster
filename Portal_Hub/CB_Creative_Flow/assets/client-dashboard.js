@@ -401,12 +401,12 @@ function renderActionCenter() {
       <div class="action-card ac--rating">
         <div class="action-card-head">
           <div class="action-card-icon ai--rating"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <div><div class="action-card-title">Chưa đánh giá</div><div class="action-card-order">${o.id}</div></div>
+          <div><div class="action-card-title">Chưa đánh giá <span class="cl-rate-pill">★ 5 giây</span></div><div class="action-card-order">${o.id}</div></div>
         </div>
-        <p>${o.name} — Sản phẩm đã bàn giao. Hãy đánh giá để team cải thiện chất lượng. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, anh/chị có thể tạo một Order mới từ yêu cầu này.</p>
+        <p>${o.name} — Sản phẩm đã bàn giao. <b>Đánh giá giúp team Media cải thiện chất lượng</b> (chỉ vài giây, không bắt buộc). Cần chỉnh sửa/phát sinh sau Final thì tạo một Order mới từ yêu cầu này.</p>
         <div class="action-card-btns">
           ${o.final_link ? `<a class="btn btn-secondary btn-sm" href="${o.final_link}" target="_blank" rel="noopener">Xem Final</a>` : ''}
-          <button class="btn btn-success btn-sm" data-action="rating" data-order-id="${o.id}">Đánh giá</button>
+          <button class="btn btn-success btn-sm cl-rate-btn" data-action="rating" data-order-id="${o.id}">Đánh giá ngay</button>
           <button class="btn btn-secondary btn-sm" data-action="new-order-from" data-order-id="${o.id}">Tạo Order mới</button>
         </div>
       </div>`;
@@ -599,14 +599,18 @@ function openOrderDrawer(orderId) {
     const _msg = finishedRounds
       ? 'Yêu cầu đã hoàn tất 03 vòng feedback. Team Media đã xử lý Feedback Vòng 3 và bàn giao bản Final. Anh/chị vui lòng kiểm tra sản phẩm hoàn thiện và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, vui lòng tạo một Order mới từ yêu cầu hiện tại để team tiếp tục xử lý.'
       : 'Sản phẩm đã được bàn giao. Anh/chị vui lòng kiểm tra và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm, có thể tạo một Order mới từ yêu cầu hiện tại.';
-    actionBlock = `<div class="drawer-detail-section"><h4>${finishedRounds ? 'Đã bàn giao Final' : 'Đánh giá sản phẩm'}</h4>
+    actionBlock = `<div class="drawer-detail-section"><h4>${finishedRounds ? 'Đã bàn giao Final' : 'Sản phẩm đã bàn giao'}</h4>
       <div class="dw-callout dw--success">
         <p>${_msg}</p>
         <div class="dw-actions">
           ${o.final_link ? `<a class="btn btn-secondary btn-sm" href="${o.final_link}" target="_blank" rel="noopener">Xem Final</a>` : ''}
-          ${!rt ? `<button class="btn btn-success btn-sm" data-action="rating" data-order-id="${o.id}">Đánh giá</button>` : ''}
           <button class="btn btn-primary btn-sm" data-action="new-order-from" data-order-id="${o.id}">Tạo Order mới từ yêu cầu này</button>
         </div>
+        ${!rt ? `<div class="cl-rate-nudge">
+            <div class="cl-rate-stars" aria-hidden="true">★★★★★</div>
+            <div class="cl-rate-text"><b>Bạn thấy sản phẩm thế nào?</b><span>Đánh giá chỉ mất vài giây &amp; giúp team Media cải thiện chất lượng. Không bắt buộc.</span></div>
+            <button class="btn btn-success btn-sm cl-rate-btn" data-action="rating" data-order-id="${o.id}">Đánh giá ngay</button>
+          </div>` : `<div class="cl-rate-done">✓ Cảm ơn anh/chị đã đánh giá ${'★'.repeat(Number(rt.score) || 0)}${rt.comment ? ' — “' + esc(rt.comment) + '”' : ''}</div>`}
       </div></div>`;
   }
 
@@ -1389,6 +1393,18 @@ function renderAll() {
   renderCurrentOrders();
   renderOrdersTable();
   renderNotifications();
+  maybeRemindRating();
+}
+// Nhắc nhẹ client đánh giá (1 lần/phiên) nếu có sản phẩm đã bàn giao mà chưa rating → tăng tỉ lệ rating.
+function maybeRemindRating() {
+  if (state._ratingReminded) return;
+  const pending = ORDERS.filter((o) => isFinalDelivered(o) && !state.ratings[o.id]);
+  if (!pending.length) return;
+  state._ratingReminded = true;
+  setTimeout(function () {
+    toast('info', '⭐ ' + pending.length + ' sản phẩm chưa đánh giá',
+      'Dành vài giây đánh giá giúp team Media cải thiện chất lượng. Mở yêu cầu đã bàn giao để đánh giá (không bắt buộc).');
+  }, 1600);
 }
 
 /* ===== INIT ===== */

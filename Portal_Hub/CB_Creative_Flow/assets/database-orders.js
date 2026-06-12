@@ -1186,6 +1186,12 @@
           <button class="btn btn-primary btn-sm" id="send-final-btn" ${o.final_delivery_link ? 'disabled' : ''}>${o.final_delivery_link ? '✓ Đã gửi Final' : 'Gửi Final → Client'}</button>
         </div>
         <p class="text-xs muted" style="margin:10px 0 0">${o.final_delivery_link ? 'Đã bàn giao Final cho client — chỉ gửi MỘT lần. Cần thay đổi thì liên hệ quản trị.' : 'Nhập link Drive rồi bấm gửi — client nhận thông báo và mở link ngay trong Client Portal. Final chỉ gửi một lần.'}</p>
+        ${o.final_delivery_link && o.production_status !== 'completed' ? `
+        <div class="row" style="justify-content:flex-end; margin-top:12px">
+          <button class="btn btn-success btn-sm" id="close-order-btn">Đóng đơn — Hoàn thành</button>
+        </div>
+        <p class="text-xs muted" style="margin:6px 0 0">Đóng đơn khi client đã nhận sản phẩm. Rating của client là <b>tùy chọn</b> — không bắt buộc để hoàn thành đơn.</p>` : ''}
+        ${o.production_status === 'completed' ? '<p class="text-xs" style="margin:12px 0 0;color:var(--success);font-weight:600">✓ Đơn đã Hoàn thành.</p>' : ''}
         ` : `
         <dl>
           <dt>Preview Link</dt><dd>${link(o.preview_link)}</dd>
@@ -1267,10 +1273,28 @@
       render();
       openDrawer(currentOrder);
     }
+    // Đóng đơn → Hoàn thành. Dùng khi đã gửi Final mà client không đánh giá (rating tùy chọn,
+    // không gate hoàn thành). Set production_status+delivery_status='completed'.
+    function closeOrderCompleted(o) {
+      if (!o) return;
+      if (o.production_status === 'completed') { window.MH.toast({ type: 'info', title: 'Đã hoàn thành', message: 'Đơn này đã ở trạng thái Hoàn thành.' }); return; }
+      if (!o.final_delivery_link) { window.MH.toast({ type: 'warning', title: 'Chưa gửi Final', message: 'Cần gửi Final cho client trước khi đóng đơn.' }); return; }
+      const nowIso = new Date().toISOString();
+      o.production_status = 'completed';
+      o.delivery_status = 'completed';
+      o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
+      persistOrder(o.order_id, { production_status: 'completed', delivery_status: 'completed', last_updated: nowIso });
+      window.MH.toast({ type: 'success', title: 'Đã đóng đơn — Hoàn thành', message: o.order_id + ' · Rating của client (nếu có sau) vẫn được ghi nhận.' });
+      render();
+      openDrawer(o);
+    }
     const sendPreviewBtn = document.getElementById('send-preview-btn');
     if (sendPreviewBtn) sendPreviewBtn.addEventListener('click', () => sendDelivery('preview'));
     const sendFinalBtn = document.getElementById('send-final-btn');
     if (sendFinalBtn) sendFinalBtn.addEventListener('click', () => sendDelivery('final'));
+    // Đóng đơn — Hoàn thành (lưới an toàn khi client KHÔNG đánh giá; rating là tùy chọn).
+    const closeOrderBtn = document.getElementById('close-order-btn');
+    if (closeOrderBtn) closeOrderBtn.addEventListener('click', () => closeOrderCompleted(currentOrder));
 
     // Gửi feedback hiện tại cho PIC xử lý (revision panel).
     const sendFbPicBtn = document.getElementById('btn-send-feedback-pic');
