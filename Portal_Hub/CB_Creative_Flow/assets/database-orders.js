@@ -1180,12 +1180,12 @@
         </div>` : ''}
         <div class="edit-row">
           <label>Final Link</label>
-          <input class="input" id="dlv-final-link" type="url" value="${escapeHtml(o.final_delivery_link || '')}" placeholder="https://drive.google.com/final..." />
+          <input class="input" id="dlv-final-link" type="url" value="${escapeHtml(o.final_delivery_link || '')}" placeholder="https://drive.google.com/final..." ${o.final_delivery_link ? 'readonly' : ''} />
         </div>
         <div class="row" style="justify-content:flex-end; margin-top:4px">
-          <button class="btn btn-primary btn-sm" id="send-final-btn">Gửi Final → Client</button>
+          <button class="btn btn-primary btn-sm" id="send-final-btn" ${o.final_delivery_link ? 'disabled' : ''}>${o.final_delivery_link ? '✓ Đã gửi Final' : 'Gửi Final → Client'}</button>
         </div>
-        <p class="text-xs muted" style="margin:10px 0 0">Nhập link Drive rồi bấm gửi — client nhận thông báo và mở link ngay trong Client Portal.</p>
+        <p class="text-xs muted" style="margin:10px 0 0">${o.final_delivery_link ? 'Đã bàn giao Final cho client — chỉ gửi MỘT lần. Cần thay đổi thì liên hệ quản trị.' : 'Nhập link Drive rồi bấm gửi — client nhận thông báo và mở link ngay trong Client Portal. Final chỉ gửi một lần.'}</p>
         ` : `
         <dl>
           <dt>Preview Link</dt><dd>${link(o.preview_link)}</dd>
@@ -1235,6 +1235,12 @@
     // Wire delivery hand-off (gửi Preview/Final link → update order + notify client)
     function sendDelivery(kind) {
       const isFinal = kind === 'final';
+      // Guard: Final chỉ gửi MỘT lần. Đã có final_delivery_link → chặn (tránh re-persist + re-notify
+      // do bấm nhiều lần / double-click trước khi drawer re-render disable nút).
+      if (isFinal && currentOrder.final_delivery_link && String(currentOrder.final_delivery_link).trim()) {
+        window.MH.toast({ type: 'warning', title: 'Đã gửi Final', message: 'Order này đã bàn giao Final cho client rồi — không gửi lại.' });
+        return;
+      }
       const input = document.getElementById(isFinal ? 'dlv-final-link' : 'dlv-preview-link');
       const linkVal = input ? input.value.trim() : '';
       if (!linkVal) {
@@ -1245,7 +1251,11 @@
       // Bàn giao ĐẦU TIÊN luôn là "Preview" (yêu cầu nghiệp vụ — không gọi Final/Draft/Demo).
       // Preview → mở vòng feedback (feedback_status=waiting_feedback). Final → approved.
       const localFields = isFinal
-        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today, feedback_status: 'final_sent' }
+        // ⚠ feedback_status='approved' (KHÔNG dùng 'final_sent' — value đó KHÔNG có trong CHECK
+        // orders_feedback_status_check → vi phạm constraint làm FAIL cả UPDATE, final_link không lưu →
+        // client không nhận Final). 'approved' = "client duyệt / đã gửi Final" (đúng comment migration).
+        // Lifecycle/isFinalDelivered nhận diện Final qua final_delivery_link + production_status='delivered'.
+        ? { final_delivery_link: linkVal, delivery_status: 'final', production_status: 'delivered', progress: 95, delivery_date: today, feedback_status: 'approved' }
         : { preview_link: linkVal, delivery_status: 'client_wait', production_status: 'feedback_wait', delivery_date: today, feedback_status: 'waiting_feedback' };
       Object.assign(currentOrder, localFields, { last_updated: new Date().toISOString().slice(0, 16).replace('T', ' ') });
       persistOrder(currentOrder.order_id, Object.assign({}, localFields, { last_updated: new Date().toISOString() }));
