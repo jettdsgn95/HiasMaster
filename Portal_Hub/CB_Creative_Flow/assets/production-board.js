@@ -19,6 +19,12 @@
     setTimeout(() => location.replace('client-dashboard.html'), 1200);
     return;
   }
+  // Team Content tách biệt khỏi Production: content/lead_content không vào Task Tracker.
+  if (user.role === 'content' || user.role === 'lead_content') {
+    if (window.MH && window.MH.toast) window.MH.toast({ type: 'warning', title: 'Khu vực Production', message: 'Team Content làm việc tại khu Content Team.' });
+    setTimeout(() => location.replace(user.role === 'lead_content' ? 'content-team.html' : 'content-workbench.html'), 900);
+    return;
+  }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
 
@@ -117,7 +123,7 @@
   const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
 
   /* ---------- Mock tasks ---------- */
-  const TODAY = new Date('2026-05-13');
+  const TODAY = (function () { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })(); // ngày THẬT (bỏ hardcode demo anchor)
   function fmtDT() { return new Date().toISOString().slice(0, 16).replace('T', ' '); }
   // Hiển thị timestamp → "DD/MM/YYYY HH:MM" local. Bare "YYYY-MM-DD HH:MM" (fmtDT) coi là UTC.
   function fmtDateTime(s) {
@@ -137,7 +143,11 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   function parseDate(s) { return s ? new Date(s.replace(' ', 'T')) : null; }
-  function diffDays(s) { const d = parseDate(s); if (!d) return null; return Math.ceil((d - TODAY) / 86400000); }
+  function diffDays(s) {
+    const d = parseDate(s); if (!d) return null;
+    const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()); // so theo NGÀY lịch, bỏ giờ → "Còn Nd" chuẩn
+    return Math.round((a - TODAY) / 86400000);
+  }
   function fmtRelative(s) {
     const days = diffDays(s);
     if (days === null) return '';
@@ -501,10 +511,12 @@
     const userTasks = scope.filter((t) => isMyTask(t.assigned_to));
     const groups = {
       new: userTasks.filter((t) => ['pending', 'received'].includes(t.status)),
-      progress: userTasks.filter((t) => ['inprogress', 'review'].includes(t.status)),
+      // 'ready' (đã duyệt nội bộ, đang ở pha Preview/bàn giao) + 'feedback_wait' (đã gửi Preview, chờ client)
+      // VẪN là đang thực hiện — KHÔNG tính Hoàn thành. Chỉ 'delivered' (final) / 'completed' (đóng) mới Hoàn thành.
+      progress: userTasks.filter((t) => ['inprogress', 'review', 'ready', 'feedback_wait'].includes(t.status)),
       revision: userTasks.filter((t) => ['revision', 'feedback_fix'].includes(t.status)),
       soon: userTasks.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && t.status !== 'completed'; }),
-      done: userTasks.filter((t) => ['ready', 'completed', 'delivered'].includes(t.status)).slice(0, 5)
+      done: userTasks.filter((t) => ['delivered', 'completed'].includes(t.status)).slice(0, 5)
     };
     document.getElementById('vt-mytasks').textContent = userTasks.length;
     function fill(id, list) {
@@ -688,8 +700,59 @@
             message: `${task.task_id} · ${task.project_name || ''} — Account yêu cầu chỉnh sửa. Xem ghi chú trong task.`
           }));
         }
+      } else if (newStatus === 'ready') {
+        // #7: Account/Admin duyệt nội bộ (review → ready) — báo PIC "đã được duyệt".
+        const picId = await window.MH.store.notifications.findUserIdByName(task.assigned_to);
+        if (picId) {
+          await window.MH.store.notifications.create(Object.assign({}, base, {
+            user_id: picId,
+            type: 'task_status_changed',
+            title: 'Task đã được duyệt',
+            message: `${task.task_id} · ${task.project_name || ''} — đã duyệt nội bộ, sẵn sàng bàn giao.`
+          }));
+        }
       }
     } catch (e) { console.warn('[task] notify status change failed:', e); }
+  }
+  /* #4/#5: báo PIC khi được GÁN task (tạo mới có PIC hoặc đổi PIC). type task_assigned (base-safe). */
+  async function notifyTaskAssign(task, picName) {
+    if (!picName || !window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    try {
+      const uid = await window.MH.store.notifications.findUserIdByName(picName);
+      if (uid) await window.MH.store.notifications.create({
+        user_id: uid,
+        type: 'task_assigned',
+        title: 'Bạn được giao task',
+        message: `${task.task_id} · ${task.project_name || ''} — bạn là P.I.C. Mở chi tiết để bắt đầu.`,
+        link: 'production-board.html?id=' + task.task_id,
+        related_entity_type: 'tasks',
+        related_entity_id: task.task_id
+      });
+    } catch (e) { console.warn('[task] notify assign failed:', e); }
+  }
+  /* #6: báo người được @mention (và người được reply) trong comment. type task_comment (base-safe). */
+  async function notifyTaskMentions(task, comment) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+    const names = new Set();
+    (comment.mentions || []).forEach((n) => names.add(n));
+    if (comment.reply_to_author) names.add(comment.reply_to_author);
+    if (!names.size) return;
+    const meName = (user.name || '').toLowerCase();
+    for (const name of names) {
+      if (meName && String(name).toLowerCase() === meName) continue; // không tự báo mình
+      try {
+        const uid = await window.MH.store.notifications.findUserIdByName(name);
+        if (uid) await window.MH.store.notifications.create({
+          user_id: uid,
+          type: 'task_comment',
+          title: (comment.reply_to_author === name) ? 'Có người trả lời bạn' : 'Bạn được nhắc trong comment',
+          message: `${task.task_id} · ${user.name || 'Ai đó'}: ${String(comment.text).slice(0, 120)}`,
+          link: 'production-board.html?id=' + task.task_id,
+          related_entity_type: 'tasks',
+          related_entity_id: task.task_id
+        });
+      } catch (e) { console.warn('[task] notify mention failed:', e); }
+    }
   }
 
   function updateStatus(task, newStatus) {
@@ -1316,6 +1379,7 @@
       currentTask.last_update = fmtDT();
       persistTaskComment(currentTask.task_id, newComment);
       persistTask(currentTask.task_id, { last_update: new Date().toISOString() });
+      notifyTaskMentions(currentTask, newComment); // #6: báo người được @mention / reply
       const toastMsg = replyParent
         ? `Đã reply @${replyParent.author}`
         : (mentions.length ? `Đã gửi · mention ${mentions.length}` : 'Đã gửi comment');
@@ -1570,10 +1634,16 @@
       if (std) tmOrderId.value = '';
     });
   });
-  document.getElementById('btn-create-task').addEventListener('click', () => {
-    if (user.role === 'client') return;
-    openTaskModal({ assigned_to: user.name && ['Duy','Vinh','Linh Chi','Mai Phương'].includes(user.name) ? user.name : '' });
-  });
+  // Chỉ Admin/Account giao việc nội bộ; Design/Editor chỉ NHẬN & thực hiện task → ẩn nút.
+  (function () {
+    const canCreateTask = ['admin', 'account'].includes(user.role);
+    const createBtn = document.getElementById('btn-create-task');
+    if (createBtn && !canCreateTask) createBtn.style.display = 'none';
+    if (createBtn) createBtn.addEventListener('click', () => {
+      if (!canCreateTask) return; // guard: Design/Editor/Client không tạo task
+      openTaskModal({ assigned_to: user.name && ['Duy','Vinh','Linh Chi','Mai Phương'].includes(user.name) ? user.name : '' });
+    });
+  })();
   document.getElementById('task-modal-close').addEventListener('click', closeTaskModal);
   document.getElementById('task-modal-cancel').addEventListener('click', closeTaskModal);
   modalBd.addEventListener('click', () => { if (modal.classList.contains('is-open')) closeTaskModal(); });
@@ -1600,6 +1670,7 @@
     if (editingTaskId) {
       const t = TASKS.find((x) => x.task_id === editingTaskId);
       if (!t) { closeTaskModal(); return; }
+      const prevPic = t.assigned_to; // #4: lưu PIC cũ để phát hiện reassign
       t.project_name = project;
       t.content = tmContent.value.trim();
       t.task_type = tmType.value;
@@ -1637,6 +1708,7 @@
       if (t.task_type === 'photo' || t.task_type === 'shoot') editPatch.shoot_location = t.shoot_location || null;
       persistTask(t.task_id, editPatch);
       persistTaskComment(t.task_id, editComment);
+      if (t.assigned_to && t.assigned_to !== prevPic) notifyTaskAssign(t, t.assigned_to); // #4: đổi PIC → báo PIC mới
       window.MH.toast({ type: 'success', title: 'Đã lưu task', message: t.task_id });
       closeTaskModal();
       render();
@@ -1691,6 +1763,7 @@
     if (newTask.comments && newTask.comments.length) {
       persistTaskComment(newTask.task_id, newTask.comments[0]);
     }
+    if (newTask.assigned_to) notifyTaskAssign(newTask, newTask.assigned_to); // #5: báo PIC được gán
     window.MH.toast({ type: 'success', title: '✓ Đã tạo task', message: `${newTask.task_id} · ${newTask.project_name}` });
     closeTaskModal();
     render();

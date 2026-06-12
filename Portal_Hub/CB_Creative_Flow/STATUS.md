@@ -2,7 +2,7 @@
 
 > Tracker tiến độ CB Media Hub. Cập nhật sau mỗi task có thay đổi module/file/progress, hoặc khi user gõ `check_update`.
 >
-> *Last updated: 2026-06-08 · Project state: Production-ready beta · **📅 Calendar / Lịch DONE** (`calendar.html`+`calendar.js`: **Month/Week/Day** read-only; chấm deadline task/order + lịch quay/chụp + bàn giao; **role-filtered** admin/account full · design/editor chỉ task PIC · content chỉ order wording; **Day view ref-style** mini-calendar + danh sách task của ngày ("+N khác"/click số ngày để mở); click event→popover→drawer; nav inject `app.js injectCalendarNav()`; ⚠ chạy `add-shoot-date.sql`) · **⏰ Hạn wording DONE** (`orders.wording_deadline`: Account đặt ở Order drawer khi/sau Chuyển Content Wording; Content Wording hiển thị cột "Hạn wording" + drawer + tô đỏ khi trễ; **chuyển wording → notify team Content** (`notifyContentWording`, type task_assigned); **Calendar role Content CHỈ hiện "Hạn Content Wording"** (event `wording-deadline` tím, ẩn deadline order/shoot); ⚠ chạy `add-wording-deadline.sql`) · **Content = team tách biệt**: tạm ẩn nav Master/Task Dashboard + Internal Task Tracker (CSS `:has`) · Content Role Phase 1+2+3+4 DONE (Brief Wording: role → gate → Content Workbench → **Client confirm**; ⚠ chạy `add-brief-wording-fields.sql` + `add-brief-wording-workspace-fields.sql` + `add-brief-wording-confirmation.sql`) · **Workflow notifications khép kín** (order → PIC → duyệt nội bộ → bàn giao → rating) · **Bàn giao Preview/Final trong Order drawer** (trang Delivery Log ĐÃ GỠ) · **Order type `media` "Quay/Chụp" gộp → Push tách 2 task (PIC Quay + PIC Chụp)** (`add-media-pics.sql` đã chạy production 2026-06-03) · Order Form rút gọn theo type (media skip mục 4,5 + đánh số liền mạch; video gộp 1 ô nội dung+định hướng; slide thả link Google Doc; **bỏ wording toàn bộ**) · Master Dashboard "New Orders" card + animation + NEW badge ở Client Orders · notif-icons shared module · fix date/timezone (deadline không mất) · **Order drawer**: Push CTA giữ sáng + nút "Xác nhận & Chuyển Production" + khóa PIC sau push + ô Production Status read-only + banner next-step (review/ready/delivered) · **Auto-sync Production Status task→order** (bottleneck rule; ⚠ chạy `sync-order-status-from-tasks.sql`) · **🐛 FIX: task status/link không lưu** (persistTask partial-upsert vi phạm NOT NULL → đổi sang `tasks.update`) · List mới-nhất-trước · **Preview → 3 vòng Feedback → Final + Approve Preview + Link sync Task↔Order** (⚠ chạy `add-revision-rounds.sql` + `add-preview-approval.sql`) · **Order Lifecycle Timeline** (Brief→Production→Preview&Feedback→Final&Rating, display-only) · **Task Tracker: "Sửa công việc" chỉ Admin/Account** (P.I.C chỉ Files&Links + status flow review) · ⚠ **5 SQL pending**: `sync-order-status-from-tasks` · `add-revision-rounds` · `add-preview-approval` · `add-shoot-date` · `add-wording-deadline` · **17 HTML · 14 JS** · Railway deploy LIVE ✓*
+> *Last updated: 2026-06-12 · Project state: Production-ready beta · **📊 Reports wired LIVE 2026-06-12** (`reports.js`: load orders+tasks+users qua `MH.store` → aggregate client-side 12 KPI/6 charts/funnel/rating/3 bảng; filters recompute thật từ RAW snapshot; empty-state khi 0 data — fix crash `FUNNEL[0]`; poll 60s; module cuối cùng nối Supabase) · **🧑‍🤝‍🧑 Content Team Workspace DONE 2026-06-11** (`content-team.html`+`content-team.js`: role mới **`lead_content`** + `content` — team TÁCH BIỆT Production; views Dashboard / Content Inbox (Lead) / Board 7 cột / Danh sách / My Content Tasks + drawer: Lifecycle 7 bước · Lead Assign (PIC + hạn wording) · Workspace · Quality Checklist · Lead Review Panel · Account&Client status · Files/Links · Activity; flow `assigned`→`pic_assigned`→`in_progress`→`submitted_to_lead`→(`lead_revision`↺)→`submitted_to_account`→ Account/Client flow cũ; notify transfer→lead · gán→PIC · submit→lead · duyệt→admin+account; guard 2 chiều content/lead↔production; login redirect content+lead_content→content-team; content-workbench = legacy đọc-được status mới nhưng KHÔNG bypass Lead; ⚠ chạy `add-content-team.sql`) · **📅 Calendar / Lịch DONE** (`calendar.html`+`calendar.js`: **Month/Week/Day** read-only; chấm deadline task/order + lịch quay/chụp + bàn giao; **role-filtered** admin/account full · design/editor chỉ task PIC · content chỉ order wording; **Day view ref-style** mini-calendar + danh sách task của ngày ("+N khác"/click số ngày để mở); click event→popover→drawer; nav inject `app.js injectCalendarNav()`; ⚠ chạy `add-shoot-date.sql`) · **⏰ Hạn wording DONE** (`orders.wording_deadline`: Account đặt ở Order drawer khi/sau Chuyển Content Wording; Content Wording hiển thị cột "Hạn wording" + drawer + tô đỏ khi trễ; **chuyển wording → notify team Content** (`notifyContentWording`, type task_assigned); **Calendar role Content CHỈ hiện "Hạn Content Wording"** (event `wording-deadline` tím, ẩn deadline order/shoot); ⚠ chạy `add-wording-deadline.sql`) · **Content = team tách biệt**: tạm ẩn nav Master/Task Dashboard + Internal Task Tracker (CSS `:has`) · Content Role Phase 1+2+3+4 DONE (Brief Wording: role → gate → Content Workbench → **Client confirm**; ⚠ chạy `add-brief-wording-fields.sql` + `add-brief-wording-workspace-fields.sql` + `add-brief-wording-confirmation.sql`) · **Workflow notifications khép kín** (order → PIC → duyệt nội bộ → bàn giao → rating) · **Bàn giao Preview/Final trong Order drawer** (trang Delivery Log ĐÃ GỠ) · **Order type `media` "Quay/Chụp" gộp → Push tách 2 task (PIC Quay + PIC Chụp)** (`add-media-pics.sql` đã chạy production 2026-06-03) · Order Form rút gọn theo type (media skip mục 4,5 + đánh số liền mạch; video gộp 1 ô nội dung+định hướng; slide thả link Google Doc; **bỏ wording toàn bộ**) · Master Dashboard "New Orders" card + animation + NEW badge ở Client Orders · notif-icons shared module · fix date/timezone (deadline không mất) · **Order drawer**: Push CTA giữ sáng + nút "Xác nhận & Chuyển Production" + khóa PIC sau push + ô Production Status read-only + banner next-step (review/ready/delivered) · **Auto-sync Production Status task→order** (bottleneck rule; ⚠ chạy `sync-order-status-from-tasks.sql`) · **🐛 FIX: task status/link không lưu** (persistTask partial-upsert vi phạm NOT NULL → đổi sang `tasks.update`) · List mới-nhất-trước · **Preview → 3 vòng Feedback → Final + Approve Preview + Link sync Task↔Order** (⚠ chạy `add-revision-rounds.sql` + `add-preview-approval.sql`) · **Order Lifecycle Timeline** (Brief→Production→Preview&Feedback→Final&Rating, display-only) · **Task Tracker: "Sửa công việc" chỉ Admin/Account** (P.I.C chỉ Files&Links + status flow review) · ⚠ **6 SQL pending**: `sync-order-status-from-tasks` · `add-revision-rounds` · `add-preview-approval` · `add-shoot-date` · `add-wording-deadline` · `add-content-team` · **18 HTML · 15 JS** · Railway deploy LIVE ✓*
 
 ---
 
@@ -23,8 +23,9 @@
 | 10 | Chatbot | Done | `chatbot.html`, `chatbot.js` | [10](../Brief_Wflow/CB_Creative_Flow_10_chatbot_module.md) |
 | 11 | Client Portal | Done | `client-dashboard.html`, `client-dashboard.js` | [11](../Brief_Wflow/CB_Creative_Flow_11_Client_Portal_YeuCauSangTao_module.md) |
 | 12 | Calendar / Lịch | Done | `calendar.html`, `calendar.js` | — (2026-06-08) |
+| 13 | **Content Team Workspace** | Done | `content-team.html`, `content-team.js` (+ `content-workbench` legacy) | — (2026-06-11) |
 
-**Overall**: 12/12 internal modules done · 5/5 public pages done · 0 module pending.
+**Overall**: 13/13 internal modules done · 5/5 public pages done · 0 module pending.
 
 ---
 
@@ -34,7 +35,7 @@
 
 Status: Done
 
-- `index.html`: hero, quick actions, workflow overview, tracking lookup, FAQ preview, support strip. **GSAP motion (2026-06-11)** via `assets/home-motion.js` (count-up, scroll-reveal, parallax, scroll-progress, header shadow, hover, magnetic CTA) — additive, `prefers-reduced-motion` + fallback an toàn, KHÔNG đụng `.fade-up`. _(Flow trang chủ/đăng nhập giữ nguyên gốc.)_
+- `index.html`: hero, quick actions, workflow overview, tracking lookup, FAQ preview, support strip. **Support strip repurposed 2026-06-12**: bỏ CTA ngoài "Cần tư vấn dự án lớn / booking dài hạn" → block nội bộ **"QUY TRÌNH NỘI BỘ"** ("Yêu cầu hợp lệ sẽ được tiếp nhận và phân công theo quy trình" + nút "Xem quy trình tiếp nhận →" → `help.html#requesting`); giữ nguyên gradient/layout/radius/responsive, chỉ đổi text+action. **Contact info đồng bộ toàn site** (index+help footer · help contact card · settings g-phone): email `marketing@cbcentres.com`, hotline `1900 866 855`, giờ làm việc T2–T6 7:30–11:30 · 13:30–17:00 / T7 7:30–11:30. **GSAP motion (2026-06-11)** via `assets/home-motion.js` (count-up, scroll-reveal, parallax, scroll-progress, header shadow, hover, magnetic CTA) — additive, `prefers-reduced-motion` + fallback an toàn, KHÔNG đụng `.fade-up`. _(Flow trang chủ/đăng nhập giữ nguyên gốc.)_
 - `login.html`: 5 demo account tiles (click-to-fill credentials), password show/hide, role-based redirect after login, `?redirect=` param support to return to original page after auth.
 - `request.html`: 7-section order form (requester → brief → type → content → assets → deadline → confirm), conditional service sub-forms, autosave draft, preview, success state. Auth-gated: blocks submit if not logged in, auto-fills requester info from session, redirects to `login.html?redirect=request.html` preserving draft.
 - `tracking.html`: search by `MEDIA-*` code, client-scope guard, mock order timeline, progress, feedback modal.
@@ -105,13 +106,15 @@ Status: **Removed 2026-06-03** (trang `delivery-log.html` + `delivery-log.js` đ
 
 ### 6. Reports
 
-Status: Done
+Status: Done — **wired LIVE Supabase 2026-06-12** (trước đó UI xong nhưng data rỗng chờ Phase 3)
 
-- 12 KPI cards and 5 report filters (period, type, status, PIC, branch).
-- 6 custom charts: trend line, distribution donut, role bar, PIC stacked bar, heatmap, quality grid.
-- Delivery funnel, rating distribution, SLA gauge.
-- PIC KPI table, overdue risk table, feedback table.
-- CSV export and browser print PDF.
+- `loadReportsFromStore()`: load `orders.list()` + `tasks.list()` + `users.list()` song song qua `MH.store` → snapshot `RAW`. Supabase chưa enabled → empty state (không mock).
+- 12 KPI cards + 6 charts (trend 14 ngày, donut task_type, role bars, PIC stacked, heatmap thứ-trong-tuần, quality grid) + Delivery Funnel 7 bước (Tiếp nhận→Brief xác nhận→Sản xuất→Preview→Feedback→Final→Đánh giá) + rating distribution + SLA — tất cả aggregate từ data thật trong `computeReportData()`.
+- 5 filters (period/role/PIC/branch/type) **recompute client-side thật** từ RAW, không refetch; `#filter-pic` options rebuild từ PIC thật trong data. Role suy từ task_type (`ROLE_OF_TASK_TYPE`).
+- 3 tables: PIC KPI (composite score 60% on-time + 25% rating + 15% ít revision, sort desc) · Overdue & Risk (open task trễ hoặc còn ≤2 ngày, link `production-board.html?id=`) · Feedback top 6 rating mới nhất.
+- Empty-state mọi chart/table khi 0 data — đồng thời fix crash sẵn có (`renderFunnel` đọc `FUNNEL[0].count` trên mảng rỗng làm chết init từ đó trở xuống, export buttons không gắn listener).
+- Đọc an toàn cột thuộc migration pending (`revision_round`, `production_pic_video/photo`): undefined → 0/skip, không lỗi.
+- Poll 60s + reload khi `visibilitychange` visible. CSV export + print PDF giữ nguyên, giờ xuất số liệu thật.
 
 ### 7. User Management
 
@@ -166,6 +169,7 @@ Status: Done
 - Order detail drawer: order info, status timeline, deliverables, feedback.
 - Profile tab: view/edit name, initials, title, avatar, phone, department, bio — persists to `mh-user`.
 - Demo account: `client@cb.vn` / `cb2026` → redirect to `client-dashboard.html`.
+- **Status label client (2026-06-12)**: `pending` (vừa gửi) = **"Yêu cầu đã gửi"** · `checking` (account bấm "Kiểm tra brief") = **"Đã nhận yêu cầu"** (trước: pending="Đã nhận yêu cầu", checking="Đang kiểm tra thông tin"). Đồng bộ cả `client-dashboard.js PUB_STATUS` + `tracking.html STATUS_PUB`. (TL_STAGES node 1 vẫn gộp "Đã nhận" pending+checking — milestone thô, không đổi.)
 
 ### 12. Calendar / Lịch
 
@@ -179,6 +183,22 @@ Status: Done (2026-06-08)
 - **Read-only**: click event → popover (ngày/giờ/PIC/trạng thái) → "Mở chi tiết" navigate `production-board.html?id=` (task) / `database-orders.html?id=` (order admin/account) / `content-workbench.html?order=` (content). Task vẫn tạo/sửa ở Task Tracker.
 - **Shoot date**: cột mới `orders/tasks.shoot_date`+`shoot_time` (migration `add-shoot-date.sql` ⚠ pending). `order-form.js` lưu `media_date`→`shoot_date`; `database-orders.js pushToProduction` kế thừa sang task quay/chụp. calendar.js fallback regex bóc `Ngày: YYYY-MM-DD` từ content_brief khi chưa migrate.
 - Nav "Lịch" inject 1 chỗ qua `app.js injectCalendarNav()` → hiện trên mọi trang nội bộ. **"Hôm nay" = `new Date()` ngày THẬT** (mặc định mở tháng hiện tại). **Đồng bộ realtime**: Supabase Realtime orders/tasks (best-effort) + poll 60s + reload khi quay lại tab (silent, giữ view/filter). CSS `.cal-*` cuối `styles.css`.
+
+### 13. Content Team Workspace
+
+Status: Done (2026-06-11)
+
+- `content-team.html` + `assets/content-team.js` — workspace RIÊNG cho team Content, TÁCH BIỆT Production/Task Tracker (không tạo production task cho việc wording, workload không trộn).
+- **2 role team Content**: `lead_content` (nhận request ở Content Inbox, gán PIC, đặt hạn wording, duyệt/trả chỉnh) + `content` (làm wording được gán, lưu nháp, gửi Lead). Admin = full; Account = theo dõi read-only (action của Account vẫn ở Client Orders drawer); design/editor/client = chặn (redirect).
+- **5 view** (chip tab, role-gated JS): Dashboard (7 stat cards + workload bar theo PIC + danh sách trễ hạn + hoạt động gần đây) · Content Inbox (Lead: 2 cột "chờ phân công" + "chờ duyệt") · Content Board (Kanban 7 cột: Inbox/Đã gán PIC/Đang viết/Chờ Lead duyệt/Cần chỉnh/Chờ Account-Client/Hoàn tất, click card → drawer, KHÔNG drag-drop — đổi status qua action có gate) · Danh sách (search + filter status/type/PIC) · My Content Tasks (PIC match kiểu `isMyTask` word-boundary).
+- **Content Wording Drawer**: Lifecycle 7 bước → Lead Assign panel (PIC datalist từ users role=content + hạn wording) → Brief gốc (read-only) → Wording Workspace (7 field, 2 bắt buộc) → Content Quality Checklist (7 mục, bắt buộc tick đủ trước khi gửi Lead) → Lead Review Panel (note + Duyệt & chuyển Account / Trả Content chỉnh) → Account & Client status (read-only) → Files/Links workspace (4 link + nút Mở) → Activity timeline.
+- **Status flow mở rộng `brief_wording_status`**: `assigned` (Inbox Lead) → `pic_assigned` → `in_progress` → `submitted_to_lead` → (`lead_revision` ↺) → `submitted_to_account` → flow Account/Client CŨ GIỮ NGUYÊN (`account_revision`/`sent_to_client`/`client_feedback`/`client_approved`/`completed`). Gate Confirm Brief (`isWordingApproved`) không đổi.
+- **Notify khép kín**: Account transfer → mọi `lead_content` active (fallback `content` nếu chưa có lead) · Lead gán PIC → PIC (`findUserIdByName`) · Content submit → mọi `lead_content` · Lead duyệt → admin+account · Client wording feedback → admin+account+lead_content+content (link `content-team.html?id=`).
+- **Persist**: localStorage-first (cache CHUNG `mh-wording-drafts` với content-workbench — draft/checklist/links/activity share; Supabase off → ghi `mh-submitted-orders`); Supabase on → RPC `update_brief_wording` v2. DB là nguồn thật cho lifecycle, chỉ override khi DB có giá trị (cột chưa migrate không clobber cache). Poll 60s + reload on visibilitychange.
+- **Sidebar nhóm "Content Team" 2 sub (2026-06-11)**: h6 riêng sau "Vận hành" — **Content Workspace** (`content-team.html`, admin/account/**lead_content**) + **Content Wording** (`content-workbench.html`, admin/account/**content**). Inject qua `app.js injectContentTeamGroup()` (thay 2 inject cũ); CSS override `:has(a[href="content-team.html"])` ẩn Workspace khỏi role content (substring trap).
+- **Phân vai trang**: Lead làm ở Workspace; **Content làm ở Content Wording** — `content-workbench.js` nâng cấp: WS_CONTENT_EDITABLE thêm `pic_assigned`/`lead_revision`, nút **"Gửi Lead Content duyệt"** (`submitted_to_lead` + notify lead) thay gửi thẳng Account (hết bypass), LIFE bước "Lead Review". Account vẫn thao tác `submitted_to_account` ở đó/Client Orders.
+- **Guard 2 chiều**: content/lead_content → chặn `production-board` + `database-orders` + `task-dashboard` (**redirect theo role**: lead→content-team, content→content-workbench); role content vào content-team → redirect content-workbench (giữ `?id=`); nav Master/Task Dashboard/Task Tracker ẩn qua CSS `:has` (thêm rules cho `lead_content`). Client KHÔNG thấy Content Board/note nội bộ (`wording_lead_note` không map sang client adapter).
+- ⚠ **Migration `supabase/add-content-team.sql`** (sau `add-content-role.sql`): role check + status CHECK + 4 cột lead + RLS lead_content + RPC v2. Login redirect: `lead_content` → `content-team.html` · `content` → `content-workbench.html`. Tạo user lead qua Supabase Auth metadata `{name, role:'lead_content'}`.
 
 ---
 
@@ -196,7 +216,12 @@ No pending MVP modules. Remaining work is production integration:
 
 ## File Inventory
 
-Build total: **17 HTML pages · 14 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations**. (Delivery Log page removed 2026-06-03; Calendar/Lịch added 2026-06-08.)
+Build total: **18 HTML pages · 15 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations**. (Delivery Log page removed 2026-06-03; Calendar/Lịch added 2026-06-08; Content Team Workspace added 2026-06-11.)
+
+New files 2026-06-11 (Content Team Workspace):
+- `content-team.html` — Content Team Workspace (Dashboard/Inbox/Board/List/My Tasks + drawer)
+- `assets/content-team.js` — toàn bộ logic team Content (roles, views, drawer, lead review, notify)
+- `supabase/add-content-team.sql` — role lead_content + 3 status mới + cột lead review + RLS + RPC v2 (⚠ pending)
 
 New files 2026-06-08 (Calendar / Lịch):
 - `calendar.html` — Lịch / Calendar internal page (Month/Week/Day, role-filtered)

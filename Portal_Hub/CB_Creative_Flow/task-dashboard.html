@@ -399,6 +399,9 @@
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
   if (user.role === 'client') { location.replace('client-dashboard.html'); return; }
+  // Team Content tách biệt Production — không xem Task Dashboard (workload production).
+  if (user.role === 'lead_content') { location.replace('content-team.html'); return; }
+  if (user.role === 'content') { location.replace('content-workbench.html'); return; }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
 

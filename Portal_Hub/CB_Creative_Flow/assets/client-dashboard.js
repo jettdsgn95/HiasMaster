@@ -9,8 +9,8 @@ document.body.setAttribute('data-user-role', user ? user.role : '');
 
 /* ===== PUBLIC STATUS MAP ===== */
 const PUB_STATUS = {
-  pending:       { label: 'Đã nhận yêu cầu',            cls: 's--pending' },
-  checking:      { label: 'Đang kiểm tra thông tin',     cls: 's--checking' },
+  pending:       { label: 'Yêu cầu đã gửi',             cls: 's--pending' },
+  checking:      { label: 'Đã nhận yêu cầu',            cls: 's--checking' },
   needinfo:      { label: 'Cần bổ sung brief',           cls: 's--needinfo' },
   wording:       { label: 'Chuẩn hóa brief',             cls: 's--wording' },
   confirmed:     { label: 'Đã tiếp nhận',                cls: 's--confirmed' },
@@ -650,10 +650,15 @@ function openOrderDrawer(orderId) {
       let head, tone, banner, actions = '';
       if (ws === 'sent_to_client') {
         head = 'Brief đã được chuẩn hóa'; tone = 'dw--brand';
-        banner = `<p>Team đã chuẩn hóa nội dung yêu cầu của anh/chị. Vui lòng kiểm tra và <b>xác nhận brief</b> để chuyển sang bước sản xuất, hoặc <b>yêu cầu chỉnh brief</b> nếu cần điều chỉnh.</p>`;
+        const atLimit = wordingAtLimit(o);                       // đã dùng hết 2 vòng chỉnh
+        const lastRound = wround === (WORDING_ROUND_LIMIT - 1);  // sắp gửi vòng cuối (2/2)
+        const roundNote = atLimit
+          ? `<p class="bw-note bw-warn" style="margin-top:8px">${WORDING_LIMIT_MSG}</p>`
+          : (lastRound ? `<p class="bw-note bw-warn" style="margin-top:8px">${WORDING_LAST_ROUND_MSG}</p>` : '');
+        banner = `<p>Team đã chuẩn hóa nội dung yêu cầu của anh/chị. Vui lòng kiểm tra và <b>xác nhận brief</b> để chuyển sang bước sản xuất${atLimit ? '' : ', hoặc <b>yêu cầu chỉnh brief</b> nếu cần điều chỉnh'}.</p>${roundNote}`;
         actions = `<div class="dw-actions">
             <button class="btn btn-success btn-sm" data-action="approve-wording" data-order-id="${o.id}">Xác nhận brief</button>
-            <button class="btn btn-secondary btn-sm" data-action="wording-feedback" data-order-id="${o.id}">Yêu cầu chỉnh brief</button>
+            ${atLimit ? '' : `<button class="btn btn-secondary btn-sm" data-action="wording-feedback" data-order-id="${o.id}">Yêu cầu chỉnh brief</button>`}
           </div>`;
       } else if (ws === 'client_feedback') {
         head = 'Đã gửi yêu cầu chỉnh brief'; tone = 'dw--warning';
@@ -759,6 +764,12 @@ function getPreviewRound(o) {
 /* ===== PHASE 4 — Brief Wording confirmation (Client) ===== */
 // Chỉ cho thao tác khi Account thực sự đang chờ Client (brief_wording_status = sent_to_client).
 function wordingActionable(o) { return o && o.brief_wording_status === 'sent_to_client'; }
+// Brief wording tối đa 2 vòng chỉnh từ Client (khác Preview design = 3 vòng).
+const WORDING_ROUND_LIMIT = 2;
+// Đã dùng hết số vòng chỉnh wording cho phép (brief_wording_round >= limit) → KHÔNG cho gửi thêm.
+function wordingAtLimit(o) { return Number(o && o.brief_wording_round || 0) >= WORDING_ROUND_LIMIT; }
+const WORDING_LAST_ROUND_MSG = 'Đây là <b>vòng chỉnh sửa wording cuối cùng (vòng 2/2)</b>. Vui lòng tổng hợp đầy đủ nội dung cần điều chỉnh — sau vòng này brief sẽ được chốt để chuyển sản xuất.';
+const WORDING_LIMIT_MSG = 'Yêu cầu này đã dùng hết <b>2 vòng chỉnh wording</b>. Vui lòng <b>xác nhận brief</b> để chuyển sản xuất; nếu vẫn cần thay đổi lớn, hãy liên hệ Account để được hỗ trợ.';
 
 async function approveWording(orderId) {
   const o = ORDERS.find(x => x.id === orderId);
@@ -794,7 +805,8 @@ async function approveWording(orderId) {
       await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
         return {
           user_id: u.id,
-          type: 'wording_client_approved',
+          // type base-CHECK-safe (không phụ thuộc add-brief-wording-confirmation/add-revision-rounds đã chạy chưa).
+          type: 'order_status_changed',
           title: 'Client đã xác nhận brief wording',
           message: `Client đã xác nhận brief wording cho yêu cầu ${o.id} · ${o.name || ''}. Account có thể Confirm Brief và Push Production.`,
           link: 'database-orders.html?id=' + o.id,
@@ -816,14 +828,19 @@ function openWordingFeedbackModal(orderId) {
     toast('info', 'Đã gửi yêu cầu', 'Anh/chị đã gửi yêu cầu chỉnh brief. Vui lòng chờ team gửi lại bản chuẩn hóa.');
     return;
   }
+  if (wordingAtLimit(o)) {
+    toast('info', 'Đã đạt tối đa 2 vòng', 'Yêu cầu đã dùng hết 2 vòng chỉnh wording. Vui lòng xác nhận brief hoặc liên hệ Account.');
+    return;
+  }
   state.wordingFeedbackOrderId = orderId;
   const label = document.getElementById('wfb-order-label');
   if (label) label.textContent = `${o.id} — ${o.name}`;
   ['wfb-content', 'wfb-reason', 'wfb-link'].forEach(function (id) { const el = document.getElementById(id); if (el) el.value = ''; });
-  const round = (o.brief_wording_round || 0) + 1;
+  const nextRound = (o.brief_wording_round || 0) + 1;
   const warn = document.getElementById('wfb-round-warn');
   if (warn) {
-    if (round > 3) { warn.hidden = false; warn.textContent = 'Brief wording đã qua 3 vòng chỉnh. Team sẽ liên hệ để thống nhất hướng xử lý tiếp theo.'; }
+    // Vòng client sắp gửi đạt giới hạn (vòng 2/2) → báo đây là vòng chỉnh cuối.
+    if (nextRound >= WORDING_ROUND_LIMIT) { warn.hidden = false; warn.innerHTML = WORDING_LAST_ROUND_MSG; }
     else warn.hidden = true;
   }
   document.getElementById('wording-feedback-modal').classList.add('is-open');
@@ -1128,6 +1145,10 @@ document.getElementById('feedback-modal').addEventListener('click', e => { if (e
       toast('info', 'Đã gửi yêu cầu', 'Anh/chị đã gửi yêu cầu chỉnh brief cho yêu cầu này.');
       closeWordingFeedbackModal(); return;
     }
+    if (wordingAtLimit(o)) {
+      toast('info', 'Đã đạt tối đa 2 vòng', 'Yêu cầu đã dùng hết 2 vòng chỉnh wording. Vui lòng xác nhận brief hoặc liên hệ Account.');
+      closeWordingFeedbackModal(); return;
+    }
     const content = (document.getElementById('wfb-content').value || '').trim();
     const reason = (document.getElementById('wfb-reason').value || '').trim();
     const link = (document.getElementById('wfb-link').value || '').trim();
@@ -1146,7 +1167,10 @@ document.getElementById('feedback-modal').addEventListener('click', e => { if (e
     o.wording_client_feedback_at = nowIso;
     if (o.__raw) Object.assign(o.__raw, { brief_wording_status: 'client_feedback', brief_wording_round: nextRound, wording_client_feedback: fbText, wording_client_feedback_at: nowIso });
     closeWordingFeedbackModal();
-    toast('success', 'Đã gửi yêu cầu chỉnh brief', 'Team sẽ điều chỉnh và gửi lại bản chuẩn hóa để anh/chị xác nhận.');
+    toast('success', 'Đã gửi yêu cầu chỉnh brief',
+      nextRound >= WORDING_ROUND_LIMIT
+        ? 'Đây là vòng chỉnh wording cuối (2/2). Team sẽ điều chỉnh và gửi lại bản chuẩn hóa để anh/chị xác nhận & chốt sản xuất.'
+        : 'Team sẽ điều chỉnh và gửi lại bản chuẩn hóa để anh/chị xác nhận.');
     renderAll();
     openOrderDrawer(o.id);
 
@@ -1161,15 +1185,20 @@ document.getElementById('feedback-modal').addEventListener('click', e => { if (e
         wording_client_feedback_at: nowIso
       });
       const { data: staff } = await window.MH.supabase
-        .from('users').select('id').in('role', ['admin', 'account', 'content']).eq('status', 'active');
+        .from('users').select('id, role').in('role', ['admin', 'account', 'lead_content', 'content']).eq('status', 'active');
       if (Array.isArray(staff) && staff.length) {
         await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
+          // Link theo surface của từng role: content → Content Wording; lead_content → Content Workspace;
+          // admin/account → Client Orders drawer (nơi Account kiểm tra & gửi Client).
+          const link = (u.role === 'content' ? 'content-workbench.html?id='
+            : (u.role === 'lead_content' ? 'content-team.html?id=' : 'database-orders.html?id=')) + o.id;
           return {
             user_id: u.id,
-            type: 'wording_client_feedback',
+            // type base-CHECK-safe (chạy không phụ thuộc migration pending).
+            type: 'order_status_changed',
             title: 'Client yêu cầu chỉnh brief wording',
-            message: `Client yêu cầu chỉnh brief wording (Vòng ${nextRound}) cho yêu cầu ${o.id} · ${o.name || ''}. Content cần chỉnh & gửi lại Account.`,
-            link: 'content-workbench.html?id=' + o.id,
+            message: `Client yêu cầu chỉnh brief wording (Vòng ${nextRound}) cho yêu cầu ${o.id} · ${o.name || ''}. Content cần chỉnh & gửi lại Account duyệt.`,
+            link: link,
             related_entity_type: 'orders',
             related_entity_id: o.id
           };
@@ -1343,6 +1372,13 @@ document.getElementById('orders-sort').addEventListener('change', e => { state.o
 document.getElementById('mark-all-read-btn').addEventListener('click', () => {
   NOTIFS.forEach(n => state.notifRead.add(n.id));
   renderNotifications();
+  // Persist Supabase để dot KHÔNG quay lại sau reload + để badge chuông (app.js,
+  // đọc is_read từ Supabase) cũng tự clear ở lần refresh kế. Trước đây chỉ set local.
+  if (window.MH && window.MH.store && window.MH.store.notifications && window.MH.supabaseEnabled) {
+    Promise.resolve(window.MH.store.notifications.markAllRead()).catch(function (err) {
+      console.warn('[client-dashboard] markAllRead failed:', err);
+    });
+  }
   toast('success','Đã đánh dấu đọc','Tất cả thông báo đã được đánh dấu là đã đọc.');
 });
 

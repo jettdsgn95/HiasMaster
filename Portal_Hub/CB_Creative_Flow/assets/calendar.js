@@ -26,7 +26,7 @@
   const ROLE = USER.role;
   const IS_FULL = ROLE === 'admin' || ROLE === 'account';
   const IS_PRODUCTION = ROLE === 'design' || ROLE === 'editor';
-  const IS_CONTENT = ROLE === 'content';
+  const IS_CONTENT = ROLE === 'content' || ROLE === 'lead_content'; // team Content (gồm Lead)
 
   /* ---------- Hằng số ---------- */
   // "Hôm nay" = ngày THẬT (không hardcode demo anchor) — lịch phản ánh đúng thực tế.
@@ -387,7 +387,8 @@
     if (ev.refKind === 'task') return 'production-board.html?id=' + encodeURIComponent(ev.refId);
     if (ev.refKind === 'order') {
       if (IS_FULL) return 'database-orders.html?id=' + encodeURIComponent(ev.refId);
-      if (IS_CONTENT) return 'content-workbench.html?id=' + encodeURIComponent(ev.refId);
+      if (ROLE === 'lead_content') return 'content-team.html?id=' + encodeURIComponent(ev.refId);
+      if (ROLE === 'content') return 'content-workbench.html?id=' + encodeURIComponent(ev.refId);
     }
     return '';
   }

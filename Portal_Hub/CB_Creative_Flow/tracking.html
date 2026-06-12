@@ -382,8 +382,8 @@
     const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide / Proposal' };
     const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
     const STATUS_PUB = {
-      pending:    { key: 'received', label: 'Đã tiếp nhận',          stage: 'Account đang kiểm tra brief và chờ xác nhận scope', pct: 10 },
-      checking:   { key: 'received', label: 'Đang kiểm tra brief',   stage: 'Account đang review brief',                          pct: 15 },
+      pending:    { key: 'received', label: 'Yêu cầu đã gửi',        stage: 'Yêu cầu đã gửi tới CB Media Hub, chờ Account tiếp nhận', pct: 10 },
+      checking:   { key: 'received', label: 'Đã nhận yêu cầu',       stage: 'Account đã nhận và đang kiểm tra brief',             pct: 15 },
       needinfo:   { key: 'received', label: 'Cần bổ sung brief',     stage: 'Account đã yêu cầu bổ sung thêm thông tin',         pct: 15 },
       confirmed:  { key: 'received', label: 'Đã xác nhận brief',     stage: 'Brief OK, đang điều phối sang Production',          pct: 25 },
       unassigned: { key: 'progress', label: 'Đang phân công',        stage: 'Account đang gán PIC sản xuất',                     pct: 30 },

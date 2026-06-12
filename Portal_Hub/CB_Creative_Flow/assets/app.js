@@ -193,7 +193,9 @@
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
   function roleLabel(role) {
-    return role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+    if (!role) return '';
+    if (role === 'lead_content') return 'Lead Content'; // tránh "Lead_content"
+    return role.charAt(0).toUpperCase() + role.slice(1);
   }
   function renderAvatarInto(el, user) {
     if (!el) return;
@@ -577,36 +579,51 @@
     if (!user) return;
     refreshProfileChip(user);
   }
-  /* Phase 1 — Content role: thêm nav "Content Wording" vào sidebar nội bộ (idempotent, chỉ role nội bộ).
-     Dùng JS để đồng nhất qua mọi trang nội bộ thay vì sửa từng file HTML; CSS data-show-roles lo phần ẩn/hiện. */
-  function injectContentNav() {
+  /* Content Team — nhóm sidebar riêng (h6 + ul) với 2 sub:
+       1. Content Workspace (content-team.html)      — admin/account/lead_content
+       2. Content Wording   (content-workbench.html) — admin/account/content
+     Inject 1 chỗ cho mọi trang nội bộ; CSS data-show-roles lo ẩn/hiện theo role.
+     ⚠ Substring trap: value "admin,account,lead_content" chứa "content" → role content
+       sẽ match rule *="content"; CSS có override exact-match ẩn Workspace cho content. */
+  function injectContentTeamGroup() {
     var u = getUser();
-    var internal = ['admin', 'account', 'content', 'design', 'editor'];
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor'];
     if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
-    var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
+    var sidebar = document.querySelector('.dash-sidebar');
+    if (!sidebar) return;
+    if (sidebar.querySelector('a[href="content-team.html"], a[href="content-workbench.html"]')) return; // hardcode/đã inject → không lặp
+    var groups = sidebar.querySelectorAll('.dash-nav');
     if (!groups.length) return;
-    var opsUl = groups[0]; // nhóm "Vận hành"
-    if (opsUl.querySelector('a[href="content-workbench.html"]')) return; // đã có (hardcode hoặc inject trước) → không lặp
-    var li = document.createElement('li');
-    li.setAttribute('data-show-roles', 'admin,account,content');
-    li.innerHTML = '<a href="content-workbench.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="13" y2="18"/></svg></span><span>Content Wording</span></a>';
-    if ((location.pathname.split('/').pop() || '') === 'content-workbench.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
-    opsUl.appendChild(li);
+    var opsUl = groups[0]; // nhóm "Vận hành" — chèn group Content Team ngay sau
+    var page = location.pathname.split('/').pop() || '';
+
+    var h6 = document.createElement('h6');
+    h6.setAttribute('data-show-roles', 'admin,account,lead_content,content');
+    h6.textContent = 'Content Team';
+
+    var ul = document.createElement('ul');
+    ul.className = 'dash-nav';
+    ul.innerHTML =
+      '<li data-show-roles="admin,account,lead_content"><a href="content-team.html"' + (page === 'content-team.html' ? ' class="is-active"' : '') + '><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Content Workspace</span></a></li>'
+      + '<li data-show-roles="admin,account,content"><a href="content-workbench.html"' + (page === 'content-workbench.html' ? ' class="is-active"' : '') + '><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="13" y2="18"/></svg></span><span>Content Wording</span></a></li>';
+
+    opsUl.insertAdjacentElement('afterend', h6);
+    h6.insertAdjacentElement('afterend', ul);
   }
   /* Calendar / Lịch: thêm nav "Lịch" vào sidebar nội bộ (idempotent, mọi role nội bộ).
      Cùng pattern injectContentNav — inject 1 chỗ thay vì sửa sidebar 11 file HTML;
      CSS data-show-roles lo ẩn/hiện theo role (mọi role nội bộ đều thấy, lọc event ở calendar.js). */
   function injectCalendarNav() {
     var u = getUser();
-    var internal = ['admin', 'account', 'content', 'design', 'editor'];
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor'];
     if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
     var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
     if (!groups.length) return;
     var opsUl = groups[0]; // nhóm "Vận hành"
     if (opsUl.querySelector('a[href="calendar.html"]')) return; // đã có → không lặp
     var li = document.createElement('li');
-    li.setAttribute('data-show-roles', 'admin,account,design,editor,content');
-    li.innerHTML = '<a href="calendar.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Lịch</span></a>';
+    li.setAttribute('data-show-roles', 'admin,account,design,editor,content,lead_content');
+    li.innerHTML = '<a href="calendar.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Calendar</span></a>';
     if ((location.pathname.split('/').pop() || '') === 'calendar.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
     // Chèn sau "Internal Task Tracker" (production-board) cho gần nhóm task; không có thì append.
     var anchor = opsUl.querySelector('a[href="production-board.html"]');
@@ -617,9 +634,9 @@
     }
   }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentNav(); injectCalendarNav(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); injectContentNav(); injectCalendarNav(); }, 0);
+    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */
@@ -807,6 +824,11 @@
             wrap.classList.remove('has-unread');
           }
         });
+        // Đồng bộ luôn dot tĩnh trên trang (vd Client Portal `#notif-dot`) theo CÙNG
+        // nguồn unread của Supabase → tránh dot kẹt đỏ sau khi "Đánh dấu đã đọc" ở
+        // dropdown (app.js) trong khi dot tĩnh do JS trang khác điều khiển.
+        var staticDot = document.getElementById('notif-dot');
+        if (staticDot) staticDot.style.display = count > 0 ? '' : 'none';
         return list;
       } catch (e) { console.warn('[notif] refresh badge failed:', e); return []; }
     }

@@ -37,6 +37,7 @@
   // Giữ manager/staff cho mock cũ tương thích ngược.
   const ROLE_LABEL = {
     admin: 'Admin', manager: 'Manager', account: 'Account', content: 'Content',
+    lead_content: 'Lead Content',
     design: 'Design', editor: 'Editor', staff: 'Staff', client: 'Client'
   };
   const STATUS_LABEL = { pending: 'Pending Invite', active: 'Active', inactive: 'Inactive', suspended: 'Suspended', archived: 'Archived' };

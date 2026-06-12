@@ -17,7 +17,8 @@
   // Only admin / account can see Database Orders
   if (!['admin', 'account'].includes(user.role)) {
     window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Database Orders chỉ dành cho Admin/Account.' });
-    setTimeout(() => location.replace('dashboard.html'), 1200);
+    const home = user.role === 'lead_content' ? 'content-team.html' : (user.role === 'content' ? 'content-workbench.html' : 'dashboard.html');
+    setTimeout(() => location.replace(home), 1200);
     return;
   }
   document.body.setAttribute('data-user', user.email || user.role);
@@ -100,7 +101,9 @@
   // Phase 2 — Brief Wording status (cổng bắt buộc trước Confirm Brief).
   const WORDING_STATUS_LABEL = {
     none: 'Chưa chuyển Content Wording', assigned: 'Đã chuyển Content Wording',
-    in_progress: 'Content đang xử lý', submitted_to_account: 'Chờ Account duyệt',
+    pic_assigned: 'Lead đã gán PIC Content', in_progress: 'Content đang xử lý',
+    submitted_to_lead: 'Chờ Lead Content duyệt', lead_revision: 'Lead yêu cầu Content chỉnh',
+    submitted_to_account: 'Chờ Account duyệt',
     account_revision: 'Account yêu cầu Content chỉnh', sent_to_client: 'Chờ Client xác nhận brief wording',
     client_feedback: 'Client yêu cầu chỉnh brief wording', client_approved: 'Client đã xác nhận brief wording',
     completed: 'Hoàn tất Content Wording'
@@ -153,7 +156,7 @@
     fromExtras.forEach((t) => { if (!merged.find((m) => m.task_id === t.task_id)) merged.push(t); });
     return merged;
   }
-  const TODAY = new Date('2026-05-13'); // demo: anchored to "now"
+  const TODAY = (function () { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })(); // ngày THẬT (bỏ hardcode demo anchor)
   function parseDate(s) { return s ? new Date(s.replace(' ', 'T')) : null; }
   // Hiển thị timestamp (created_at / last_updated) → "DD/MM/YYYY HH:MM" giờ local.
   // created_at/last_updated lưu dạng UTC (toISOString); bare "YYYY-MM-DD HH:MM" cũng coi là UTC.
@@ -339,7 +342,8 @@
   function diffDays(target) {
     const d = parseDate(target);
     if (!d) return null;
-    return Math.ceil((d - TODAY) / (24 * 60 * 60 * 1000));
+    const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()); // so theo NGÀY lịch, bỏ giờ
+    return Math.round((a - TODAY) / (24 * 60 * 60 * 1000));
   }
   function fmtRelative(target) {
     const days = diffDays(target);
@@ -715,7 +719,7 @@
     const round = o.brief_wording_round || 0;
     const approved = isWordingApproved(o);
     const cancelled = o.account_status === 'rejected' || o.production_status === 'cancelled';
-    const reachedMap = { none: 0, assigned: 2, in_progress: 2, submitted_to_account: 3, account_revision: 3, sent_to_client: 4, client_feedback: 4, client_approved: 6, completed: 6 };
+    const reachedMap = { none: 0, assigned: 2, pic_assigned: 2, in_progress: 2, submitted_to_lead: 2, lead_revision: 2, submitted_to_account: 3, account_revision: 3, sent_to_client: 4, client_feedback: 4, client_approved: 6, completed: 6 };
     const reached = reachedMap[ws] != null ? reachedMap[ws] : 0;
     const steps = ['Account kiểm tra brief', 'Chuyển Content Wording', 'Content xử lý wording', 'Account gửi Client xác nhận', 'Client xác nhận brief wording', 'Sẵn sàng Confirm Brief'];
     const li = steps.map(function (s, i) {
@@ -744,7 +748,7 @@
     // CTA "Gửi Client xác nhận Brief": chỉ bật khi Content đã submit & có nội dung wording.
     const canSendClient = !cancelled && ws === 'submitted_to_account' && !!(o.wording_brief && String(o.wording_brief).trim());
     const showSendBtn = !cancelled && !approved && ['submitted_to_account', 'sent_to_client', 'client_feedback', 'account_revision'].includes(ws);
-    const soft3 = round >= 3 && !approved;
+    const soft3 = round >= 2 && !approved; // wording cap 2 vòng — cảnh báo Account khi đã đạt giới hạn
     const overdue = isWordingOverdue(o);
     // Hạn hoàn thành wording — Account đặt khi/ sau khi Chuyển Content Wording (đặt nhanh).
     const deadlineEditable = !cancelled && !approved;
@@ -764,7 +768,7 @@
         <ol class="bw-steps">${li}</ol>
         ${note}
         ${deadlineField}
-        ${soft3 ? '<p class="bw-note bw-warn">Brief wording đã qua 3 vòng chỉnh. Account cần xác nhận hướng xử lý tiếp theo.</p>' : ''}
+        ${soft3 ? '<p class="bw-note bw-warn">Brief wording đã đạt tối đa <b>2 vòng chỉnh</b> (Client không thể gửi thêm). Hoàn thiện bản wording rồi gửi Client xác nhận để chốt sản xuất; nếu Client vẫn cần thay đổi lớn, trao đổi trực tiếp.</p>' : ''}
         ${ws !== 'none' ? `
         <dl class="bw-summary" style="margin:12px 0 0">
           <dt>PIC Content</dt><dd>${o.brief_wording_pic ? escapeHtml(o.brief_wording_pic) : '<em class="muted">Chưa gán</em>'}</dd>
@@ -781,6 +785,10 @@
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             ${ws === 'sent_to_client' ? 'Đã gửi Client — chờ xác nhận' : 'Gửi Client xác nhận Brief'}
           </button>` : ''}
+          <a class="btn btn-secondary btn-sm" href="content-team.html?id=${escapeHtml(o.order_id)}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Mở Content Workspace
+          </a>
           <a class="btn btn-secondary btn-sm" href="content-workbench.html?id=${escapeHtml(o.order_id)}">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
             Mở Content Wording
@@ -1703,24 +1711,35 @@
     render(); openDrawer(o);
   }
 
-  // Notify TẤT CẢ content user (active) khi Account chuyển order sang Content Wording.
+  // Notify team Content khi Account chuyển order sang Content Wording.
+  // Content Team flow: ƯU TIÊN Lead Content (nhận request ở Content Inbox, gán PIC);
+  // chưa có user lead_content → fallback notify mọi content user (flow cũ).
   // Pattern giống order-form.js notify staff: bulk INSERT notifications (fire-and-forget).
-  // Dùng type 'task_assigned' (đã có trong CHECK constraint) + link content-workbench
-  // (resolveNotifLink ưu tiên field link nên content mở đúng trang, không lệch database-orders).
+  // Dùng type 'task_assigned' (đã có trong CHECK constraint) + link content-team.html
+  // (resolveNotifLink ưu tiên field link nên mở đúng Content Team Workspace).
   async function notifyContentWording(o) {
     if (!o || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
     try {
-      const { data: contents } = await window.MH.supabase
+      let { data: leads } = await window.MH.supabase
         .from('users').select('id, name')
-        .eq('role', 'content').eq('status', 'active');
-      if (Array.isArray(contents) && contents.length) {
-        const payloads = contents.map(function (u) {
+        .eq('role', 'lead_content').eq('status', 'active');
+      let title = '📥 Order mới trong Content Inbox';
+      let link = 'content-team.html?id=' + (o.order_id || ''); // lead → Workspace
+      if (!Array.isArray(leads) || !leads.length) {
+        const r = await window.MH.supabase
+          .from('users').select('id, name')
+          .eq('role', 'content').eq('status', 'active');
+        leads = r.data; title = '📝 Order cần Content Wording';
+        link = 'content-workbench.html?id=' + (o.order_id || ''); // fallback content → Wording
+      }
+      if (Array.isArray(leads) && leads.length) {
+        const payloads = leads.map(function (u) {
           return {
             user_id: u.id,
             type: 'task_assigned',
-            title: '📝 Order cần Content Wording',
+            title: title,
             message: (o.order_id || '') + ' · ' + (o.project_name || 'Untitled') + (o.wording_deadline ? ' · Hạn wording: ' + fmtDateTime(o.wording_deadline) : ''),
-            link: 'content-workbench.html?id=' + (o.order_id || ''),
+            link: link,
             related_entity_type: 'orders',
             related_entity_id: o.order_id
           };
@@ -1773,7 +1792,8 @@
     });
     // Notify Client của order (fire-and-forget) — dùng helper notifyClient (requester_id/email fallback).
     notifyClient(o, {
-      type: 'wording_sent_to_client',
+      // type base-CHECK-safe (không phụ thuộc add-revision-rounds/brief-wording-confirmation đã chạy chưa).
+      type: 'order_status_changed',
       title: 'Brief đã được chuẩn hóa — chờ anh/chị xác nhận',
       message: `Yêu cầu ${o.order_id}${o.project_name ? ' · ' + o.project_name : ''} đã được chuẩn hóa nội dung. Vui lòng mở chi tiết để xác nhận hoặc yêu cầu chỉnh brief.`,
       link: 'client-dashboard.html?id=' + o.order_id
