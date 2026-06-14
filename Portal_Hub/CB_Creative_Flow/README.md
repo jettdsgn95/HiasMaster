@@ -33,6 +33,8 @@ Role Content Team (tạo tay trong Supabase Auth + metadata `{name, role}` SAU k
 
 Sidebar có nhóm **Content Team** riêng với 2 sub: *Content Workspace* (lead) · *Content Wording* (content); admin/account thấy cả hai.
 
+Role **`system_supervisor`** ("Giám sát hệ thống") — GIÁM SÁT chỉ-đọc cấp hệ thống (redirect `dashboard.html`). Xem toàn bộ Orders / Tasks / Content Team / Calendar / Reports (kèm export) nhưng **mọi mutation bị khóa** (không confirm/push/assign/đổi status/drag/tạo-sửa task/bàn giao/duyệt wording/hủy đơn). Sidebar thấy mọi mục TRỪ Order Form / User Management / Settings. ⚠ chạy `supabase/add-system-supervisor.sql` (role check + SELECT-only RLS). Tạo user qua Supabase Auth metadata `{name, role:'system_supervisor'}`.
+
 Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn site. Client role có khu vực riêng biệt (`client-dashboard.html`), bị chặn khỏi Internal Dashboard.
 
 ---
@@ -136,6 +138,7 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 11. [`add-shoot-date.sql`](supabase/add-shoot-date.sql) — orders/tasks.shoot_date + shoot_time (cho Calendar chấm lịch quay/chụp; order-form lưu media_date→shoot_date, push kế thừa sang task)
 12. [`add-wording-deadline.sql`](supabase/add-wording-deadline.sql) — orders.wording_deadline (Hạn hoàn thành wording; Account đặt ở Order drawer, Content Wording hiển thị + tô đỏ khi trễ)
 13. [`add-content-team.sql`](supabase/add-content-team.sql) — Content Team Workspace: role `lead_content` (users_role_check) + 3 status wording mới (`pic_assigned`/`submitted_to_lead`/`lead_revision`) + cột Lead review (`wording_lead_note`/`wording_lead_reviewed_at`/`wording_lead_reviewed_by`/`wording_submitted_to_lead_at`) + RLS lead_content SELECT orders/users + RPC `update_brief_wording` v2 (thêm lead_content, status mới, wording_deadline)
+14. [`add-system-supervisor.sql`](supabase/add-system-supervisor.sql) — role `system_supervisor` (Giám sát hệ thống, monitor read-only): users_role_check += role + helper `is_system_supervisor()` + **SELECT-only** RLS orders/tasks/task_comments/users/deliveries/activity_log. KHÔNG đụng `is_staff()` (nó còn gate write). Chạy sau `rls.sql` + `add-content-team.sql`.
 
 ### Order ↔ Task ↔ Delivery relationship
 
@@ -370,4 +373,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-06-12 · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*
+*Last updated: 2026-06-14 · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*

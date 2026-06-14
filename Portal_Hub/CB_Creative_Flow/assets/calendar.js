@@ -24,7 +24,7 @@
   try { USER = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { USER = null; }
   if (!USER || !USER.role) return; // auth guard inline đã redirect; phòng hờ
   const ROLE = USER.role;
-  const IS_FULL = ROLE === 'admin' || ROLE === 'account';
+  const IS_FULL = ROLE === 'admin' || ROLE === 'account' || ROLE === 'system_supervisor'; // supervisor = full read-only view
   const IS_PRODUCTION = ROLE === 'design' || ROLE === 'editor';
   const IS_CONTENT = ROLE === 'content' || ROLE === 'lead_content'; // team Content (gồm Lead)
 

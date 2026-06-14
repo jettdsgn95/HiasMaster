@@ -12,7 +12,9 @@
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
   if (user.role === 'client') { location.replace('client-dashboard.html'); return; }
-  if (['admin', 'account', 'content', 'lead_content'].indexOf(user.role) < 0) {
+  // system_supervisor = monitor read-only: vào xem được; canEditWording + isAccountAdmin đều false
+  // → workspace readonly, không nút Content/Account nào render.
+  if (['admin', 'account', 'content', 'lead_content', 'system_supervisor'].indexOf(user.role) < 0) {
     if (window.MH && window.MH.toast) window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Content Wording chỉ dành cho Admin / Account / Lead Content / Content.' });
     setTimeout(function () { location.replace('dashboard.html'); }, 900);
     return;

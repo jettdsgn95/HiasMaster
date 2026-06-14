@@ -37,7 +37,7 @@
   // Giữ manager/staff cho mock cũ tương thích ngược.
   const ROLE_LABEL = {
     admin: 'Admin', manager: 'Manager', account: 'Account', content: 'Content',
-    lead_content: 'Lead Content',
+    lead_content: 'Lead Content', system_supervisor: 'Giám sát hệ thống',
     design: 'Design', editor: 'Editor', staff: 'Staff', client: 'Client'
   };
   const STATUS_LABEL = { pending: 'Pending Invite', active: 'Active', inactive: 'Inactive', suspended: 'Suspended', archived: 'Archived' };
@@ -309,6 +309,7 @@
       case 'account': return { tag: 'account', permission_group: 'order_mgmt',   data_scope: 'all' };
       case 'design':  return { tag: 'staff',   permission_group: 'production_only', data_scope: 'assigned' };
       case 'editor':  return { tag: 'staff',   permission_group: 'production_only', data_scope: 'assigned' };
+      case 'system_supervisor': return { tag: 'manager', permission_group: 'report_viewer', data_scope: 'all' };
       case 'client':  return { tag: 'client',  permission_group: 'client_only', data_scope: 'client_own' };
       default:        return { tag: 'client',  permission_group: 'client_only', data_scope: 'client_own' };
     }

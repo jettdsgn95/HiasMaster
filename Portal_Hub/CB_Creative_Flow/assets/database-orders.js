@@ -14,8 +14,8 @@
   let user;
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
-  // Only admin / account can see Database Orders
-  if (!['admin', 'account'].includes(user.role)) {
+  // admin / account = full quyền. system_supervisor = monitor read-only (xem được, mọi mutation bị ẩn/khóa).
+  if (!['admin', 'account', 'system_supervisor'].includes(user.role)) {
     window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Database Orders chỉ dành cho Admin/Account.' });
     const home = user.role === 'lead_content' ? 'content-team.html' : (user.role === 'content' ? 'content-workbench.html' : 'dashboard.html');
     setTimeout(() => location.replace(home), 1200);
@@ -23,6 +23,8 @@
   }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
+  // READONLY = Giám sát hệ thống: chỉ xem (ẩn kebab action, khóa input drawer, ẩn nút Quick Actions/Bàn giao).
+  const READONLY = user.role === 'system_supervisor';
 
   // Profile chip
   const pcName = document.getElementById('pc-name');
@@ -478,13 +480,13 @@
             </button>
             <div class="menu">
               <button data-action="view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> View Detail</button>
-              <button data-action="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Kiểm tra brief</button>
+              ${READONLY ? '' : `<button data-action="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Kiểm tra brief</button>
               <button data-action="needinfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg> Yêu cầu bổ sung</button>
               <button data-action="confirm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Xác nhận brief</button>
               <button data-action="assign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg> Gán P.I.C / Deadline</button>
               <button data-action="push"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> Push → Production</button>
               <hr/>
-              <button data-action="cancel" class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Hủy đơn</button>
+              <button data-action="cancel" class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Hủy đơn</button>`}
             </div>
           </div>
         </td>
@@ -657,10 +659,13 @@
     }
     if (action) {
       e.stopPropagation();
+      const act = action.getAttribute('data-action');
+      // Read-only monitor: chỉ cho 'view', chặn mọi mutation (defense-in-depth, kebab vốn đã ẩn).
+      if (READONLY && act !== 'view') { document.querySelectorAll('.row-actions.is-open').forEach((r) => r.classList.remove('is-open')); return; }
       const id = action.closest('.row-actions').getAttribute('data-row-id');
       const order = ORDERS.find((o) => o.order_id === id);
       if (!order) return;
-      handleAction(action.getAttribute('data-action'), order);
+      handleAction(act, order);
       document.querySelectorAll('.row-actions.is-open').forEach((r) => r.classList.remove('is-open'));
       return;
     }
@@ -1401,10 +1406,22 @@
     // Update stepper state theo account_status + production_status
     updateStepperState(o);
 
+    // Read-only monitor: khóa toàn bộ input + ẩn mọi nút mutation trong drawer (giữ link điều hướng <a>).
+    if (READONLY) applyDrawerReadonly();
+
     drawer.classList.add('is-open');
     drawer.setAttribute('aria-hidden', 'false');
     drawerBd.classList.add('is-open');
     document.body.style.overflow = 'hidden';
+  }
+
+  /* Read-only monitor (system_supervisor): khóa mọi control trong order drawer.
+     Disable input/select/textarea + ẩn mọi <button> (trừ nút đóng). Link <a> giữ để điều hướng. */
+  function applyDrawerReadonly() {
+    const root = document.getElementById('order-drawer');
+    if (!root) return;
+    root.querySelectorAll('input, select, textarea').forEach((el) => { el.disabled = true; });
+    root.querySelectorAll('button').forEach((b) => { if (b.id !== 'drawer-close') b.style.display = 'none'; });
   }
 
   /* ---------- Drawer state update ----------
@@ -1413,6 +1430,13 @@
        2. Enable/disable các action button theo account_status + production_status. */
   function updateStepperState(o) {
     if (!o) return;
+    // Read-only monitor: ẩn hết Quick Actions + Hủy đơn, không enable nút nào.
+    if (READONLY) {
+      ['#order-drawer .wf-actions-flow', '#order-drawer .wf-actions-danger', '#order-drawer .drawer-actions']
+        .forEach((sel) => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; });
+      const h = document.getElementById('wf-hint'); if (h) { h.hidden = true; h.innerHTML = ''; }
+      return;
+    }
     const hint   = document.getElementById('wf-hint');
     const flow   = document.querySelector('#order-drawer .wf-actions-flow');
     const danger = document.querySelector('#order-drawer .wf-actions-danger');

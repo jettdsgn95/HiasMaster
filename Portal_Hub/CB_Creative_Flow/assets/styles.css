@@ -1889,6 +1889,24 @@ body[data-user-role="lead_content"] .dash-nav li:has(> a[href="production-board.
    Ngược lại Wording ("admin,account,content") không chứa "lead_content" → lead tự ẩn, không cần override. */
 body[data-user-role="content"] .dash-nav li:has(> a[href="content-team.html"]) { display: none !important; }
 
+/* System Supervisor — monitor-only role (data-show-roles*="system_supervisor").
+   Read-only viewer của toàn bộ data vận hành. Substring "system_supervisor" KHÔNG chứa
+   "admin"/"account"/"design"/"editor"/"content"/"client" → không kích nhầm rule role khác. */
+body[data-user-role="system_supervisor"] [data-show-roles*="system_supervisor"] { display: revert; }
+body[data-user-role="system_supervisor"] li[data-show-roles*="system_supervisor"] { display: list-item; }
+body[data-user-role="system_supervisor"] .kpi[data-show-roles*="system_supervisor"],
+body[data-user-role="system_supervisor"] .qa-btn[data-show-roles*="system_supervisor"],
+body[data-user-role="system_supervisor"] .dash-card[data-show-roles*="system_supervisor"],
+body[data-user-role="system_supervisor"] .hpm-item[data-show-roles*="system_supervisor"] { display: flex; }
+body[data-user-role="system_supervisor"] .dash-section[data-show-roles*="system_supervisor"] { display: block; }
+body[data-user-role="system_supervisor"] .btn[data-show-roles*="system_supervisor"] { display: inline-flex; }
+/* Các nav item hardcode "admin,account" (Orders Dashboard / Client Orders / Reports) —
+   reveal cho supervisor theo href (KHÔNG sửa data-show-roles ở 16 sidebar HTML). Order Form
+   (request.html) cố ý GIỮ ẩn vì là mutation tạo order. */
+body[data-user-role="system_supervisor"] .dash-nav li:has(> a[href="order-dashboard.html"]),
+body[data-user-role="system_supervisor"] .dash-nav li:has(> a[href="database-orders.html"]),
+body[data-user-role="system_supervisor"] .dash-nav li:has(> a[href="reports.html"]) { display: list-item !important; }
+
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }
 .profile-menu {
@@ -1922,8 +1940,10 @@ body[data-user-role="content"] .dash-nav li:has(> a[href="content-team.html"]) {
 .role-badge.r--editor  { background: var(--warning-soft); color: var(--warning-fg); }
 .role-badge.r--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
 .role-badge.r--lead_content { background: rgb(91 33 182 / 0.18); color: #5b21b6; }
+.role-badge.r--system_supervisor { background: rgb(100 116 139 / 0.16); color: #475569; }
 .role-badge.r--client  { background: var(--success-soft); color: var(--success-fg); }
 [data-theme="dark"] .role-badge.r--account { background: rgb(186 17 15 / 0.18); color: #fca5a5; }
+[data-theme="dark"] .role-badge.r--system_supervisor { background: rgb(148 163 184 / 0.20); color: #cbd5e1; }
 
 /* =====================================================================
    MASTER DASHBOARD (internal · after login)
@@ -2825,9 +2845,11 @@ body[data-user-role="content"] .dash-nav li:has(> a[href="content-team.html"]) {
 .role-tag-badge.rt--editor  { background: rgb(245 158 11 / 0.15); color: #b45309; }
 .role-tag-badge.rt--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
 .role-tag-badge.rt--lead_content { background: rgb(91 33 182 / 0.18); color: #5b21b6; }
+.role-tag-badge.rt--system_supervisor { background: rgb(100 116 139 / 0.16); color: #475569; }
 .role-tag-badge.rt--staff   { background: var(--warning-soft); color: var(--warning-fg); }
 .role-tag-badge.rt--client  { background: var(--info-soft);    color: var(--info-fg); }
 [data-theme="dark"] .role-tag-badge.rt--account { background: rgb(186 17 15 / 0.18); color: #fca5a5; }
+[data-theme="dark"] .role-tag-badge.rt--system_supervisor { background: rgb(148 163 184 / 0.20); color: #cbd5e1; }
 [data-theme="dark"] .role-tag-badge.rt--manager { background: rgb(139 92 246 / 0.20); color: #c4b5fd; }
 [data-theme="dark"] .role-tag-badge.rt--design  { background: rgb(20 184 166 / 0.20); color: #5eead4; }
 [data-theme="dark"] .role-tag-badge.rt--editor  { background: rgb(245 158 11 / 0.20); color: #fcd34d; }

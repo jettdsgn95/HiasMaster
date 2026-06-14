@@ -27,6 +27,8 @@
   }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
+  // READONLY = Giám sát hệ thống: xem Task Tracker nhưng không status/drag/edit/comment/tạo task.
+  const READONLY = user.role === 'system_supervisor';
 
   const pcName = document.getElementById('pc-name');
   const pcAvatar = document.getElementById('pc-avatar');
@@ -756,6 +758,7 @@
   }
 
   function updateStatus(task, newStatus) {
+    if (READONLY) return; // monitor read-only — chặn mọi đổi status
     // Defense-in-depth: chặn transition không hợp lệ theo role (P.I.C không ready/completed/cancelled/paused).
     if (!canTransition(task, newStatus)) {
       window.MH.toast({ type: 'warning', title: 'Không thể chuyển', message: getTransitionError(task, newStatus) });
@@ -857,6 +860,7 @@
   let currentTask = null;
 
   function buildStatusActions(t) {
+    if (READONLY) return []; // monitor read-only — không đổi status
     const role = user.role;
     const actions = [];
     if (t.status === 'pending') actions.push({ id: 'received', label: 'Nhận task', desc: 'Xác nhận bắt đầu', cls: '' });
@@ -1134,19 +1138,19 @@
             <button type="button" class="close-reply" id="cancel-reply" aria-label="Hủy reply">×</button>
           </div>
           <div class="comment-composer-wrap">
-            <textarea class="textarea" id="comment-input" placeholder="Viết comment... gõ @ để mention"></textarea>
+            <textarea class="textarea" id="comment-input" placeholder="${READONLY ? 'Chế độ giám sát — chỉ xem, không thể bình luận.' : 'Viết comment... gõ @ để mention'}" ${READONLY ? 'disabled' : ''}></textarea>
             <div class="mention-dropdown" id="mention-dropdown"></div>
           </div>
           <div class="row">
             <div class="composer-type">
               <label for="comment-type">Loại:</label>
-              <select class="select" id="comment-type">
+              <select class="select" id="comment-type" ${READONLY ? 'disabled' : ''}>
                 <option value="internal">Internal</option>
                 <option value="revision">Revision</option>
                 <option value="feedback">Client Feedback</option>
               </select>
             </div>
-            <button class="btn btn-primary btn-sm" id="add-comment">
+            <button class="btn btn-primary btn-sm" id="add-comment" ${READONLY ? 'style="display:none"' : ''}>
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               Gửi
             </button>
@@ -1359,6 +1363,7 @@
 
     // Submit comment
     document.getElementById('add-comment').addEventListener('click', () => {
+      if (READONLY) return; // monitor read-only
       const text = commentInput.value.trim();
       if (!text) return;
       const type = document.getElementById('comment-type').value;

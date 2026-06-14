@@ -176,6 +176,7 @@
     { value: 'account', label: 'Account' },
     { value: 'design',  label: 'Design'  },
     { value: 'editor',  label: 'Editor'  },
+    { value: 'system_supervisor', label: 'Giám sát hệ thống' },
     { value: 'client',  label: 'Client'  }
   ];
   const DEPARTMENTS = ['HO Marketing', 'Academic', 'Sales', 'CB Mekong', 'CB Hưng Phú', 'CB Cần Thơ', 'CB Tiên Thủy'];
@@ -195,6 +196,7 @@
   function roleLabel(role) {
     if (!role) return '';
     if (role === 'lead_content') return 'Lead Content'; // tránh "Lead_content"
+    if (role === 'system_supervisor') return 'Giám sát hệ thống'; // monitor-only role
     return role.charAt(0).toUpperCase() + role.slice(1);
   }
   function renderAvatarInto(el, user) {
@@ -587,7 +589,7 @@
        sẽ match rule *="content"; CSS có override exact-match ẩn Workspace cho content. */
   function injectContentTeamGroup() {
     var u = getUser();
-    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor'];
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor', 'system_supervisor'];
     if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
     var sidebar = document.querySelector('.dash-sidebar');
     if (!sidebar) return;
@@ -598,14 +600,14 @@
     var page = location.pathname.split('/').pop() || '';
 
     var h6 = document.createElement('h6');
-    h6.setAttribute('data-show-roles', 'admin,account,lead_content,content');
+    h6.setAttribute('data-show-roles', 'admin,account,lead_content,content,system_supervisor');
     h6.textContent = 'Content Team';
 
     var ul = document.createElement('ul');
     ul.className = 'dash-nav';
     ul.innerHTML =
-      '<li data-show-roles="admin,account,lead_content"><a href="content-team.html"' + (page === 'content-team.html' ? ' class="is-active"' : '') + '><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Content Workspace</span></a></li>'
-      + '<li data-show-roles="admin,account,content"><a href="content-workbench.html"' + (page === 'content-workbench.html' ? ' class="is-active"' : '') + '><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="13" y2="18"/></svg></span><span>Content Wording</span></a></li>';
+      '<li data-show-roles="admin,account,lead_content,system_supervisor"><a href="content-team.html"' + (page === 'content-team.html' ? ' class="is-active"' : '') + '><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Content Workspace</span></a></li>'
+      + '<li data-show-roles="admin,account,content,system_supervisor"><a href="content-workbench.html"' + (page === 'content-workbench.html' ? ' class="is-active"' : '') + '><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="13" y2="18"/></svg></span><span>Content Wording</span></a></li>';
 
     opsUl.insertAdjacentElement('afterend', h6);
     h6.insertAdjacentElement('afterend', ul);
@@ -615,14 +617,14 @@
      CSS data-show-roles lo ẩn/hiện theo role (mọi role nội bộ đều thấy, lọc event ở calendar.js). */
   function injectCalendarNav() {
     var u = getUser();
-    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor'];
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor', 'system_supervisor'];
     if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
     var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
     if (!groups.length) return;
     var opsUl = groups[0]; // nhóm "Vận hành"
     if (opsUl.querySelector('a[href="calendar.html"]')) return; // đã có → không lặp
     var li = document.createElement('li');
-    li.setAttribute('data-show-roles', 'admin,account,design,editor,content,lead_content');
+    li.setAttribute('data-show-roles', 'admin,account,design,editor,content,lead_content,system_supervisor');
     li.innerHTML = '<a href="calendar.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Calendar</span></a>';
     if ((location.pathname.split('/').pop() || '') === 'calendar.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
     // Chèn sau "Internal Task Tracker" (production-board) cho gần nhóm task; không có thì append.
