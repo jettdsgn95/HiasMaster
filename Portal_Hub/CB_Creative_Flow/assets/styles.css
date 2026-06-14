@@ -1906,6 +1906,13 @@ body[data-user-role="system_supervisor"] .btn[data-show-roles*="system_superviso
 body[data-user-role="system_supervisor"] .dash-nav li:has(> a[href="order-dashboard.html"]),
 body[data-user-role="system_supervisor"] .dash-nav li:has(> a[href="database-orders.html"]),
 body[data-user-role="system_supervisor"] .dash-nav li:has(> a[href="reports.html"]) { display: list-item !important; }
+/* Master Dashboard CONTENT — supervisor (data_scope:all) xem mọi KPI section + Quick Actions
+   read-only NHƯ admin. Các .dash-section/.qa-btn vốn data-show-roles "admin,account[,design,editor]"
+   (không chứa system_supervisor) → base rule ẩn → dashboard trắng. Reveal lại ở đây.
+   CHẶN riêng nút "Tạo Order" (request.html) vì Order Form là mutation — supervisor không được vào. */
+body[data-user-role="system_supervisor"] .dash-section[data-show-roles] { display: block; }
+body[data-user-role="system_supervisor"] .qa-btn[data-show-roles] { display: flex; }
+body[data-user-role="system_supervisor"] .qa-btn[href="request.html"] { display: none !important; }
 
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }
