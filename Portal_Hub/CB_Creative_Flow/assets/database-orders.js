@@ -110,6 +110,15 @@
   };
   // Wording đã được duyệt → cho phép Confirm Brief.
   function wordingStatusOf(o) { return (o && o.brief_wording_status) || 'none'; }
+  // Order revision (client tạo tiếp sau khi Order gốc quá 03 vòng feedback) → trả mã Order gốc.
+  // Ưu tiên cột parent_order_id (nếu đã chạy add-revision-link.sql); fallback bóc từ content_brief
+  // (order-form.js LUÔN nhúng "[Yêu cầu chỉnh sửa phát sinh — từ Order gốc MEDIA-...]") → không cần migration.
+  function getRevisionRef(o) {
+    if (!o) return null;
+    if (o.parent_order_id) return o.parent_order_id;
+    const m = String(o.content_brief || '').match(/từ Order gốc\s+(MEDIA-[0-9A-Za-z\-]+)/);
+    return m ? m[1] : null;
+  }
   function isWordingApproved(o) { const w = wordingStatusOf(o); return w === 'client_approved' || w === 'completed'; }
   // Trễ hạn wording: có wording_deadline, chưa duyệt/hoàn tất, chưa hủy, và đã quá hạn.
   function isWordingOverdue(o) {
@@ -451,7 +460,7 @@
 
     return `
       <tr data-id="${o.order_id}" class="${isOverdue ? 'is-overdue' : ''}">
-        <td><span class="order-id">${o.order_id}</span>${o.account_status === 'pending' ? '<span class="order-new-badge">NEW</span>' : ''}</td>
+        <td><span class="order-id">${o.order_id}</span>${o.account_status === 'pending' ? '<span class="order-new-badge">NEW</span>' : ''}${getRevisionRef(o) ? `<span class="rev-cont-badge" title="Tiếp nối từ ${escapeHtml(getRevisionRef(o))} (sau 03 vòng feedback)">↩ Tiếp</span>` : ''}</td>
         <td><span class="text-xs muted">${ts_fmt}</span></td>
         <td class="requester-cell"><b>${escapeHtml(o.requester_name)}</b><span>${escapeHtml(o.department)}</span></td>
         <td class="project-cell"><b>${escapeHtml(o.project_name)}</b><span>${o.deliverable_type ? o.deliverable_type.slice(0, 2).join(' · ') + (o.deliverable_type.length > 2 ? ' +' + (o.deliverable_type.length - 2) : '') : ''}</span></td>
@@ -980,6 +989,10 @@
 
     const nextAction = orderNextAction(o);
     drawerBody.innerHTML = `
+      ${(function () { const ref = getRevisionRef(o); return ref ? `
+      <div class="ow-revision-banner" style="margin-bottom:14px;padding:11px 14px;background:rgba(186,17,15,.07);border:1px solid rgba(186,17,15,.28);border-left:3px solid #BA110F;border-radius:10px;font-size:13px;line-height:1.55">
+        <b>↩ Order chỉnh sửa tiếp</b> — tạo nối tiếp từ Order gốc <a class="link" href="database-orders.html?id=${escapeHtml(ref)}"><b>${escapeHtml(ref)}</b></a> sau khi đã hoàn tất <b>03 vòng feedback</b>. Đây KHÔNG phải order mới hoàn toàn — client cần chỉnh sửa/phát sinh thêm. Xem brief cũ ở Order gốc để có ngữ cảnh.
+      </div>` : ''; })()}
       ${buildLifecycleTimeline(o)}
 
       <section class="drawer-block ow-next">

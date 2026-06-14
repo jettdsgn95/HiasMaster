@@ -4386,6 +4386,14 @@ body[data-user-role="content"] .dash-nav li:has(> a[href="content-team.html"]) {
   60% { box-shadow: 0 0 0 4px rgba(186,17,15,0); }
 }
 @media (prefers-reduced-motion: reduce) { .order-new-badge { animation: none; } }
+/* Badge "order chỉnh sửa tiếp" (revision nối tiếp từ order gốc sau 3 vòng feedback) */
+.rev-cont-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 7px;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.02em; line-height: 1.5;
+  color: var(--red-600, #BA110F); background: rgb(186 17 15 / 0.12);
+  border: 1px solid rgb(186 17 15 / 0.28); border-radius: 9999px; vertical-align: middle;
+}
+[data-theme="dark"] .rev-cont-badge { color: #fca5a5; background: rgb(186 17 15 / 0.2); border-color: rgb(186 17 15 / 0.35); }
 .data-table .requester-cell { min-width: 160px; }
 .data-table .requester-cell b { display: block; font-size: var(--text-sm); font-weight: 600; }
 .data-table .requester-cell span { display: block; font-size: 11px; color: var(--text-muted); }

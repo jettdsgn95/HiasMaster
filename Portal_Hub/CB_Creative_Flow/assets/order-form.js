@@ -846,8 +846,8 @@
               return {
                 user_id: u.id,
                 type: 'order_new',
-                title: '📥 Order mới: ' + code,
-                message: (orderPayload.project_name || 'Untitled') + ' · ' + (orderPayload.requester_name || '') + ' · ' + (orderPayload.department || ''),
+                title: (REVISION_MODE && REF_ORDER) ? ('↩ Order chỉnh sửa tiếp: ' + code) : ('📥 Order mới: ' + code),
+                message: (orderPayload.project_name || 'Untitled') + ' · ' + (orderPayload.requester_name || '') + ' · ' + (orderPayload.department || '') + ((REVISION_MODE && REF_ORDER) ? (' · tiếp nối từ ' + REF_ORDER + ' (sau 3 vòng feedback)') : ''),
                 link: 'database-orders.html?id=' + code,
                 related_entity_type: 'orders',
                 related_entity_id: code
