@@ -197,7 +197,7 @@ async function loadClientOrdersFromStore() {
     if (!Array.isArray(remote)) remote = [];
     // Always replace khi Supabase enabled (kể cả empty) — DB là source of truth.
 
-    const TYPE_LABEL = { design: 'Thiết kế', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };
+    const TYPE_LABEL = { design: 'Thiết kế', digital: 'Digital', video: 'Video', motion: 'Motion', media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };
     function fmtDate(s) {
       if (!s) return '—';
       const d = new Date(s.replace ? s.replace(' ', 'T') : s);
@@ -213,6 +213,7 @@ async function loadClientOrdersFromStore() {
         type: TYPE_LABEL[o.request_type] || o.request_type || '—',
         category: (o.deliverable_type && o.deliverable_type[0]) || (TYPE_LABEL[o.request_type] || '—'),
         date: fmtDate(o.created_at),
+        created_raw: o.created_at || '',
         deadline: fmtDate(o.requested_deadline),
         status: effStatus || 'pending',
         pic: o.production_pic || o.account_pic || '',
@@ -334,10 +335,12 @@ function renderKPIs() {
   document.getElementById('kpi-grid').querySelectorAll('.kpi-card').forEach(card => {
     card.addEventListener('click', () => {
       switchTab('orders');
-      const f = card.dataset.kpiFilter;
+      const f = card.dataset.kpiFilter || '';
       const sel = document.getElementById('orders-filter-status');
-      sel.value = f === 'no_rating' ? '' : (f || '');
-      state.ordersFilterStatus = sel.value;
+      // Áp filter thật theo KPI (gồm 'active'/'no_rating' không có trong dropdown);
+      // dropdown chỉ phản chiếu khi có option tương ứng, ngược lại để trống.
+      state.ordersFilterStatus = f;
+      sel.value = sel.querySelector('option[value="' + f + '"]') ? f : '';
       renderOrdersTable();
     });
   });
@@ -451,21 +454,47 @@ function renderCurrentOrders() {
 }
 
 /* ===== RENDER: ORDERS TABLE ===== */
+// Bucket filter trạng thái KHỚP nhãn badge (pubEffStatus), không so raw o.status.
+const STATUS_FILTER_GROUPS = {
+  submitted: ['pending', 'checking', 'confirmed', 'wording'],
+  needinfo:  ['needinfo'],
+  producing: ['received', 'inprogress', 'revision', 'feedback_fix'],
+  review:    ['review', 'ready'],
+  feedback:  ['feedback_wait'],
+  completed: ['completed'],
+  cancelled: ['cancelled'],
+};
+// Thứ tự "Cần xử lý trước": việc client cần action (bổ sung brief / phản hồi) lên đầu.
+const STATUS_SORT_PRIO = ['needinfo', 'feedback_wait', 'review', 'ready', 'revision', 'feedback_fix', 'inprogress', 'received', 'confirmed', 'wording', 'checking', 'pending', 'delivered', 'completed', 'paused', 'cancelled'];
+// Timestamp tạo đơn để sort theo ngày (created_raw từ DB; fallback parse 'DD/MM/YYYY' của mock).
+function orderTime(o) {
+  if (o.created_raw) { const d = new Date(String(o.created_raw).replace(' ', 'T')); if (!isNaN(d.getTime())) return d.getTime(); }
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(o.date || '');
+  return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : 0;
+}
+function orderDeadlineTime(o) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(o.deadline || '');
+  return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : Infinity; // không có deadline → cuối khi sort tăng dần
+}
 function getFilteredOrders() {
   let list = [...ORDERS];
   const s = state.ordersSearch.toLowerCase();
   if (s) list = list.filter(o => o.id.toLowerCase().includes(s) || o.name.toLowerCase().includes(s));
   const fs = state.ordersFilterStatus;
-  if (fs === 'active')    list = list.filter(o => !['completed','cancelled'].includes(o.status) && !isFinalDelivered(o));
-  else if (fs === 'needinfo')  list = list.filter(o => o.status === 'needinfo');
-  else if (fs === 'feedback')  list = list.filter(o => o.status === 'feedback_wait' && !isFinalDelivered(o));
+  // 'active' (KPI Đang xử lý) + 'delivered' (KPI Đã bàn giao = isFinalDelivered, gồm cả đã đánh giá)
+  // + 'no_rating' (KPI Chưa đánh giá) giữ semantics khớp KPI drilldown.
+  if (fs === 'active')         list = list.filter(o => !['delivered', 'completed', 'cancelled'].includes(pubEffStatus(o)));
   else if (fs === 'delivered') list = list.filter(o => isFinalDelivered(o));
-  else if (fs === 'completed') list = list.filter(o => o.status === 'completed');
+  else if (fs === 'no_rating') list = list.filter(o => isFinalDelivered(o) && !state.ratings[o.id]);
+  else if (STATUS_FILTER_GROUPS[fs]) list = list.filter(o => STATUS_FILTER_GROUPS[fs].includes(pubEffStatus(o)));
   if (state.ordersFilterType) list = list.filter(o => o.type === state.ordersFilterType);
-  const PRIO = ['needinfo','feedback_wait','delivered','inprogress','review','confirmed','received','pending','completed','cancelled'];
-  if (state.ordersSort === 'date_desc') list.sort((a,b) => b.id.localeCompare(a.id));
-  else if (state.ordersSort === 'date_asc') list.sort((a,b) => a.id.localeCompare(b.id));
-  else if (state.ordersSort === 'status') list.sort((a,b) => PRIO.indexOf(a.status) - PRIO.indexOf(b.status));
+  if (state.ordersSort === 'date_desc')         list.sort((a, b) => orderTime(b) - orderTime(a));
+  else if (state.ordersSort === 'date_asc')     list.sort((a, b) => orderTime(a) - orderTime(b));
+  else if (state.ordersSort === 'deadline_asc') list.sort((a, b) => orderDeadlineTime(a) - orderDeadlineTime(b));
+  else if (state.ordersSort === 'status')       list.sort((a, b) => {
+    const ia = STATUS_SORT_PRIO.indexOf(pubEffStatus(a)), ib = STATUS_SORT_PRIO.indexOf(pubEffStatus(b));
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
   return list;
 }
 

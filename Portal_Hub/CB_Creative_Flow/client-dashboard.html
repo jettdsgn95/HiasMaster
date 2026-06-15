@@ -318,8 +318,11 @@
         </div>
         <select class="select" id="orders-filter-status">
           <option value="">Mọi trạng thái</option>
-          <option value="active">Đang xử lý</option>
+          <option value="active">Tất cả đang xử lý</option>
+          <option value="submitted">Đã gửi / chờ tiếp nhận</option>
           <option value="needinfo">Cần bổ sung brief</option>
+          <option value="producing">Đang sản xuất</option>
+          <option value="review">Đang kiểm tra nội bộ</option>
           <option value="feedback">Chờ phản hồi</option>
           <option value="delivered">Đã bàn giao</option>
           <option value="completed">Hoàn thành</option>
@@ -327,9 +330,14 @@
         <select class="select" id="orders-filter-type">
           <option value="">Mọi loại</option>
           <option value="Thiết kế">Thiết kế</option>
+          <option value="Digital">Digital</option>
           <option value="Video">Video</option>
           <option value="Motion">Motion</option>
-          <option value="Photo">Photo</option>
+          <option value="Quay / Chụp ảnh">Quay / Chụp ảnh</option>
+          <option value="Chụp ảnh">Chụp ảnh</option>
+          <option value="Quay">Quay</option>
+          <option value="Slide">Slide</option>
+          <option value="Ads">Ads</option>
         </select>
         <select class="select" id="orders-sort">
           <option value="date_desc">Mới nhất</option>
