@@ -35,6 +35,8 @@ Sidebar có nhóm **Content Team** riêng với 2 sub: *Content Workspace* (lead
 
 Role **`system_supervisor`** ("Giám sát hệ thống") — GIÁM SÁT chỉ-đọc cấp hệ thống (redirect `dashboard.html`). Xem toàn bộ Orders / Tasks / Content Team / Calendar / Reports (kèm export) nhưng **mọi mutation bị khóa** (không confirm/push/assign/đổi status/drag/tạo-sửa task/bàn giao/duyệt wording/hủy đơn). Sidebar thấy mọi mục TRỪ Order Form / User Management / Settings. ⚠ chạy `supabase/add-system-supervisor.sql` (role check + SELECT-only RLS). Tạo user qua Supabase Auth metadata `{name, role:'system_supervisor'}`.
 
+Role **`lead_media`** ("Lead Media") — Lead nhóm Media cho module **Supervisor Planning** (redirect `supervisor-planning.html`). Nhận + cập nhật trạng thái các kế hoạch nội bộ được giao cho Media (`lead_tasks` có `assigned_lead='lead_media'`); KHÔNG tạo kế hoạch (chỉ Supervisor/Admin), KHÔNG đụng task sản xuất (production-board redirect về trang Kế hoạch). ⚠ chạy `supabase/add-supervisor-planning.sql` (thêm `lead_media` vào users_role_check) rồi tạo user qua Supabase Auth metadata `{name, role:'lead_media'}`.
+
 Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn site. Client role có khu vực riêng biệt (`client-dashboard.html`), bị chặn khỏi Internal Dashboard.
 
 ---
@@ -51,6 +53,7 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 | AI Tools | Done | 13 mini apps (gồm AI Voice / Supertonic on-device TTS), workspace form, output panel, usage log demo |
 | Dashboards | Wired LIVE | **Master Dashboard** (Module 5 — 4 sections separated: Client Orders Overview 8 metrics / Internal Tasks Overview 8 metrics / Alerts 5 categories / Team Workload 6-PIC bar) · **Orders Dashboard** (13 KPI Client Order lifecycle: Intake / Production Flow / Feedback & Completion + 6 breakdowns) · **Task Dashboard** (17 KPI Internal workload: Volume / Workload / Deadline / Status / Performance + 6-PIC bar chart). Master Dashboard refresh button fetches Supabase again, polls every 60s, and listens to orders/tasks realtime when publication is enabled. Drilldown click-through tới database-orders.html / production-board.html với filter chính xác |
 | Chatbot | Done | Dedicated page + floating widget trên internal/public pages khi đã login |
+| Supervisor Planning | Done | `supervisor-planning.html` + `supervisor-planning.js` (sidebar **"Strategy Board"**) — Supervisor/Admin lập + giao **kế hoạch nội bộ** cho Lead Media / Content / **cả 2** (`both`), TÁCH BIỆT `tasks` production + wording. Bảng `lead_tasks` + đính kèm PDF/link; **tiến độ RIÊNG từng Lead** (lead_status); **cổng duyệt per-lane** (Lead "Nộp duyệt" Kế hoạch/Sản phẩm → Supervisor Duyệt / Trả chỉnh, lane completed chỉ khi Supervisor duyệt); **Lead chủ động đề xuất kế hoạch** (origin=lead → Supervisor Duyệt/Từ chối; mention Lead kia "nắm thông tin" read-only); **Drawer workspace cộng tác** (comment 2 chiều + activity timeline + checklist/progress); **List + Board kanban** (cột "Chờ duyệt"); notify 2 chiều + deep-link + realtime; role mới `lead_media`. ⚠ chạy `supabase/add-supervisor-planning.sql`. |
 | Content Team Workspace | Done | `content-team.html` — team Content TÁCH BIỆT Production (role `lead_content` + `content`). Dashboard / Content Inbox (Lead) / Board Kanban 7 cột / Danh sách / My Content Tasks + Content Wording Drawer (Lifecycle · Assign PIC + hạn · Workspace · Quality Checklist · Lead Review · Files/Links · Activity). Flow: Account "Chuyển Content Wording" → Lead Inbox → gán PIC → Content làm → gửi Lead duyệt → (trả chỉnh ↺) → Account gửi Client xác nhận → Client duyệt → Confirm Brief & Push. Content/Lead bị chặn Task Tracker + Client Orders (redirect). `content-workbench.html` giữ làm legacy (status Content Team = read-only). ⚠ chạy `supabase/add-content-team.sql`. |
 
 Xem tiến độ chi tiết ở [`STATUS.md`](STATUS.md). Agent/dev mới nên đọc [`_hot.md`](_hot.md) trước khi sửa code.
@@ -95,6 +98,7 @@ CB_Creative_Flow/
 ├── production-board.html Task Tracker (Production Board) — Table / Kanban / My Tasks
 ├── content-workbench.html Content Wording (legacy solo flow)
 ├── content-team.html     Content Team Workspace — Dashboard / Inbox / Board / My Tasks (lead_content + content)
+├── supervisor-planning.html Supervisor Planning — kế hoạch nội bộ Supervisor→Lead Media/Content (lead_tasks)
 ├── calendar.html         Lịch / Calendar — deadline task/order + lịch quay/chụp (role-filtered)
 ├── reports.html          KPI, charts, export
 ├── ai-tools.html         12 AI mini apps
@@ -112,6 +116,7 @@ CB_Creative_Flow/
     ├── production-board.js
     ├── content-workbench.js  Content Wording legacy
     ├── content-team.js       Content Team Workspace logic (roles, board, drawer, lead review)
+    ├── supervisor-planning.js supervisor-planning.html — kế hoạch nội bộ (leadTasks CRUD, role-aware, drawer)
     ├── calendar.js              calendar.html — month/week/agenda, role-filtered events, popover→drawer
     ├── reports.js
     ├── ai-tools.js
@@ -120,7 +125,7 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **18 HTML pages · 15 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations** (Content Team Workspace thêm 2026-06-11; Calendar/Lịch thêm 2026-06-08). (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
+Build hiện tại: **19 HTML pages · 16 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations** (Supervisor Planning thêm 2026-06-17; Content Team Workspace thêm 2026-06-11; Calendar/Lịch thêm 2026-06-08). (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
 
 Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN). Shared UI module: `assets/notif-icons.js` (`window.MH.notifIcons` — single source of truth cho icon thông báo, dùng bởi bell dropdown + client panel).
 
@@ -139,6 +144,7 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 12. [`add-wording-deadline.sql`](supabase/add-wording-deadline.sql) — orders.wording_deadline (Hạn hoàn thành wording; Account đặt ở Order drawer, Content Wording hiển thị + tô đỏ khi trễ)
 13. [`add-content-team.sql`](supabase/add-content-team.sql) — Content Team Workspace: role `lead_content` (users_role_check) + 3 status wording mới (`pic_assigned`/`submitted_to_lead`/`lead_revision`) + cột Lead review (`wording_lead_note`/`wording_lead_reviewed_at`/`wording_lead_reviewed_by`/`wording_submitted_to_lead_at`) + RLS lead_content SELECT orders/users + RPC `update_brief_wording` v2 (thêm lead_content, status mới, wording_deadline)
 14. [`add-system-supervisor.sql`](supabase/add-system-supervisor.sql) — role `system_supervisor` (Giám sát hệ thống, monitor read-only): users_role_check += role + helper `is_system_supervisor()` + **SELECT-only** RLS orders/tasks/task_comments/users/deliveries/activity_log. KHÔNG đụng `is_staff()` (nó còn gate write). Chạy sau `rls.sql` + `add-content-team.sql`.
+15. [`add-supervisor-planning.sql`](supabase/add-supervisor-planning.sql) — module Supervisor Planning: `users_role_check` += `lead_media` + bảng `lead_tasks` (id/title/description/**assigned_lead** (`lead_media`/`lead_content`/**`both`**)/status (tổng hợp)/**`lead_status` jsonb** (tiến độ RIÊNG từng Lead, gồm trạng thái `submitted`/`revision` của cổng duyệt)/**`checklist` jsonb**/**`lead_submissions` jsonb** (hồ sơ Lead nộp duyệt per-lane)/**`origin`** (supervisor/lead)/**`approval`** (approved/proposed/declined)/**`informed_leads` jsonb** (Lead mention "nắm thông tin")/priority/deadline/attachment_path/name/url/created_by/created_at/updated_at) + bảng **`lead_task_comments`** (kind comment/status/system/submit/review) + index + trigger + **bucket Storage `plan-files`** + RLS 2 bảng (supervisor/admin **ALL**; lead **SELECT/UPDATE/DELETE** dòng bucket mình incl `both`, comment thì SELECT+INSERT, **KHÔNG INSERT plan**) + storage policy + **Realtime** (lead_tasks + lead_task_comments) + RLS **lead INSERT đề xuất** (origin=lead, approval=proposed, bucket mình) + **informed SELECT** (Lead được mention đọc read-only). Chạy sau `rls.sql` + `add-system-supervisor.sql`.
 
 ### Order ↔ Task ↔ Delivery relationship
 
@@ -373,4 +379,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-06-14 · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*
+*Last updated: 2026-06-17 · Module **Supervisor Planning** (`supervisor-planning.html`+`.js`, bảng `lead_tasks`, role mới `lead_media`, ⚠ `add-supervisor-planning.sql`) · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*

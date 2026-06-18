@@ -1914,6 +1914,27 @@ body[data-user-role="system_supervisor"] .dash-section[data-show-roles] { displa
 body[data-user-role="system_supervisor"] .qa-btn[data-show-roles] { display: flex; }
 body[data-user-role="system_supervisor"] .qa-btn[href="request.html"] { display: none !important; }
 
+/* Lead Media — role mới (Supervisor Planning). Team Media tách biệt: chỉ thấy nav
+   "Kế hoạch" (+ AI Tools/Chatbot mặc định). Reveal data-show-roles*="lead_media".
+   ⚠ Substring-safe: "lead_media" KHÔNG chứa admin/account/design/editor/content/client. */
+body[data-user-role="lead_media"] [data-show-roles*="lead_media"] { display: revert; }
+body[data-user-role="lead_media"] li[data-show-roles*="lead_media"] { display: list-item; }
+body[data-user-role="lead_media"] .kpi[data-show-roles*="lead_media"],
+body[data-user-role="lead_media"] .qa-btn[data-show-roles*="lead_media"],
+body[data-user-role="lead_media"] .dash-card[data-show-roles*="lead_media"],
+body[data-user-role="lead_media"] .hpm-item[data-show-roles*="lead_media"] { display: flex; }
+body[data-user-role="lead_media"] .dash-section[data-show-roles*="lead_media"] { display: block; }
+body[data-user-role="lead_media"] .btn[data-show-roles*="lead_media"] { display: inline-flex; }
+/* Lead Media tách khỏi Production → ẩn nav Master/Task Dashboard + Task Tracker (không có
+   data-show-roles nên mặc định hiện; ẩn bằng :has theo href, như role content/lead_content). */
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="dashboard.html"]),
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="task-dashboard.html"]),
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="production-board.html"]) { display: none !important; }
+
+/* Supervisor Planning nav — substring trap: data-show-roles="...,lead_content,admin" chứa
+   "content" → role content reveal nhầm mục "Kế hoạch" (qua rule *="content"). Ẩn lại cho content. */
+body[data-user-role="content"] .dash-nav li:has(> a[href="supervisor-planning.html"]) { display: none !important; }
+
 /* Profile chip with dropdown */
 .profile-chip { position: relative; }
 .profile-menu {
@@ -1947,9 +1968,11 @@ body[data-user-role="system_supervisor"] .qa-btn[href="request.html"] { display:
 .role-badge.r--editor  { background: var(--warning-soft); color: var(--warning-fg); }
 .role-badge.r--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
 .role-badge.r--lead_content { background: rgb(91 33 182 / 0.18); color: #5b21b6; }
+.role-badge.r--lead_media { background: rgb(13 148 136 / 0.16); color: #0f766e; }
 .role-badge.r--system_supervisor { background: rgb(100 116 139 / 0.16); color: #475569; }
 .role-badge.r--client  { background: var(--success-soft); color: var(--success-fg); }
 [data-theme="dark"] .role-badge.r--account { background: rgb(186 17 15 / 0.18); color: #fca5a5; }
+[data-theme="dark"] .role-badge.r--lead_media { background: rgb(45 212 191 / 0.20); color: #5eead4; }
 [data-theme="dark"] .role-badge.r--system_supervisor { background: rgb(148 163 184 / 0.20); color: #cbd5e1; }
 
 /* =====================================================================
@@ -2852,6 +2875,7 @@ body[data-user-role="system_supervisor"] .qa-btn[href="request.html"] { display:
 .role-tag-badge.rt--editor  { background: rgb(245 158 11 / 0.15); color: #b45309; }
 .role-tag-badge.rt--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
 .role-tag-badge.rt--lead_content { background: rgb(91 33 182 / 0.18); color: #5b21b6; }
+.role-tag-badge.rt--lead_media { background: rgb(13 148 136 / 0.16); color: #0f766e; }
 .role-tag-badge.rt--system_supervisor { background: rgb(100 116 139 / 0.16); color: #475569; }
 .role-tag-badge.rt--staff   { background: var(--warning-soft); color: var(--warning-fg); }
 .role-tag-badge.rt--client  { background: var(--info-soft);    color: var(--info-fg); }
@@ -6368,3 +6392,202 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
   .ctm-dash-grid, .ctm-inbox-grid, .ctm-assign-grid { grid-template-columns: 1fr; }
   .ctm-board { grid-template-columns: repeat(7, 240px); }
 }
+
+/* =====================================================================
+   SUPERVISOR PLANNING (supervisor-planning.html) — .sp-* / .lt-*
+   Kế hoạch nội bộ Supervisor → Lead Media / Lead Content. Tái dùng
+   .table-card / .data-table / .drawer / .cwb-stat / .field / .priority-pill.
+   ===================================================================== */
+.sp-stats { margin-bottom: var(--space-4); }
+.sp-stat.is-media  { border-top-color: #0f766e; }
+.sp-stat.is-content { border-top-color: #6d28d9; }
+.sp-stat.is-danger { border-top-color: var(--danger); }
+.sp-stat.is-danger .cwb-stat-val { color: var(--danger); }
+
+/* Field labels (dùng trong form tạo + drawer edit) */
+.sp-form .field-label, .sp-drawer .field-label { font-size: var(--text-sm); font-weight: 600; color: var(--text); }
+.sp-form .req, .sp-drawer .req { color: var(--danger); font-style: normal; }
+
+/* Create form */
+.sp-form-card { margin-bottom: var(--space-4); }
+.sp-form { padding: var(--space-4); }
+.sp-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.sp-field-wide { grid-column: 1 / -1; }
+.sp-form-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+
+.sp-filters { margin-bottom: var(--space-3); }
+
+/* Table cells */
+.sp-table tbody tr { cursor: pointer; }
+.sp-cell-title { font-weight: 600; font-size: var(--text-sm); }
+.sp-cell-desc { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+.sp-row-act { text-align: right; }
+.sp-row--overdue { background: rgb(220 38 38 / 0.04); }
+.sp-overdue-text { color: var(--danger); font-weight: 600; }
+.sp-empty { padding: var(--space-6); text-align: center; }
+
+/* Lead badge — phân biệt Media (teal) vs Content (purple) */
+.lt-lead-badge {
+  display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
+}
+.lt-lead--media   { background: rgb(13 148 136 / 0.14); color: #0f766e; }
+.lt-lead--content { background: rgb(139 92 246 / 0.15); color: #6d28d9; }
+.lt-lead--both    { background: linear-gradient(135deg, #191970 0%, #BA110F 100%); color: #fff; border: 0; }
+[data-theme="dark"] .lt-lead--media   { background: rgb(45 212 191 / 0.18); color: #5eead4; }
+[data-theme="dark"] .lt-lead--content { background: rgb(167 139 250 / 0.20); color: #c4b5fd; }
+
+/* Đính kèm file/link kế hoạch */
+.sp-attach { display: flex; flex-direction: column; gap: 8px; padding-top: var(--space-2); border-top: 1px solid var(--border); }
+.sp-attach-current { font-size: var(--text-sm); }
+.sp-attach-link { display: inline-flex; align-items: center; gap: 6px; color: var(--brand-600); font-weight: 600; font-size: var(--text-sm); word-break: break-all; }
+.sp-attach-link:hover { text-decoration: underline; }
+.sp-attach input[type="file"] { padding: 7px 10px; }
+
+/* Status badge (tb-status + lt-st--*) */
+.tb-status.lt-st--pending     { background: var(--surface-2); color: var(--text-muted); }
+.tb-status.lt-st--in_progress { background: var(--info-soft); color: var(--info-fg); }
+.tb-status.lt-st--submitted   { background: var(--warning-soft); color: var(--warning-fg); }
+.tb-status.lt-st--revision    { background: var(--red-50); color: var(--red-600); }
+.tb-status.lt-st--completed   { background: var(--success-soft); color: var(--success-fg); }
+.tb-status.lt-st--archived    { background: rgb(100 116 139 / 0.16); color: #475569; }
+.tb-status.lt-st--proposed    { background: var(--primary-soft); color: var(--brand-600); }
+.tb-status.lt-st--declined    { background: rgb(100 116 139 / 0.16); color: #64748b; text-decoration: line-through; }
+[data-theme="dark"] .tb-status.lt-st--archived { background: rgb(148 163 184 / 0.20); color: #cbd5e1; }
+.sp-pl--submitted { background: var(--warning-soft); color: var(--warning-fg); }
+.sp-pl--revision  { background: var(--red-50); color: var(--red-600); }
+.sp-stat.is-warn { border-top-color: var(--warning); }
+.sp-stat.is-warn .cwb-stat-val { color: var(--warning-fg); }
+
+/* Banner đề xuất / mention */
+.sp-propose-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; padding: 12px 14px; border-radius: var(--radius); background: var(--primary-soft); border: 1px solid rgb(25 25 112 / 0.18); margin-bottom: var(--space-3); }
+.sp-propose-banner.sp-pb-declined { background: rgb(100 116 139 / 0.12); border-color: rgb(100 116 139 / 0.25); }
+.sp-propose-banner.sp-pb-informed { background: var(--info-soft); border-color: rgb(14 165 233 / 0.25); }
+.sp-pb-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sp-pb-info > svg { flex: none; color: var(--brand-600); }
+.sp-pb-declined .sp-pb-info > svg { color: #64748b; }
+.sp-pb-informed .sp-pb-info > svg { color: var(--info-fg); }
+.sp-pb-txt { display: flex; flex-direction: column; line-height: 1.35; min-width: 0; }
+.sp-pb-act { display: flex; gap: 8px; flex: none; }
+.sp-informed-check { display: inline-flex; align-items: center; gap: 8px; font-size: var(--text-sm); }
+
+/* Drawer edit / view */
+.sp-drawer .drawer-body { padding: var(--space-4); }
+.sp-edit, .sp-view { display: flex; flex-direction: column; gap: var(--space-3); }
+.sp-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.sp-edit-actions { display: flex; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.sp-meta-row { display: flex; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.sp-view-desc { font-size: var(--text-sm); line-height: 1.55; white-space: pre-wrap; padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
+.sp-lead-update { display: flex; align-items: flex-end; gap: var(--space-3); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.sp-lead-update .field { flex: 1; }
+.sp-lead-note { margin-top: var(--space-1); }
+
+/* Danh nút xóa nhẹ (đỏ outline-soft) */
+.btn-danger-soft { background: var(--accent-soft, rgb(220 38 38 / 0.10)); color: var(--danger); }
+.btn-danger-soft:hover { background: rgb(220 38 38 / 0.16); }
+
+@media (max-width: 760px) {
+  .sp-form-grid { grid-template-columns: 1fr; }
+  .sp-edit-grid { grid-template-columns: 1fr; }
+  .sp-lead-update { flex-direction: column; align-items: stretch; }
+}
+
+/* View toggle + per-lead chips + mini progress (Strategy Board) */
+.sp-view-tabs { margin-bottom: var(--space-3); }
+.sp-ic { flex: none; vertical-align: middle; }
+.sp-clip { display: inline-flex; align-items: center; opacity: .6; }
+.sp-clip svg { display: block; }
+.sp-perlead { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.sp-pl-chip { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); }
+.sp-pl--in_progress { background: var(--info-soft); color: var(--info-fg); }
+.sp-pl--completed { background: var(--success-soft); color: var(--success-fg); }
+.sp-mini-prog { height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; max-width: 240px; }
+.sp-mini-prog > i { display: block; height: 100%; background: var(--grad-navy); border-radius: 999px; }
+
+/* Board (kanban) — màu theo cột (status semantic) */
+.sp-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
+.sp-board[hidden] { display: none; }  /* [hidden] phải thắng display:grid — nếu không Board lộ ở tab Danh sách */
+.sp-col { background: var(--surface-2); border: 1px solid var(--border); border-top: 3px solid var(--border); border-radius: var(--radius); padding: 10px; }
+.sp-col-head { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-col-count { font-size: 11px; font-weight: 800; background: var(--surface); border-radius: 999px; padding: 1px 9px; color: var(--text-muted); flex: none; }
+.sp-col-body { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+.sp-col-empty { padding: 14px 8px; text-align: center; }
+.sp-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+.sp-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+
+/* Mỗi cột 1 màu: slate(chờ) · xanh(làm) · amber(duyệt) · lá(xong) */
+.sp-col--pending     { border-top-color: #94a3b8; }
+.sp-col--in_progress { border-top-color: var(--brand-600); }  /* navy brand */
+.sp-col--submitted   { border-top-color: var(--red-600); }    /* đỏ brand */
+.sp-col--completed   { border-top-color: var(--success); }
+.sp-col--pending     .sp-col-count { background: rgb(148 163 184 / .20); color: #475569; }
+.sp-col--in_progress .sp-col-count { background: var(--primary-soft); color: var(--brand-600); }
+.sp-col--submitted   .sp-col-count { background: var(--red-50);       color: var(--red-600); }
+.sp-col--completed   .sp-col-count { background: var(--success-soft); color: var(--success-fg); }
+.sp-col--pending     .sp-card { border-left-color: #94a3b8; }
+.sp-col--in_progress .sp-card { border-left-color: var(--brand-600); }
+.sp-col--submitted   .sp-card { border-left-color: var(--red-600); }
+.sp-col--completed   .sp-card { border-left-color: var(--success); }
+.sp-card--overdue { border-left-color: var(--danger) !important; }
+[data-theme="dark"] .sp-col--pending .sp-col-count { background: rgb(148 163 184 / .22); color: #cbd5e1; }
+.sp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+.sp-card-title { font-size: var(--text-sm); font-weight: 600; line-height: 1.35; }
+.sp-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+
+/* Workspace drawer sections */
+.sp-ws { display: flex; flex-direction: column; gap: var(--space-4); }
+.sp-ws-sec { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--border); }
+.sp-ws-sec:last-child { border-bottom: 0; }
+.sp-ws-sec h4 { margin: 0; font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.sp-archive { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); font-weight: 400; }
+.sp-leadstatus { display: flex; flex-direction: column; gap: 8px; }
+.sp-ls-row { display: flex; align-items: center; gap: 10px; }
+.sp-ls-row .lt-lead-badge { min-width: 76px; justify-content: center; }
+.sp-ls-row .select { flex: 1; }
+
+/* Checklist / progress */
+.sp-prog { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.sp-prog > i { display: block; height: 100%; background: var(--grad-navy); border-radius: 999px; transition: width .3s; }
+.sp-prog-pct { font-size: 11px; font-weight: 700; color: var(--brand-600); }
+.sp-check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sp-check-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; }
+.sp-check-item label { display: inline-flex; align-items: center; gap: 8px; font-size: var(--text-sm); cursor: pointer; }
+.sp-check-item.is-done span { text-decoration: line-through; color: var(--text-muted); }
+.sp-ci-del { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; background: none; color: var(--text-muted); line-height: 1; cursor: pointer; border-radius: var(--radius-sm); }
+.sp-ci-del:hover { color: var(--danger); background: var(--red-50); }
+.sp-check-add { display: flex; gap: 8px; margin-top: 4px; }
+.sp-check-add .input { flex: 1; }
+
+/* Timeline + comments */
+.sp-timeline { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding: 4px 2px; }
+.sp-msg { background: var(--surface-2); border-radius: var(--radius); padding: 8px 12px; }
+.sp-msg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.sp-msg-head b { font-size: var(--text-sm); }
+.sp-msg-body { font-size: var(--text-sm); line-height: 1.5; white-space: pre-wrap; }
+.sp-event { display: flex; align-items: center; gap: 8px; font-size: var(--text-xs); color: var(--text-muted); }
+.sp-event-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--brand-600); flex: none; }
+.sp-event-txt { flex: 1; }
+.sp-comment-box { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+.sp-comment-box .textarea { flex: 1; }
+
+@media (max-width: 1200px) { .sp-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .sp-board { grid-template-columns: 1fr; } }
+
+/* Lane card (tiến độ + cổng duyệt từng Lead) */
+.sp-leadstatus { display: flex; flex-direction: column; gap: var(--space-3); }
+.sp-lane { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.sp-lane--submitted { border-color: rgb(245 158 11 / 0.45); }
+.sp-lane--revision  { border-color: rgb(220 38 38 / 0.40); }
+.sp-lane--completed { border-color: rgb(22 163 74 / 0.40); }
+.sp-lane-head { display: flex; align-items: center; gap: 8px; }
+.sp-lane-ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sp-lane-ctl .select { flex: 1; min-width: 130px; }
+.sp-sub { background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+.sp-sub-head { font-size: var(--text-xs); font-weight: 700; color: var(--text); }
+.sp-sub-note { font-size: var(--text-sm); line-height: 1.5; }
+.sp-sub-file { font-size: var(--text-xs); }
+.sp-revnote { display: flex; align-items: flex-start; gap: 6px; font-size: var(--text-sm); color: var(--red-600); background: var(--red-50); border-radius: var(--radius-sm); padding: 6px 10px; }
+.sp-revnote svg { flex: none; margin-top: 2px; }
+.sp-approved { display: inline-flex; align-items: center; gap: 4px; color: var(--success-fg); font-weight: 600; }
+.sp-submit-form, .sp-reject-form { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.sp-submit-form .input[type="file"] { padding: 7px 10px; }

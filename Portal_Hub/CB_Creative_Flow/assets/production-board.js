@@ -25,6 +25,12 @@
     setTimeout(() => location.replace(user.role === 'lead_content' ? 'content-team.html' : 'content-workbench.html'), 900);
     return;
   }
+  // Lead Media (Supervisor Planning) tách biệt khỏi task sản xuất → về trang Kế hoạch.
+  if (user.role === 'lead_media') {
+    if (window.MH && window.MH.toast) window.MH.toast({ type: 'warning', title: 'Khu vực Production', message: 'Lead Media làm việc tại trang Kế hoạch.' });
+    setTimeout(() => location.replace('supervisor-planning.html'), 900);
+    return;
+  }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
   // READONLY = Giám sát hệ thống: xem Task Tracker nhưng không status/drag/edit/comment/tạo task.

@@ -608,9 +608,121 @@
     }
   };
 
+  /* ---------- LEAD TASKS (Supervisor Planning) ----------
+     Kế hoạch nội bộ Supervisor giao cho Lead Media / Lead Content. TÁCH BIỆT
+     bảng `tasks` (production). RLS lọc theo role ở server; mock lọc ở consumer.
+     ⚠ cần supabase/add-supervisor-planning.sql (bảng lead_tasks + role lead_media). */
+  // localStorage là nguồn CHUNG cross-tab/cross-login (mock). Ưu tiên đọc localStorage nếu có
+  // (đồng bộ lại in-memory) — tránh tab này giữ mảng cũ không thấy thay đổi tab kia.
+  function readLeadTasks() {
+    var ls = readJSON('mh-lead-tasks', null);
+    if (ls && ls.length) { window.MH_MOCK_LEAD_TASKS = ls; return ls; }
+    return window.MH_MOCK_LEAD_TASKS || [];
+  }
+  function writeLeadTasks(list) { window.MH_MOCK_LEAD_TASKS = list; writeJSON('mh-lead-tasks', list.slice(0, 200)); }
+  const leadTasks = {
+    async list(filters) {
+      const s = await sb();
+      if (s) {
+        let q = s.from('lead_tasks').select('*').order('created_at', { ascending: false });
+        if (filters && filters.assigned_lead) q = q.eq('assigned_lead', filters.assigned_lead);
+        if (filters && filters.status)        q = q.eq('status', filters.status);
+        const { data, error } = await q;
+        if (error) console.warn('[store.leadTasks.list]', error);
+        return data || [];
+      }
+      return readLeadTasks();
+    },
+    async get(id) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('lead_tasks').select('*').eq('id', id).maybeSingle();
+        if (error) console.warn('[store.leadTasks.get]', error);
+        return data;
+      }
+      return readLeadTasks().find((p) => p.id === id) || null;
+    },
+    // Tạo mới (không id → INSERT, DB tự gen uuid) hoặc cập nhật full row (có id → UPSERT).
+    async upsert(plan) {
+      const s = await sb();
+      if (s) {
+        const hasId = !!(plan && plan.id);
+        const q = hasId
+          ? s.from('lead_tasks').upsert(plan, { onConflict: 'id' })
+          : s.from('lead_tasks').insert(plan);
+        const { data, error } = await q.select().maybeSingle();
+        if (error) { console.warn('[store.leadTasks.upsert]', error); throw error; }
+        return data;
+      }
+      const list = readLeadTasks();
+      const row = Object.assign({}, plan);
+      if (!row.id) row.id = 'plan-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      if (!row.created_at) row.created_at = nowIso();
+      row.updated_at = nowIso();
+      const idx = list.findIndex((p) => p.id === row.id);
+      if (idx >= 0) list[idx] = Object.assign({}, list[idx], row); else list.unshift(row);
+      writeLeadTasks(list);
+      return idx >= 0 ? list[idx] : row;
+    },
+    // PATCH 1 kế hoạch (UPDATE .eq). DB trigger tự set updated_at; mock set tay.
+    async update(id, patch) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('lead_tasks').update(patch).eq('id', id).select().maybeSingle();
+        if (error) { console.warn('[store.leadTasks.update]', error); throw error; }
+        return data;
+      }
+      const list = readLeadTasks();
+      const idx = list.findIndex((p) => p.id === id);
+      if (idx >= 0) { list[idx] = Object.assign({}, list[idx], patch, { updated_at: nowIso() }); writeLeadTasks(list); return list[idx]; }
+      return null;
+    },
+    async delete(id) {
+      const s = await sb();
+      if (s) {
+        const { error } = await s.from('lead_tasks').delete().eq('id', id);
+        if (error) { console.warn('[store.leadTasks.delete]', error); throw error; }
+        return true;
+      }
+      writeLeadTasks(readLeadTasks().filter((p) => p.id !== id));
+      return true;
+    }
+  };
+
+  /* ---------- LEAD TASK COMMENTS (Supervisor Planning — thread + activity) ----------
+     kind: 'comment' (trao đổi 2 chiều) | 'status' (đổi trạng thái) | 'system'.
+     Fallback localStorage `mh-lead-task-comments` (1 mảng phẳng, lọc theo lead_task_id). */
+  const leadTaskComments = {
+    async byPlan(planId) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('lead_task_comments').select('*').eq('lead_task_id', planId).order('created_at', { ascending: true });
+        if (error) console.warn('[store.leadTaskComments.byPlan]', error);
+        return data || [];
+      }
+      return readJSON('mh-lead-task-comments', []).filter(function (c) { return c.lead_task_id === planId; });
+    },
+    async add(planId, comment) {
+      const s = await sb();
+      const row = Object.assign({ lead_task_id: planId, created_at: nowIso() }, comment);
+      if (s) {
+        const me = await users.me();
+        if (me && !row.author_id) row.author_id = me.id;
+        const { data, error } = await s.from('lead_task_comments').insert(row).select().maybeSingle();
+        if (error) { console.warn('[store.leadTaskComments.add]', error); throw error; }
+        return data;
+      }
+      if (!row.id) row.id = 'ltc-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const list = readJSON('mh-lead-task-comments', []);
+      list.push(row);
+      writeJSON('mh-lead-task-comments', list.slice(-500));
+      return row;
+    }
+  };
+
   /* ---------- Expose ---------- */
   window.MH.store = {
-    users, orders, tasks, taskComments, deliveries, aiUsage, chatbot, files, notifications, auth, activity,
+    users, orders, tasks, taskComments, deliveries, aiUsage, chatbot, files, notifications, auth, activity, leadTasks, leadTaskComments,
     isRemote: function () { return !!window.MH.supabaseEnabled; }
   };
 })();

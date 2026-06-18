@@ -139,8 +139,9 @@
     });
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get('redirect');
-    // Home theo role: client → Client Portal; lead_content → Content Workspace; content → Content Wording; còn lại → Master Dashboard.
-    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html' };
+    // Home theo role: client → Client Portal; lead_content → Content Workspace; content → Content Wording;
+    // lead_media → Kế hoạch (Supervisor Planning); còn lại → Master Dashboard.
+    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html', lead_media: 'supervisor-planning.html' };
     const defaultRedirect = roleHome[user.role] || 'dashboard.html';
     setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
   }

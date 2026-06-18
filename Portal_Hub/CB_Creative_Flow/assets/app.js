@@ -176,6 +176,7 @@
     { value: 'account', label: 'Account' },
     { value: 'design',  label: 'Design'  },
     { value: 'editor',  label: 'Editor'  },
+    { value: 'lead_media', label: 'Lead Media' },
     { value: 'system_supervisor', label: 'Giám sát hệ thống' },
     { value: 'client',  label: 'Client'  }
   ];
@@ -196,6 +197,7 @@
   function roleLabel(role) {
     if (!role) return '';
     if (role === 'lead_content') return 'Lead Content'; // tránh "Lead_content"
+    if (role === 'lead_media') return 'Lead Media';      // Lead nhóm Media (Supervisor Planning)
     if (role === 'system_supervisor') return 'Giám sát hệ thống'; // monitor-only role
     return role.charAt(0).toUpperCase() + role.slice(1);
   }
@@ -635,10 +637,29 @@
       opsUl.appendChild(li);
     }
   }
+  /* Supervisor Planning: chèn nav "Kế hoạch" vào nhóm "Vận hành" (idempotent).
+     Hiện cho system_supervisor / lead_media / lead_content / admin (CSS data-show-roles
+     lo việc reveal theo role; content bị ẩn lại bằng override :has trong styles.css vì
+     "lead_content" chứa substring "content"). Inject DOM cho mọi role nội bộ — không
+     reveal nhầm vì chuỗi data-show-roles không chứa account/design/editor. */
+  function injectPlanningNav() {
+    var u = getUser();
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor', 'system_supervisor', 'lead_media'];
+    if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
+    var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
+    if (!groups.length) return;
+    var opsUl = groups[0]; // nhóm "Vận hành"
+    if (opsUl.querySelector('a[href="supervisor-planning.html"]')) return; // đã có → không lặp
+    var li = document.createElement('li');
+    li.setAttribute('data-show-roles', 'system_supervisor,lead_media,lead_content,admin');
+    li.innerHTML = '<a href="supervisor-planning.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H3v10h6V11z"/><path d="M21 3h-6v18h6V3z"/><path d="M15 7H9v14h6V7z"/></svg></span><span>Strategy Board</span></a>';
+    if ((location.pathname.split('/').pop() || '') === 'supervisor-planning.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
+    opsUl.appendChild(li);
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); }, 0);
+    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */
