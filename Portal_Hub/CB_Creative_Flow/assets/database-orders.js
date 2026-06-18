@@ -990,6 +990,13 @@
     p.innerHTML = '<span class="dot"></span>' + PRIORITY_LABEL[o.priority];
     document.getElementById('d-created').textContent = 'Tạo lúc ' + fmtDateTime(o.created_at);
     document.getElementById('d-copy').setAttribute('data-copy', o.order_id);
+    // Phase 5: badge order nội bộ (Internal Media Request từ Content Team).
+    var _ib = document.getElementById('d-internal-badge');
+    if (_ib) {
+      var _isInternal = o.order_kind === 'internal_media_request' || o.origin === 'content_team' || o.client_visible === false;
+      _ib.hidden = !_isInternal;
+      if (_isInternal && o.source_content_task_id) { _ib.title = 'Order nội bộ từ Content Task — không hiển thị Client Portal'; }
+    }
 
     const safeJoin = (a) => Array.isArray(a) ? a.map((v) => `<span class="chip-mini">${escapeHtml(v)}</span>`).join('') : (a || '<em class="muted">—</em>');
     const v = (x) => x ? escapeHtml(x) : '<em class="muted">—</em>';

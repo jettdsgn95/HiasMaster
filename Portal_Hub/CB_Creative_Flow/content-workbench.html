@@ -103,6 +103,12 @@
       </div>
     </div>
 
+    <div class="saved-views ctm-tabs" id="cwb-tabs">
+      <button class="saved-view-chip" data-cwb-view="tasks">Content Tasks của tôi <span class="count" id="cwb-count-tasks">0</span></button>
+      <button class="saved-view-chip" data-cwb-view="orders">Wording đơn (Client Order) <span class="count" id="cwb-count-orders">0</span></button>
+    </div>
+
+    <section id="cwb-view-orders" hidden>
     <div class="cwb-stats" id="cwb-stats"></div>
 
     <div class="cwb-filters">
@@ -129,8 +135,57 @@
         </table>
       </div>
     </div>
+    </section>
+
+    <!-- ═ VIEW: CONTENT TASKS (PIC Workbench — model content_tasks) ═ -->
+    <section id="cwb-view-tasks" hidden>
+      <div class="cwb-stats" id="cwbt-stats"></div>
+      <div class="saved-views" id="cwbt-subtabs" style="margin-bottom:var(--space-3)">
+        <button class="saved-view-chip is-active" data-cwbt-sub="all">Tất cả <span class="count" id="cwbt-c-all">0</span></button>
+        <button class="saved-view-chip" data-cwbt-sub="writing">Đang viết <span class="count" id="cwbt-c-writing">0</span></button>
+        <button class="saved-view-chip" data-cwbt-sub="revision">Cần chỉnh <span class="count" id="cwbt-c-revision">0</span></button>
+        <button class="saved-view-chip" data-cwbt-sub="submitted">Đã gửi Lead <span class="count" id="cwbt-c-submitted">0</span></button>
+        <button class="saved-view-chip" data-cwbt-sub="approved">Đã duyệt <span class="count" id="cwbt-c-approved">0</span></button>
+      </div>
+      <div class="cwb-filters">
+        <div class="s-wrap"><input class="input" type="search" id="cwbt-search" placeholder="Tìm task / plan / campaign..." /></div>
+        <select class="select" id="cwbt-filter-output"><option value="">Mọi loại output</option></select>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><span class="rinfo" id="cwbt-info">—</span></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Task</th><th>Plan / Nguồn</th><th>Output</th><th>Hạn wording</th><th>Ưu tiên</th><th>Vòng</th><th>Media</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody id="cwbt-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
+
+<!-- ═ CONTENT TASK DRAWER (PIC Workbench) ═ -->
+<div class="drawer-backdrop" id="ctask-drawer-backdrop"></div>
+<aside class="drawer content-wording-drawer ctm-drawer ctask-drawer" id="ctask-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="order-id-large"><span id="ctask-d-source">TASK</span></div>
+      <h2 id="ctask-d-title">—</h2>
+      <div class="head-status">
+        <span class="tb-status" id="ctask-d-status">—</span>
+        <span class="priority-pill" id="ctask-d-priority"><span class="dot"></span>—</span>
+        <span class="text-xs muted" id="ctask-d-round">Vòng 0</span>
+      </div>
+    </div>
+    <button class="icon-btn" id="ctask-drawer-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-actions" id="ctask-drawer-actions"></div>
+  <div class="drawer-body" id="ctask-drawer-body"></div>
+</aside>
 
 <!-- ═ CONTENT WORDING DRAWER ═ -->
 <div class="drawer-backdrop" id="cwb-drawer-backdrop"></div>

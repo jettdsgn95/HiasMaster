@@ -49,7 +49,9 @@
     const m = msg.match(/'([^']+)'\s+column/);
     if (m && Object.prototype.hasOwnProperty.call(payload, m[1])) return m[1];
     // Fallback allowlist các cột optional đã biết (phòng khi format message khác).
-    const optional = ['shoot_location', 'feedback_status', 'revision_round', 'revision_limit', 'latest_feedback_note', 'last_feedback_at', 'last_feedback_by', 'approved_at', 'approved_by', 'parent_order_id', 'order_origin'];
+    const optional = ['shoot_location', 'feedback_status', 'revision_round', 'revision_limit', 'latest_feedback_note', 'last_feedback_at', 'last_feedback_by', 'approved_at', 'approved_by', 'parent_order_id', 'order_origin',
+      // Internal Media Request (Content→Media, add-content-to-media-order.sql)
+      'origin', 'order_kind', 'client_visible', 'source_content_task_id', 'source_content_plan_id', 'requester_role'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {
@@ -162,17 +164,18 @@
     async create(payload) {
       const s = await sb();
       if (s) {
-        const { data, error } = await s.from('orders').insert(payload).select().maybeSingle();
-        if (error) {
-          const retryPayload = stripMissingOptionalColumn(payload, error, '[store.orders.create]');
-          if (retryPayload) {
-            const retry = await s.from('orders').insert(retryPayload).select().maybeSingle();
-            if (retry.error) { console.warn('[store.orders.create]', retry.error); throw retry.error; }
-            return retry.data;
-          }
-          console.warn('[store.orders.create]', error); throw error;
+        // Loop-strip nhiều cột optional thiếu (DB chưa migrate) — vd order nội bộ
+        // có origin/order_kind/client_visible/source_content_* trước khi chạy
+        // add-content-to-media-order.sql. Giữ được các cột lõi để vẫn tạo order.
+        let p = payload;
+        for (let i = 0; i < 12; i++) {
+          const { data, error } = await s.from('orders').insert(p).select().maybeSingle();
+          if (!error) return data;
+          const reduced = stripMissingOptionalColumn(p, error, '[store.orders.create]');
+          if (!reduced) { console.warn('[store.orders.create]', error); throw error; }
+          p = reduced;
         }
-        return data;
+        throw new Error('[store.orders.create] quá nhiều cột thiếu — kiểm tra migration DB.');
       }
       // Fallback: append vào localStorage 'mh-submitted-orders'
       const list = readJSON('mh-submitted-orders', []);
@@ -720,9 +723,311 @@
     }
   };
 
+  /* =====================================================================
+     CONTENT TEAM DEEP WORKFLOW — Phase 1 Foundation (2026-06-18)
+     ---------------------------------------------------------------------
+     3 namespace mới cho Content Team mở rộng (TÁCH BIỆT bảng tasks/production):
+       contentPlans        — kế hoạch/campaign cha (kế hoạch đã ký nhiều hạng mục)
+       contentTasks        — task con giao PIC Content (cũng dùng cho Initiative độc lập)
+       contentTaskComments — revision/comment/activity của task con
+
+     Nguồn (source) của 1 Content Task:
+       client_order       — Account chuyển wording từ Client Order (giữ tương thích brief_wording_*)
+       content_initiated  — Content/Lead Content chủ động tạo Initiative
+       strategy_board     — (chuẩn bị) từ Supervisor Planning
+       campaign_package   — (chuẩn bị) từ Content Plan cha (kế hoạch đã ký)
+
+     Pattern y hệt leadTasks: localStorage là nguồn CHUNG cross-tab khi Supabase off;
+     khi Supabase enabled → query bảng thật (cần chạy add-content-initiatives.sql).
+     Bảng/migration thiếu → list() trả [] (KHÔNG crash), UI hiện empty-state.
+     ===================================================================== */
+  const CONTENT_ENUMS = {
+    SOURCES: ['client_order', 'content_initiated', 'strategy_board', 'campaign_package'],
+    SOURCES_SUPPORTED: ['client_order', 'content_initiated'],
+    PLAN_STATUSES: ['draft', 'active', 'in_progress', 'pending_review', 'at_risk', 'completed', 'archived'],
+    TASK_STATUSES: [
+      'new', 'assigned', 'pic_assigned', 'in_progress', 'submitted_to_lead', 'lead_revision',
+      'lead_approved', 'submitted_to_account', 'account_revision', 'sent_to_client',
+      'client_feedback', 'client_approved', 'media_order_created', 'completed', 'archived'
+    ],
+    OUTPUT_TYPES: [
+      'social_post', 'album_caption', 'ads_copy', 'video_script', 'voice_over', 'kv_headline',
+      'landing_copy', 'email_zalo_sms', 'internal_announcement', 'campaign_big_idea',
+      'content_package', 'other'
+    ]
+  };
+  function genId(prefix) { return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  /* ---------- CONTENT PLANS (kế hoạch/campaign cha) ---------- */
+  function readContentPlans() {
+    var ls = readJSON('mh-content-plans', null);
+    if (ls && ls.length) { window.MH_MOCK_CONTENT_PLANS = ls; return ls; }
+    return window.MH_MOCK_CONTENT_PLANS || [];
+  }
+  function writeContentPlans(list) { window.MH_MOCK_CONTENT_PLANS = list; writeJSON('mh-content-plans', list.slice(0, 200)); }
+  const contentPlans = {
+    async list(filters) {
+      const s = await sb();
+      if (s) {
+        let q = s.from('content_plans').select('*').order('created_at', { ascending: false });
+        if (filters && filters.status)     q = q.eq('status', filters.status);
+        if (filters && filters.source)     q = q.eq('source', filters.source);
+        if (filters && filters.owner_lead) q = q.eq('owner_lead', filters.owner_lead);
+        const { data, error } = await q;
+        if (error) console.warn('[store.contentPlans.list]', error);
+        return data || [];
+      }
+      return readContentPlans();
+    },
+    async get(id) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_plans').select('*').eq('id', id).maybeSingle();
+        if (error) console.warn('[store.contentPlans.get]', error);
+        return data;
+      }
+      return readContentPlans().find((p) => p.id === id) || null;
+    },
+    async create(payload) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_plans').insert(payload).select().maybeSingle();
+        if (error) { console.warn('[store.contentPlans.create]', error); throw error; }
+        return data;
+      }
+      const list = readContentPlans();
+      const row = Object.assign({ status: 'draft', progress: 0 }, payload);
+      if (!row.id) row.id = genId('cplan');
+      if (!row.created_at) row.created_at = nowIso();
+      row.updated_at = nowIso();
+      list.unshift(row);
+      writeContentPlans(list);
+      return row;
+    },
+    async update(id, patch) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_plans').update(patch).eq('id', id).select().maybeSingle();
+        if (error) { console.warn('[store.contentPlans.update]', error); throw error; }
+        return data;
+      }
+      const list = readContentPlans();
+      const idx = list.findIndex((p) => p.id === id);
+      if (idx >= 0) { list[idx] = Object.assign({}, list[idx], patch, { updated_at: nowIso() }); writeContentPlans(list); return list[idx]; }
+      return null;
+    },
+    async delete(id) {
+      const s = await sb();
+      if (s) {
+        const { error } = await s.from('content_plans').delete().eq('id', id);
+        if (error) { console.warn('[store.contentPlans.delete]', error); throw error; }
+        return true;
+      }
+      writeContentPlans(readContentPlans().filter((p) => p.id !== id));
+      return true;
+    }
+  };
+
+  /* ---------- CONTENT TASKS (task con giao PIC Content) ---------- */
+  function readContentTasks() {
+    var ls = readJSON('mh-content-tasks', null);
+    if (ls && ls.length) { window.MH_MOCK_CONTENT_TASKS = ls; return ls; }
+    return window.MH_MOCK_CONTENT_TASKS || [];
+  }
+  function writeContentTasks(list) { window.MH_MOCK_CONTENT_TASKS = list; writeJSON('mh-content-tasks', list.slice(0, 400)); }
+  const contentTasks = {
+    async list(filters) {
+      const s = await sb();
+      if (s) {
+        let q = s.from('content_tasks').select('*').order('created_at', { ascending: false });
+        if (filters && filters.content_plan_id) q = q.eq('content_plan_id', filters.content_plan_id);
+        if (filters && filters.source)          q = q.eq('source', filters.source);
+        if (filters && filters.order_id)        q = q.eq('order_id', filters.order_id);
+        if (filters && filters.status)          q = q.eq('status', filters.status);
+        if (filters && filters.assigned_pic)    q = q.eq('assigned_pic', filters.assigned_pic);
+        const { data, error } = await q;
+        if (error) console.warn('[store.contentTasks.list]', error);
+        return data || [];
+      }
+      let list = readContentTasks();
+      if (filters) {
+        if (filters.content_plan_id) list = list.filter((t) => t.content_plan_id === filters.content_plan_id);
+        if (filters.source)          list = list.filter((t) => t.source === filters.source);
+        if (filters.order_id)        list = list.filter((t) => t.order_id === filters.order_id);
+        if (filters.status)          list = list.filter((t) => t.status === filters.status);
+        if (filters.assigned_pic)    list = list.filter((t) => t.assigned_pic === filters.assigned_pic);
+      }
+      return list;
+    },
+    async get(id) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_tasks').select('*').eq('id', id).maybeSingle();
+        if (error) console.warn('[store.contentTasks.get]', error);
+        return data;
+      }
+      return readContentTasks().find((t) => t.id === id) || null;
+    },
+    byPlan(planId) { return contentTasks.list({ content_plan_id: planId }); },
+    byOrder(orderId) { return contentTasks.list({ order_id: orderId }); },
+    // assigned_pic lưu tên ('Thu Hà') hoặc uuid — match cả 2 ở fallback.
+    async byAssignedPic(picNameOrId) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_tasks').select('*').eq('assigned_pic', picNameOrId).order('created_at', { ascending: false });
+        if (error) console.warn('[store.contentTasks.byAssignedPic]', error);
+        return data || [];
+      }
+      return readContentTasks().filter((t) => t.assigned_pic === picNameOrId);
+    },
+    async create(payload) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_tasks').insert(payload).select().maybeSingle();
+        if (error) { console.warn('[store.contentTasks.create]', error); throw error; }
+        return data;
+      }
+      const list = readContentTasks();
+      const row = Object.assign({
+        status: 'new', source: 'content_initiated', output_types: [], supporters: [],
+        internal_revision_count: 0, need_media_production: false, media_request_created: false
+      }, payload);
+      if (!row.id) row.id = genId('ctask');
+      if (!row.created_at) row.created_at = nowIso();
+      row.updated_at = nowIso();
+      list.unshift(row);
+      writeContentTasks(list);
+      return row;
+    },
+    async update(id, patch) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_tasks').update(patch).eq('id', id).select().maybeSingle();
+        if (error) { console.warn('[store.contentTasks.update]', error); throw error; }
+        return data;
+      }
+      const list = readContentTasks();
+      const idx = list.findIndex((t) => t.id === id);
+      if (idx >= 0) { list[idx] = Object.assign({}, list[idx], patch, { updated_at: nowIso() }); writeContentTasks(list); return list[idx]; }
+      return null;
+    },
+    async delete(id) {
+      const s = await sb();
+      if (s) {
+        const { error } = await s.from('content_tasks').delete().eq('id', id);
+        if (error) { console.warn('[store.contentTasks.delete]', error); throw error; }
+        return true;
+      }
+      writeContentTasks(readContentTasks().filter((t) => t.id !== id));
+      return true;
+    }
+  };
+
+  /* ---------- CONTENT TASK COMMENTS (revision + comment + activity) ----------
+     kind: 'comment' (trao đổi) | 'revision' (Lead trả chỉnh) | 'status' | 'system'.
+     Fallback localStorage `mh-content-task-comments` (1 mảng phẳng, lọc theo content_task_id). */
+  const contentTaskComments = {
+    async byTask(taskId) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('content_task_comments').select('*').eq('content_task_id', taskId).order('created_at', { ascending: true });
+        if (error) console.warn('[store.contentTaskComments.byTask]', error);
+        return data || [];
+      }
+      return readJSON('mh-content-task-comments', []).filter((c) => c.content_task_id === taskId);
+    },
+    async add(taskId, comment) {
+      const s = await sb();
+      const row = Object.assign({ content_task_id: taskId, kind: 'comment', created_at: nowIso() }, comment);
+      if (s) {
+        const me = await users.me();
+        if (me && !row.author_id) row.author_id = me.id;
+        const { data, error } = await s.from('content_task_comments').insert(row).select().maybeSingle();
+        if (error) { console.warn('[store.contentTaskComments.add]', error); throw error; }
+        return data;
+      }
+      if (!row.id) row.id = genId('ctc');
+      const list = readJSON('mh-content-task-comments', []);
+      list.push(row);
+      writeJSON('mh-content-task-comments', list.slice(-800));
+      return row;
+    }
+  };
+
+  /* ---------- SEED demo tối thiểu (chỉ fallback, chạy 1 lần) ----------
+     Phase 1 acceptance: 1 Content Plan có 5 task con + 1 Initiative độc lập +
+     1 task từ Client Order. Guard bằng flag `mh-content-seed-v1` → user xóa data
+     KHÔNG bị seed lại. KHÔNG đụng nếu localStorage đã có data từ trước. */
+  function seedContentDemo() {
+    try {
+      if (localStorage.getItem('mh-content-seed-v1')) return;
+      const hasPlans = (readJSON('mh-content-plans', []) || []).length > 0;
+      const hasTasks = (readJSON('mh-content-tasks', []) || []).length > 0;
+      if (hasPlans || hasTasks) { localStorage.setItem('mh-content-seed-v1', '1'); return; }
+
+      const t0 = Date.now();
+      const iso = (offsetDays) => new Date(t0 + offsetDays * 86400000).toISOString();
+      const planId = 'cplan-demo-khaitruong';
+      const plan = {
+        id: planId, title: 'Kế hoạch Khai trương CB Centres Q3',
+        description: 'Kế hoạch đã ký — gói nội dung khai trương chi nhánh mới, nhiều hạng mục.',
+        source: 'campaign_package', origin: 'signed_plan',
+        campaign_name: 'Khai trương Q3', objective: 'Tăng nhận diện + thu hút khách check-in tuần khai trương',
+        channels: ['facebook', 'tiktok', 'landing'], target_audience: 'Khách hàng khu vực mới, 22–40 tuổi',
+        key_message: 'CB Centres — không gian sáng tạo gần bạn hơn',
+        cta: 'Ghé thăm & nhận ưu đãi khai trương', plan_deadline: iso(14),
+        owner_lead: 'Lead Content', status: 'in_progress', progress: 20,
+        attachment_url: '', attachment_path: '', attachment_name: 'KH_KhaiTruong_Q3.pdf',
+        created_by: 'Lead Content', created_at: iso(-3), updated_at: iso(-1)
+      };
+      const mk = (n, title, outs, pic, status, dlDays, rev) => ({
+        id: 'ctask-demo-' + n, content_plan_id: planId, source: 'campaign_package',
+        order_id: null, parent_content_task_id: null, title: title, brief: title + ' — theo gói khai trương.',
+        output_types: outs, assigned_pic: pic, supporters: [], wording_deadline: iso(dlDays),
+        priority: 'normal', status: status, lead_review_status: status === 'lead_approved' ? 'approved' : 'pending',
+        internal_revision_count: rev || 0, need_media_production: outs.indexOf('kv_headline') >= 0 || outs.indexOf('video_script') >= 0,
+        media_request_created: false, media_order_id: null,
+        created_by: 'Lead Content', created_at: iso(-2), updated_at: iso(-1)
+      });
+      const childTasks = [
+        mk('social', 'Bài social khai trương (chuỗi 3 post)', ['social_post'], 'Thu Hà', 'in_progress', 5, 0),
+        mk('caption', 'Caption album ảnh không gian mới', ['album_caption'], 'Minh Anh', 'submitted_to_lead', 6, 1),
+        mk('script', 'Kịch bản video teaser 30s', ['video_script', 'voice_over'], 'Thu Hà', 'pic_assigned', 7, 0),
+        mk('kv', 'Headline KV khai trương', ['kv_headline'], 'Bảo Trân', 'lead_approved', 4, 2),
+        mk('landing', 'Nội dung landing page ưu đãi', ['landing_copy', 'ads_copy'], 'Minh Anh', 'assigned', 9, 0)
+      ];
+      const initiative = {
+        id: 'ctask-demo-initiative', content_plan_id: null, source: 'content_initiated',
+        order_id: null, parent_content_task_id: null,
+        title: 'Series "Tip chăm sóc khách hàng" (chủ động)',
+        brief: 'Content chủ động đề xuất series nội dung nuôi dưỡng cộng đồng, có thể cần Media làm KV.',
+        output_types: ['social_post', 'campaign_big_idea'], assigned_pic: 'Bảo Trân', supporters: [],
+        wording_deadline: iso(10), priority: 'low', status: 'in_progress', lead_review_status: 'pending',
+        internal_revision_count: 0, need_media_production: true, media_request_created: false, media_order_id: null,
+        created_by: 'Content', created_at: iso(-1), updated_at: iso(0)
+      };
+      const fromOrder = {
+        id: 'ctask-demo-order', content_plan_id: null, source: 'client_order',
+        order_id: 'MEDIA-240615', parent_content_task_id: null,
+        title: 'Wording bài giới thiệu dịch vụ (từ Client Order)',
+        brief: 'Account chuyển wording từ đơn khách — viết bài giới thiệu gói dịch vụ mới.',
+        output_types: ['social_post', 'ads_copy'], assigned_pic: 'Thu Hà', supporters: [],
+        wording_deadline: iso(3), priority: 'high', status: 'submitted_to_account', lead_review_status: 'approved',
+        internal_revision_count: 1, need_media_production: false, media_request_created: false, media_order_id: null,
+        created_by: 'Account', created_at: iso(-4), updated_at: iso(-1)
+      };
+
+      writeContentPlans([plan]);
+      writeContentTasks(childTasks.concat([initiative, fromOrder]));
+      localStorage.setItem('mh-content-seed-v1', '1');
+    } catch (e) { /* localStorage không khả dụng → bỏ qua seed */ }
+  }
+  seedContentDemo();
+
   /* ---------- Expose ---------- */
   window.MH.store = {
     users, orders, tasks, taskComments, deliveries, aiUsage, chatbot, files, notifications, auth, activity, leadTasks, leadTaskComments,
+    contentPlans, contentTasks, contentTaskComments, contentEnums: CONTENT_ENUMS,
     isRemote: function () { return !!window.MH.supabaseEnabled; }
   };
 })();

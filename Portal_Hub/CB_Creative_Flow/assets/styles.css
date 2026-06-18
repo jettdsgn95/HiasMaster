@@ -6400,6 +6400,70 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
   .ctm-board { grid-template-columns: repeat(7, 240px); }
 }
 
+/* ── Phase 2: Content Plans + Initiatives ───────────────────────────── */
+.ctm-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); flex-wrap: wrap; }
+.ctm-section-title { margin: 0; font-size: var(--text-lg); }
+
+/* Progress bar (list cell + drawer lg) */
+.ctm-progress { display: inline-block; vertical-align: middle; width: 84px; height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-right: 6px; }
+.ctm-progress > i { display: block; height: 100%; border-radius: 999px; background: var(--grad-navy); transition: width .3s; }
+.ctm-progress.lg { display: block; width: 100%; height: 10px; margin: 0 0 12px; }
+
+/* Plan status badge */
+.ctm-plan-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: var(--text-xs); font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); white-space: nowrap; }
+.ctm-plan-badge.ps--draft { color: var(--text-muted); }
+.ctm-plan-badge.ps--active { color: #1D4ED8; border-color: rgba(29,78,216,.35); background: rgba(29,78,216,.08); }
+.ctm-plan-badge.ps--in_progress { color: #6B21A8; border-color: rgba(107,33,168,.35); background: rgba(107,33,168,.08); }
+.ctm-plan-badge.ps--pending_review { color: #0E7490; border-color: rgba(14,116,144,.35); background: rgba(14,116,144,.08); }
+.ctm-plan-badge.ps--at_risk { color: var(--danger); border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.08); }
+.ctm-plan-badge.ps--completed { color: var(--success); border-color: rgba(16,163,74,.35); background: rgba(16,163,74,.08); }
+.ctm-plan-badge.ps--archived { color: var(--text-subtle); }
+
+/* Progress summary grid (plan drawer) */
+.ctm-sum-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.ctm-sum { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+.ctm-sum > b { font-size: var(--text-lg); font-weight: 700; color: var(--brand-600); }
+.ctm-sum > span { font-size: 11px; color: var(--text-muted); text-align: center; }
+.ctm-sum.is-danger > b { color: var(--danger); }
+
+/* Output-type checkbox chips */
+.ctm-chk-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.ctm-chk-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: var(--text-xs); cursor: pointer; user-select: none; transition: border-color .15s, background .15s; }
+.ctm-chk-chip:hover { border-color: var(--brand-600); }
+.ctm-chk-chip input { accent-color: var(--brand-600); margin: 0; }
+.ctm-chk-chip:has(input:checked) { border-color: var(--brand-600); background: rgba(25,25,112,.07); color: var(--brand-600); font-weight: 600; }
+
+/* Plan / Task drawers stack trên drawer wording (z-modal=100); dưới toast (1000) */
+.ctm-plan-drawer, .ctm-task-drawer { z-index: 120; }
+#ctm-plan-backdrop, #ctm-task-backdrop { z-index: 115; }
+.ctm-task-drawer, .ctask-drawer { width: min(640px, calc(100% - 40px)); }
+
+/* Phase 4 — Lead Review read-only blocks */
+.ctm-draft-field { padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.ctm-draft-field:last-child { border-bottom: 0; }
+.ctm-draft-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 2px; }
+.ctm-draft-val { font-size: var(--text-sm); color: var(--text); }
+.ctm-chk-readonly { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ctm-chk-readonly li { font-size: var(--text-sm); color: var(--text-muted); }
+.ctm-chk-readonly li.is-on { color: var(--success); }
+.ctm-review { border-left: 3px solid var(--brand-600); }
+
+/* Phase 5 — Internal Media Request badge (Database Orders drawer) */
+.ctm-internal-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; color: #6B21A8; background: rgba(107,33,168,.1); border: 1px solid rgba(107,33,168,.35); white-space: nowrap; }
+
+/* Generic modal (reuse production-board task-modal pattern, định nghĩa global) */
+.task-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.96); width: min(560px, 92vw); max-height: 90vh; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 16px); box-shadow: 0 24px 80px rgba(0,0,0,0.28); z-index: 160; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; }
+.task-modal.is-open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+.task-modal-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4); border-bottom: 1px solid var(--border); }
+.task-modal-head h3 { margin: 0; font-size: var(--text-lg); }
+.task-modal-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.task-modal-foot { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: var(--space-2); }
+#ctm-modal-backdrop { z-index: 155; }
+
+@media (max-width: 720px) {
+  .ctm-sum-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* =====================================================================
    SUPERVISOR PLANNING (supervisor-planning.html) — .sp-* / .lt-*
    Kế hoạch nội bộ Supervisor → Lead Media / Lead Content. Tái dùng

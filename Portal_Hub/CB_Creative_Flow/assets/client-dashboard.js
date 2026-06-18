@@ -195,6 +195,10 @@ async function loadClientOrdersFromStore() {
       remote = await window.MH.store.orders.list({ requester_email: user.email });
     }
     if (!Array.isArray(remote)) remote = [];
+    // Guard Phase 5: KHÔNG lộ Internal Media Request (order nội bộ Content→Media) cho Client.
+    remote = remote.filter(function (o) {
+      return !(o.client_visible === false || o.order_kind === 'internal_media_request' || o.origin === 'content_team');
+    });
     // Always replace khi Supabase enabled (kể cả empty) — DB là source of truth.
 
     const TYPE_LABEL = { design: 'Thiết kế', digital: 'Digital', video: 'Video', motion: 'Motion', media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide' };

@@ -545,6 +545,400 @@
     ORDERS.forEach(function (o) { if (o.department && !seen[o.department]) { seen[o.department] = 1; const op = document.createElement('option'); op.value = o.department; op.textContent = o.department; fd.appendChild(op); } });
   }
 
+  /* ===================================================================
+     PHASE 3 — CONTENT TASKS (PIC Workbench, model content_tasks)
+     View riêng "Content Tasks của tôi" — TÁCH BIỆT bảng order-wording trên.
+     PIC: đọc brief → viết multi-output → ghi Missing Info → tick checklist
+        → Gửi Lead Content duyệt. KHÔNG bypass Lead (không gửi Account/Client/Media).
+     =================================================================== */
+  const ENUMS = (window.MH && window.MH.store && window.MH.store.contentEnums) || { OUTPUT_TYPES: ['social_post', 'album_caption', 'ads_copy', 'video_script', 'voice_over', 'kv_headline', 'landing_copy', 'email_zalo_sms', 'internal_announcement', 'campaign_big_idea', 'content_package', 'other'] };
+  const OUTPUT_LABEL = {
+    social_post: 'Social post', album_caption: 'Album caption', ads_copy: 'Ads copy', video_script: 'Video script',
+    voice_over: 'Voice-over', kv_headline: 'KV headline', landing_copy: 'Landing copy', email_zalo_sms: 'Email/Zalo/SMS',
+    internal_announcement: 'Thông báo nội bộ', campaign_big_idea: 'Big idea', content_package: 'Content package', other: 'Khác'
+  };
+  const CT_STATUS = {
+    new: 'Mới', assigned: 'Chờ phân công', pic_assigned: 'Đã gán PIC', in_progress: 'Đang viết',
+    submitted_to_lead: 'Chờ Lead duyệt', lead_revision: 'Lead trả chỉnh', lead_approved: 'Lead đã duyệt',
+    submitted_to_account: 'Chờ Account', account_revision: 'Account trả chỉnh', sent_to_client: 'Chờ Client',
+    client_feedback: 'Client phản hồi', client_approved: 'Client duyệt', media_order_created: 'Đã tạo Media Request',
+    completed: 'Hoàn tất', archived: 'Lưu trữ'
+  };
+  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Chủ động', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký' };
+  const PRIO_VI = { low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp', critical: 'Rất gấp' };
+  // Mỗi output_type → các field workspace (map vào cột content_tasks).
+  const OUTPUT_FIELDS = {
+    social_post: ['draft_body', 'cta', 'mandatory_info'],
+    album_caption: ['caption', 'cta'],
+    ads_copy: ['ads_primary_text', 'ads_headline', 'cta'],
+    video_script: ['script', 'voice_over', 'cta', 'visual_direction'],
+    voice_over: ['voice_over'],
+    kv_headline: ['headline', 'subheadline', 'cta', 'mandatory_info', 'visual_direction'],
+    landing_copy: ['landing_copy', 'headline', 'subheadline', 'cta'],
+    email_zalo_sms: ['email_sms_zalo_copy', 'cta'],
+    internal_announcement: ['draft_body'],
+    campaign_big_idea: ['draft_body', 'visual_direction'],
+    content_package: ['draft_body', 'cta', 'mandatory_info'],
+    other: ['draft_body']
+  };
+  const FIELD_META = {
+    draft_body: { label: 'Nội dung chính / Body', rows: 4 },
+    caption: { label: 'Caption', rows: 3 },
+    headline: { label: 'Headline', rows: 1 },
+    subheadline: { label: 'Subheadline', rows: 1 },
+    script: { label: 'Kịch bản / Scene breakdown', rows: 5 },
+    voice_over: { label: 'Voice-over', rows: 3 },
+    ads_primary_text: { label: 'Ads — Primary text', rows: 3 },
+    ads_headline: { label: 'Ads — Headline', rows: 1 },
+    landing_copy: { label: 'Landing copy', rows: 5 },
+    email_sms_zalo_copy: { label: 'Email / Zalo / SMS copy', rows: 3 },
+    cta: { label: 'CTA', rows: 1 },
+    mandatory_info: { label: 'Thông tin bắt buộc', rows: 2 },
+    visual_direction: { label: 'Định hướng hình ảnh', rows: 2 }
+  };
+  const CT_CHECKLIST = [
+    { k: 'goal', label: 'Đúng mục tiêu nội dung' },
+    { k: 'audience', label: 'Đúng đối tượng' },
+    { k: 'tone', label: 'Đúng tone CB' },
+    { k: 'message', label: 'Thông điệp rõ ràng' },
+    { k: 'cta', label: 'CTA rõ' },
+    { k: 'info', label: 'Thông tin bắt buộc đủ' },
+    { k: 'spelling', label: 'Không lỗi chính tả' },
+    { k: 'format', label: 'Format phù hợp kênh sử dụng' },
+    { k: 'assumptions', label: 'Đã ghi assumptions nếu thiếu thông tin' }
+  ];
+  const HANDOFF_FIELDS = [
+    { k: 'final_headline', label: 'Final headline', rows: 1 },
+    { k: 'final_body_or_script', label: 'Final body / script', rows: 4 },
+    { k: 'handoff_mandatory_info', label: 'Thông tin bắt buộc', rows: 2 },
+    { k: 'handoff_visual_direction', label: 'Định hướng hình ảnh', rows: 2 },
+    { k: 'format_size', label: 'Format / Size', rows: 1 },
+    { k: 'channel', label: 'Kênh đăng', rows: 1 }
+  ];
+  const CT_EDITABLE_STATUS = ['new', 'assigned', 'pic_assigned', 'in_progress', 'lead_revision', 'account_revision', 'client_feedback'];
+  const CT_SUBMITTABLE = ['pic_assigned', 'in_progress', 'lead_revision'];
+  const CT_DONE = ['lead_approved', 'submitted_to_account', 'sent_to_client', 'client_approved', 'completed', 'media_order_created'];
+
+  function isMine(name) {
+    if (!name || !user.name) return false;
+    const a = String(name).trim().toLowerCase(), b = String(user.name).trim().toLowerCase();
+    if (a === b) return true;
+    return new RegExp('(^|\\s)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\s|$)').test(b)
+      || new RegExp('(^|\\s)' + b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\s|$)').test(a);
+  }
+  function parseDt(s) { if (!s) return null; s = String(s); const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z'); return isNaN(d.getTime()) ? null : d; }
+  function ctOverdue(t) { if (!t || !t.wording_deadline) return false; if (CT_DONE.indexOf(t.status) >= 0 || t.status === 'archived') return false; const d = parseDt(t.wording_deadline); return !!d && d.getTime() < Date.now(); }
+  function arrayOf(a) { return Array.isArray(a) ? a : (a ? [a] : []); }
+  function parseJson(s, fb) { if (s && typeof s === 'object') return s; try { return JSON.parse(s || '') || fb; } catch (e) { return fb; } }
+  function outputChips(types) { types = arrayOf(types); return types.length ? types.map(function (k) { return '<span class="chip-mini">' + esc(OUTPUT_LABEL[k] || k) + '</span>'; }).join('') : '<em class="muted">—</em>'; }
+  function canEditTask(t) {
+    if (!t || CT_EDITABLE_STATUS.indexOf(t.status) < 0) return false;
+    if (isAdmin) return true;
+    if (isContent) return isMine(t.assigned_pic);
+    return false; // account / lead_content / supervisor: read-only ở Wording
+  }
+  function workspaceFields(t) {
+    const types = (Array.isArray(t.output_types) && t.output_types.length) ? t.output_types : ['other'];
+    const out = []; const seen = {};
+    types.forEach(function (ty) { (OUTPUT_FIELDS[ty] || OUTPUT_FIELDS.other).forEach(function (f) { if (!seen[f]) { seen[f] = 1; out.push(f); } }); });
+    return out;
+  }
+
+  /* ---------- State (tasks) ---------- */
+  let TASKS = [];
+  let CONTENT_PLANS = [];
+  let currentTask = null;
+  let cwbView = isContent ? 'tasks' : 'orders';
+  let taskSub = 'all';
+  const TFILTERS = { search: '', output: '' };
+
+  /* ---------- Data load (tasks) ---------- */
+  async function loadTasks() {
+    try {
+      if (window.MH && window.MH.supabaseEnabled) await window.MH.supabaseReady;
+      if (window.MH && window.MH.store && window.MH.store.contentTasks) {
+        const all = (await window.MH.store.contentTasks.list()) || [];
+        // PIC content chỉ thấy task được gán cho mình; admin/lead/account/supervisor xem tất cả (follow).
+        TASKS = isContent ? all.filter(function (t) { return isMine(t.assigned_pic); }) : all;
+        CONTENT_PLANS = (await window.MH.store.contentPlans.list()) || [];
+      }
+    } catch (e) { console.warn('[cwb] load tasks failed:', e); }
+    renderCwbTabs(); renderTaskStats(); renderTasks();
+    if (currentTask) { const t = TASKS.find(function (x) { return x.id === currentTask.id; }); if (t) currentTask = t; }
+  }
+  function planOf(t) { return t.content_plan_id ? CONTENT_PLANS.find(function (p) { return p.id === t.content_plan_id; }) : null; }
+
+  /* ---------- View tabs ---------- */
+  function renderCwbTabs() {
+    document.querySelectorAll('#cwb-tabs [data-cwb-view]').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-cwb-view') === cwbView); });
+    const vo = document.getElementById('cwb-view-orders'); if (vo) vo.hidden = cwbView !== 'orders';
+    const vt = document.getElementById('cwb-view-tasks'); if (vt) vt.hidden = cwbView !== 'tasks';
+    const co = document.getElementById('cwb-count-orders'); if (co) co.textContent = ORDERS.length;
+    const ct = document.getElementById('cwb-count-tasks'); if (ct) ct.textContent = TASKS.length;
+  }
+  function subMatch(t, sub) {
+    const s = t.status;
+    if (sub === 'writing') return ['pic_assigned', 'in_progress'].indexOf(s) >= 0;
+    if (sub === 'revision') return ['lead_revision', 'account_revision', 'client_feedback'].indexOf(s) >= 0;
+    if (sub === 'submitted') return s === 'submitted_to_lead';
+    if (sub === 'approved') return CT_DONE.indexOf(s) >= 0;
+    return true; // all
+  }
+  function renderTaskStats() {
+    const cards = [
+      { k: 'all', label: 'Tổng task', color: '#191970' },
+      { k: 'writing', label: 'Đang viết', color: '#1D4ED8' },
+      { k: 'revision', label: 'Cần chỉnh', color: '#B07600' },
+      { k: 'submitted', label: 'Đã gửi Lead', color: '#6B21A8' },
+      { k: 'approved', label: 'Đã duyệt', color: '#0A7A52' },
+      { k: 'overdue', label: 'Trễ hạn', color: '#BA110F' }
+    ];
+    const el = document.getElementById('cwbt-stats'); if (!el) return;
+    el.innerHTML = cards.map(function (c) {
+      const val = c.k === 'overdue' ? TASKS.filter(ctOverdue).length : (c.k === 'all' ? TASKS.length : TASKS.filter(function (t) { return subMatch(t, c.k); }).length);
+      return '<div class="cwb-stat" style="border-top-color:' + c.color + '"><div class="cwb-stat-val" style="color:' + c.color + '">' + val + '</div><div class="cwb-stat-label">' + c.label + '</div></div>';
+    }).join('');
+    ['all', 'writing', 'revision', 'submitted', 'approved'].forEach(function (k) {
+      const c = document.getElementById('cwbt-c-' + k); if (c) c.textContent = k === 'all' ? TASKS.length : TASKS.filter(function (t) { return subMatch(t, k); }).length;
+    });
+  }
+  function renderTasks() {
+    const tb = document.getElementById('cwbt-tbody'); if (!tb) return;
+    document.querySelectorAll('#cwbt-subtabs [data-cwbt-sub]').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-cwbt-sub') === taskSub); });
+    const q = TFILTERS.search.toLowerCase();
+    let list = TASKS.filter(function (t) { return subMatch(t, taskSub); });
+    if (TFILTERS.output) list = list.filter(function (t) { return arrayOf(t.output_types).indexOf(TFILTERS.output) >= 0; });
+    if (q) list = list.filter(function (t) { const p = planOf(t); return ((t.title || '') + ' ' + (p ? p.title + ' ' + (p.campaign_name || '') : '')).toLowerCase().indexOf(q) >= 0; });
+    document.getElementById('cwbt-info').innerHTML = 'Hiển thị <strong>' + list.length + '</strong> / ' + TASKS.length + ' content task';
+    // rebuild output filter options
+    const fo = document.getElementById('cwbt-filter-output'); const cur = fo.value; const seen = {};
+    fo.innerHTML = '<option value="">Mọi loại output</option>';
+    TASKS.forEach(function (t) { arrayOf(t.output_types).forEach(function (o) { if (!seen[o]) { seen[o] = 1; const op = document.createElement('option'); op.value = o; op.textContent = OUTPUT_LABEL[o] || o; fo.appendChild(op); } }); });
+    fo.value = cur;
+    tb.innerHTML = list.length ? list.map(function (t) {
+      const p = planOf(t); const overdue = ctOverdue(t);
+      return '<tr data-ctask="' + esc(t.id) + '">'
+        + '<td><b>' + esc(t.title || '—') + '</b></td>'
+        + '<td><span class="text-xs">' + (p ? esc(p.title) : esc(SOURCE_LABEL[t.source] || t.source || '—')) + '</span></td>'
+        + '<td>' + outputChips(t.output_types) + '</td>'
+        + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
+        + '<td><span class="priority-pill p--' + (t.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_VI[t.priority] || t.priority || '—') + '</span></td>'
+        + '<td><span class="text-xs">' + (t.internal_revision_count || 0) + '</span></td>'
+        + '<td><span class="text-xs">' + (t.need_media_production ? '<span class="chip-mini">Cần</span>' : '—') + '</span></td>'
+        + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(CT_STATUS[t.status] || t.status) + '</span></td>'
+        + '<td><button class="btn btn-secondary btn-sm" data-ctask-open="' + esc(t.id) + '">Mở</button></td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text-muted)">' + (isContent ? 'Bạn chưa được gán content task nào.' : 'Chưa có content task.') + '</td></tr>';
+  }
+
+  /* ---------- Content Task Drawer ---------- */
+  function pushTaskActivity(taskId, text) {
+    const c = loadCache(); const key = 'task:' + taskId; const e = c[key] || (c[key] = {}); e.activity = e.activity || [];
+    e.activity.push({ text: text, by: user.name || user.role, at: new Date().toISOString() }); saveCache(c);
+  }
+  function buildTaskActions(t) {
+    const btns = [];
+    if (canEditTask(t)) {
+      if (CT_SUBMITTABLE.indexOf(t.status) >= 0 || t.status === 'pic_assigned')
+        btns.push('<button class="btn btn-secondary btn-sm" id="wt-start">' + (t.status === 'lead_revision' ? 'Chỉnh theo Lead' : (t.status === 'pic_assigned' ? 'Bắt đầu viết' : 'Tiếp tục viết')) + '</button>');
+      btns.push('<button class="btn btn-secondary btn-sm" id="wt-save">Lưu nháp</button>');
+      btns.push('<button class="btn btn-primary btn-sm" id="wt-submit">Gửi Lead Content duyệt</button>');
+    } else if (isContent && t.status === 'submitted_to_lead' && isMine(t.assigned_pic)) {
+      btns.push('<span class="wf-wait-tag">Đã gửi Lead — chờ duyệt</span>');
+    }
+    return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div></div>' : '';
+  }
+  function buildTaskBody(t) {
+    const editable = canEditTask(t);
+    const ro = editable ? '' : 'readonly';
+    const v = function (x) { return x ? esc(x) : '<em class="muted">—</em>'; };
+    const p = planOf(t);
+    const cl = parseJson(t.quality_checklist, {});
+    const overdue = ctOverdue(t);
+
+    // 1. Summary + 2. Brief + 3. Output requirements
+    const summary = '<section class="drawer-block cwb-snapshot"><div class="drawer-block-head"><span class="block-letter">B</span><h4>Task Summary &amp; Brief</h4></div><dl>'
+      + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[t.source] || t.source) + (t.order_id ? ' · Order ' + esc(t.order_id) : '') + (p ? ' · Plan: ' + esc(p.title) : '') + '</dd>'
+      + '<dt>Output yêu cầu</dt><dd>' + outputChips(t.output_types) + '</dd>'
+      + '<dt>Brief</dt><dd style="white-space:pre-wrap">' + v(t.brief) + '</dd>'
+      + (p ? '<dt>Key message (Plan)</dt><dd>' + v(p.key_message) + '</dd><dt>Đối tượng (Plan)</dt><dd>' + v(p.target_audience) + '</dd>' : '')
+      + '<dt>Hạn wording</dt><dd>' + (t.wording_deadline ? '<span class="' + (overdue ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.wording_deadline)) + '</span>' + (overdue ? ' · ⚠ trễ' : '') : '<em class="muted">—</em>') + '</dd>'
+      + '<dt>Vòng sửa nội bộ</dt><dd>' + (t.internal_revision_count || 0) + '</dd>'
+      + '</dl></section>';
+
+    // Lead revision callout
+    const revisionNote = (t.status === 'lead_revision' && (t.lead_review_note || t.last_revision_reason))
+      ? '<div class="dw-callout dw--warning" style="margin:0 0 var(--space-3)"><p><b>Lead yêu cầu chỉnh:</b> ' + esc(t.lead_review_note || t.last_revision_reason) + '</p></div>' : '';
+
+    // 4. Missing Info / Assumptions
+    const missing = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">!</span><h4>Missing Info / Assumptions</h4></div>'
+      + '<p class="text-xs muted" style="margin:0 0 8px">Brief thiếu vẫn xử lý tiếp — ghi lại để Lead nắm (KHÔNG block gửi duyệt).</p>'
+      + '<div class="field"><label class="label">Thông tin còn thiếu</label><textarea class="textarea cwbt-field" id="wt-missing_info_notes" rows="2" ' + ro + ' placeholder="...">' + esc(t.missing_info_notes || '') + '</textarea></div>'
+      + '<div class="field"><label class="label">Giả định khi triển khai</label><textarea class="textarea cwbt-field" id="wt-assumptions" rows="2" ' + ro + ' placeholder="...">' + esc(t.assumptions || '') + '</textarea></div>'
+      + '<div class="field"><label class="label">Câu hỏi cần xác nhận</label><textarea class="textarea cwbt-field" id="wt-questions_for_account_client" rows="2" ' + ro + ' placeholder="...">' + esc(t.questions_for_account_client || '') + '</textarea></div>'
+      + '<div class="field"><label class="label">Rủi ro nội dung</label><textarea class="textarea cwbt-field" id="wt-risk_notes" rows="2" ' + ro + ' placeholder="...">' + esc(t.risk_notes || '') + '</textarea></div>'
+      + '</section>';
+
+    // 5. Writing Workspace (multi-output)
+    const wfFields = workspaceFields(t).map(function (k) {
+      const m = FIELD_META[k] || { label: k, rows: 2 };
+      return '<div class="field"><label class="label">' + esc(m.label) + '</label><textarea class="textarea cwbt-field" id="wt-ws-' + k + '" rows="' + m.rows + '" ' + ro + ' placeholder="...">' + esc(t[k] || '') + '</textarea></div>';
+    }).join('');
+    const workspace = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">W</span><h4>Writing Workspace</h4></div>'
+      + (editable ? '' : '<p class="text-xs muted" style="margin:0 0 8px">Chế độ chỉ đọc — chỉ PIC được gán (hoặc Admin) chỉnh khi task đang ở pha Content.</p>')
+      + '<div class="field"><label class="label">Tiêu đề bản thảo</label><input class="input cwbt-field" id="wt-ws-draft_title" ' + ro + ' value="' + esc(t.draft_title || '') + '" placeholder="Tiêu đề nội dung..." /></div>'
+      + wfFields + '</section>';
+
+    // 6. Production Handoff Draft (chỉ khi cần Media)
+    const handoff = t.need_media_production ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">H</span><h4>Production Handoff Draft</h4></div>'
+      + '<p class="text-xs muted" style="margin:0 0 8px">Task cần Media — chuẩn bị gói bàn giao (Lead hoàn thiện & tạo Media Request ở Phase 5).</p>'
+      + HANDOFF_FIELDS.map(function (f) { return '<div class="field"><label class="label">' + esc(f.label) + '</label><textarea class="textarea cwbt-field" id="wt-' + f.k + '" rows="' + f.rows + '" ' + ro + ' placeholder="...">' + esc(t[f.k] || '') + '</textarea></div>'; }).join('')
+      + '</section>' : '';
+
+    // 7. Quality Checklist
+    const clHtml = CT_CHECKLIST.map(function (c) {
+      return '<label class="checkbox"><input type="checkbox" class="cwbt-check" id="wtcl-' + c.k + '" ' + (cl[c.k] ? 'checked' : '') + ' ' + (editable ? '' : 'disabled') + ' /><div><span class="checkbox-text">' + c.label + '</span></div></label>';
+    }).join('');
+    const checklist = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Quality Checklist</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>'
+      + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Tích đủ checklist + ít nhất 1 ô nội dung trước khi "Gửi Lead Content duyệt".</p>' : '') + '</section>';
+
+    // 8. Files/Links
+    const links = arrayOf(t.asset_links);
+    const filesHtml = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">F</span><h4>Files / Links</h4></div>'
+      + '<div class="field"><label class="label">Asset links (phân cách bằng dấu phẩy)</label><input class="input cwbt-field" id="wt-asset_links" ' + ro + ' value="' + esc(links.join(', ')) + '" placeholder="https://..., https://..." /></div>'
+      + (links.length ? '<div class="row" style="flex-wrap:wrap;gap:6px">' + links.map(function (u) { return '<a class="btn btn-secondary btn-sm" href="' + esc(u) + '" target="_blank" rel="noopener">Mở link</a>'; }).join('') + '</div>' : '')
+      + '</section>';
+
+    // 9. Activity / Revision History
+    const rev = arrayOf(t.revision_history);
+    const revHtml = rev.length ? '<ul class="activity-mini">' + rev.slice().reverse().map(function (r) { return '<li><span><b>Vòng ' + esc(r.round || '') + ':</b> ' + esc(r.reason || r.note || '') + ' — <b>' + esc(r.by || '') + '</b></span><time>' + fmtDT(r.at) + '</time></li>'; }).join('') + '</ul>' : '';
+    const acts = ((loadCache()['task:' + t.id] || {}).activity || []).slice(-10).reverse();
+    const actHtml = acts.length ? acts.map(function (a) { return '<li><span>' + esc(a.text) + ' — <b>' + esc(a.by) + '</b></span><time>' + fmtDT(a.at) + '</time></li>'; }).join('') : '<li><span class="muted">Chưa có hoạt động.</span></li>';
+    const activity = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">A</span><h4>Activity / Revision History</h4></div>' + revHtml + '<ul class="activity-mini">' + actHtml + '</ul></section>';
+
+    return revisionNote + summary + missing + workspace + handoff + checklist + filesHtml + activity;
+  }
+  function openTaskDrawer(t) {
+    currentTask = t;
+    document.getElementById('ctask-d-source').textContent = (SOURCE_LABEL[t.source] || 'TASK').toUpperCase();
+    document.getElementById('ctask-d-title').textContent = t.title || '—';
+    const st = document.getElementById('ctask-d-status'); st.className = 'tb-status s--wording'; st.style.display = 'inline-flex'; st.style.alignItems = 'center'; st.style.gap = '4px'; st.innerHTML = '<span class="dot"></span>' + (CT_STATUS[t.status] || t.status);
+    const pr = document.getElementById('ctask-d-priority'); pr.className = 'priority-pill p--' + (t.priority || 'normal'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_VI[t.priority] || t.priority || '—');
+    document.getElementById('ctask-d-round').textContent = 'Vòng ' + (t.internal_revision_count || 0);
+    document.getElementById('ctask-drawer-actions').innerHTML = buildTaskActions(t);
+    document.getElementById('ctask-drawer-body').innerHTML = buildTaskBody(t);
+    wireTaskDrawer();
+    const dr = document.getElementById('ctask-drawer'); dr.classList.add('is-open'); dr.setAttribute('aria-hidden', 'false');
+    document.getElementById('ctask-drawer-backdrop').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeTaskDrawer() {
+    currentTask = null;
+    const dr = document.getElementById('ctask-drawer'); dr.classList.remove('is-open'); dr.setAttribute('aria-hidden', 'true');
+    document.getElementById('ctask-drawer-backdrop').classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  function collectTaskForm() {
+    const data = {};
+    // workspace discrete columns
+    ['draft_title', 'draft_body', 'caption', 'headline', 'subheadline', 'script', 'voice_over', 'ads_primary_text', 'ads_headline', 'landing_copy', 'email_sms_zalo_copy', 'cta', 'mandatory_info', 'visual_direction'].forEach(function (k) {
+      const el = document.getElementById('wt-ws-' + k); if (el) data[k] = el.value;
+    });
+    // missing info
+    ['missing_info_notes', 'assumptions', 'questions_for_account_client', 'risk_notes'].forEach(function (k) { const el = document.getElementById('wt-' + k); if (el) data[k] = el.value; });
+    // handoff
+    HANDOFF_FIELDS.forEach(function (f) { const el = document.getElementById('wt-' + f.k); if (el) data[f.k] = el.value; });
+    // asset links
+    const al = document.getElementById('wt-asset_links'); if (al) data.asset_links = al.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    // checklist
+    const cl = {}; CT_CHECKLIST.forEach(function (c) { const el = document.getElementById('wtcl-' + c.k); cl[c.k] = !!(el && el.checked); });
+    data.quality_checklist = cl;
+    return data;
+  }
+  function taskHasContent() {
+    return ['draft_body', 'caption', 'headline', 'script', 'voice_over', 'ads_primary_text', 'landing_copy', 'email_sms_zalo_copy'].some(function (k) {
+      const el = document.getElementById('wt-ws-' + k); return el && el.value.trim();
+    });
+  }
+  function taskValidForSubmit() {
+    const clOk = CT_CHECKLIST.every(function (c) { const el = document.getElementById('wtcl-' + c.k); return el && el.checked; });
+    return clOk && taskHasContent();
+  }
+  function refreshTaskSubmit() { const b = document.getElementById('wt-submit'); if (b) b.disabled = !taskValidForSubmit(); }
+  async function persistTask(t, patch, activity) {
+    Object.assign(t, patch);
+    try { await window.MH.store.contentTasks.update(t.id, patch); }
+    catch (e) { console.warn('[cwb] persist task failed:', e); toast('warning', 'Chưa đồng bộ DB', 'Thay đổi lưu cục bộ. Kiểm tra đã chạy add-content-initiatives.sql chưa.'); }
+    if (activity) pushTaskActivity(t.id, activity);
+  }
+  async function reloadTaskAndReopen() {
+    const id = currentTask && currentTask.id;
+    await loadTasks();
+    if (!id) return;
+    const t = TASKS.find(function (x) { return x.id === id; });
+    if (t) openTaskDrawer(t); else closeTaskDrawer();
+  }
+  async function startTask() {
+    if (!canEditTask(currentTask)) return;
+    if (['pic_assigned', 'lead_revision', 'new', 'assigned'].indexOf(currentTask.status) < 0 && currentTask.status !== 'in_progress') return;
+    if (currentTask.status === 'in_progress') { toast('info', 'Đang viết', currentTask.title); return; }
+    await persistTask(currentTask, { status: 'in_progress' }, currentTask.status === 'lead_revision' ? 'PIC chỉnh theo Lead' : 'PIC bắt đầu viết');
+    toast('info', 'Bắt đầu viết', currentTask.title);
+    reloadTaskAndReopen();
+  }
+  async function saveTaskDraft() {
+    if (!canEditTask(currentTask)) return;
+    const data = collectTaskForm();
+    if (['pic_assigned', 'lead_revision', 'account_revision', 'client_feedback', 'new', 'assigned'].indexOf(currentTask.status) >= 0) data.status = 'in_progress';
+    await persistTask(currentTask, data, 'PIC lưu nháp');
+    toast('success', 'Đã lưu nháp', currentTask.title);
+    reloadTaskAndReopen();
+  }
+  async function submitTaskToLead() {
+    if (!canEditTask(currentTask)) return;
+    if (CT_SUBMITTABLE.indexOf(currentTask.status) < 0) { toast('warning', 'Chưa thể gửi', 'Task không ở trạng thái cho phép gửi.'); return; }
+    if (!taskValidForSubmit()) { toast('warning', 'Chưa đủ điều kiện', 'Tích đủ Quality Checklist + ít nhất 1 ô nội dung trước khi gửi.'); return; }
+    const data = collectTaskForm();
+    data.status = 'submitted_to_lead';
+    data.lead_review_status = 'pending';
+    await persistTask(currentTask, data, 'PIC gửi Lead Content duyệt');
+    notifyLeadTask(currentTask, '📨 Content task chờ Lead duyệt', (currentTask.title || 'Content task') + ' — ' + (user.name || 'Content') + ' đã gửi bản thảo.');
+    toast('success', 'Đã gửi Lead Content duyệt', currentTask.title + ' — chờ Lead review.');
+    reloadTaskAndReopen();
+  }
+  async function notifyLeadTask(t, title, message) {
+    if (!t || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    try {
+      const { data: leads } = await window.MH.supabase.from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
+      if (Array.isArray(leads) && leads.length) {
+        await window.MH.supabase.from('notifications').insert(leads.map(function (u) {
+          return { user_id: u.id, type: 'task_status_changed', title: title, message: message, link: 'content-team.html?task=' + (t.id || ''), related_entity_type: 'content_tasks', related_entity_id: t.id };
+        }));
+      }
+    } catch (e) { console.warn('[cwb] notifyLeadTask failed:', e); }
+  }
+  function wireTaskDrawer() {
+    const w = function (id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+    w('wt-start', startTask); w('wt-save', saveTaskDraft); w('wt-submit', submitTaskToLead);
+    document.querySelectorAll('#ctask-drawer-body .cwbt-field').forEach(function (el) { el.addEventListener('input', refreshTaskSubmit); });
+    document.querySelectorAll('#ctask-drawer-body .cwbt-check').forEach(function (el) { el.addEventListener('change', refreshTaskSubmit); });
+    refreshTaskSubmit();
+  }
+
+  /* ---------- Wiring Phase 3 (tabs + task delegation) ---------- */
+  (function wirePhase3() {
+    const tabs = document.getElementById('cwb-tabs');
+    if (tabs) tabs.addEventListener('click', function (e) { const b = e.target.closest('[data-cwb-view]'); if (!b) return; cwbView = b.getAttribute('data-cwb-view'); renderCwbTabs(); });
+    const sub = document.getElementById('cwbt-subtabs');
+    if (sub) sub.addEventListener('click', function (e) { const b = e.target.closest('[data-cwbt-sub]'); if (!b) return; taskSub = b.getAttribute('data-cwbt-sub'); renderTasks(); });
+    const se = document.getElementById('cwbt-search'); if (se) se.addEventListener('input', function (e) { TFILTERS.search = e.target.value; renderTasks(); });
+    const fo = document.getElementById('cwbt-filter-output'); if (fo) fo.addEventListener('change', function (e) { TFILTERS.output = e.target.value; renderTasks(); });
+    const cl = document.getElementById('ctask-drawer-close'); if (cl) cl.addEventListener('click', closeTaskDrawer);
+    const bd = document.getElementById('ctask-drawer-backdrop'); if (bd) bd.addEventListener('click', closeTaskDrawer);
+    document.addEventListener('click', function (e) { const b = e.target.closest('[data-ctask-open]'); if (!b) return; const t = TASKS.find(function (x) { return x.id === b.getAttribute('data-ctask-open'); }); if (t) openTaskDrawer(t); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('ctask-drawer').classList.contains('is-open')) closeTaskDrawer(); });
+  })();
+
   /* ---------- Init ---------- */
   detectLeads(); // xác định có Lead Content active → định tuyến submit content→Lead vs content→Account
   fillFilterOptions();
@@ -560,12 +954,20 @@
     const o = ORDERS.find(function (x) { return x.order_id === b.getAttribute('data-open'); }); if (o) openDrawer(o);
   });
 
-  loadOrders().then(function () {
-    const id = new URLSearchParams(location.search).get('id');
+  Promise.all([loadOrders(), loadTasks()]).then(function () {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
     if (id) {
       const all = window.__CWB_ALL || [];
       const o = ORDERS.find(function (x) { return x.order_id === id; }) || all.find(function (x) { return x.order_id === id; });
-      if (o) openDrawer(o);
+      if (o) { cwbView = 'orders'; renderCwbTabs(); openDrawer(o); }
     }
+    // Deep-link Content Task (?task=) — chuyển sang view tasks + mở drawer.
+    const taskId = params.get('task');
+    if (taskId) { const t = TASKS.find(function (x) { return x.id === taskId; }); if (t) { cwbView = 'tasks'; renderCwbTabs(); openTaskDrawer(t); } }
+    renderCwbTabs();
   });
+  // Đồng bộ nhẹ: poll 60s + reload khi quay lại tab.
+  setInterval(function () { if (!document.hidden) { loadOrders(); loadTasks(); } }, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { loadOrders(); loadTasks(); } });
 })();

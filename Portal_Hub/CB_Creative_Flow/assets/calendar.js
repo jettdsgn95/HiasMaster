@@ -36,7 +36,7 @@
   const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']; // Monday-first (giống ref)
   const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
   const TYPE_LABEL = { media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', slide: 'Slide', ads: 'Ads / Post', other: 'Khác' };
-  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording' };
+  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording', 'ct-deadline': 'Hạn Content Task', 'cplan-deadline': 'Hạn Content Plan' };
 
   /* ---------- State ---------- */
   let cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng đang xem (Month/Week)
@@ -45,7 +45,7 @@
   let selectedDay = new Date(TODAY); // ngày đang mở ở Day view
   let miniCursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng hiển thị ở mini-calendar
   let allEvents = [];
-  const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery', 'wording-deadline']);
+  const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery', 'wording-deadline', 'ct-deadline', 'cplan-deadline']);
 
   /* ---------- DOM ---------- */
   const $ = (id) => document.getElementById(id);
@@ -123,8 +123,10 @@
     return { date: date, key: dayKey(date), type: type, title: title || '(Không tên)', pic: opts.pic || '', sub: opts.sub || '', time: opts.time || '', refKind: opts.refKind, refId: opts.refId, status: opts.status || '' };
   }
 
-  function buildEvents(tasks, orders) {
+  function buildEvents(tasks, orders, ctasks, cplans) {
     const events = [];
+    ctasks = Array.isArray(ctasks) ? ctasks : [];
+    cplans = Array.isArray(cplans) ? cplans : [];
 
     /* ----- TASKS ----- */
     tasks.forEach((t) => {
@@ -209,8 +211,38 @@
       }
     });
 
+    /* ----- CONTENT TASKS / PLANS (Deep Workflow — Phase 6) ----- */
+    // lead_content/admin: toàn bộ; content: task mình PIC; (account/production không hiện ở đây).
+    const seeContent = ROLE === 'lead_content' || ROLE === 'admin' || ROLE === 'content';
+    if (seeContent) {
+      const DONE = ['lead_approved', 'submitted_to_account', 'sent_to_client', 'client_approved', 'completed', 'media_order_created', 'archived'];
+      ctasks.forEach((t) => {
+        if (DONE.indexOf(t.status) >= 0) return;
+        if (ROLE === 'content' && !isMyTask(t.assigned_pic)) return;
+        const dl = parseDate(t.wording_deadline);
+        if (!dl) return;
+        events.push(makeEvent(dl, 'ct-deadline', t.title || t.id, {
+          pic: t.assigned_pic, sub: (CT_SOURCE[t.source] || t.source || '') + ' · Hạn wording',
+          refKind: 'ctask', refId: t.id, status: t.status
+        }));
+      });
+      // Plan deadline — chỉ Lead/Admin.
+      if (ROLE === 'lead_content' || ROLE === 'admin') {
+        cplans.forEach((p) => {
+          if (p.status === 'archived' || p.status === 'completed') return;
+          const dl = parseDate(p.plan_deadline);
+          if (!dl) return;
+          events.push(makeEvent(dl, 'cplan-deadline', p.title || p.id, {
+            pic: p.owner_lead, sub: (p.campaign_name || 'Content Plan'),
+            refKind: 'cplan', refId: p.id, status: p.status
+          }));
+        });
+      }
+    }
+
     return events;
   }
+  const CT_SOURCE = { client_order: 'Client Order', content_initiated: 'Chủ động', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch' };
 
   /* ---------- Render ---------- */
   function visibleEvents() { return allEvents.filter((e) => activeTypes.has(e.type)); }
@@ -336,7 +368,7 @@
   }
 
   function dotClass(type) {
-    return type === 'task-deadline' ? 'task' : type === 'order-deadline' ? 'order' : type === 'shoot' ? 'shoot' : type === 'wording-deadline' ? 'wording' : 'delivery';
+    return type === 'task-deadline' ? 'task' : type === 'order-deadline' ? 'order' : type === 'shoot' ? 'shoot' : (type === 'wording-deadline' || type === 'ct-deadline') ? 'wording' : type === 'cplan-deadline' ? 'order' : 'delivery';
   }
 
   function groupByDay(events) {
@@ -390,6 +422,9 @@
       if (ROLE === 'lead_content') return 'content-team.html?id=' + encodeURIComponent(ev.refId);
       if (ROLE === 'content') return 'content-workbench.html?id=' + encodeURIComponent(ev.refId);
     }
+    // Content Task / Plan (Phase 6)
+    if (ev.refKind === 'ctask') return (ROLE === 'content' ? 'content-workbench.html?task=' : 'content-team.html?task=') + encodeURIComponent(ev.refId);
+    if (ev.refKind === 'cplan') return 'content-team.html?plan=' + encodeURIComponent(ev.refId);
     return '';
   }
 
@@ -491,23 +526,30 @@
   // silent=true → refresh ngầm (realtime/poll), không bật lại spinner, giữ nguyên view/cursor/filter.
   async function load(silent) {
     setScopeNote();
-    let tasks = [], orders = [];
+    let tasks = [], orders = [], ctasks = [], cplans = [];
     try {
       if (window.MH && window.MH.supabaseReady) { try { await window.MH.supabaseReady; } catch (e) {} }
       if (window.MH && window.MH.store) {
         const needTasks = !IS_CONTENT;
         const needOrders = !IS_PRODUCTION;
-        const [tr, or] = await Promise.all([
-          needTasks ? window.MH.store.tasks.list() : Promise.resolve([]),
-          needOrders ? window.MH.store.orders.list() : Promise.resolve([])
+        // Content Deep Workflow events (Phase 6) cho Content team + admin.
+        const needContent = ROLE === 'lead_content' || ROLE === 'admin' || ROLE === 'content';
+        const store = window.MH.store;
+        const [tr, or, ctr, cpr] = await Promise.all([
+          needTasks ? store.tasks.list() : Promise.resolve([]),
+          needOrders ? store.orders.list() : Promise.resolve([]),
+          (needContent && store.contentTasks) ? store.contentTasks.list() : Promise.resolve([]),
+          (needContent && store.contentPlans) ? store.contentPlans.list() : Promise.resolve([])
         ]);
         tasks = Array.isArray(tr) ? tr : [];
         orders = Array.isArray(or) ? or : [];
+        ctasks = Array.isArray(ctr) ? ctr : [];
+        cplans = Array.isArray(cpr) ? cpr : [];
       }
     } catch (e) {
       console.warn('[calendar] load failed:', e);
     }
-    allEvents = buildEvents(tasks, orders);
+    allEvents = buildEvents(tasks, orders, ctasks, cplans);
     if (!silent) {
       if (elLoading) elLoading.hidden = true;
       if (elSurface) elSurface.hidden = false;
