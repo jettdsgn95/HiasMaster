@@ -309,7 +309,7 @@
       case 'account': return { tag: 'account', permission_group: 'order_mgmt',   data_scope: 'all' };
       case 'design':  return { tag: 'staff',   permission_group: 'production_only', data_scope: 'assigned' };
       case 'editor':  return { tag: 'staff',   permission_group: 'production_only', data_scope: 'assigned' };
-      case 'lead_media':   return { tag: 'manager', permission_group: 'production_only', data_scope: 'assigned' };
+      case 'lead_media':   return { tag: 'manager', permission_group: 'order_mgmt', data_scope: 'all' };
       case 'lead_content': return { tag: 'manager', permission_group: 'production_only', data_scope: 'assigned' };
       case 'system_supervisor': return { tag: 'manager', permission_group: 'report_viewer', data_scope: 'all' };
       case 'client':  return { tag: 'client',  permission_group: 'client_only', data_scope: 'client_own' };

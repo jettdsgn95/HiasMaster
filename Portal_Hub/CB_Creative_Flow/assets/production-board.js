@@ -25,12 +25,7 @@
     setTimeout(() => location.replace(user.role === 'lead_content' ? 'content-team.html' : 'content-workbench.html'), 900);
     return;
   }
-  // Lead Media (Supervisor Planning) tách biệt khỏi task sản xuất → về trang Kế hoạch.
-  if (user.role === 'lead_media') {
-    if (window.MH && window.MH.toast) window.MH.toast({ type: 'warning', title: 'Khu vực Production', message: 'Lead Media làm việc tại trang Kế hoạch.' });
-    setTimeout(() => location.replace('supervisor-planning.html'), 900);
-    return;
-  }
+  // Media Lead = Trưởng nhóm Production: VÀO ĐƯỢC Task Tracker (bỏ redirect cũ).
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
   // READONLY = Giám sát hệ thống: xem Task Tracker nhưng không status/drag/edit/comment/tạo task.
@@ -41,7 +36,13 @@
   const pcRole = document.getElementById('pc-role-badge');
   if (pcName) pcName.textContent = user.name || 'User';
   if (pcAvatar) pcAvatar.textContent = user.initials || (user.name || 'U').substring(0, 2).toUpperCase();
-  if (pcRole) { pcRole.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1); pcRole.className = 'role-badge r--' + user.role; }
+  if (pcRole) { pcRole.textContent = (window.MH && window.MH.roleLabel) ? window.MH.roleLabel(user.role) : (user.role.charAt(0).toUpperCase() + user.role.slice(1)); pcRole.className = 'role-badge r--' + user.role; }
+
+  // Media Lead = quyền vận hành Production NGANG Account → alias role cho MỌI check quyền JS
+  // bên dưới (['admin','account']…). data-user-role + badge giữ 'lead_media' thật (ở trên) cho
+  // CSS/nav; RLS DB vẫn thấy role thật qua current_user_role(). KHÔNG đụng Content Team (lead_media
+  // không có trong allow-list content-team/content-workbench).
+  if (user.role === 'lead_media') user.role = 'account';
 
   const chip = document.getElementById('profile-chip');
   if (chip) {

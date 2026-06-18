@@ -14,9 +14,9 @@
   let user;
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
-  // admin / account = full quyền. system_supervisor = monitor read-only (xem được, mọi mutation bị ẩn/khóa).
-  if (!['admin', 'account', 'system_supervisor'].includes(user.role)) {
-    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Database Orders chỉ dành cho Admin/Account.' });
+  // admin / account / lead_media = full quyền. system_supervisor = monitor read-only.
+  if (!['admin', 'account', 'system_supervisor', 'lead_media'].includes(user.role)) {
+    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Client Orders chỉ dành cho Admin / Account / Media Lead.' });
     const home = user.role === 'lead_content' ? 'content-team.html' : (user.role === 'content' ? 'content-workbench.html' : 'dashboard.html');
     setTimeout(() => location.replace(home), 1200);
     return;
@@ -25,6 +25,9 @@
   document.body.setAttribute('data-user-role', user.role);
   // READONLY = Giám sát hệ thống: chỉ xem (ẩn kebab action, khóa input drawer, ẩn nút Quick Actions/Bàn giao).
   const READONLY = user.role === 'system_supervisor';
+  // Media Lead = quyền vận hành NGANG Account → alias cho mọi check ['admin','account'] bên dưới.
+  // data-user-role giữ 'lead_media' thật (CSS/nav); RLS DB thấy role thật qua current_user_role().
+  if (user.role === 'lead_media') user.role = 'account';
 
   // Profile chip
   const pcName = document.getElementById('pc-name');

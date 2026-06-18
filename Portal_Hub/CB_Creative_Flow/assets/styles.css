@@ -1914,9 +1914,8 @@ body[data-user-role="system_supervisor"] .dash-section[data-show-roles] { displa
 body[data-user-role="system_supervisor"] .qa-btn[data-show-roles] { display: flex; }
 body[data-user-role="system_supervisor"] .qa-btn[href="request.html"] { display: none !important; }
 
-/* Lead Media — role mới (Supervisor Planning). Team Media tách biệt: chỉ thấy nav
-   "Kế hoạch" (+ AI Tools/Chatbot mặc định). Reveal data-show-roles*="lead_media".
-   ⚠ Substring-safe: "lead_media" KHÔNG chứa admin/account/design/editor/content/client. */
+/* Lead Media = TRƯỞNG NHÓM PRODUCTION (quyền ngang Account, KHÔNG vào Content Team).
+   Reveal data-show-roles*="lead_media" (Strategy Board) + mở mọi màn vận hành như Account. */
 body[data-user-role="lead_media"] [data-show-roles*="lead_media"] { display: revert; }
 body[data-user-role="lead_media"] li[data-show-roles*="lead_media"] { display: list-item; }
 body[data-user-role="lead_media"] .kpi[data-show-roles*="lead_media"],
@@ -1925,11 +1924,19 @@ body[data-user-role="lead_media"] .dash-card[data-show-roles*="lead_media"],
 body[data-user-role="lead_media"] .hpm-item[data-show-roles*="lead_media"] { display: flex; }
 body[data-user-role="lead_media"] .dash-section[data-show-roles*="lead_media"] { display: block; }
 body[data-user-role="lead_media"] .btn[data-show-roles*="lead_media"] { display: inline-flex; }
-/* Lead Media tách khỏi Production → ẩn nav Master/Task Dashboard + Task Tracker (không có
-   data-show-roles nên mặc định hiện; ẩn bằng :has theo href, như role content/lead_content). */
-body[data-user-role="lead_media"] .dash-nav li:has(> a[href="dashboard.html"]),
-body[data-user-role="lead_media"] .dash-nav li:has(> a[href="task-dashboard.html"]),
-body[data-user-role="lead_media"] .dash-nav li:has(> a[href="production-board.html"]) { display: none !important; }
+/* Nav admin/account-only (Orders Dashboard / Client Orders / Reports / Order Form) reveal theo
+   href — KHÔNG đụng group "Content Team" (href content-team/content-workbench KHÔNG trong list →
+   vẫn ẩn cho Media Lead). Master/Task Dashboard + Task Tracker không có data-show-roles → hiện sẵn. */
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="order-dashboard.html"]),
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="database-orders.html"]),
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="reports.html"]),
+body[data-user-role="lead_media"] .dash-nav li:has(> a[href="request.html"]) { display: list-item !important; }
+/* Dashboard CONTENT (sections/KPI/quick-actions vốn data-show-roles "admin,account[,design,editor]")
+   → reveal cho Media Lead để không trắng trang. CHỈ áp cho content, KHÔNG áp .dash-nav li (nav lo riêng ở trên). */
+body[data-user-role="lead_media"] .dash-section[data-show-roles] { display: block; }
+body[data-user-role="lead_media"] .kpi[data-show-roles] { display: flex; }
+body[data-user-role="lead_media"] .qa-btn[data-show-roles] { display: flex; }
+body[data-user-role="lead_media"] .dash-card[data-show-roles] { display: flex; }
 
 /* Supervisor Planning nav — substring trap: data-show-roles="...,lead_content,admin" chứa
    "content" → role content reveal nhầm mục "Kế hoạch" (qua rule *="content"). Ẩn lại cho content. */

@@ -16,9 +16,9 @@
   let user;
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
-  // system_supervisor: read-only monitor — được xem Reports + export (không có mutation trong module này).
-  if (!['admin', 'account', 'system_supervisor'].includes(user.role)) {
-    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Reports chỉ dành cho Admin/Account.' });
+  // admin / account / lead_media = xem Reports. system_supervisor: read-only monitor (+ export).
+  if (!['admin', 'account', 'system_supervisor', 'lead_media'].includes(user.role)) {
+    window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Reports chỉ dành cho Admin / Account / Media Lead.' });
     setTimeout(() => location.replace('dashboard.html'), 1200);
     return;
   }
