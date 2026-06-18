@@ -139,9 +139,11 @@
     });
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get('redirect');
-    // Home theo role: client → Client Portal; lead_content → Content Workspace; content → Content Wording;
-    // lead_media → Kế hoạch (Supervisor Planning); còn lại → Master Dashboard.
-    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html', lead_media: 'supervisor-planning.html' };
+    // Home theo role: client → Client Portal; content → Content Wording;
+    // lead_media + lead_content → Strategy Board (Supervisor Planning); còn lại → Master Dashboard.
+    // ⚠ TẠM: lead_content → supervisor-planning.html (Content Team chưa deploy — content-team.html
+    //    chưa commit). Khi build xong Content Team thì trả lại lead_content → 'content-team.html'.
+    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'supervisor-planning.html', lead_media: 'supervisor-planning.html' };
     const defaultRedirect = roleHome[user.role] || 'dashboard.html';
     setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
   }
