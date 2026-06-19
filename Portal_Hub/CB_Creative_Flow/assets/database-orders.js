@@ -1297,7 +1297,9 @@
       notifyClient(currentOrder, isFinal
         ? { type: 'delivery_final', title: 'Final đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã được xử lý theo Feedback Vòng 3 và bàn giao bản Final. Anh/chị vui lòng kiểm tra sản phẩm hoàn thiện và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, vui lòng tạo một Order mới từ yêu cầu hiện tại.`, link: linkVal }
         : { type: 'delivery_preview', title: 'Sản phẩm Preview đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã có bản Preview. Anh/chị vui lòng kiểm tra nội dung, bố cục, hình ảnh và gửi feedback trực tiếp trên hệ thống để team Media tiếp tục hoàn thiện.`, link: linkVal });
-      window.MH.toast({ type: 'success', title: isFinal ? 'Đã gửi Final' : 'Đã gửi Preview', message: 'Client đã nhận thông báo + link.' });
+      // Khép kín: order nội bộ → báo Lead Content (notifyClient đã tự bỏ qua internal order).
+      if (isInternalOrder(currentOrder)) notifyContentRequester(currentOrder, isFinal, linkVal);
+      window.MH.toast({ type: 'success', title: isFinal ? 'Đã gửi Final' : 'Đã gửi Preview', message: isInternalOrder(currentOrder) ? 'Đã báo Lead Content + cập nhật link.' : 'Client đã nhận thông báo + link.' });
       render();
       openDrawer(currentOrder);
     }
@@ -1683,9 +1685,15 @@
      - Lookup user_id qua requester_id (preferred) hoặc requester_email (fallback)
      - INSERT vào notifications table với related_entity_type=orders + entity_id=order_id
      - Fire-and-forget: không block UI nếu lookup hoặc INSERT fail (log warning) */
+  function isInternalOrder(order) {
+    return !!(order && (order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false || order.source_content_task_id));
+  }
   async function notifyClient(order, notifPayload) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return false;
     if (!order) return false;
+    // Order NỘI BỘ từ Content Team không có "client" thật — không bắn noti văn phong client.
+    // (Content nhận noti riêng qua notifyContentRequester, deep-link về content task.)
+    if (isInternalOrder(order)) return false;
     try {
       let clientUserId = order.requester_id || null;
       if (!clientUserId && order.requester_email && window.MH.supabase) {
@@ -1713,6 +1721,30 @@
       console.warn('[notifyClient] create failed:', err);
       return false;
     }
+  }
+
+  /* ---------- KHÉP KÍN loop Content↔Production: báo Content khi Media bàn giao ----------
+     Order nội bộ → báo Lead Content (role) khi gửi Preview/Final, deep-link content task drawer.
+     Chỉ insert notifications (quyền staff) — Content tự thấy link Preview/Final qua block tracking
+     (fillMediaTrack đọc order). related_entity_type='orders' (CHECK constraint). */
+  async function notifyContentRequester(order, isFinal, linkVal) {
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    if (!order || !order.source_content_task_id) return;
+    try {
+      const ctId = order.source_content_task_id;
+      const { data: leads } = await window.MH.supabase
+        .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
+      if (!Array.isArray(leads) || !leads.length) return;
+      await window.MH.supabase.from('notifications').insert(leads.map((u) => ({
+        user_id: u.id,
+        type: isFinal ? 'delivery_final' : 'delivery_preview',
+        title: isFinal ? 'Media đã bàn giao Final' : 'Media đã gửi Preview',
+        message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media ' + (isFinal ? 'đã bàn giao Final' : 'đã có Preview') + '. Mở để xem.',
+        link: 'content-team.html?task=' + ctId,
+        related_entity_type: 'orders',
+        related_entity_id: order.order_id
+      })));
+    } catch (e) { console.warn('[delivery] notify content lead failed:', e); }
   }
 
   function updateStatus(o, newStatus, msg) {

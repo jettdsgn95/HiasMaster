@@ -912,7 +912,7 @@
       const { data: leads } = await window.MH.supabase.from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
       if (Array.isArray(leads) && leads.length) {
         await window.MH.supabase.from('notifications').insert(leads.map(function (u) {
-          return { user_id: u.id, type: 'task_status_changed', title: title, message: message, link: 'content-team.html?task=' + (t.id || ''), related_entity_type: 'content_tasks', related_entity_id: t.id };
+          return { user_id: u.id, type: 'task_status_changed', title: title, message: message, link: 'content-team.html?task=' + (t.id || ''), related_entity_type: null, related_entity_id: t.id };
         }));
       }
     } catch (e) { console.warn('[cwb] notifyLeadTask failed:', e); }

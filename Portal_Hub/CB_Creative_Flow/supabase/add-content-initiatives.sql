@@ -252,6 +252,38 @@ EXCEPTION WHEN undefined_object THEN
   NULL;
 END $$;
 
+-- =====================================================================
+-- 7. Storage — đính kèm file PDF kế hoạch Content (tái dùng bucket `plan-files`,
+--    prefix `content-plans/`). RLS gốc của plan-files (cbplan_*) chỉ cho
+--    supervisor/admin ghi → thêm policy cho lead_content/admin ghi+đọc dưới
+--    prefix content-plans/. (Bucket `plan-files` do add-supervisor-planning.sql
+--    tạo; ON CONFLICT để chắc tồn tại nếu chạy độc lập.)
+-- =====================================================================
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('plan-files', 'plan-files', false, 50 * 1024 * 1024, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "cbplan_content_write"  ON storage.objects;
+CREATE POLICY "cbplan_content_write"  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'plan-files' AND split_part(name, '/', 1) = 'content-plans'
+             AND public.current_user_role() IN ('lead_content','admin'));
+
+DROP POLICY IF EXISTS "cbplan_content_update" ON storage.objects;
+CREATE POLICY "cbplan_content_update" ON storage.objects FOR UPDATE TO authenticated
+  USING (bucket_id = 'plan-files' AND split_part(name, '/', 1) = 'content-plans'
+         AND public.current_user_role() IN ('lead_content','admin'));
+
+DROP POLICY IF EXISTS "cbplan_content_delete" ON storage.objects;
+CREATE POLICY "cbplan_content_delete" ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'plan-files' AND split_part(name, '/', 1) = 'content-plans'
+         AND public.current_user_role() IN ('lead_content','admin'));
+
+DROP POLICY IF EXISTS "cbplan_content_read"   ON storage.objects;
+CREATE POLICY "cbplan_content_read"   ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'plan-files' AND split_part(name, '/', 1) = 'content-plans'
+         AND public.current_user_role() IN ('lead_content','admin','account','content'));
+
 -- Verify (tùy chọn):
 -- SELECT tablename FROM pg_tables WHERE tablename LIKE 'content_%';
 -- SELECT policyname, tablename FROM pg_policies WHERE tablename LIKE 'content_%' ORDER BY tablename, policyname;
+-- SELECT policyname FROM pg_policies WHERE tablename='objects' AND policyname LIKE 'cbplan_content%';

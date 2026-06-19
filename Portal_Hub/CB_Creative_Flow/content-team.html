@@ -121,40 +121,44 @@
       <!-- Phase 6 — Content Tasks & Plans KPI -->
       <h3 class="ctm-section-title" style="margin:6px 0 10px">Content Tasks &amp; Plans <span class="text-xs muted">(Deep Workflow)</span></h3>
       <div class="cwb-stats" id="ctm-ct-kpi"></div>
-      <div class="ctm-dash-grid">
-        <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Theo Trạng thái</h3></div>
-          <div class="ctm-panel-body" id="ctm-ct-by-status"></div>
+      <div class="ctm-cards-2">
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Theo trạng thái</h3></div>
+          <div class="ctm-card-body" id="ctm-ct-by-status"></div>
         </div>
-        <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Theo Nguồn / Output</h3></div>
-          <div class="ctm-panel-body" id="ctm-ct-by-source"></div>
-        </div>
-      </div>
-      <div class="ctm-dash-grid">
-        <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Content Plans — tiến độ</h3></div>
-          <div class="ctm-panel-body" id="ctm-ct-plans"></div>
-        </div>
-        <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Task vòng sửa cao</h3></div>
-          <div class="ctm-panel-body" id="ctm-ct-highrev"></div>
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Theo nguồn / output</h3></div>
+          <div class="ctm-card-body" id="ctm-ct-by-source"></div>
         </div>
       </div>
-
-      <div class="ctm-dash-grid">
-        <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Workload theo PIC Content</h3></div>
-          <div class="ctm-panel-body" id="ctm-workload"></div>
+      <div class="ctm-cards-2">
+        <div class="ctm-card">
+          <div class="ctm-card-head">
+            <h3>Content Plans — tiến độ</h3>
+            <button type="button" class="ctm-card-action" data-ctm-view="plans">Xem tất cả
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="ctm-card-body" id="ctm-ct-plans"></div>
         </div>
-        <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Trễ hạn wording</h3><span class="rinfo" id="ctm-overdue-count">0</span></div>
-          <div class="ctm-panel-body" id="ctm-overdue-list"></div>
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Task vòng sửa cao</h3></div>
+          <div class="ctm-card-body" id="ctm-ct-highrev"></div>
         </div>
       </div>
-      <div class="table-card ctm-panel">
-        <div class="table-head"><h3>Hoạt động gần đây</h3></div>
-        <div class="ctm-panel-body"><ul class="activity-mini" id="ctm-recent-activity"></ul></div>
+      <div class="ctm-cards-2">
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Workload theo PIC Content</h3></div>
+          <div class="ctm-card-body" id="ctm-workload"></div>
+        </div>
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Trễ hạn wording</h3><span class="ctm-card-meta" id="ctm-overdue-count">0</span></div>
+          <div class="ctm-card-body" id="ctm-overdue-list"></div>
+        </div>
+      </div>
+      <div class="ctm-card">
+        <div class="ctm-card-head"><h3>Hoạt động gần đây</h3></div>
+        <div class="ctm-card-body"><ul class="activity-mini" id="ctm-recent-activity"></ul></div>
       </div>
     </section>
 

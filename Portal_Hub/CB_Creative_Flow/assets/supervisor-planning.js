@@ -747,7 +747,7 @@
   }
 
   function planNotif(type, title, message, id) {
-    return { type: type, title: title, message: message || '', link: 'supervisor-planning.html?id=' + id, related_entity_type: 'lead_task', related_entity_id: id };
+    return { type: type, title: title, message: message || '', link: 'supervisor-planning.html?id=' + id, related_entity_type: null, related_entity_id: id };
   }
   async function notifyUsers(roles, payload) {
     if (!store || !store.notifications) return;

@@ -723,6 +723,47 @@
       }
     } catch (e) { console.warn('[task] notify status change failed:', e); }
   }
+  /* ---------- KHÉP KÍN loop Content↔Production ----------
+     Order NỘI BỘ từ Content Team (order_kind=internal_media_request / origin=content_team /
+     source_content_task_id) → Content KHÔNG vào được database-orders. Khi Media đổi trạng thái SX
+     → đẩy noti cho Lead Content + PIC Content, deep-link content-team.html?task=<content_task_id>.
+     Chỉ insert notifications (quyền staff) — KHÔNG ghi content_tasks (RLS chặn Media/Account).
+     related_entity_type='orders' (CHECK constraint: chỉ tasks|orders|deliveries|comments|NULL). */
+  const CONTENT_PROD_NOTIFY = { inprogress: 'Media đang sản xuất', ready: 'Media sẵn sàng bàn giao' };
+  async function notifyContentOnProdStatus(task, newStatus) {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    if (!task.order_id || !CONTENT_PROD_NOTIFY[newStatus]) return;
+    try {
+      const order = await window.MH.store.orders.get(task.order_id);
+      if (!order || !order.source_content_task_id) return;
+      const isInternal = order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false;
+      if (!isInternal) return;
+      const ctId = order.source_content_task_id;
+      const recips = [];
+      const { data: leads } = await window.MH.supabase
+        .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
+      (leads || []).forEach((u) => recips.push(u.id));
+      try {
+        const ct = await window.MH.store.contentTasks.get(ctId);
+        if (ct && ct.assigned_pic) {
+          const pid = await window.MH.store.notifications.findUserIdByName(ct.assigned_pic);
+          if (pid) recips.push(pid);
+        }
+      } catch (e) { /* ignore PIC lookup */ }
+      const uniq = recips.filter((v, i, a) => v && a.indexOf(v) === i);
+      if (!uniq.length) return;
+      const label = CONTENT_PROD_NOTIFY[newStatus];
+      await window.MH.supabase.from('notifications').insert(uniq.map((uid) => ({
+        user_id: uid,
+        type: 'task_status_changed',
+        title: label,
+        message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media: ' + label.toLowerCase() + '.',
+        link: 'content-team.html?task=' + ctId,
+        related_entity_type: 'orders',
+        related_entity_id: order.order_id
+      })));
+    } catch (e) { console.warn('[task] notify content requester failed:', e); }
+  }
   /* #4/#5: báo PIC khi được GÁN task (tạo mới có PIC hoặc đổi PIC). type task_assigned (base-safe). */
   async function notifyTaskAssign(task, picName) {
     if (!picName || !window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
@@ -788,6 +829,7 @@
     });
     persistTaskComment(task.task_id, transitionComment);
     notifyTaskStatusChange(task, newStatus); // fire-and-forget: báo Account/Admin (duyệt) hoặc PIC (sửa)
+    notifyContentOnProdStatus(task, newStatus); // khép kín: nếu order nội bộ → báo Lead/PIC Content
     // task → order.production_status: client-side chỉ chạy cho admin/account (RLS chặn design/editor UPDATE orders).
     // Nguồn chính là DB trigger (supabase/sync-order-status-from-tasks.sql) — cover MỌI role server-side.
     if (task.order_id && !task.is_standalone && ['admin', 'account'].includes(user.role)) syncOrderStatusFromTasks(task.order_id, task);
