@@ -1168,7 +1168,7 @@
         + '<div class="field"><label class="label">Ghi chú Lead (bắt buộc khi trả chỉnh)</label><textarea class="textarea" id="ctm-rev-note" rows="2" placeholder="Điểm cần Content chỉnh...">' + esc(t.lead_review_note || '') + '</textarea></div>'
         + '</section>';
     } else if (isLead && t.status === 'lead_approved') {
-      reviewPanel = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">R</span><h4>Lead Review</h4></div><div class="dw-callout dw--success"><p><b>Đã duyệt nội dung.</b>' + (t.lead_approved_at ? ' · ' + fmtDT(t.lead_approved_at) : '') + (t.need_media_production ? ' — chờ tạo Internal Media Request (Phase 5).' : '') + '</p></div></section>';
+      reviewPanel = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">R</span><h4>Lead Review</h4></div><div class="dw-callout dw--success"><p><b>Đã duyệt nội dung.</b>' + (t.lead_approved_at ? ' · ' + fmtDT(t.lead_approved_at) : '') + (t.need_media_production ? ' — chờ <b>PIC Content</b> gửi Internal Media Request (trong Content Workbench).' : '') + '</p></div></section>';
     }
     // Phase 5 — block theo dõi Media Order nội bộ (read-only). Content/Lead KHÔNG vào
     // database-orders được → fetch order qua MH.store.orders.get điền async ở openTaskDrawer.
@@ -1176,6 +1176,24 @@
       ? '<section class="drawer-block cwb-snapshot ctm-review"><div class="drawer-block-head"><span class="block-letter">M</span><h4>Media Order — theo dõi sản xuất</h4></div>'
         + '<div id="ctm-media-track-body"><p class="text-xs muted" style="margin:0">Đang tải trạng thái <b>' + esc(t.media_order_id) + '</b>…</p></div></section>'
       : '';
+
+    // Phase 5 — Checklist hoàn tất task (read-only cho Lead theo dõi; PIC gửi Media + bấm hoàn tất).
+    let completionHtml = '';
+    if (['lead_approved', 'media_order_created', 'completed'].indexOf(t.status) >= 0) {
+      const isDone = t.status === 'completed';
+      const cmpItems = [{ id: 'ctm-cmp-approved', label: 'Nội dung đã được Lead Content duyệt', done: true }];
+      if (t.need_media_production) {
+        cmpItems.push({ id: 'ctm-cmp-sent', label: 'Đã gửi Internal Media Request (thiết kế)', done: isDone || !!t.media_request_created });
+        cmpItems.push({ id: 'ctm-cmp-final', label: 'Media bàn giao Final', done: isDone });
+      }
+      const cmpTotal = cmpItems.length, cmpDone = cmpItems.filter(function (x) { return x.done; }).length;
+      const cmpPct = Math.round(cmpDone / cmpTotal * 100);
+      completionHtml = '<section class="drawer-block ctm-review"><div class="drawer-block-head"><span class="block-letter">✓</span><h4>Checklist hoàn tất task</h4></div><ul class="ctm-chk-readonly">'
+        + cmpItems.map(function (it) { return '<li id="' + it.id + '" class="' + (it.done ? 'is-on' : '') + '">' + (it.done ? '✓ ' : '○ ') + esc(it.label) + '</li>'; }).join('') + '</ul>'
+        + '<div style="margin-top:10px"><span class="ctm-progress"><i id="ctm-cmp-bar" style="width:' + cmpPct + '%"></i></span> <span class="text-xs" id="ctm-cmp-text">' + cmpDone + '/' + cmpTotal + ' · ' + cmpPct + '%</span></div>'
+        + '<p class="text-xs muted" style="margin:8px 0 0">PIC Content gửi Media trong workbench rồi bấm <b>Hoàn tất task</b> khi Media bàn giao Final.</p>'
+        + '</section>';
+    }
 
     return ''
       + (plan ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">K</span><h4>Thuộc kế hoạch</h4></div><button class="ctm-inbox-item" data-plan-open="' + esc(plan.id) + '"><b>' + esc(plan.title || plan.id) + '</b><div class="text-xs muted">' + esc(SOURCE_LABEL[plan.source] || plan.source || '') + '</div></button></section>' : '')
@@ -1190,6 +1208,7 @@
         + '<dt>Cần Media</dt><dd>' + (t.need_media_production ? 'Có' + (t.media_request_created ? ' · đã tạo Media Request' : '') : 'Không') + '</dd>'
       + '</dl></section>'
       + mediaTrack
+      + completionHtml
       + draftBlock
       + missing
       + checklistBlock
@@ -1214,9 +1233,8 @@
       if (isAdmin || isAccount) return '<div class="wf-actions"><div class="wf-actions-flow"><a class="btn btn-secondary btn-sm" href="database-orders.html?id=' + esc(t.media_order_id) + '">Mở Media Order</a></div></div>';
       return '';
     }
-    if (t.status === 'lead_approved' && t.need_media_production && !t.media_request_created) {
-      return '<div class="wf-actions"><div class="wf-actions-flow"><button class="btn btn-primary btn-sm" id="ctm-make-media">Tạo Internal Media Request</button></div></div>';
-    }
+    // Phase 5 — PIC Content gửi Internal Media Request (trong content-workbench). Lead KHÔNG tạo nữa,
+    // chỉ theo dõi qua block "Media Order" + "Checklist hoàn tất task".
     return '';
   }
   function openTaskDrawer(t) {
@@ -1243,26 +1261,41 @@
   // Theo dõi Media Order nội bộ (read-only) — Content/Lead đọc order qua RLS lead_content SELECT,
   // KHÔNG cần vào database-orders (bị guard chặn). Điền vào #ctm-media-track-body.
   async function fillMediaTrack(orderId) {
-    const el = document.getElementById('ctm-media-track-body'); if (!el) return;
     let o = null;
     try { o = await window.MH.store.orders.get(orderId); } catch (e) { console.warn('[ctm] media track fetch:', e); }
-    const cur = document.getElementById('ctm-media-track-body'); if (!cur) return; // drawer đã đóng/đổi
-    if (!o) { cur.innerHTML = '<p class="text-xs muted" style="margin:0">Order <b>' + esc(orderId) + '</b> — chưa đồng bộ được trạng thái (cần Supabase + đã chạy add-content-to-media-order.sql).</p>'; return; }
-    const ps = o.production_status || 'unassigned';
-    const prog = (o.progress != null ? o.progress : 0);
-    const picMedia = o.production_pic || [o.production_pic_video, o.production_pic_photo].filter(Boolean).join(' · ');
-    const links = [];
-    if (o.preview_link) links.push('<a class="btn btn-secondary btn-sm" href="' + esc(o.preview_link) + '" target="_blank" rel="noopener">Xem Preview</a>');
-    if (o.final_delivery_link) links.push('<a class="btn btn-secondary btn-sm" href="' + esc(o.final_delivery_link) + '" target="_blank" rel="noopener">Xem Final</a>');
-    const pushed = ps && ps !== 'unassigned';
-    cur.innerHTML = '<dl style="margin:0">'
-      + '<dt>Order nội bộ</dt><dd><span class="order-id">' + esc(orderId) + '</span> <span class="ctm-internal-badge">Internal</span></dd>'
-      + '<dt>PIC Media</dt><dd>' + (picMedia ? esc(picMedia) : '<em class="muted">chưa gán</em>') + '</dd>'
-      + '<dt>Trạng thái SX</dt><dd><span class="tb-status s--wording"><span class="dot"></span>' + esc(PROD_STATUS[ps] || ps) + '</span>' + (pushed ? '' : ' <span class="text-xs muted">· chờ Media/Account push Production</span>') + '</dd>'
-      + '<dt>Tiến độ</dt><dd><span class="ctm-progress"><i style="width:' + prog + '%"></i></span> <span class="text-xs">' + prog + '%</span></dd>'
-      + '<dt>Hạn sản xuất</dt><dd>' + (o.requested_deadline ? esc(o.requested_deadline) : '<em class="muted">—</em>') + '</dd>'
-      + '<dt>Bàn giao</dt><dd>' + (links.length ? '<div class="row" style="flex-wrap:wrap;gap:6px">' + links.join('') + '</div>' : '<em class="muted">chưa có</em>') + '</dd>'
-      + '</dl>';
+    const cur = document.getElementById('ctm-media-track-body');
+    if (cur) {
+      if (!o) { cur.innerHTML = '<p class="text-xs muted" style="margin:0">Order <b>' + esc(orderId) + '</b> — chưa đồng bộ được trạng thái (cần Supabase + đã chạy add-content-to-media-order.sql).</p>'; }
+      else {
+        const ps = o.production_status || 'unassigned';
+        const prog = (o.progress != null ? o.progress : 0);
+        const picMedia = o.production_pic || [o.production_pic_video, o.production_pic_photo].filter(Boolean).join(' · ');
+        const links = [];
+        if (o.preview_link) links.push('<a class="btn btn-secondary btn-sm" href="' + esc(o.preview_link) + '" target="_blank" rel="noopener">Xem Preview</a>');
+        if (o.final_delivery_link) links.push('<a class="btn btn-secondary btn-sm" href="' + esc(o.final_delivery_link) + '" target="_blank" rel="noopener">Xem Final</a>');
+        const pushed = ps && ps !== 'unassigned';
+        cur.innerHTML = '<dl style="margin:0">'
+          + '<dt>Order nội bộ</dt><dd><span class="order-id">' + esc(orderId) + '</span> <span class="ctm-internal-badge">Internal</span></dd>'
+          + '<dt>PIC Media</dt><dd>' + (picMedia ? esc(picMedia) : '<em class="muted">chưa gán</em>') + '</dd>'
+          + '<dt>Trạng thái SX</dt><dd><span class="tb-status s--wording"><span class="dot"></span>' + esc(PROD_STATUS[ps] || ps) + '</span>' + (pushed ? '' : ' <span class="text-xs muted">· chờ Media/Account push Production</span>') + '</dd>'
+          + '<dt>Tiến độ</dt><dd><span class="ctm-progress"><i style="width:' + prog + '%"></i></span> <span class="text-xs">' + prog + '%</span></dd>'
+          + '<dt>Hạn sản xuất</dt><dd>' + (o.requested_deadline ? esc(o.requested_deadline) : '<em class="muted">—</em>') + '</dd>'
+          + '<dt>Bàn giao</dt><dd>' + (links.length ? '<div class="row" style="flex-wrap:wrap;gap:6px">' + links.join('') + '</div>' : '<em class="muted">chưa có</em>') + '</dd>'
+          + '</dl>';
+      }
+    }
+    // Cập nhật Checklist hoàn tất (read-only) theo trạng thái Final của order.
+    const t = currentTask;
+    if (t) {
+      const final = !!(o && (o.final_delivery_link || o.production_status === 'delivered' || o.production_status === 'completed'));
+      const fin = document.getElementById('ctm-cmp-final');
+      if (fin) { fin.className = final ? 'is-on' : ''; fin.innerHTML = (final ? '✓ ' : '○ ') + 'Media bàn giao Final'; }
+      let total = 1, done = 1;
+      if (t.need_media_production) { total += 2; done += (t.media_request_created ? 1 : 0) + (final ? 1 : 0); }
+      const pct = Math.round(done / total * 100);
+      const bar = document.getElementById('ctm-cmp-bar'); if (bar) bar.style.width = pct + '%';
+      const txt = document.getElementById('ctm-cmp-text'); if (txt) txt.textContent = done + '/' + total + ' · ' + pct + '%';
+    }
   }
   function wireTaskDrawer() {
     const w = function (id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
@@ -1270,7 +1303,6 @@
     w('ctm-t-save-notes', saveTaskNotes);
     w('ctm-rev-return', leadReturnTask);
     w('ctm-rev-approve', leadApproveTask);
-    w('ctm-make-media', function () { openMediaRequestModal(currentTask); });
     const dl = document.getElementById('ctm-t-deadline');
     if (dl) dl.addEventListener('change', function () {
       const pd = dl.getAttribute('data-plan-deadline'); const warn = document.getElementById('ctm-t-dlwarn');

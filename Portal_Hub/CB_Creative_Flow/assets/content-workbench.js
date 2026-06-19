@@ -619,6 +619,46 @@
   const CT_SUBMITTABLE = ['pic_assigned', 'in_progress', 'lead_revision'];
   const CT_DONE = ['lead_approved', 'submitted_to_account', 'sent_to_client', 'client_approved', 'completed', 'media_order_created'];
 
+  /* ---------- Phase 5 — PIC Content gửi Internal Media Order + theo dõi (port từ content-team.js) ---------- */
+  const PROD_STATUS = {
+    unassigned: 'Chưa phân công', pending: 'Chờ nhận', received: 'Đã nhận', inprogress: 'Đang sản xuất',
+    review: 'Chờ duyệt nội bộ', revision: 'Đang chỉnh', feedback_wait: 'Chờ phản hồi', feedback_fix: 'Sửa theo feedback',
+    ready: 'Sẵn sàng bàn giao', delivered: 'Đã bàn giao', completed: 'Hoàn tất', paused: 'Tạm dừng', cancelled: 'Đã hủy'
+  };
+  // priority task (low/normal/high/urgent) → priority order CHECK (normal/urgent/critical).
+  const ORDER_PRIO = { low: 'normal', normal: 'normal', high: 'urgent', urgent: 'critical', critical: 'critical' };
+  const MEDIA_REQ_FIELDS = [
+    { k: 'final_headline', label: 'Final headline', src: ['final_headline', 'headline', 'draft_title', 'title'] },
+    { k: 'final_body_or_script', label: 'Final body / script', req: true, area: true, rows: 4, src: ['final_body_or_script', 'draft_body', 'script', 'caption'] },
+    { k: 'cta', label: 'CTA', src: ['cta'] },
+    { k: 'mandatory_info', label: 'Thông tin bắt buộc', area: true, rows: 2, src: ['handoff_mandatory_info', 'mandatory_info'] },
+    { k: 'visual_direction', label: 'Định hướng hình ảnh', req: true, area: true, rows: 2, src: ['handoff_visual_direction', 'visual_direction'] },
+    { k: 'format_size', label: 'Format / Size', req: true, src: ['format_size'] },
+    { k: 'channel', label: 'Kênh đăng', req: true, src: ['channel'] },
+    { k: 'asset_link', label: 'Asset link', type: 'url', src: ['handoff_asset_link'] },
+    { k: 'media_note', label: 'Ghi chú cho Media', area: true, rows: 2, src: ['media_note'] }
+  ];
+  function mediaPrefill(t, f) {
+    for (let i = 0; i < f.src.length; i++) { const k = f.src[i]; if (k === 'title') return t.title || ''; let val = t[k]; if (Array.isArray(val)) val = val[0]; if (val) return val; }
+    return '';
+  }
+  function genOrderId() {
+    const d = new Date(); const p = function (n) { return String(n).padStart(2, '0'); };
+    return 'MEDIA-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-CT' + Math.random().toString(36).slice(2, 5).toUpperCase();
+  }
+  function toLocalInput(s) { if (!s) return ''; const d = new Date(/[Z+]/.test(String(s).slice(10)) ? s : String(s).replace(' ', 'T') + 'Z'); if (isNaN(d.getTime())) return ''; const p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function mrField(id, label, val, opts) {
+    opts = opts || {};
+    const req = opts.req ? ' <span style="color:var(--red-600)">*</span>' : '';
+    const inner = opts.area
+      ? '<textarea class="textarea" id="' + id + '" rows="' + (opts.rows || 2) + '" placeholder="' + esc(opts.ph || '') + '">' + esc(val || '') + '</textarea>'
+      : '<input class="input" id="' + id + '" type="' + (opts.type || 'text') + '" value="' + esc(val || '') + '" placeholder="' + esc(opts.ph || '') + '" />';
+    return '<div class="field"><label class="label">' + esc(label) + req + '</label>' + inner + '</div>';
+  }
+  function passedLeadApproval(t) { return ['lead_approved', 'media_order_created', 'completed'].indexOf(t.status) >= 0; }
+  function orderFinalDelivered(o) { return !!(o && (o.final_delivery_link || o.production_status === 'delivered' || o.production_status === 'completed')); }
+  function canSendMediaTask(t) { return ((isContent && isMine(t.assigned_pic)) || isAdmin) && t.status === 'lead_approved' && t.need_media_production && !t.media_request_created; }
+
   function isMine(name) {
     if (!name || !user.name) return false;
     const a = String(name).trim().toLowerCase(), b = String(user.name).trim().toLowerCase();
@@ -746,6 +786,15 @@
     } else if (isContent && t.status === 'submitted_to_lead' && isMine(t.assigned_pic)) {
       btns.push('<span class="wf-wait-tag">Đã gửi Lead — chờ duyệt</span>');
     }
+    // Phase 5 — PIC gửi Media + hoàn tất task (sau khi Lead duyệt nội dung).
+    const canPost = (isContent && isMine(t.assigned_pic)) || isAdmin;
+    if (canPost && t.status === 'lead_approved' && t.need_media_production && !t.media_request_created) {
+      btns.push('<button class="btn btn-primary btn-sm" id="wt-make-media">Gửi sang Media</button>');
+    }
+    if (canPost && t.media_request_created && t.status !== 'completed') {
+      // Bật/khóa theo Final (cập nhật async trong fillMediaTrack).
+      btns.push('<button class="btn btn-primary btn-sm" id="wt-complete" disabled title="Chờ Media bàn giao Final">Hoàn tất task</button>');
+    }
     return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div></div>' : '';
   }
   function buildTaskBody(t) {
@@ -769,6 +818,44 @@
     // Lead revision callout
     const revisionNote = (t.status === 'lead_revision' && (t.lead_review_note || t.last_revision_reason))
       ? '<div class="dw-callout dw--warning" style="margin:0 0 var(--space-3)"><p><b>Lead yêu cầu chỉnh:</b> ' + esc(t.lead_review_note || t.last_revision_reason) + '</p></div>' : '';
+
+    // Phase 5a — Media Order theo dõi (read-only, điền async ở openTaskDrawer/fillMediaTrack)
+    const mediaTrackHtml = (t.media_request_created && t.media_order_id)
+      ? '<section class="drawer-block cwb-snapshot ctm-review"><div class="drawer-block-head"><span class="block-letter">M</span><h4>Media Order — theo dõi sản xuất</h4></div>'
+        + '<div id="cwb-media-track-body"><p class="text-xs muted" style="margin:0">Đang tải trạng thái <b>' + esc(t.media_order_id) + '</b>…</p></div></section>'
+      : '';
+
+    // Phase 5b — Gửi sang Media (Internal Media Request) inline (chỉ PIC sau khi Lead duyệt)
+    const reqTypes = [['design', 'Thiết kế'], ['media', 'Quay / Chụp'], ['video', 'Video'], ['motion', 'Motion'], ['slide', 'Slide'], ['digital', 'Digital'], ['ads', 'Ads / Post'], ['other', 'Khác']];
+    const mediaFormHtml = canSendMediaTask(t)
+      ? '<section class="drawer-block ctm-review"><div class="drawer-block-head"><span class="block-letter">M</span><h4>Gửi sang Media (Internal Media Request)</h4></div>'
+        + '<p class="text-xs muted" style="margin:0 0 8px">Nội dung đã được Lead duyệt — gửi order nội bộ sang Media để sản xuất (KHÔNG lộ Client Portal). Lead Media/Account push Production sau.</p>'
+        + MEDIA_REQ_FIELDS.map(function (f) { return mrField('mr-' + f.k, f.label, mediaPrefill(t, f), { area: f.area, rows: f.rows, type: f.type, req: f.req }); }).join('')
+        + '<div class="field"><label class="label">Loại sản xuất (request type) <span style="color:var(--red-600)">*</span></label><select class="select" id="mr-request_type">' + reqTypes.map(function (r) { return '<option value="' + r[0] + '"' + (t.request_type === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select></div>'
+        + mrField('mr-deliverable_type', 'Hạng mục bàn giao (deliverable)', t.deliverable_type || '', { req: true, ph: 'VD: 3 post + 1 KV' })
+        + mrField('mr-production_deadline', 'Hạn sản xuất', toLocalInput(t.production_deadline || t.wording_deadline), { req: true, type: 'datetime-local' })
+        + '<div class="field"><label class="label">Ưu tiên</label><select class="select" id="mr-priority">' + ['low', 'normal', 'high', 'urgent'].map(function (k) { return '<option value="' + k + '"' + ((t.priority || 'normal') === k ? ' selected' : '') + '>' + PRIO_VI[k] + '</option>'; }).join('') + '</select></div>'
+        + '</section>'
+      : '';
+
+    // Phase 5c — Checklist hoàn tất task (auto-derive; mục Media-final cập nhật async)
+    let completionHtml = '';
+    if (passedLeadApproval(t)) {
+      const isDone = t.status === 'completed';
+      const items = [{ id: 'cmp-approved', label: 'Nội dung đã được Lead Content duyệt', done: true }];
+      if (t.need_media_production) {
+        items.push({ id: 'cmp-sent', label: 'Đã gửi Internal Media Request (thiết kế)', done: isDone || !!t.media_request_created });
+        items.push({ id: 'cmp-final', label: 'Media bàn giao Final', done: isDone });
+      }
+      const total = items.length; const done = items.filter(function (x) { return x.done; }).length;
+      const pct = Math.round(done / total * 100);
+      const rows = items.map(function (it) { return '<label class="checkbox"><input type="checkbox" id="' + it.id + '" ' + (it.done ? 'checked' : '') + ' disabled /><div><span class="checkbox-text">' + esc(it.label) + '</span></div></label>'; }).join('');
+      completionHtml = '<section class="drawer-block ctm-review"><div class="drawer-block-head"><span class="block-letter">✓</span><h4>Checklist hoàn tất task</h4></div>'
+        + '<div style="display:flex;flex-direction:column;gap:8px">' + rows + '</div>'
+        + '<div style="margin-top:10px"><span class="ctm-progress"><i id="cwb-cmp-bar" style="width:' + pct + '%"></i></span> <span class="text-xs" id="cwb-cmp-text">' + done + '/' + total + ' · ' + pct + '%</span></div>'
+        + (t.need_media_production && !isDone ? '<p class="text-xs muted" style="margin:8px 0 0">Đủ checklist (Media bàn giao Final) → bấm <b>Hoàn tất task</b>.</p>' : '')
+        + '</section>';
+    }
 
     // 4. Missing Info / Assumptions
     const missing = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">!</span><h4>Missing Info / Assumptions</h4></div>'
@@ -816,7 +903,7 @@
     const actHtml = acts.length ? acts.map(function (a) { return '<li><span>' + esc(a.text) + ' — <b>' + esc(a.by) + '</b></span><time>' + fmtDT(a.at) + '</time></li>'; }).join('') : '<li><span class="muted">Chưa có hoạt động.</span></li>';
     const activity = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">A</span><h4>Activity / Revision History</h4></div>' + revHtml + '<ul class="activity-mini">' + actHtml + '</ul></section>';
 
-    return revisionNote + summary + missing + workspace + handoff + checklist + filesHtml + activity;
+    return revisionNote + summary + mediaTrackHtml + mediaFormHtml + completionHtml + missing + workspace + handoff + checklist + filesHtml + activity;
   }
   function openTaskDrawer(t) {
     currentTask = t;
@@ -828,6 +915,8 @@
     document.getElementById('ctask-drawer-actions').innerHTML = buildTaskActions(t);
     document.getElementById('ctask-drawer-body').innerHTML = buildTaskBody(t);
     wireTaskDrawer();
+    if (t.media_request_created && t.media_order_id) fillMediaTrack(t.media_order_id, t);
+    else refreshCompletion(t, null);
     const dr = document.getElementById('ctask-drawer'); dr.classList.add('is-open'); dr.setAttribute('aria-hidden', 'false');
     document.getElementById('ctask-drawer-backdrop').classList.add('is-open');
     document.body.style.overflow = 'hidden';
@@ -917,9 +1006,147 @@
       }
     } catch (e) { console.warn('[cwb] notifyLeadTask failed:', e); }
   }
+  async function notifyRoles(roles, type, title, message, link, orderId) {
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    try {
+      const { data: us } = await window.MH.supabase.from('users').select('id').in('role', roles).eq('status', 'active');
+      if (Array.isArray(us) && us.length) {
+        await window.MH.supabase.from('notifications').insert(us.map(function (u) {
+          return { user_id: u.id, type: type, title: title, message: message, link: link, related_entity_type: 'orders', related_entity_id: orderId || null };
+        }));
+      }
+    } catch (e) { console.warn('[cwb] notifyRoles failed:', e); }
+  }
+  /* ---------- Phase 5 — PIC tạo Internal Media Request inline ---------- */
+  async function createMediaRequestInline(t) {
+    if (!t || !canSendMediaTask(t)) { toast('warning', 'Chưa đủ điều kiện', 'Chỉ gửi Media cho task đã Lead duyệt + cần Media + chưa gửi.'); return; }
+    const get = function (id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const vals = {};
+    MEDIA_REQ_FIELDS.forEach(function (f) { vals[f.k] = get('mr-' + f.k); });
+    vals.request_type = get('mr-request_type');
+    vals.deliverable_type = get('mr-deliverable_type');
+    const dlRaw = get('mr-production_deadline');
+    vals.priority = get('mr-priority') || 'normal';
+    const missing = [];
+    if (!vals.final_body_or_script) missing.push('Final body/script');
+    if (!vals.visual_direction) missing.push('Định hướng hình ảnh');
+    if (!vals.format_size) missing.push('Format/Size');
+    if (!vals.channel) missing.push('Kênh đăng');
+    if (!dlRaw) missing.push('Hạn sản xuất');
+    if (!vals.request_type) missing.push('Loại sản xuất');
+    if (!vals.deliverable_type) missing.push('Hạng mục bàn giao');
+    if (missing.length) { toast('warning', 'Thiếu handoff', 'Cần điền: ' + missing.join(', ') + '.'); return; }
+    const deadlineIso = new Date(dlRaw).toISOString();
+    const deadlineYmd = deadlineIso.slice(0, 10); // requested_deadline là DATE
+    const orderId = genOrderId();
+    const briefParts = [vals.final_body_or_script];
+    if (vals.cta) briefParts.push('CTA: ' + vals.cta);
+    if (vals.mandatory_info) briefParts.push('Thông tin bắt buộc: ' + vals.mandatory_info);
+    const noteParts = ['[Internal Media Request từ Content Team]', 'Content Task: ' + (t.title || t.id)];
+    if (vals.media_note) noteParts.push('Ghi chú Media: ' + vals.media_note);
+    const payload = {
+      order_id: orderId,
+      project_name: vals.final_headline || t.title || 'Internal Media Request',
+      content_brief: briefParts.join('\n\n'),
+      creative_direction: vals.visual_direction,
+      size_ratio: vals.format_size,
+      source_link: vals.asset_link || null,
+      internal_note: noteParts.join('\n'),
+      requested_deadline: deadlineYmd,
+      internal_deadline: deadlineIso,
+      request_type: vals.request_type,
+      deliverable_type: [vals.deliverable_type],   // text[]
+      priority: ORDER_PRIO[vals.priority] || 'normal',
+      department: 'Content Team',
+      requester_name: user.name || 'Content',
+      requester_email: (user && user.email) || 'content-team@cb.vn',
+      requester_role: 'content',
+      origin: 'content_team',
+      order_kind: 'internal_media_request',
+      client_visible: false,
+      source_content_task_id: t.id,
+      source_content_plan_id: t.content_plan_id || null,
+      account_status: 'confirmed',
+      brief_wording_status: 'completed',
+      created_at: new Date().toISOString()
+    };
+    try { await window.MH.store.orders.create(payload); }
+    catch (e) {
+      console.warn('[cwb] create media order failed:', e);
+      toast('warning', 'Chưa tạo được Media Order', 'Kiểm tra đã chạy add-content-to-media-order.sql + RLS content INSERT order nội bộ.');
+      return;
+    }
+    await persistTask(t, {
+      status: 'media_order_created', media_request_created: true, media_order_id: orderId,
+      handoff_ready: true, final_headline: vals.final_headline, final_body_or_script: vals.final_body_or_script,
+      handoff_mandatory_info: vals.mandatory_info, handoff_visual_direction: vals.visual_direction,
+      format_size: vals.format_size, channel: vals.channel, handoff_asset_link: vals.asset_link,
+      media_note: vals.media_note, production_deadline: deadlineIso, request_type: vals.request_type,
+      deliverable_type: vals.deliverable_type
+    }, 'PIC gửi Internal Media Request → ' + orderId);
+    notifyRoles(['admin', 'account', 'lead_media'], 'order_new', '🎬 Internal Media Request từ Content',
+      orderId + ' · ' + (vals.final_headline || t.title || '') + ' — cần Media sản xuất (push Production).',
+      'database-orders.html?id=' + orderId, orderId);
+    notifyLeadTask(t, '🎬 PIC đã gửi Media Request', (t.title || 'Content task') + ' → ' + orderId + ' (order nội bộ).');
+    toast('success', 'Đã gửi sang Media', orderId + ' — order nội bộ, không lộ Client Portal.');
+    reloadTaskAndReopen();
+  }
+  // Theo dõi Media Order nội bộ (read-only) + cập nhật checklist hoàn tất + nút "Hoàn tất task".
+  async function fillMediaTrack(orderId, t) {
+    let o = null;
+    try { o = await window.MH.store.orders.get(orderId); } catch (e) { console.warn('[cwb] media track fetch:', e); }
+    const cur = document.getElementById('cwb-media-track-body');
+    if (cur) {
+      if (!o) { cur.innerHTML = '<p class="text-xs muted" style="margin:0">Order <b>' + esc(orderId) + '</b> — chưa đồng bộ được trạng thái (cần Supabase + đã chạy add-content-to-media-order.sql).</p>'; }
+      else {
+        const ps = o.production_status || 'unassigned';
+        const prog = (o.progress != null ? o.progress : 0);
+        const picMedia = o.production_pic || [o.production_pic_video, o.production_pic_photo].filter(Boolean).join(' · ');
+        const links = [];
+        if (o.preview_link) links.push('<a class="btn btn-secondary btn-sm" href="' + esc(o.preview_link) + '" target="_blank" rel="noopener">Xem Preview</a>');
+        if (o.final_delivery_link) links.push('<a class="btn btn-secondary btn-sm" href="' + esc(o.final_delivery_link) + '" target="_blank" rel="noopener">Xem Final</a>');
+        const pushed = ps && ps !== 'unassigned';
+        cur.innerHTML = '<dl style="margin:0">'
+          + '<dt>Order nội bộ</dt><dd><span class="order-id">' + esc(orderId) + '</span> <span class="ctm-internal-badge">Internal</span></dd>'
+          + '<dt>PIC Media</dt><dd>' + (picMedia ? esc(picMedia) : '<em class="muted">chưa gán</em>') + '</dd>'
+          + '<dt>Trạng thái SX</dt><dd><span class="tb-status s--wording"><span class="dot"></span>' + esc(PROD_STATUS[ps] || ps) + '</span>' + (pushed ? '' : ' <span class="text-xs muted">· chờ Media/Account push Production</span>') + '</dd>'
+          + '<dt>Tiến độ</dt><dd><span class="ctm-progress"><i style="width:' + prog + '%"></i></span> <span class="text-xs">' + prog + '%</span></dd>'
+          + '<dt>Hạn sản xuất</dt><dd>' + (o.requested_deadline ? esc(o.requested_deadline) : '<em class="muted">—</em>') + '</dd>'
+          + '<dt>Bàn giao</dt><dd>' + (links.length ? '<div class="row" style="flex-wrap:wrap;gap:6px">' + links.join('') + '</div>' : '<em class="muted">chưa có</em>') + '</dd>'
+          + '</dl>';
+      }
+    }
+    refreshCompletion(t || currentTask, o);
+  }
+  // Cập nhật checklist hoàn tất + nút "Hoàn tất task" theo trạng thái order.
+  function refreshCompletion(t, o) {
+    if (!t) return;
+    const final = orderFinalDelivered(o);
+    const fin = document.getElementById('cmp-final'); if (fin) fin.checked = final;
+    let total = 1, done = 1; // mục "Lead duyệt" luôn done khi block hiện
+    if (t.need_media_production) { total += 2; done += (t.media_request_created ? 1 : 0) + (final ? 1 : 0); }
+    const pct = Math.round(done / total * 100);
+    const bar = document.getElementById('cwb-cmp-bar'); if (bar) bar.style.width = pct + '%';
+    const txt = document.getElementById('cwb-cmp-text'); if (txt) txt.textContent = done + '/' + total + ' · ' + pct + '%';
+    const btn = document.getElementById('wt-complete');
+    if (btn) { const ready = (!t.need_media_production) || final; btn.disabled = !ready; btn.title = ready ? '' : 'Chờ Media bàn giao Final'; }
+  }
+  async function completeTask(t) {
+    if (!t) return;
+    if (t.need_media_production) {
+      let o = null; try { o = await window.MH.store.orders.get(t.media_order_id); } catch (e) { }
+      if (!orderFinalDelivered(o)) { toast('warning', 'Chưa thể hoàn tất', 'Media chưa bàn giao Final cho order ' + (t.media_order_id || '') + '.'); return; }
+    }
+    await persistTask(t, { status: 'completed' }, 'Hoàn tất task (Media đã bàn giao Final)');
+    notifyLeadTask(t, '✅ Content task đã hoàn tất', (t.title || 'Content task') + ' — Media bàn giao Final, PIC đã hoàn tất.');
+    toast('success', 'Đã hoàn tất task', t.title || t.id);
+    reloadTaskAndReopen();
+  }
   function wireTaskDrawer() {
     const w = function (id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
     w('wt-start', startTask); w('wt-save', saveTaskDraft); w('wt-submit', submitTaskToLead);
+    w('wt-make-media', function () { createMediaRequestInline(currentTask); });
+    w('wt-complete', function () { completeTask(currentTask); });
     document.querySelectorAll('#ctask-drawer-body .cwbt-field').forEach(function (el) { el.addEventListener('input', refreshTaskSubmit); });
     document.querySelectorAll('#ctask-drawer-body .cwbt-check').forEach(function (el) { el.addEventListener('change', refreshTaskSubmit); });
     refreshTaskSubmit();

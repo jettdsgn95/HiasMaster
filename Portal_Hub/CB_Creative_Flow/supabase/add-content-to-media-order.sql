@@ -2,13 +2,15 @@
 -- (Content-to-Media Handoff → Internal Media Request).
 -- Idempotent. Chạy SAU: rls.sql + add-content-team.sql + add-content-initiatives.sql.
 --
--- Mục đích: Lead Content (sau khi duyệt content) tạo "Internal Media Request" =
+-- Mục đích: Sau khi Lead Content duyệt nội dung, Content Team tạo "Internal Media Request" =
 --   1 order NỘI BỘ (client_visible=false) để Media team sản xuất qua Production flow.
 --   KHÔNG lộ Client Portal. Order link ngược về content_task/content_plan.
+--   Creator: PIC Content (role 'content', gửi trong drawer content-workbench) HOẶC Lead Content.
 --
 -- B1. Thêm cột internal vào orders.
 -- B2. RLS: lead_content INSERT order nội bộ (chỉ order_kind=internal_media_request,
 --     client_visible=false) + SELECT order nội bộ mình tạo. KHÔNG mở order Client.
+-- B3. RLS: content INSERT order nội bộ (PIC gửi sau khi Lead duyệt). SELECT đã có sẵn.
 
 -- =====================================================================
 -- B1. Cột internal media request trên orders
@@ -22,7 +24,7 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS requester_role          text;
 
 COMMENT ON COLUMN public.orders.client_visible IS 'false = order nội bộ (Internal Media Request từ Content), KHÔNG hiển thị Client Portal.';
-COMMENT ON COLUMN public.orders.order_kind IS 'internal_media_request = order do Lead Content tạo cho Media team.';
+COMMENT ON COLUMN public.orders.order_kind IS 'internal_media_request = order do Content Team (PIC Content / Lead Content) tạo cho Media team.';
 
 CREATE INDEX IF NOT EXISTS idx_orders_source_content_task ON public.orders(source_content_task_id);
 
@@ -49,6 +51,18 @@ CREATE POLICY "orders lead_content update internal" ON public.orders
   ) WITH CHECK (
     public.current_user_role() = 'lead_content'
     AND order_kind = 'internal_media_request'
+  );
+
+-- B3. PIC Content (role 'content') tạo Internal Media Request NGAY trong drawer content-workbench
+--     (sau khi Lead duyệt nội dung). Chỉ INSERT order nội bộ (order_kind=internal_media_request,
+--     client_visible=false). SELECT đã có qua "orders content read" (add-content-role.sql, không scope).
+--     KHÔNG cấp UPDATE cho content — PIC điền đủ field 1 lần khi gửi.
+DROP POLICY IF EXISTS "orders content insert internal" ON public.orders;
+CREATE POLICY "orders content insert internal" ON public.orders
+  FOR INSERT WITH CHECK (
+    public.current_user_role() = 'content'
+    AND order_kind = 'internal_media_request'
+    AND client_visible = false
   );
 
 -- Verify (tùy chọn):

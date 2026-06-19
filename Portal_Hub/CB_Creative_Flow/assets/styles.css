@@ -4620,6 +4620,8 @@ body[data-user-role="content"] .dash-nav li:has(> a[href="supervisor-planning.ht
   display: flex; flex-direction: column; gap: var(--space-3);
 }
 .drawer-actions .btn-sm { font-size: 11px; padding-inline: var(--space-4); }
+/* Actions rỗng (vd Lead xem task đã sang Media — không có CTA) → ẩn dải trống. */
+.drawer-actions:empty { display: none; }
 
 /* Workflow stepper — 4 chấm + đường nối */
 .wf-stepper {
@@ -6485,10 +6487,16 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .ctm-chk-chip input { accent-color: var(--brand-600); margin: 0; }
 .ctm-chk-chip:has(input:checked) { border-color: var(--brand-600); background: rgba(25,25,112,.07); color: var(--brand-600); font-weight: 600; }
 
-/* Plan / Task drawers stack trên drawer wording (z-modal=100); dưới toast (1000) */
-.ctm-plan-drawer, .ctm-task-drawer { z-index: 120; }
-#ctm-plan-backdrop, #ctm-task-backdrop { z-index: 115; }
-.ctm-task-drawer, .ctask-drawer { width: min(640px, calc(100% - 40px)); }
+/* Plan / Task drawers stack trên drawer wording (z-modal=100); dưới toast (1000).
+   Task drawer mở TỪ TRONG Plan drawer → phải nằm TRÊN + backdrop riêng che/làm mờ Plan
+   (Plan rộng 760 > Task 640 nên nếu cùng z thì Plan lòi ra trái → "đè drawer"). */
+.ctm-plan-drawer { z-index: 120; }
+#ctm-plan-backdrop { z-index: 115; }
+.ctm-task-drawer { z-index: 140; }
+#ctm-task-backdrop { z-index: 130; }
+.ctm-task-drawer, .ctask-drawer { width: min(820px, calc(100% - 40px)); }
+/* Content drawer: nới khoảng cách label↔value trong dl (đỡ sát) */
+.ctm-drawer .drawer-block dl, .ctask-drawer .drawer-block dl { grid-template-columns: 168px 1fr; gap: 10px var(--space-5); }
 
 /* Phase 4 — Lead Review read-only blocks */
 .ctm-draft-field { padding: 8px 0; border-bottom: 1px dashed var(--border); }
@@ -6498,7 +6506,9 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .ctm-chk-readonly { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .ctm-chk-readonly li { font-size: var(--text-sm); color: var(--text-muted); }
 .ctm-chk-readonly li.is-on { color: var(--success); }
-.ctm-review { border-left: 3px solid var(--brand-600); }
+.ctm-review { border-left: 3px solid var(--brand-600); padding-left: var(--space-4); border-radius: 0 10px 10px 0; }
+/* block-head trong ctm-review: chừa khoảng để chữ M/✓ không dính vạch trái */
+.ctm-review .drawer-block-head { padding-top: 2px; }
 
 /* Phase 5 — Internal Media Request badge (Database Orders drawer) */
 .ctm-internal-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; color: #6B21A8; background: rgba(107,33,168,.1); border: 1px solid rgba(107,33,168,.35); white-space: nowrap; }
