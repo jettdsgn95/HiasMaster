@@ -739,22 +739,14 @@
       const isInternal = order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false;
       if (!isInternal) return;
       const ctId = order.source_content_task_id;
-      const recips = [];
+      // Chỉ báo Lead Content (sở hữu handoff Media + có block tracking ở content-team).
+      // KHÔNG báo PIC content: role 'content' bị guard đá khỏi content-team → deep-link bounce.
       const { data: leads } = await window.MH.supabase
         .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
-      (leads || []).forEach((u) => recips.push(u.id));
-      try {
-        const ct = await window.MH.store.contentTasks.get(ctId);
-        if (ct && ct.assigned_pic) {
-          const pid = await window.MH.store.notifications.findUserIdByName(ct.assigned_pic);
-          if (pid) recips.push(pid);
-        }
-      } catch (e) { /* ignore PIC lookup */ }
-      const uniq = recips.filter((v, i, a) => v && a.indexOf(v) === i);
-      if (!uniq.length) return;
+      if (!Array.isArray(leads) || !leads.length) return;
       const label = CONTENT_PROD_NOTIFY[newStatus];
-      await window.MH.supabase.from('notifications').insert(uniq.map((uid) => ({
-        user_id: uid,
+      await window.MH.supabase.from('notifications').insert(leads.map((u) => ({
+        user_id: u.id,
         type: 'task_status_changed',
         title: label,
         message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media: ' + label.toLowerCase() + '.',
