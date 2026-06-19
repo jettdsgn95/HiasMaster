@@ -395,7 +395,7 @@
   function matchesView(o) {
     switch (state.view) {
       case 'all': return o.account_status !== 'rejected';
-      case 'pending': return o.account_status === 'pending';
+      case 'pending': return isNewOrder(o);
       case 'checking': return o.account_status === 'checking';
       case 'needinfo': return o.account_status === 'needinfo';
       case 'confirmed': return o.account_status === 'confirmed' && o.production_status !== 'completed';
@@ -465,7 +465,7 @@
 
     return `
       <tr data-id="${o.order_id}" class="${isOverdue ? 'is-overdue' : ''}">
-        <td><span class="order-id">${o.order_id}</span>${o.account_status === 'pending' ? '<span class="order-new-badge">NEW</span>' : ''}${getRevisionRef(o) ? `<span class="rev-cont-badge" title="Tiếp nối từ ${escapeHtml(getRevisionRef(o))} (sau 03 vòng feedback)">↩ Tiếp</span>` : ''}</td>
+        <td><span class="order-id">${o.order_id}</span>${isNewOrder(o) ? '<span class="order-new-badge">NEW</span>' : ''}${getRevisionRef(o) ? `<span class="rev-cont-badge" title="Tiếp nối từ ${escapeHtml(getRevisionRef(o))} (sau 03 vòng feedback)">↩ Tiếp</span>` : ''}</td>
         <td><span class="text-xs muted">${ts_fmt}</span></td>
         <td class="requester-cell"><b>${escapeHtml(o.requester_name)}</b><span>${escapeHtml(o.department)}</span></td>
         <td class="project-cell"><b>${escapeHtml(o.project_name)}</b><span>${o.deliverable_type ? o.deliverable_type.slice(0, 2).join(' · ') + (o.deliverable_type.length > 2 ? ' +' + (o.deliverable_type.length - 2) : '') : ''}</span></td>
@@ -544,7 +544,7 @@
     const setCount = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
     const active = ORDERS.filter((o) => o.account_status !== 'rejected');
     setCount('count-all', active.length);
-    setCount('count-pending', ORDERS.filter((o) => o.account_status === 'pending').length);
+    setCount('count-pending', ORDERS.filter((o) => isNewOrder(o)).length);
     setCount('count-needinfo', ORDERS.filter((o) => o.account_status === 'needinfo').length);
     setCount('count-confirmed', ORDERS.filter((o) => o.account_status === 'confirmed' && o.production_status !== 'completed').length);
     setCount('count-unassigned', ORDERS.filter((o) => o.account_status === 'confirmed' && !orderHasPic(o)).length);
@@ -556,7 +556,7 @@
     setCount('count-completed', ORDERS.filter((o) => o.production_status === 'completed' || o.production_status === 'delivered').length);
     // sidebar badge
     const navBadge = document.getElementById('nav-pending');
-    if (navBadge) navBadge.textContent = ORDERS.filter((o) => o.account_status === 'pending').length;
+    if (navBadge) navBadge.textContent = ORDERS.filter((o) => isNewOrder(o)).length;
   }
 
   /* ---------- Event listeners ---------- */
@@ -1687,6 +1687,13 @@
      - Fire-and-forget: không block UI nếu lookup hoặc INSERT fail (log warning) */
   function isInternalOrder(order) {
     return !!(order && (order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false || order.source_content_task_id));
+  }
+  // Badge NEW: order client = chờ Account xác nhận (pending); order NỘI BỘ auto-confirmed (Option A)
+  // → "new" cho tới khi Lead Media/Account push Production (production_status còn unassigned/null).
+  function isNewOrder(o) {
+    if (!o) return false;
+    if (isInternalOrder(o)) return (!o.production_status || o.production_status === 'unassigned') && o.account_status !== 'rejected';
+    return o.account_status === 'pending';
   }
   async function notifyClient(order, notifPayload) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return false;

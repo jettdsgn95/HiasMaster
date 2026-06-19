@@ -711,8 +711,11 @@
   function renderModule5Dashboard(O, T) {
     const orderInProductionStatuses = ['received', 'inprogress', 'revision', 'feedback_fix'];
     const totalClientOrders = O.length;
-    // "New Orders" = đơn mới chờ Account xác nhận (account_status='pending').
-    const activeClientOrders = O.filter((o) => o.account_status === 'pending').length;
+    // "New Orders" = đơn mới cần xử lý: client chờ Account xác nhận (pending) HOẶC order nội bộ
+    // từ Content (auto-confirmed) chưa push Production. Khớp drilldown view 'pending' (database-orders).
+    const _isInternalO = (o) => o.order_kind === 'internal_media_request' || o.origin === 'content_team' || o.client_visible === false || o.source_content_task_id;
+    const _isNewO = (o) => _isInternalO(o) ? ((!o.production_status || o.production_status === 'unassigned') && o.account_status !== 'rejected') : o.account_status === 'pending';
+    const activeClientOrders = O.filter(_isNewO).length;
     const orderNeedInfo = O.filter((o) => o.account_status === 'needinfo').length;
     const orderInProduction = O.filter((o) => orderInProductionStatuses.includes(o.production_status)).length;
     const deliveredOrders = O.filter((o) => o.production_status === 'delivered').length;
