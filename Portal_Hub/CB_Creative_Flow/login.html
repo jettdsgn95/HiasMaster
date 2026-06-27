@@ -45,20 +45,20 @@
       <p class="lead">Truy cập toàn bộ dự án, file bàn giao và lịch sử phản hồi của bạn.</p>
 
       <form id="login-form" novalidate>
+        <!-- 1. Đăng nhập bằng email + mật khẩu -->
         <div class="field">
-          <label class="label" for="email">Email công ty <span class="req">*</span></label>
+          <label class="label" for="email">Email <span class="req">*</span></label>
           <div class="input-group">
             <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
-            <input class="input" id="email" type="email" placeholder="name@company.com" required autocomplete="email" />
+            <input class="input" id="email" type="email" placeholder="name@cbcentres.com" autocomplete="email" />
           </div>
           <span class="error">Vui lòng nhập email hợp lệ.</span>
         </div>
-
         <div class="field">
           <label class="label" for="password">Mật khẩu <span class="req">*</span></label>
           <div class="input-group">
             <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <input class="input" id="password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+            <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
             <button type="button" class="icon-btn" id="toggle-pwd" aria-label="Hiện / ẩn mật khẩu" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:36px; height:36px">
               <svg id="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <svg id="eye-off" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -66,26 +66,23 @@
           </div>
           <span class="error">Mật khẩu không được để trống.</span>
         </div>
-
         <div class="form-foot">
-          <label class="checkbox">
-            <input type="checkbox" />
-            <span class="checkbox-text">Ghi nhớ tôi</span>
-          </label>
+          <label class="checkbox"><input type="checkbox" /><span class="checkbox-text">Ghi nhớ tôi</span></label>
           <a href="#" id="forgot-pwd">Quên mật khẩu?</a>
         </div>
-
         <button class="btn btn-primary btn-lg btn-block" type="submit" id="login-btn">Đăng nhập</button>
 
         <div class="auth-divider">hoặc</div>
 
-        <button class="btn btn-secondary btn-block" type="button">
-          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.48a4.8 4.8 0 0 1 4.48-3.3z"/></svg>
-          Đăng nhập với Google công ty
+        <!-- 2. Đăng nhập bằng Gmail công ty (Google Workspace SSO) -->
+        <button class="btn btn-secondary btn-block" type="button" id="google-login-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18" style="background:#fff;border-radius:3px;padding:1px"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.48a4.8 4.8 0 0 1 4.48-3.3z"/></svg>
+          Đăng nhập với Gmail công ty
         </button>
+        <p class="text-xs muted" style="text-align:center;margin-top:10px">Gmail công ty <b>@cbcentres.com</b></p>
       </form>
 
-      <p class="auth-foot">Chưa có tài khoản? <a href="help.html#contact">Liên hệ admin để được cấp quyền</a></p>
+      <p class="auth-foot">Chưa có quyền? <a href="help.html#contact">Liên hệ admin để được cấp quyền</a></p>
     </div>
   </section>
 
@@ -123,10 +120,12 @@
 <script src="assets/app.js"></script>
 <script>
 (function(){
+  const ALLOWED_DOMAIN = 'cbcentres.com';
   const form = document.getElementById('login-form');
   const email = document.getElementById('email');
   const password = document.getElementById('password');
   const btn = document.getElementById('login-btn');
+  const gbtn = document.getElementById('google-login-btn');
 
   function clearErr(){ form.querySelectorAll('.has-error').forEach(f => f.classList.remove('has-error')); }
   function mark(el){ el.closest('.field').classList.add('has-error'); }
@@ -139,15 +138,61 @@
     });
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get('redirect');
-    // Home theo role: client → Client Portal; content → Content Wording;
-    // lead_media → Master Dashboard (Trưởng nhóm Production, quyền ngang Account); còn lại → Master Dashboard.
-    // ⚠ TẠM: lead_content → supervisor-planning.html (Content Team chưa deploy — content-team.html
-    //    chưa commit). Khi build xong Content Team thì trả lại lead_content → 'content-team.html'.
-    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'supervisor-planning.html', lead_media: 'dashboard.html' };
+    // Home theo role: client → Client Portal; content (PIC) → Content Workbench;
+    // lead_content → Content Team Workspace; lead_media → Master Dashboard (quyền ngang Account); còn lại → Master Dashboard.
+    const roleHome = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html', lead_media: 'dashboard.html' };
     const defaultRedirect = roleHome[user.role] || 'dashboard.html';
     setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
   }
 
+  async function pollUser() {
+    let user = null;
+    for (let i = 0; i < 30 && !user; i++) {
+      await new Promise(function (r) { setTimeout(r, 50); });
+      try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) {}
+    }
+    return user;
+  }
+
+  /* ---------- Google Workspace SSO (@cbcentres.com) ---------- */
+  function gFail(msg) {
+    if (gbtn) { gbtn.classList.remove('is-loading'); gbtn.disabled = false; }
+    window.MH.toast({ type: 'error', title: 'Đăng nhập thất bại', message: msg });
+  }
+  if (gbtn) gbtn.addEventListener('click', async () => {
+    if (!window.MH || !window.MH.supabaseEnabled) { gFail('Hệ thống xác thực chưa khởi tạo. Tải lại trang.'); return; }
+    gbtn.classList.add('is-loading'); gbtn.disabled = true;
+    try {
+      await window.MH.supabaseReady;
+      // cờ phân biệt OAuth-return (giữ qua redirect Google trong cùng tab) với phiên cũ.
+      sessionStorage.setItem('mh-oauth-pending', '1');
+      const { error } = await window.MH.store.auth.signInWithGoogle(location.origin + '/login.html');
+      if (error) { sessionStorage.removeItem('mh-oauth-pending'); gFail(error.message || 'Không mở được Google.'); }
+      // thành công → trình duyệt redirect sang Google; xử lý return ở handleOAuthReturn().
+    } catch (e) { sessionStorage.removeItem('mh-oauth-pending'); gFail(e && e.message ? e.message : 'Lỗi kết nối Google.'); }
+  });
+
+  // Xử lý khi Google redirect quay lại login.html (chỉ chạy khi có cờ pending).
+  async function handleOAuthReturn() {
+    if (!sessionStorage.getItem('mh-oauth-pending')) return;
+    if (!window.MH || !window.MH.supabaseEnabled) return;
+    await window.MH.supabaseReady;
+    const session = await window.MH.store.auth.session();
+    sessionStorage.removeItem('mh-oauth-pending');
+    if (!session || !session.user) return; // user hủy / lỗi → ở lại trang
+    const em = (session.user.email || '').toLowerCase();
+    if (!em.endsWith('@' + ALLOWED_DOMAIN)) {
+      await window.MH.store.auth.signOut();
+      gFail('Chỉ email @' + ALLOWED_DOMAIN + ' được phép đăng nhập.');
+      return;
+    }
+    const user = await pollUser();
+    if (!user) { gFail('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
+    finishLogin(user);
+  }
+  handleOAuthReturn();
+
+  /* ---------- Đăng nhập email + mật khẩu ---------- */
   function failLogin(msg) {
     btn.classList.remove('is-loading');
     btn.textContent = 'Đăng nhập';
@@ -158,24 +203,12 @@
   async function loginAs(emailVal, pwdVal) {
     btn.classList.add('is-loading');
     btn.textContent = 'Đang đăng nhập...';
-
-    if (!window.MH || !window.MH.supabaseEnabled) {
-      failLogin('Hệ thống xác thực chưa khởi tạo. Vui lòng tải lại trang.');
-      return;
-    }
-
+    if (!window.MH || !window.MH.supabaseEnabled) { failLogin('Hệ thống xác thực chưa khởi tạo. Vui lòng tải lại trang.'); return; }
     try {
       await window.MH.supabaseReady;
       const { error } = await window.MH.store.auth.signIn(emailVal, pwdVal);
       if (error) { failLogin(error.message || 'Email hoặc mật khẩu không đúng.'); return; }
-
-      // onAuthStateChange (supabase-client.js) mirror session → localStorage['mh-user'].
-      // Cho ~1s để fetch public.users row populate xong rồi mới redirect.
-      let user = null;
-      for (let i = 0; i < 20 && !user; i++) {
-        await new Promise(function (r) { setTimeout(r, 50); });
-        try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) {}
-      }
+      const user = await pollUser();
       if (!user) { failLogin('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
       finishLogin(user);
     } catch (e) {
@@ -190,10 +223,7 @@
     let ok = true;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { mark(email); ok = false; }
     if (!password.value.trim()) { mark(password); ok = false; }
-    if (!ok) {
-      window.MH.toast({ type: 'error', title: 'Thông tin chưa hợp lệ', message: 'Vui lòng kiểm tra lại email và mật khẩu.' });
-      return;
-    }
+    if (!ok) { window.MH.toast({ type: 'error', title: 'Thông tin chưa hợp lệ', message: 'Vui lòng kiểm tra lại email và mật khẩu.' }); return; }
     loginAs(email.value.trim(), password.value);
   });
 
@@ -201,16 +231,17 @@
   const toggle = document.getElementById('toggle-pwd');
   const eyeOn = document.getElementById('eye-on');
   const eyeOff = document.getElementById('eye-off');
-  toggle.addEventListener('click', () => {
+  if (toggle) toggle.addEventListener('click', () => {
     const show = password.type === 'password';
     password.type = show ? 'text' : 'password';
     eyeOn.style.display = show ? 'none' : 'block';
     eyeOff.style.display = show ? 'block' : 'none';
   });
 
-  document.getElementById('forgot-pwd').addEventListener('click', (e) => {
+  const forgot = document.getElementById('forgot-pwd');
+  if (forgot) forgot.addEventListener('click', (e) => {
     e.preventDefault();
-    window.MH.toast({ type: 'info', title: 'Khôi phục mật khẩu', message: 'Link đặt lại mật khẩu sẽ được gửi tới email của bạn (demo).' });
+    window.MH.toast({ type: 'info', title: 'Khôi phục mật khẩu', message: 'Liên hệ admin để được cấp lại mật khẩu, hoặc đăng nhập bằng Gmail công ty.' });
   });
 })();
 </script>

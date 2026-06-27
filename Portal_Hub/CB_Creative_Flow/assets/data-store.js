@@ -574,6 +574,19 @@
       // Fallback: existing demo accounts. Returned object mimics Supabase shape.
       throw new Error('Supabase chưa cấu hình — demo flow vẫn dùng login.html localStorage logic.');
     },
+    // Google Workspace SSO (@cbcentres.com). Redirect-based OAuth — trả {data,error};
+    // session về qua redirectTo + detectSessionInUrl (supabase-client.js).
+    async signInWithGoogle(redirectTo) {
+      const s = await sb();
+      if (!s) return { data: null, error: { message: 'Hệ thống xác thực chưa sẵn sàng.' } };
+      return s.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo || (location.origin + location.pathname),
+          queryParams: { hd: 'cbcentres.com', prompt: 'select_account' }
+        }
+      });
+    },
     async signOut() {
       const s = await sb();
       if (s) { await s.auth.signOut(); return; }
