@@ -7,9 +7,11 @@
 -- =====================================================================
 -- A1. Cho phép role 'content' trong public.users (trigger handle_new_auth_user cần CHECK này).
 -- =====================================================================
+-- Superset TẤT CẢ role đang dùng (tránh regress khi DB đã có lead_content/lead_media/system_supervisor
+-- từ các migration sau — chạy lại bất kỳ file role-check nào cũng an toàn, không phụ thuộc thứ tự).
 ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE public.users ADD CONSTRAINT users_role_check
-  CHECK (role IN ('admin','account','design','editor','client','content'));
+  CHECK (role IN ('admin','account','design','editor','client','content','lead_content','lead_media','system_supervisor'));
 
 -- =====================================================================
 -- A2. RLS: content CHỈ ĐỌC orders (không đụng tasks/deliveries/settings → giữ "content không thấy Task Tracker").

@@ -17,9 +17,10 @@
 -- =====================================================================
 -- B1. Role 'lead_content'
 -- =====================================================================
+-- Superset TẤT CẢ role (tránh regress khi DB đã có lead_media/system_supervisor — re-run an toàn).
 ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE public.users ADD CONSTRAINT users_role_check
-  CHECK (role IN ('admin','account','design','editor','client','content','lead_content'));
+  CHECK (role IN ('admin','account','design','editor','client','content','lead_content','lead_media','system_supervisor'));
 
 -- =====================================================================
 -- B2. brief_wording_status: thêm 3 status Lead Content

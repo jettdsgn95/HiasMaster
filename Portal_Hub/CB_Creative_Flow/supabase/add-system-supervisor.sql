@@ -16,7 +16,7 @@
 ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE public.users ADD CONSTRAINT users_role_check
   CHECK (role IN ('admin','account','design','editor','client',
-                  'content','lead_content','system_supervisor'));
+                  'content','lead_content','system_supervisor','lead_media'));
 
 -- =====================================================================
 -- B2. Helper: is_system_supervisor() (SECURITY DEFINER, tránh recursion RLS).
