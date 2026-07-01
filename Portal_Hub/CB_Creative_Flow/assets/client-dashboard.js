@@ -484,7 +484,7 @@ function renderCurrentOrders() {
       <div class="co-card" data-action="open-order" data-order-id="${o.id}">
         <div class="co-card-head">
           <div>
-            <div class="co-card-id">${o.id}${isAdsOrder(o) ? ' <span class="badge-ads-order">Ads Order</span>' : ''}</div>
+            <div class="co-card-id">${o.id}${isAdsOrder(o) ? ' <span class="badge-campaign">Ads Order</span>' : ''}</div>
             <div class="co-card-name">${o.name}</div>
           </div>
           <span class="tb-status ${st.cls}">${st.label}</span>
@@ -570,7 +570,7 @@ function renderOrdersTable() {
         : '—');
     return `
       <tr style="cursor:pointer" data-action="open-order" data-order-id="${o.id}">
-        <td class="mono text-xs">${o.id}${isAdsOrder(o) ? '<br><span class="badge-ads-order">Ads Order</span>' : ''}</td>
+        <td class="mono text-xs">${o.id}${isAdsOrder(o) ? '<br><span class="badge-campaign">Ads Order</span>' : ''}</td>
         <td><b>${o.name}</b><br><span class="text-xs muted">${isAdsOrder(o) ? 'Yêu cầu chạy Ads' : o.category}</span></td>
         <td class="text-sm">${isAdsOrder(o) ? 'Ads' : o.type}</td>
         <td class="text-xs muted">${o.date}</td>
@@ -642,7 +642,7 @@ function openOrderDrawer(orderId) {
     document.getElementById('drawer-body').innerHTML = `<div class="drawer-block">
       <div class="drawer-detail-section">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--space-3)">
-          <span class="badge-ads-order">Ads Order</span>
+          <span class="badge-campaign">Ads Order</span>
         </div>
         <h4>Chiến dịch Ads</h4>
         <div>

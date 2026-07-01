@@ -67,7 +67,7 @@
 
   /* ---------- Autofill người yêu cầu + auth bar ---------- */
   function autofill() {
-    const bar = document.getElementById('ads-auth-bar');
+    const bar = document.getElementById('cmp-auth-bar');
     if (AUTH_USER) {
       const set = (id, val) => { const el = document.getElementById(id); if (el && !el.value && val) el.value = val; };
       set('ads_requester_name', AUTH_USER.name || '');
@@ -99,8 +99,8 @@
   let planFile = null;
   (function wirePlanFile() {
     const inp = document.getElementById('ads_plan_file');
-    const drop = document.getElementById('ads-file-drop');
-    const txt = document.getElementById('ads-file-text');
+    const drop = document.getElementById('cmp-file-drop');
+    const txt = document.getElementById('cmp-file-text');
     if (!inp) return;
     inp.addEventListener('change', function () {
       planFile = (inp.files && inp.files[0]) || null;

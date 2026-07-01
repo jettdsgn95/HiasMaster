@@ -29,10 +29,10 @@
 @media(max-width:520px){.rf-type-switch{width:100%}}
 @media(prefers-reduced-motion:reduce){.rf-type-switch::before{transition:none}}
 /* Ads: ô đính kèm file kế hoạch */
-.ads-file-drop{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;border:1.5px dashed var(--border);border-radius:var(--radius);background:var(--surface-2);color:var(--text-muted);font-size:var(--text-sm);font-weight:500;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
-.ads-file-drop:hover{border-color:var(--brand-600,#191970);color:var(--text)}
-.ads-file-drop svg{width:20px;height:20px;flex-shrink:0}
-.ads-file-drop.has-file{border-style:solid;border-color:var(--brand-600,#191970);color:var(--brand-600,#191970);background:rgb(25 25 112 / .05)}
+.cmp-file-drop{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;border:1.5px dashed var(--border);border-radius:var(--radius);background:var(--surface-2);color:var(--text-muted);font-size:var(--text-sm);font-weight:500;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.cmp-file-drop:hover{border-color:var(--brand-600,#191970);color:var(--text)}
+.cmp-file-drop svg{width:20px;height:20px;flex-shrink:0}
+.cmp-file-drop.has-file{border-style:solid;border-color:var(--brand-600,#191970);color:var(--brand-600,#191970);background:rgb(25 25 112 / .05)}
 /* Chooser popup */
 .rf-chooser-card{max-width:780px}
 .rf-chooser-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);padding:var(--space-6);overflow-y:auto}
@@ -46,7 +46,7 @@
   opacity:0;transform:translateY(14px);animation:rfCardIn .5s var(--ease-spring,cubic-bezier(.22,1,.36,1)) forwards}
 .rf-choice-card--media{--rf-accent:#191970;--rf-accent-2:#3849b3;animation-delay:.06s;
   background:linear-gradient(165deg,rgb(25 25 112 / .05) 0%,var(--surface) 42%)}
-.rf-choice-card--ads{--rf-accent:#BA110F;--rf-accent-2:#d62a28;animation-delay:.14s;
+.rf-choice-card--campaign{--rf-accent:#BA110F;--rf-accent-2:#d62a28;animation-delay:.14s;
   background:linear-gradient(165deg,rgb(186 17 15 / .05) 0%,var(--surface) 42%)}
 /* Dải màu brand trên đỉnh */
 .rf-choice-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--rf-accent),var(--rf-accent-2));z-index:2}
@@ -884,8 +884,8 @@
         </nav>
       </aside>
 
-      <div class="ads-main">
-      <div class="ads-auth-bar auth-gate-bar" id="ads-auth-bar"></div>
+      <div class="cmp-main">
+      <div class="cmp-auth-bar auth-gate-bar" id="cmp-auth-bar"></div>
 
       <!-- Ads Section 1 — Thông tin chiến dịch -->
       <section class="card form-section" id="ads-sec-1">
@@ -903,9 +903,9 @@
         </div>
         <div class="field">
           <label class="label" for="ads_plan_file">Đính kèm File kế hoạch / Phiếu đề xuất</label>
-          <label class="ads-file-drop" for="ads_plan_file" id="ads-file-drop">
+          <label class="cmp-file-drop" for="ads_plan_file" id="cmp-file-drop">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <span class="ads-file-text" id="ads-file-text">Chọn file kế hoạch / phiếu đề xuất (PDF · Word · PPT · ảnh)</span>
+            <span class="cmp-file-text" id="cmp-file-text">Chọn file kế hoạch / phiếu đề xuất (PDF · Word · PPT · ảnh)</span>
           </label>
           <input type="file" id="ads_plan_file" name="plan_file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/*" hidden />
           <p class="section-sub" style="margin-top:6px">Không bắt buộc — hoặc dán link Google Drive bên dưới.</p>
@@ -1131,9 +1131,9 @@
         </div>
       </section>
 
-      <div class="ads-submit-bar">
+      <div class="cmp-submit-bar">
         <span class="text-sm muted">Yêu cầu sẽ được gửi thẳng cho <b>Content Team</b>.</span>
-        <div class="ads-submit-actions">
+        <div class="cmp-submit-actions">
           <button type="button" class="btn btn-ghost btn-sm" id="ads-save-draft-btn">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             Lưu nháp
@@ -1148,7 +1148,7 @@
           </button>
         </div>
       </div>
-      </div><!-- /ads-main -->
+      </div><!-- /cmp-main -->
 
       <!-- Tips + Quy trình (Ads) -->
       <aside class="form-tips">
@@ -1215,10 +1215,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </span>
       </button>
-      <button type="button" class="rf-choice-card rf-choice-card--ads" data-rf-type="ads">
+      <button type="button" class="rf-choice-card rf-choice-card--campaign" data-rf-type="ads">
         <span class="rf-choice-deco" aria-hidden="true"></span>
         <span class="rf-choice-head">
-          <span class="rf-choice-icon rf-choice-icon--ads">
+          <span class="rf-choice-icon rf-choice-icon--campaign">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg>
           </span>
           <span class="rf-choice-title">Chạy Ads</span>

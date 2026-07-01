@@ -1792,7 +1792,7 @@
     if (cInbox) cInbox.innerHTML = news.length
       ? news.map(function (o) {
           const d = adsDetail(o);
-          return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b><span class="badge-ads-order">Ads</span><span class="badge-from-client">From Client</span></div>'
+          return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b><span class="badge-campaign">Ads</span><span class="badge-from-client">From Client</span></div>'
             + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + ' · ' + esc(o.department || d.branch_department || '—') + '</div></button>';
         }).join('')
       : '<p class="text-xs muted" style="margin:0">Chưa có yêu cầu Ads mới.</p>';
@@ -1878,7 +1878,7 @@
     const mediaId = o.ads_media_order_id;
     let mediaBlock;
     if (mediaId) {
-      mediaBlock = '<div class="dw-callout dw--brand"><p><b>Đã tạo Internal Media Request:</b> <span class="mono">' + esc(mediaId) + '</span> <span class="badge-internal-ads">Internal · From Ads</span></p><p class="text-xs muted" style="margin:6px 0 0">Media team sản xuất creative; không lộ Client Portal.</p></div>';
+      mediaBlock = '<div class="dw-callout dw--brand"><p><b>Đã tạo Internal Media Request:</b> <span class="mono">' + esc(mediaId) + '</span> <span class="badge-internal-src">Internal · From Ads</span></p><p class="text-xs muted" style="margin:6px 0 0">Media team sản xuất creative; không lộ Client Portal.</p></div>';
     } else if (isLead && ['lead_approved', 'need_creative', 'writing_ads_content', 'submitted_to_lead'].indexOf(st) >= 0) {
       mediaBlock = '<p class="text-xs muted" style="margin:0 0 8px">Cần thiết kế/video? Tạo yêu cầu nội bộ cho Media (không lộ Client).</p><button class="btn btn-primary btn-sm" id="ads-media-req"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Tạo Internal Media Request</button>';
     } else {
@@ -1891,7 +1891,7 @@
     const actHtml = acts.length ? acts.map(function (a) { return '<li><span>' + esc(a.text) + ' — <b>' + esc(a.by) + '</b></span><time>' + fmtDT(a.at) + '</time></li>'; }).join('') : '<li><span class="muted">Chưa có hoạt động.</span></li>';
 
     return ''
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 var(--space-3)"><span class="badge-ads-order">Ads Order</span><span class="badge-from-client">From Client</span>' + (d.need_media_production ? '<span class="badge-need-creative">Need Creative</span>' : '') + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 var(--space-3)"><span class="badge-campaign">Ads Order</span><span class="badge-from-client">From Client</span>' + (d.need_media_production ? '<span class="badge-need-creative">Need Creative</span>' : '') + '</div>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">L</span><h4>Ads Lifecycle</h4></div><ol class="bw-steps">' + lifeLi + '</ol>' + revNote + '</section>'
       + assign
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Thông tin chiến dịch</h4></div><div>'
