@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Phiếu yêu cầu Thiết kế &amp; Media — CB Media Hub</title>
-<meta name="description" content="Tạo yêu cầu thiết kế / video / quay / chụp / ads cho team CB Media. Form 7 section, hỗ trợ autosave draft + preview brief trước khi gửi." />
+<meta name="description" content="Tạo yêu cầu thiết kế / video / quay / chụp / post cho team CB Media, hoặc yêu cầu chạy Ads gửi thẳng Content Team (request.html?type=ads). Hỗ trợ autosave draft + preview brief trước khi gửi." />
 <meta name="theme-color" content="#191970" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,6 +15,70 @@
 .auth-gate-bar:empty{display:none}
 .auth-ok-chip{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:600;color:var(--success);background:rgb(22 163 74 / .1);border:1px solid rgb(22 163 74 / .25);border-radius:99px;padding:4px 10px}
 .auth-warn-chip{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:600;color:var(--warning, #d97706);background:rgb(245 158 11 / .1);border:1px solid rgb(245 158 11 / .3);border-radius:99px;padding:4px 10px}
+.rf-type-switch{position:relative;display:flex;width:360px;max-width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px;margin-top:var(--space-5)}
+/* Thumb trượt (tô gradient brand) sau nút active */
+.rf-type-switch::before{content:'';position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;
+  background:linear-gradient(135deg,#191970 0%,#3849b3 100%);box-shadow:0 4px 12px -4px rgba(25,25,112,.55);z-index:0;
+  transition:transform .32s var(--ease-spring,cubic-bezier(.22,1,.36,1)),background .25s var(--ease-out),box-shadow .25s var(--ease-out)}
+.rf-type-switch:has(.rf-type-btn[data-rf-type="ads"].is-active)::before{transform:translateX(100%);
+  background:linear-gradient(135deg,#BA110F 0%,#d62a28 100%);box-shadow:0 4px 12px -4px rgba(186,17,15,.55)}
+.rf-type-btn{position:relative;z-index:1;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:999px;font-size:var(--text-sm);font-weight:700;color:var(--text-muted);text-decoration:none;border:none;background:none;cursor:pointer;transition:color .25s var(--ease-out)}
+.rf-type-btn svg{width:16px;height:16px}
+.rf-type-btn:hover{color:var(--text)}
+.rf-type-btn.is-active,.rf-type-btn.is-active:hover{color:#fff}
+@media(max-width:520px){.rf-type-switch{width:100%}}
+@media(prefers-reduced-motion:reduce){.rf-type-switch::before{transition:none}}
+/* Ads: ô đính kèm file kế hoạch */
+.ads-file-drop{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;border:1.5px dashed var(--border);border-radius:var(--radius);background:var(--surface-2);color:var(--text-muted);font-size:var(--text-sm);font-weight:500;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.ads-file-drop:hover{border-color:var(--brand-600,#191970);color:var(--text)}
+.ads-file-drop svg{width:20px;height:20px;flex-shrink:0}
+.ads-file-drop.has-file{border-style:solid;border-color:var(--brand-600,#191970);color:var(--brand-600,#191970);background:rgb(25 25 112 / .05)}
+/* Chooser popup */
+.rf-chooser-card{max-width:780px}
+.rf-chooser-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);padding:var(--space-6);overflow-y:auto}
+.rf-choice-card{
+  --rf-accent:#191970;--rf-accent-2:#3849b3;
+  position:relative;overflow:hidden;isolation:isolate;
+  display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;
+  padding:var(--space-5);border:1.5px solid var(--border);border-radius:var(--radius-lg);
+  background:var(--surface);cursor:pointer;
+  transition:border-color .2s var(--ease-out),box-shadow .25s var(--ease-out),transform .2s var(--ease-out);
+  opacity:0;transform:translateY(14px);animation:rfCardIn .5s var(--ease-spring,cubic-bezier(.22,1,.36,1)) forwards}
+.rf-choice-card--media{--rf-accent:#191970;--rf-accent-2:#3849b3;animation-delay:.06s;
+  background:linear-gradient(165deg,rgb(25 25 112 / .05) 0%,var(--surface) 42%)}
+.rf-choice-card--ads{--rf-accent:#BA110F;--rf-accent-2:#d62a28;animation-delay:.14s;
+  background:linear-gradient(165deg,rgb(186 17 15 / .05) 0%,var(--surface) 42%)}
+/* Dải màu brand trên đỉnh */
+.rf-choice-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--rf-accent),var(--rf-accent-2));z-index:2}
+/* Glow nhỏ sau icon (không tạo băng trống) */
+.rf-choice-deco{position:absolute;top:12px;left:12px;width:70px;height:70px;border-radius:50%;
+  background:radial-gradient(circle,var(--rf-accent-2),var(--rf-accent));opacity:.14;filter:blur(10px);z-index:0;
+  transition:transform .35s var(--ease-out),opacity .35s var(--ease-out)}
+.rf-choice-card>*{position:relative;z-index:1}
+.rf-choice-card:hover{border-color:var(--rf-accent);transform:translateY(-4px);
+  box-shadow:0 14px 30px -12px color-mix(in srgb,var(--rf-accent) 55%,transparent),0 4px 10px rgba(0,0,0,.06)}
+.rf-choice-card:hover .rf-choice-deco{transform:scale(1.3);opacity:.22}
+.rf-choice-card:focus-visible{outline:2px solid var(--rf-accent);outline-offset:2px}
+.rf-choice-head{display:flex;align-items:center;gap:14px;width:100%}
+.rf-choice-icon{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;flex-shrink:0;color:#fff;
+  background:linear-gradient(135deg,var(--rf-accent) 0%,var(--rf-accent-2) 100%);
+  box-shadow:0 8px 18px -6px color-mix(in srgb,var(--rf-accent) 65%,transparent);
+  transition:transform .25s var(--ease-spring,cubic-bezier(.22,1,.36,1))}
+.rf-choice-icon svg{width:24px;height:24px}
+.rf-choice-card:hover .rf-choice-icon{transform:scale(1.08) rotate(-4deg)}
+.rf-choice-title{font-size:var(--text-lg);font-weight:800;letter-spacing:-.01em}
+.rf-choice-desc{font-size:var(--text-sm);color:var(--text-muted);line-height:1.5}
+.rf-choice-hint{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;width:100%}
+.rf-choice-hint li{position:relative;padding-left:18px;font-size:var(--text-xs);color:var(--text-muted);line-height:1.45}
+.rf-choice-hint li::before{content:'';position:absolute;left:2px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--rf-accent);opacity:.85}
+.rf-choice-cta{margin-top:auto;padding-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:var(--text-sm);font-weight:800;color:var(--rf-accent)}
+.rf-choice-cta svg{width:16px;height:16px;transition:transform .2s var(--ease-out)}
+.rf-choice-card:hover .rf-choice-cta svg{transform:translateX(4px)}
+.rf-chooser-foot{padding:0 var(--space-6) var(--space-5);text-align:center}
+@keyframes rfCardIn{to{opacity:1;transform:translateY(0)}}
+[data-theme="dark"] .rf-choice-deco{opacity:.14}
+@media(max-width:640px){.rf-chooser-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.rf-choice-card{animation:none;opacity:1;transform:none}.rf-choice-card:hover{transform:none}.rf-choice-card:hover .rf-choice-icon{transform:none}.rf-choice-deco{transition:none}}
 </style>
 </head>
 <body>
@@ -56,6 +120,18 @@
     <h1 id="rf-title"><span class="serif-italic">Phiếu yêu cầu</span> Thiết kế &amp; Media</h1>
     <p class="lead" id="rf-lead">Gửi yêu cầu thiết kế, video, quay, chụp và nội dung media cho team CB Centres. Vui lòng cung cấp đầy đủ brief, tài nguyên và deadline để team triển khai đúng chuẩn thương hiệu.</p>
     <div id="rf-revision-banner" hidden style="margin-top:var(--space-4);padding:14px 16px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.28);border-left:3px solid var(--info,#0ea5e9);border-radius:var(--radius);font-size:var(--text-sm);line-height:1.6;color:var(--text)"></div>
+
+    <!-- Chọn loại yêu cầu: Thiết kế/Media vs Chạy Ads -->
+    <div class="rf-type-switch" id="rf-type-switch" role="tablist" aria-label="Loại yêu cầu">
+      <button type="button" class="rf-type-btn is-active" data-rf-type="media" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Thiết kế / Media
+      </button>
+      <button type="button" class="rf-type-btn" data-rf-type="ads" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg>
+        Chạy Ads
+      </button>
+    </div>
   </div>
 </section>
 
@@ -271,9 +347,9 @@
                   <span class="tile-body"><b>Quay / Chụp ảnh</b><span>Sự kiện, ngoại khóa, sản phẩm</span></span>
                 </label>
                 <label class="service-tile">
-                  <input type="radio" name="request_type" value="ads" />
-                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg></span>
-                  <span class="tile-body"><b>Ads / Post Basic</b><span>Caption, headline, CTA</span></span>
+                  <input type="radio" name="request_type" value="post" />
+                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                  <span class="tile-body"><b>Post / Bài đăng</b><span>Caption, headline, CTA — 1 bài post</span></span>
                 </label>
                 <label class="service-tile">
                   <input type="radio" name="request_type" value="slide" />
@@ -352,13 +428,13 @@
                 </div>
               </div>
 
-              <div class="deliverable-group" data-deliverable-for="ads">
-                <div class="group-label">Ads / Post Basic</div>
+              <div class="deliverable-group" data-deliverable-for="post">
+                <div class="group-label">Post / Bài đăng</div>
                 <div class="deliverable-grid">
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Facebook Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Facebook Post</label>
-                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Facebook Ads Copy" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Facebook Ads Copy</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Instagram Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Instagram Post</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Zalo OA Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Zalo OA Post</label>
-                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Google Ads Copy" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Google Ads</label>
+                  <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Website Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Website Post</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="TikTok Caption" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> TikTok Caption</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Headline/CTA" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Headline / CTA</label>
                 </div>
@@ -490,12 +566,12 @@
               </div>
             </div>
 
-            <!-- Sub-form: Ads -->
-            <div class="sub-form" data-subform-for="ads">
+            <!-- Sub-form: Post -->
+            <div class="sub-form" data-subform-for="post">
               <div class="sub-head">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/></svg>
-                Thông tin Ads / Post
-                <span class="sub-badge">Ads</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Thông tin bài Post
+                <span class="sub-badge">Post</span>
               </div>
               <div class="grid-2">
                 <div class="field">
@@ -756,7 +832,7 @@
             <li><b>Digital Design</b> — 1–3 ngày làm việc</li>
             <li><b>Video Editing</b> — 3–10 ngày tùy footage</li>
             <li><b>Quay / Chụp</b> — cần xác nhận lịch riêng</li>
-            <li><b>Ads / Post Basic</b> — 0.5–2 ngày làm việc</li>
+            <li><b>Post / Bài đăng</b> — 0.5–2 ngày làm việc</li>
             <li><b>Slide / Proposal</b> — 2–7 ngày làm việc</li>
           </ul>
         </div>
@@ -764,6 +840,406 @@
     </form>
   </div>
 </section>
+
+<!-- ============ ADS ORDER FLOW (request.html?type=ads) ============ -->
+<section class="section section--tight" id="ads-form-section" hidden>
+  <div class="container container--wide">
+    <form class="order-form-layout" id="ads-form" novalidate>
+
+      <!-- Sticky side stepper (Ads) -->
+      <aside class="form-side">
+        <div class="flow-progress" aria-label="Tiến độ hoàn thành yêu cầu Ads">
+          <div class="flow-progress-top">
+            <span>Ads flow</span>
+            <b id="ads-side-progress-label">Bước 1/5 · 0% hoàn tất</b>
+          </div>
+          <div class="flow-progress-bar" aria-hidden="true"><span id="ads-side-progress-fill"></span></div>
+        </div>
+        <nav class="flow-steps" aria-label="Các bước gửi yêu cầu Ads">
+          <a href="#ads-sec-1" data-ads-step="ads-sec-1">
+            <span class="step-node"><span class="step-index">1</span><span class="step-check">✓</span></span>
+            <span class="step-copy"><b>Chiến dịch</b><small>Tên, chi nhánh, thời gian</small></span>
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+          </a>
+          <a href="#ads-sec-2" data-ads-step="ads-sec-2">
+            <span class="step-node"><span class="step-index">2</span><span class="step-check">✓</span></span>
+            <span class="step-copy"><b>Mục tiêu</b><small>Mục tiêu &amp; KPI kỳ vọng</small></span>
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </a>
+          <a href="#ads-sec-3" data-ads-step="ads-sec-3">
+            <span class="step-node"><span class="step-index">3</span><span class="step-check">✓</span></span>
+            <span class="step-copy"><b>Nội dung QC</b><small>Sản phẩm, offer, đối tượng</small></span>
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </a>
+          <a href="#ads-sec-4" data-ads-step="ads-sec-4">
+            <span class="step-node"><span class="step-index">4</span><span class="step-check">✓</span></span>
+            <span class="step-copy"><b>Kênh &amp; ngân sách</b><small>Nền tảng, loại CD, ngân sách</small></span>
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </a>
+          <a href="#ads-sec-5" data-ads-step="ads-sec-5">
+            <span class="step-node"><span class="step-index">5</span><span class="step-check">✓</span></span>
+            <span class="step-copy"><b>Xác nhận</b><small>Rà soát trước khi gửi</small></span>
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </a>
+        </nav>
+      </aside>
+
+      <div class="ads-main">
+      <div class="ads-auth-bar auth-gate-bar" id="ads-auth-bar"></div>
+
+      <!-- Ads Section 1 — Thông tin chiến dịch -->
+      <section class="card form-section" id="ads-sec-1">
+        <div class="section-h">
+          <span class="section-num">1</span>
+          <div>
+            <h3>Thông tin chiến dịch</h3>
+            <p class="section-sub">Tên chiến dịch, chi nhánh và thời gian dự kiến chạy Ads.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_campaign_name">Tên chiến dịch <span class="req">*</span></label>
+          <input class="input" id="ads_campaign_name" name="campaign_name" type="text" placeholder="VD: Tuyển sinh Khai giảng Q3 — CS Nguyễn Trãi" required />
+          <span class="error" data-error-for="campaign_name">Vui lòng nhập tên chiến dịch.</span>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_plan_file">Đính kèm File kế hoạch / Phiếu đề xuất</label>
+          <label class="ads-file-drop" for="ads_plan_file" id="ads-file-drop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            <span class="ads-file-text" id="ads-file-text">Chọn file kế hoạch / phiếu đề xuất (PDF · Word · PPT · ảnh)</span>
+          </label>
+          <input type="file" id="ads_plan_file" name="plan_file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/*" hidden />
+          <p class="section-sub" style="margin-top:6px">Không bắt buộc — hoặc dán link Google Drive bên dưới.</p>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_plan_file_url">Link kế hoạch (Google Drive)</label>
+          <input class="input" id="ads_plan_file_url" name="plan_file_url" type="url" placeholder="https://drive.google.com/..." />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_branch_department">Chi nhánh / Bộ phận</label>
+            <input class="input" id="ads_branch_department" name="branch_department" type="text" placeholder="VD: CS Nguyễn Trãi / Phòng Marketing" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_priority">Mức độ ưu tiên</label>
+            <select class="select" id="ads_priority" name="priority">
+              <option value="normal">Bình thường</option>
+              <option value="urgent">Gấp</option>
+              <option value="critical">Rất gấp</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_requester_name">Người yêu cầu</label>
+            <input class="input" id="ads_requester_name" name="requester_name" type="text" placeholder="Họ tên" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_requester_email">Email</label>
+            <input class="input" id="ads_requester_email" name="requester_email" type="email" placeholder="email@cbcentres.com" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_requester_phone">Số điện thoại</label>
+            <input class="input" id="ads_requester_phone" name="requester_phone" type="tel" placeholder="Số liên hệ" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_desired_launch_date">Ngày mong muốn lên Ads</label>
+            <input class="input" id="ads_desired_launch_date" name="desired_launch_date" type="date" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_campaign_start_date">Ngày bắt đầu chạy</label>
+            <input class="input" id="ads_campaign_start_date" name="campaign_start_date" type="date" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_campaign_end_date">Ngày kết thúc</label>
+            <input class="input" id="ads_campaign_end_date" name="campaign_end_date" type="date" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Ads Section 2 — Mục tiêu chạy Ads -->
+      <section class="card form-section" id="ads-sec-2">
+        <div class="section-h">
+          <span class="section-num">2</span>
+          <div>
+            <h3>Mục tiêu chạy Ads</h3>
+            <p class="section-sub">Mục tiêu chiến dịch và các chỉ số kỳ vọng (KPI).</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_objective">Mục tiêu <span class="req">*</span></label>
+            <select class="select" id="ads_objective" name="objective" required>
+              <option value="">— Chọn mục tiêu —</option>
+              <option value="lead_generation">Lead Generation (thu data)</option>
+              <option value="inbox">Tin nhắn / Inbox</option>
+              <option value="awareness">Nhận diện (Awareness)</option>
+              <option value="event">Sự kiện</option>
+              <option value="opening">Khai trương</option>
+              <option value="remarketing">Remarketing</option>
+              <option value="traffic">Traffic / Click</option>
+              <option value="video_view">Video View</option>
+            </select>
+            <span class="error" data-error-for="objective">Vui lòng chọn mục tiêu.</span>
+          </div>
+          <div class="field">
+            <label class="label" for="ads_expected_kpi">KPI kỳ vọng</label>
+            <input class="input" id="ads_expected_kpi" name="expected_kpi" type="text" placeholder="VD: 200 lead / 1 tháng" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_expected_leads">Số lead kỳ vọng</label>
+            <input class="input" id="ads_expected_leads" name="expected_leads" type="number" min="0" placeholder="VD: 200" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_expected_cpl">CPL kỳ vọng (đ/lead)</label>
+            <input class="input" id="ads_expected_cpl" name="expected_cpl" type="number" min="0" placeholder="VD: 50000" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_kpi_notes">Ghi chú KPI</label>
+          <textarea class="textarea" id="ads_kpi_notes" name="kpi_notes" placeholder="Ràng buộc, benchmark hoặc lưu ý về chỉ số..."></textarea>
+        </div>
+      </section>
+
+      <!-- Ads Section 3 — Nội dung cần quảng cáo -->
+      <section class="card form-section" id="ads-sec-3">
+        <div class="section-h">
+          <span class="section-num">3</span>
+          <div>
+            <h3>Nội dung cần quảng cáo</h3>
+            <p class="section-sub">Sản phẩm/chương trình, thông điệp và đối tượng nhắm tới.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_product_program_name">Sản phẩm / Chương trình <span class="req">*</span></label>
+          <input class="input" id="ads_product_program_name" name="product_program_name" type="text" placeholder="VD: Khóa Tiếng Anh Thiếu nhi Superkids" required />
+          <span class="error" data-error-for="product_program_name">Vui lòng nhập sản phẩm / chương trình.</span>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_short_description">Mô tả ngắn</label>
+          <textarea class="textarea" id="ads_short_description" name="short_description" placeholder="Mô tả ngắn gọn về sản phẩm/chương trình..."></textarea>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_offer_message">Ưu đãi / Offer</label>
+          <textarea class="textarea" id="ads_offer_message" name="offer_message" placeholder="VD: Giảm 30% học phí, tặng bộ giáo trình..."></textarea>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_target_student_group">Nhóm học viên mục tiêu</label>
+            <input class="input" id="ads_target_student_group" name="target_student_group" type="text" placeholder="VD: Phụ huynh học sinh 6-11 tuổi" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_applicable_area">Khu vực áp dụng</label>
+            <input class="input" id="ads_applicable_area" name="applicable_area" type="text" placeholder="VD: Q.Thanh Xuân, bán kính 5km" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_target_audience_description">Mô tả đối tượng khách hàng</label>
+          <textarea class="textarea" id="ads_target_audience_description" name="target_audience_description" placeholder="Insight, hành vi, mối quan tâm của tệp khách hàng..."></textarea>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_hotline_or_contact">Hotline / Liên hệ</label>
+            <input class="input" id="ads_hotline_or_contact" name="hotline_or_contact" type="text" placeholder="Số hotline hiển thị trên Ads" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_landing_or_form_url">Landing page / Form URL</label>
+            <input class="input" id="ads_landing_or_form_url" name="landing_or_form_url" type="url" placeholder="https://..." />
+          </div>
+        </div>
+      </section>
+
+      <!-- Ads Section 4 — Kênh & ngân sách -->
+      <section class="card form-section" id="ads-sec-4">
+        <div class="section-h">
+          <span class="section-num">4</span>
+          <div>
+            <h3>Kênh &amp; ngân sách</h3>
+            <p class="section-sub">Nền tảng chạy, loại chiến dịch và ngân sách dự kiến.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Nền tảng chạy Ads</label>
+          <div class="chips" id="ads_platforms">
+            <label class="chip"><input type="checkbox" name="platforms" value="facebook" /> Facebook</label>
+            <label class="chip"><input type="checkbox" name="platforms" value="instagram" /> Instagram</label>
+            <label class="chip"><input type="checkbox" name="platforms" value="tiktok" /> TikTok</label>
+            <label class="chip"><input type="checkbox" name="platforms" value="google" /> Google</label>
+            <label class="chip"><input type="checkbox" name="platforms" value="youtube" /> YouTube</label>
+            <label class="chip"><input type="checkbox" name="platforms" value="zalo" /> Zalo</label>
+            <label class="chip"><input type="checkbox" name="platforms" value="other" /> Khác</label>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_campaign_type">Loại chiến dịch</label>
+            <select class="select" id="ads_campaign_type" name="campaign_type">
+              <option value="">— Chọn —</option>
+              <option value="lead_form">Lead Form</option>
+              <option value="message">Message / Inbox</option>
+              <option value="traffic">Traffic</option>
+              <option value="engagement">Engagement</option>
+              <option value="video_view">Video View</option>
+              <option value="conversion">Conversion</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label" for="ads_budget_type">Kiểu ngân sách</label>
+            <select class="select" id="ads_budget_type" name="budget_type">
+              <option value="total">Tổng ngân sách</option>
+              <option value="daily">Theo ngày</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="ads_budget_amount">Tổng ngân sách (đ)</label>
+            <input class="input" id="ads_budget_amount" name="budget_amount" type="number" min="0" placeholder="VD: 10000000" />
+          </div>
+          <div class="field">
+            <label class="label" for="ads_daily_budget">Ngân sách / ngày (đ)</label>
+            <input class="input" id="ads_daily_budget" name="daily_budget" type="number" min="0" placeholder="VD: 300000" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_budget_notes">Ghi chú ngân sách</label>
+          <textarea class="textarea" id="ads_budget_notes" name="budget_notes" placeholder="Phân bổ, giới hạn hoặc lưu ý về ngân sách..."></textarea>
+        </div>
+      </section>
+
+      <!-- Ads Section 5 — Xác nhận -->
+      <section class="card form-section" id="ads-sec-5">
+        <div class="section-h">
+          <span class="section-num">5</span>
+          <div>
+            <h3>Xác nhận</h3>
+            <p class="section-sub">Rà soát và xác nhận thông tin trước khi gửi cho Content Team.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="ads_special_notes">Ghi chú thêm</label>
+          <textarea class="textarea" id="ads_special_notes" name="special_notes" placeholder="Yêu cầu đặc biệt hoặc lưu ý khác..."></textarea>
+        </div>
+        <div class="field">
+          <label class="chip chip--toggle" style="width:fit-content"><input type="checkbox" name="confirm_information" value="yes" required /> Tôi xác nhận thông tin chính xác <span class="req">*</span></label>
+          <span class="error" data-error-for="confirm_information">Vui lòng xác nhận thông tin.</span>
+        </div>
+      </section>
+
+      <div class="ads-submit-bar">
+        <span class="text-sm muted">Yêu cầu sẽ được gửi thẳng cho <b>Content Team</b>.</span>
+        <div class="ads-submit-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="ads-save-draft-btn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Lưu nháp
+          </button>
+          <button type="button" class="btn btn-secondary" id="ads-preview-btn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview Brief
+          </button>
+          <button type="submit" class="btn btn-primary" id="ads-submit-btn">
+            Gửi yêu cầu chạy Ads
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+      </div><!-- /ads-main -->
+
+      <!-- Tips + Quy trình (Ads) -->
+      <aside class="form-tips">
+        <div class="tips-card">
+          <h4>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M2 9a10 10 0 1 1 20 0c0 4-3 6-3 9H5c0-3-3-5-3-9z"/></svg>
+            Mẹo brief chạy Ads
+          </h4>
+          <ul>
+            <li><b>Mục tiêu rõ ràng</b> — lead / inbox / traffic + KPI &amp; CPL kỳ vọng.</li>
+            <li><b>Ngân sách &amp; thời gian</b> — tổng hoặc theo ngày, ngày bắt đầu – kết thúc.</li>
+            <li><b>Đối tượng</b> — nhóm học viên, khu vực, insight càng cụ thể càng tốt.</li>
+            <li><b>Kênh chạy</b> — chọn nền tảng phù hợp mục tiêu (FB / IG / TikTok / Google / Zalo).</li>
+            <li><b>Offer &amp; CTA</b> — ưu đãi nổi bật + hành động mong muốn.</li>
+            <li><b>Landing / Form</b> — link đích để đo lường &amp; thu lead.</li>
+          </ul>
+        </div>
+        <div class="tips-card" style="margin-top: var(--space-4); background: var(--surface); border-color: var(--border)">
+          <h4>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Quy trình xử lý
+          </h4>
+          <ul>
+            <li><b>Content tiếp nhận</b> — Lead Content nhận &amp; phân công PIC.</li>
+            <li><b>Chuẩn bị nội dung</b> — viết copy / headline / caption theo brief.</li>
+            <li><b>Cần thiết kế / video</b> — Content chủ động tạo yêu cầu nội bộ cho Media.</li>
+            <li><b>Theo dõi</b> — bạn xem trạng thái tổng trong Portal của mình.</li>
+          </ul>
+        </div>
+      </aside>
+    </form>
+  </div>
+</section>
+
+<!-- ============ CHOOSER POPUP (Media vs Ads) ============ -->
+<div class="preview-modal rf-chooser" id="rf-chooser" aria-hidden="true" role="dialog" aria-labelledby="rf-chooser-title">
+  <div class="preview-card rf-chooser-card">
+    <div class="preview-head">
+      <div>
+        <h3 id="rf-chooser-title"><span class="serif-italic">Bạn muốn gửi</span> yêu cầu loại nào?</h3>
+        <p class="text-sm muted" style="margin-top:2px">Chọn đúng loại để yêu cầu tới đúng team xử lý nhanh nhất.</p>
+      </div>
+      <button class="icon-btn" id="rf-chooser-close" aria-label="Đóng">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="rf-chooser-grid">
+      <button type="button" class="rf-choice-card rf-choice-card--media" data-rf-type="media">
+        <span class="rf-choice-deco" aria-hidden="true"></span>
+        <span class="rf-choice-head">
+          <span class="rf-choice-icon rf-choice-icon--media">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </span>
+          <span class="rf-choice-title">Thiết kế / Media</span>
+        </span>
+        <span class="rf-choice-desc">Sản phẩm thiết kế, video, quay/chụp, slide — team Media/Design sản xuất.</span>
+        <ul class="rf-choice-hint">
+          <li>Backdrop · Standee · Banner · Poster</li>
+          <li>Social Post · Post bài đăng (caption/headline)</li>
+          <li>Video · Reel · TVC · Motion Graphic</li>
+          <li>Quay / Chụp sự kiện · Slide / Proposal</li>
+        </ul>
+        <span class="rf-choice-cta">Chọn Thiết kế / Media
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </button>
+      <button type="button" class="rf-choice-card rf-choice-card--ads" data-rf-type="ads">
+        <span class="rf-choice-deco" aria-hidden="true"></span>
+        <span class="rf-choice-head">
+          <span class="rf-choice-icon rf-choice-icon--ads">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg>
+          </span>
+          <span class="rf-choice-title">Chạy Ads</span>
+        </span>
+        <span class="rf-choice-desc">Yêu cầu chạy quảng cáo — team Content tiếp nhận, chuẩn bị nội dung & triển khai.</span>
+        <ul class="rf-choice-hint">
+          <li>Facebook · Instagram · TikTok · Google · Zalo Ads</li>
+          <li>Lead form · Tin nhắn / Inbox · Traffic</li>
+          <li>Awareness · Remarketing · Sự kiện / Khai trương</li>
+          <li>Đặt mục tiêu KPI · ngân sách · kênh chạy</li>
+        </ul>
+        <span class="rf-choice-cta">Chọn Chạy Ads
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </button>
+    </div>
+    <div class="rf-chooser-foot">
+      <span class="text-xs muted">Bạn có thể đổi loại bất cứ lúc nào bằng thanh chuyển ở đầu trang.</span>
+    </div>
+  </div>
+</div>
 
 <!-- ============ PREVIEW MODAL ============ -->
 <div class="preview-modal" id="preview-modal" aria-hidden="true">
@@ -786,6 +1262,32 @@
         Quay lại chỉnh sửa
       </button>
       <button class="btn btn-primary" id="preview-submit">
+        Xác nhận &amp; Gửi
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADS PREVIEW MODAL ============ -->
+<div class="preview-modal" id="ads-preview-modal" aria-hidden="true">
+  <div class="preview-card" role="dialog" aria-labelledby="ads-preview-title">
+    <div class="preview-head">
+      <div>
+        <h3 id="ads-preview-title"><span class="serif-italic">Preview</span> Yêu cầu chạy Ads</h3>
+        <p class="text-sm muted" style="margin-top:2px">Kiểm tra lại thông tin trước khi gửi cho Content Team.</p>
+      </div>
+      <button class="icon-btn" id="ads-preview-close" aria-label="Đóng">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="preview-body" id="ads-preview-body"><!-- Filled by JS --></div>
+    <div class="preview-foot">
+      <button class="btn btn-ghost" id="ads-preview-edit">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Quay lại chỉnh sửa
+      </button>
+      <button class="btn btn-primary" id="ads-preview-submit">
         Xác nhận &amp; Gửi
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
@@ -850,6 +1352,7 @@
 <script src="assets/data-store.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/order-form.js"></script>
+<script src="assets/ads-order-form.js"></script>
 <script src="assets/chatbot.js"></script>
 </body>
 </html>

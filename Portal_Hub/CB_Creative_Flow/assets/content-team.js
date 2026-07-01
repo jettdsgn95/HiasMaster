@@ -212,6 +212,7 @@
     });
     window.__CTM_ALL = list;
     ORDERS = list.filter(function (o) { return ENGAGED.indexOf(o.brief_wording_status || 'none') >= 0; });
+    ADS_ORDERS = list.filter(function (o) { return o.order_kind === 'ads_order'; });
     renderAll();
   }
   async function loadContentUsers() {
@@ -292,14 +293,17 @@
       if (v === 'mine' && !(isContent || user.role === 'content')) { b.style.display = 'none'; return; }
       // Plans + Initiatives: Lead Content / Admin điều phối (Account read-only được xem nếu cần).
       if ((v === 'plans' || v === 'initiatives') && !(isLead || isAccountAdmin || isSupervisor)) { b.style.display = 'none'; return; }
+      // Ads Orders: Lead Content / Admin điều phối; Account/Supervisor xem read-only.
+      if (v === 'ads-orders' && !(isLead || isAccountAdmin || isSupervisor)) { b.style.display = 'none'; return; }
       b.classList.toggle('is-active', v === view);
     });
+    var cAds = document.getElementById('ctm-count-ads'); if (cAds) cAds.textContent = ADS_ORDERS.length;
     document.getElementById('ctm-count-inbox').textContent = byStatus(['assigned']).length + byStatus(['submitted_to_lead']).length;
     document.getElementById('ctm-count-list').textContent = ORDERS.length;
     document.getElementById('ctm-count-mine').textContent = myOrders().length;
     var cPlans = document.getElementById('ctm-count-plans'); if (cPlans) cPlans.textContent = CONTENT_PLANS.length;
     var cInit = document.getElementById('ctm-count-initiatives'); if (cInit) cInit.textContent = initiativeTasks().length;
-    ['dashboard', 'inbox', 'plans', 'initiatives', 'board', 'list', 'mine'].forEach(function (v) {
+    ['dashboard', 'inbox', 'ads-orders', 'plans', 'initiatives', 'board', 'list', 'mine'].forEach(function (v) {
       const el = document.getElementById('ctm-view-' + v);
       if (el) el.hidden = v !== view;
     });
@@ -466,6 +470,7 @@
     renderTabs(); renderStats(); renderWorkload(); renderOverdueList(); renderRecentActivity();
     renderInbox(); renderBoard(); renderList(); renderMine();
     renderPlans(); renderInitiatives(); renderContentDashboard();
+    renderAdsOrders();
   }
 
   /* ===================================================================
@@ -766,7 +771,7 @@
     draft: 'Nháp', active: 'Sẵn sàng', in_progress: 'Đang chạy', pending_review: 'Có bản chờ duyệt',
     at_risk: 'Có task trễ', completed: 'Hoàn tất', archived: 'Lưu trữ'
   };
-  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Chủ động', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký' };
+  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Chủ động', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order' };
   const PRIO_VI = { low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp', critical: 'Rất gấp' };
   // Trạng thái production của Media Order nội bộ (đọc read-only để Content theo dõi — Phase 5).
   const PROD_STATUS = {
@@ -1714,6 +1719,374 @@
     return true;
   }
 
+  /* ===================================================================
+     ADS ORDERS — Client → Content Team (order_kind='ads_order')
+     Lifecycle riêng `ads_status`; KHÔNG qua Account/Production.
+     =================================================================== */
+  let ADS_ORDERS = [];
+  let currentAds = null;
+
+  const ADS_STATUS = {
+    draft: 'Nháp', submitted: 'Client vừa gửi', lead_checking: 'Lead đang kiểm tra',
+    assigned_to_content: 'Đã gán PIC Content', writing_ads_content: 'Đang viết nội dung Ads',
+    submitted_to_lead: 'Chờ Lead duyệt', lead_revision: 'Lead trả chỉnh', lead_approved: 'Lead đã duyệt',
+    need_creative: 'Cần creative', media_request_created: 'Đã tạo Media Request',
+    creative_ready: 'Creative sẵn sàng', ready_to_launch: 'Sẵn sàng chạy Ads', running: 'Đang chạy',
+    paused: 'Tạm dừng', completed: 'Hoàn thành', report_updated: 'Đã cập nhật báo cáo',
+    archived: 'Lưu trữ', cancelled: 'Đã hủy'
+  };
+  const ADS_STATUS_CLS = {
+    submitted: 's--pending', lead_checking: 's--checking', assigned_to_content: 's--inprogress',
+    writing_ads_content: 's--inprogress', submitted_to_lead: 's--review', lead_revision: 's--needinfo',
+    lead_approved: 's--inprogress', need_creative: 's--needinfo', media_request_created: 's--inprogress',
+    creative_ready: 's--ready', ready_to_launch: 's--ready', running: 's--inprogress',
+    paused: 's--needinfo', completed: 's--completed', report_updated: 's--completed', archived: 's--completed', cancelled: 's--cancelled'
+  };
+  const ADS_OBJECTIVE = { lead_generation: 'Lead Generation', inbox: 'Inbox / Tin nhắn', awareness: 'Awareness', event: 'Sự kiện', opening: 'Khai trương', remarketing: 'Remarketing', traffic: 'Traffic', video_view: 'Video View' };
+  const ADS_LIFE = ['Client gửi', 'Kiểm tra & gán PIC', 'Viết nội dung', 'Lead duyệt', 'Creative', 'Sẵn sàng / Chạy', 'Hoàn thành'];
+  const ADS_LIFE_REACHED = {
+    draft: 0, submitted: 0, lead_checking: 1, assigned_to_content: 1, writing_ads_content: 2,
+    submitted_to_lead: 3, lead_revision: 2, lead_approved: 3, need_creative: 4, media_request_created: 4,
+    creative_ready: 5, ready_to_launch: 5, running: 5, paused: 5, completed: 6, report_updated: 6, archived: 6, cancelled: 0
+  };
+  const ADS_NEW = ['submitted', 'lead_checking'];
+  const ADS_TERMINAL = ['completed', 'report_updated', 'archived', 'cancelled'];
+
+  function adsDetail(o) {
+    if (!o) return {};
+    let d = o.ads_detail;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { d = {}; } }
+    return d && typeof d === 'object' ? d : {};
+  }
+  function adsPicOf(o) { return o.brief_wording_pic || (adsDetail(o).assigned_pic) || ''; }
+  function adsTasksOf(o) { return CONTENT_TASKS.filter(function (t) { return t.source === 'ads_order' && t.order_id === o.order_id; }); }
+  function fmtBudget(d) {
+    if (d.budget_type === 'daily') return d.daily_budget ? Number(d.daily_budget).toLocaleString('vi-VN') + ' đ/ngày' : '—';
+    return d.budget_amount ? Number(d.budget_amount).toLocaleString('vi-VN') + ' đ (tổng)' : '—';
+  }
+
+  async function persistAds(o, patch, activity) {
+    Object.assign(o, patch);
+    if (activity) pushActivity(o.order_id, activity);
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      try { await window.MH.store.orders.update(o.order_id, patch); }
+      catch (e) { console.warn('[ctm-ads] persist failed:', e); toast('warning', 'Chưa đồng bộ DB', 'Kiểm tra đã chạy supabase/add-ads-orders.sql + RLS lead_content.'); }
+    } else {
+      try { const arr = JSON.parse(localStorage.getItem('mh-submitted-orders') || '[]'); const i = arr.findIndex(function (x) { return x.order_id === o.order_id; }); if (i >= 0) { arr[i] = Object.assign({}, arr[i], patch); localStorage.setItem('mh-submitted-orders', JSON.stringify(arr)); } } catch (e) { }
+    }
+  }
+  async function reloadAndReopenAds() {
+    const id = currentAds && currentAds.order_id;
+    await loadOrders();
+    if (!id) return;
+    const o = ADS_ORDERS.find(function (x) { return x.order_id === id; });
+    if (o) openAdsDrawer(o); else closeAdsDrawer();
+  }
+
+  /* ---------- RENDER: Ads view ---------- */
+  function renderAdsOrders() {
+    const list = ADS_ORDERS.slice();
+    const cInbox = document.getElementById('ctm-ads-inbox');
+    const news = list.filter(function (o) { return ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0; });
+    const newCount = document.getElementById('ctm-ads-new-count'); if (newCount) newCount.textContent = news.length + ' yêu cầu';
+    if (cInbox) cInbox.innerHTML = news.length
+      ? news.map(function (o) {
+          const d = adsDetail(o);
+          return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b><span class="badge-ads-order">Ads</span><span class="badge-from-client">From Client</span></div>'
+            + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + ' · ' + esc(o.department || d.branch_department || '—') + '</div></button>';
+        }).join('')
+      : '<p class="text-xs muted" style="margin:0">Chưa có yêu cầu Ads mới.</p>';
+
+    const tb = document.getElementById('ctm-ads-tbody');
+    const info = document.getElementById('ctm-ads-info'); if (info) info.textContent = list.length + ' Ads Order';
+    if (tb) tb.innerHTML = list.length
+      ? list.map(function (o) {
+          const d = adsDetail(o);
+          const st = o.ads_status || 'submitted';
+          const needCr = d.need_media_production || st === 'need_creative' || st === 'media_request_created';
+          return '<tr style="cursor:pointer" data-ads-open="' + esc(o.order_id) + '">'
+            + '<td class="mono text-xs">' + esc(o.order_id) + '</td>'
+            + '<td><b>' + esc(o.project_name || '—') + '</b></td>'
+            + '<td class="text-xs">' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + '</td>'
+            + '<td class="text-xs">' + esc(fmtBudget(d)) + '</td>'
+            + '<td class="text-xs">' + esc(adsPicOf(o) || '—') + '</td>'
+            + '<td><span class="tb-status ' + (ADS_STATUS_CLS[st] || '') + '">' + esc(ADS_STATUS[st] || st) + '</span></td>'
+            + '<td>' + (needCr ? '<span class="badge-need-creative">Need Creative</span>' : '<span class="text-xs muted">—</span>') + '</td>'
+            + '<td><button class="btn btn-ghost btn-sm" data-ads-open="' + esc(o.order_id) + '">Mở</button></td>'
+            + '</tr>';
+        }).join('')
+      : '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có Ads Order nào từ Client.</td></tr>';
+  }
+
+  /* ---------- Ads drawer ---------- */
+  function buildAdsActions(o) {
+    if (!isLead) return '';
+    const st = o.ads_status || 'submitted';
+    const btns = [];
+    const B = function (id, label, kind) { btns.push('<button class="btn btn-' + (kind || 'secondary') + ' btn-sm" data-ads-act="' + id + '">' + label + '</button>'); };
+    if (ADS_NEW.indexOf(st) >= 0) B('lead_checking', 'Tiếp nhận đơn', 'primary');
+    if (['assigned_to_content', 'lead_revision'].indexOf(st) >= 0) B('writing_ads_content', 'Bắt đầu viết nội dung', 'secondary');
+    if (st === 'writing_ads_content') B('submitted_to_lead', 'Đánh dấu chờ Lead duyệt', 'secondary');
+    if (st === 'submitted_to_lead') { B('lead_revision', 'Trả chỉnh', 'warning'); B('lead_approved', 'Duyệt nội dung', 'primary'); }
+    if (['lead_approved', 'need_creative', 'creative_ready'].indexOf(st) >= 0) B('ready_to_launch', 'Sẵn sàng chạy Ads', 'primary');
+    if (st === 'ready_to_launch') B('running', 'Bắt đầu chạy', 'primary');
+    if (st === 'running') { B('paused', 'Tạm dừng', 'warning'); B('completed', 'Hoàn thành', 'primary'); }
+    if (st === 'paused') B('running', 'Tiếp tục chạy', 'primary');
+    if (st === 'completed') { B('report_updated', 'Cập nhật báo cáo', 'secondary'); B('archived', 'Lưu trữ', 'secondary'); }
+    if (ADS_TERMINAL.indexOf(st) < 0) B('cancelled', 'Hủy đơn', 'ghost');
+    return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div></div>' : '';
+  }
+
+  function buildAdsBody(o) {
+    const d = adsDetail(o);
+    const st = o.ads_status || 'submitted';
+    const v = function (x) { return (x && String(x).trim()) ? esc(x) : '<em class="muted">—</em>'; };
+    const arr = function (a) { return (Array.isArray(a) && a.length) ? a.map(function (x) { return '<span class="chip-mini">' + esc(x) + '</span>'; }).join('') : '<em class="muted">—</em>'; };
+    const link = function (u) { return u ? '<a class="link" href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + '</a>' : '<em class="muted">—</em>'; };
+    const rowd = function (label, val) { return '<div class="detail-row"><span class="detail-dt">' + label + '</span><span class="detail-dd">' + val + '</span></div>'; };
+    const planVal = (function () {
+      const parts = [];
+      if (d.plan_file && d.plan_file.name) parts.push('<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' + esc(d.plan_file.name));
+      if (d.plan_file_url) parts.push('<a class="link" href="' + esc(d.plan_file_url) + '" target="_blank" rel="noopener">Link Google Drive</a>');
+      return parts.length ? parts.join(' · ') : '<em class="muted">—</em>';
+    })();
+
+    const reached = ADS_LIFE_REACHED[st] != null ? ADS_LIFE_REACHED[st] : 0;
+    const lifeLi = ADS_LIFE.map(function (s, i) {
+      const cs = i < reached ? 'done' : (i === reached ? 'active' : 'pending');
+      return '<li class="bw-step bw-' + cs + '"><span class="bw-dot">' + (cs === 'done' ? '✓' : (i + 1)) + '</span><span class="bw-label">' + s + '</span></li>';
+    }).join('');
+    const revNote = (st === 'lead_revision' && o.wording_lead_note) ? '<div class="dw-callout dw--warning" style="margin-top:var(--space-3)"><p><b>Lead trả chỉnh:</b> ' + esc(o.wording_lead_note) + '</p></div>' : '';
+
+    // Assign PIC panel (Lead)
+    let assign = '';
+    if (isLead && ADS_TERMINAL.indexOf(st) < 0) {
+      const opts = CONTENT_USERS.map(function (u) { return '<option value="' + esc(u.name) + '"></option>'; }).join('');
+      assign = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công PIC</h4></div>'
+        + '<div class="ctm-assign-grid"><div class="field"><label class="label">PIC Content</label><input class="input" id="ads-pic" list="ads-pic-list" value="' + esc(adsPicOf(o)) + '" placeholder="Tên Content phụ trách..." /><datalist id="ads-pic-list">' + opts + '</datalist></div></div>'
+        + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" id="ads-assign">Gán PIC Content</button></div></section>';
+    }
+
+    // Content Tasks tách từ Ads Order
+    const tasks = adsTasksOf(o);
+    const taskRows = tasks.length ? tasks.map(function (t) {
+      return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '"><div class="ctm-ii-top"><b>' + esc(t.title || t.id) + '</b><span class="text-xs">' + esc(CT_STATUS[t.status] || t.status) + '</span></div><div class="text-xs muted">PIC: ' + esc(t.assigned_pic || 'chưa gán') + '</div></button>';
+    }).join('') : '<p class="text-xs muted" style="margin:0">Chưa tách Content Task nào.</p>';
+    const taskBtn = (isLead && ADS_TERMINAL.indexOf(st) < 0) ? '<button class="btn btn-secondary btn-sm" id="ads-split-tasks" style="margin-top:8px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tách Content Tasks</button>' : '';
+
+    // Internal Media Request
+    const mediaId = o.ads_media_order_id;
+    let mediaBlock;
+    if (mediaId) {
+      mediaBlock = '<div class="dw-callout dw--brand"><p><b>Đã tạo Internal Media Request:</b> <span class="mono">' + esc(mediaId) + '</span> <span class="badge-internal-ads">Internal · From Ads</span></p><p class="text-xs muted" style="margin:6px 0 0">Media team sản xuất creative; không lộ Client Portal.</p></div>';
+    } else if (isLead && ['lead_approved', 'need_creative', 'writing_ads_content', 'submitted_to_lead'].indexOf(st) >= 0) {
+      mediaBlock = '<p class="text-xs muted" style="margin:0 0 8px">Cần thiết kế/video? Tạo yêu cầu nội bộ cho Media (không lộ Client).</p><button class="btn btn-primary btn-sm" id="ads-media-req"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Tạo Internal Media Request</button>';
+    } else {
+      mediaBlock = '<p class="text-xs muted" style="margin:0">Chưa cần creative.</p>';
+    }
+
+    const creativeReadyBtn = (isLead && mediaId && ['media_request_created', 'need_creative'].indexOf(st) >= 0) ? '<button class="btn btn-success btn-sm" data-ads-act="creative_ready" style="margin-top:8px">Đánh dấu Creative sẵn sàng</button>' : '';
+
+    const acts = (cacheOf(o.order_id).activity || []).slice(-10).reverse();
+    const actHtml = acts.length ? acts.map(function (a) { return '<li><span>' + esc(a.text) + ' — <b>' + esc(a.by) + '</b></span><time>' + fmtDT(a.at) + '</time></li>'; }).join('') : '<li><span class="muted">Chưa có hoạt động.</span></li>';
+
+    return ''
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 var(--space-3)"><span class="badge-ads-order">Ads Order</span><span class="badge-from-client">From Client</span>' + (d.need_media_production ? '<span class="badge-need-creative">Need Creative</span>' : '') + '</div>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">L</span><h4>Ads Lifecycle</h4></div><ol class="bw-steps">' + lifeLi + '</ol>' + revNote + '</section>'
+      + assign
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Thông tin chiến dịch</h4></div><div>'
+        + rowd('Chi nhánh / Bộ phận', v(d.branch_department)) + rowd('Người yêu cầu', v(d.requester_name) + ' · ' + v(d.requester_email))
+        + rowd('File kế hoạch', planVal)
+        + rowd('Ngày lên Ads', v(d.desired_launch_date)) + rowd('Chạy', v(d.campaign_start_date) + ' → ' + v(d.campaign_end_date))
+        + rowd('Ưu tiên', v(PRIO_LABEL[d.priority] || d.priority)) + '</div></section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">K</span><h4>Mục tiêu / KPI</h4></div><div>'
+        + rowd('Mục tiêu', v(ADS_OBJECTIVE[d.objective] || d.objective)) + rowd('KPI kỳ vọng', v(d.expected_kpi))
+        + rowd('Số lead', v(d.expected_leads)) + rowd('CPL', v(d.expected_cpl)) + rowd('Ghi chú KPI', v(d.kpi_notes)) + '</div></section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">$</span><h4>Kênh &amp; ngân sách</h4></div><div>'
+        + rowd('Nền tảng', arr(d.platforms)) + rowd('Loại chiến dịch', v(d.campaign_type)) + rowd('Ngân sách', v(fmtBudget(d))) + rowd('Ghi chú ngân sách', v(d.budget_notes)) + '</div></section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">A</span><h4>Nội dung &amp; đối tượng</h4></div><div>'
+        + rowd('Sản phẩm / CT', v(d.product_program_name)) + rowd('Mô tả ngắn', v(d.short_description)) + rowd('Ưu đãi', v(d.offer_message))
+        + rowd('Nhóm học viên', v(d.target_student_group)) + rowd('Mô tả đối tượng', v(d.target_audience_description)) + rowd('Khu vực', v(d.applicable_area))
+        + rowd('Hotline', v(d.hotline_or_contact)) + rowd('Landing / Form', link(d.landing_or_form_url)) + '</div></section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">T</span><h4>Content Tasks</h4></div>' + taskRows + taskBtn + '</section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">M</span><h4>Internal Media Request</h4></div>' + mediaBlock + creativeReadyBtn + '</section>'
+      + (d.special_notes ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">N</span><h4>Ghi chú khách hàng</h4></div><p style="white-space:pre-wrap;margin:0">' + esc(d.special_notes) + '</p></section>' : '')
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">·</span><h4>Hoạt động</h4></div><ul class="activity-mini">' + actHtml + '</ul></section>';
+  }
+
+  function openAdsDrawer(o) {
+    currentAds = o;
+    const st = o.ads_status || 'submitted';
+    document.getElementById('ctm-ad-id').textContent = o.order_id;
+    document.getElementById('ctm-ad-title').textContent = o.project_name || '—';
+    const stEl = document.getElementById('ctm-ad-status'); stEl.textContent = ADS_STATUS[st] || st; stEl.className = 'tb-status ' + (ADS_STATUS_CLS[st] || '');
+    const d = adsDetail(o);
+    const pr = document.getElementById('ctm-ad-priority'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_LABEL[d.priority] || d.priority || 'Bình thường');
+    document.getElementById('ctm-ad-pic').textContent = 'PIC: ' + (adsPicOf(o) || 'chưa gán');
+    document.getElementById('ctm-ads-actions').innerHTML = buildAdsActions(o);
+    document.getElementById('ctm-ads-body').innerHTML = buildAdsBody(o);
+    // Wire actions
+    document.querySelectorAll('#ctm-ads-actions [data-ads-act], #ctm-ads-body [data-ads-act]').forEach(function (b) {
+      b.addEventListener('click', function () { adsAdvance(o, b.getAttribute('data-ads-act')); });
+    });
+    const asg = document.getElementById('ads-assign'); if (asg) asg.addEventListener('click', function () { assignAdsPic(o); });
+    const split = document.getElementById('ads-split-tasks'); if (split) split.addEventListener('click', function () { openAdsSplitModal(o); });
+    const mreq = document.getElementById('ads-media-req'); if (mreq) mreq.addEventListener('click', function () { openAdsMediaModal(o); });
+    document.getElementById('ctm-ads-drawer').classList.add('is-open');
+    document.getElementById('ctm-ads-drawer').setAttribute('aria-hidden', 'false');
+    document.getElementById('ctm-ads-backdrop').classList.add('is-open');
+  }
+  function closeAdsDrawer() {
+    currentAds = null;
+    document.getElementById('ctm-ads-drawer').classList.remove('is-open');
+    document.getElementById('ctm-ads-drawer').setAttribute('aria-hidden', 'true');
+    document.getElementById('ctm-ads-backdrop').classList.remove('is-open');
+  }
+
+  async function adsAdvance(o, newStatus) {
+    if (!isLead || !newStatus) return;
+    if (newStatus === 'lead_revision') {
+      const note = prompt('Lý do trả chỉnh cho Content:', o.wording_lead_note || '');
+      if (note === null) return;
+      await persistAds(o, { ads_status: 'lead_revision', wording_lead_note: note }, 'Lead trả chỉnh nội dung Ads');
+      notifyByName(adsPicOf(o), { type: 'task_status_changed', title: 'Ads — Lead trả chỉnh', message: o.order_id + ': ' + (note || ''), link: 'content-team.html?tab=ads-orders&id=' + o.order_id, related_entity_type: 'orders', related_entity_id: o.order_id });
+    } else if (newStatus === 'cancelled') {
+      if (!confirm('Hủy Ads Order ' + o.order_id + '?')) return;
+      await persistAds(o, { ads_status: 'cancelled' }, 'Hủy Ads Order');
+    } else {
+      await persistAds(o, { ads_status: newStatus }, 'Ads chuyển trạng thái → ' + (ADS_STATUS[newStatus] || newStatus));
+    }
+    toast('success', 'Đã cập nhật', o.order_id + ' → ' + (ADS_STATUS[newStatus] || newStatus));
+    await reloadAndReopenAds();
+  }
+
+  async function assignAdsPic(o) {
+    const pic = (document.getElementById('ads-pic').value || '').trim();
+    if (!pic) { toast('warning', 'Thiếu PIC', 'Nhập tên PIC Content.'); return; }
+    const patch = { brief_wording_pic: pic };
+    if (ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0) patch.ads_status = 'assigned_to_content';
+    await persistAds(o, patch, 'Gán PIC Content: ' + pic);
+    notifyByName(pic, { type: 'task_assigned', title: 'Bạn được gán Ads Order', message: o.order_id + ' · ' + (o.project_name || ''), link: 'content-team.html?tab=ads-orders&id=' + o.order_id, related_entity_type: 'orders', related_entity_id: o.order_id });
+    toast('success', 'Đã gán PIC', pic);
+    await reloadAndReopenAds();
+  }
+
+  /* ---------- Tách Content Tasks từ Ads Order ---------- */
+  const ADS_TASK_TYPES = [
+    { k: 'ads_copy', label: 'Ads copy', outputs: ['primary_text'] },
+    { k: 'headline', label: 'Headline', outputs: ['headline'] },
+    { k: 'caption', label: 'Caption', outputs: ['caption'] },
+    { k: 'video_script', label: 'Video script', outputs: ['video_script'] },
+    { k: 'landing_copy', label: 'Landing copy', outputs: ['landing_copy'] }
+  ];
+  function openAdsSplitModal(o) {
+    if (!isLead) return;
+    const chips = ADS_TASK_TYPES.map(function (t) { return '<label class="ctm-chk-chip"><input type="checkbox" name="ads-tt" value="' + t.k + '" /> ' + t.label + '</label>'; }).join('');
+    const body = '<p class="text-xs muted" style="margin:0 0 8px">Chọn hạng mục nội dung cần tách. Mỗi hạng mục tạo 1 Content Task cho PIC xử lý ở Content Wording.</p>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>Hạng mục</label><div class="ctm-chk-group">' + chips + '</div></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><input class="input" id="ads-tt-pic" list="ads-tt-pic-list" value="' + esc(adsPicOf(o)) + '" placeholder="Tên PIC..." /><datalist id="ads-tt-pic-list">' + CONTENT_USERS.map(function (u) { return '<option value="' + esc(u.name) + '"></option>'; }).join('') + '</datalist></div>'
+      + fieldText('ads-tt-deadline', 'Hạn wording', '', { type: 'datetime-local' });
+    openModal('Tách Content Tasks — ' + (o.project_name || o.order_id), body, function () { return createAdsContentTasks(o); });
+  }
+  async function createAdsContentTasks(o) {
+    const picked = [].slice.call(document.querySelectorAll('input[name="ads-tt"]:checked')).map(function (i) { return i.value; });
+    if (!picked.length) { toast('warning', 'Chưa chọn', 'Chọn ít nhất 1 hạng mục.'); return false; }
+    const pic = (document.getElementById('ads-tt-pic').value || '').trim();
+    const dlRaw = document.getElementById('ads-tt-deadline').value;
+    const d = adsDetail(o);
+    let created = 0;
+    for (let i = 0; i < picked.length; i++) {
+      const def = ADS_TASK_TYPES.find(function (x) { return x.k === picked[i]; });
+      const payload = {
+        source: 'ads_order', order_id: o.order_id, content_plan_id: null,
+        title: '[Ads] ' + def.label + ' — ' + (o.project_name || o.order_id),
+        brief: [d.product_program_name, d.offer_message, d.mandatory_message].filter(Boolean).join(' · '),
+        output_types: def.outputs, assigned_pic: pic, priority: d.priority || 'normal',
+        visual_direction: d.desired_angle || '', mandatory_info: d.mandatory_message || '', cta: d.desired_cta || '',
+        need_media_production: !!d.need_media_production,
+        status: pic ? 'pic_assigned' : 'new', created_by: user.name || user.role
+      };
+      if (dlRaw) payload.wording_deadline = new Date(dlRaw).toISOString();
+      try { const c = await window.MH.store.contentTasks.create(payload); created++; if (pic) notifyByName(pic, { type: 'task_assigned', title: 'Content Task (Ads) mới', message: payload.title, link: 'content-workbench.html?task=' + c.id, related_entity_type: null, related_entity_id: c.id }); }
+      catch (e) { console.warn('[ctm-ads] create content task failed:', e); }
+    }
+    if (!created) { toast('warning', 'Chưa tạo được', 'Kiểm tra add-content-initiatives.sql + add-ads-orders.sql (source ads_order).'); return false; }
+    const patch = { ads_status: 'writing_ads_content' };
+    if (ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0 || o.ads_status === 'assigned_to_content') { patch.brief_wording_pic = pic || adsPicOf(o); }
+    await persistAds(o, patch, 'Tách ' + created + ' Content Task' + (pic ? ' → ' + pic : ''));
+    toast('success', 'Đã tách task', created + ' Content Task đã tạo.');
+    closeModal();
+    await Promise.all([loadOrders(), loadContentData()]);
+    const no = ADS_ORDERS.find(function (x) { return x.order_id === o.order_id; }); if (no) openAdsDrawer(no);
+    return true;
+  }
+
+  /* ---------- Internal Ads Media Request ---------- */
+  function genAdsMediaId() {
+    const d = new Date(); return 'ADS-MEDIA-' + d.getFullYear() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  }
+  function openAdsMediaModal(o) {
+    if (!isLead) return;
+    const d = adsDetail(o);
+    const reqTypes = [['design', 'Thiết kế'], ['media', 'Quay / Chụp'], ['video', 'Video'], ['motion', 'Motion'], ['digital', 'Digital'], ['other', 'Khác']];
+    const body = '<p class="text-xs muted" style="margin:0 0 6px">Tạo <b>Internal Media Request từ Ads</b> — order nội bộ (KHÔNG lộ Client Portal). Media sản xuất creative, Lead Media/Account push Production.</p>'
+      + fieldText('amr-body', 'Nội dung / brief creative', [d.offer_message, d.mandatory_message, d.desired_angle].filter(Boolean).join('\n'), { req: true, area: true, rows: 4 })
+      + fieldText('amr-visual', 'Định hướng hình ảnh', d.visual_style || '', { req: true, area: true, rows: 2 })
+      + fieldText('amr-format', 'Format / Size', (Array.isArray(d.creative_sizes) ? d.creative_sizes.join(', ') : ''), { req: true })
+      + fieldText('amr-channel', 'Kênh đăng', (Array.isArray(d.platforms) ? d.platforms.join(', ') : ''), { req: true })
+      + fieldText('amr-deliverable', 'Hạng mục bàn giao', (Array.isArray(d.creative_types) ? d.creative_types.join(', ') : ''), { req: true, ph: 'VD: 3 static + 1 video' })
+      + fieldText('amr-asset', 'Asset link', d.existing_assets_url || '', { type: 'url' })
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>Loại sản xuất *</label><select class="select" id="amr-request_type">' + reqTypes.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select></div>'
+      + fieldText('amr-deadline', 'Hạn sản xuất *', toLocalInput(d.creative_deadline ? d.creative_deadline + 'T17:00' : ''), { type: 'datetime-local' })
+      + fieldText('amr-note', 'Ghi chú cho Media', d.brand_notes || '', { area: true, rows: 2 });
+    openModal('Internal Media Request từ Ads — ' + (o.project_name || o.order_id), body, function () { return createAdsMediaRequest(o); });
+  }
+  async function createAdsMediaRequest(o) {
+    const get = function (id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const body = get('amr-body'), visual = get('amr-visual'), format = get('amr-format'), channel = get('amr-channel');
+    const deliverable = get('amr-deliverable'), asset = get('amr-asset'), reqType = get('amr-request_type');
+    const dlRaw = get('amr-deadline'), note = get('amr-note');
+    const missing = [];
+    if (!body) missing.push('Nội dung/brief'); if (!visual) missing.push('Định hướng hình ảnh');
+    if (!format) missing.push('Format/Size'); if (!channel) missing.push('Kênh'); if (!deliverable) missing.push('Hạng mục'); if (!dlRaw) missing.push('Hạn sản xuất');
+    if (missing.length) { toast('warning', 'Thiếu thông tin', 'Cần: ' + missing.join(', ') + '.'); return false; }
+    const deadlineIso = new Date(dlRaw).toISOString();
+    const orderId = genAdsMediaId();
+    const payload = {
+      order_id: orderId,
+      project_name: (o.project_name || 'Ads') + ' — Creative',
+      content_brief: body,
+      creative_direction: visual,
+      size_ratio: format,
+      source_link: asset || null,
+      internal_note: ['[Internal Media Request từ Ads Order]', 'Nguồn Ads: ' + o.order_id, note ? ('Ghi chú: ' + note) : ''].filter(Boolean).join('\n'),
+      requested_deadline: deadlineIso.slice(0, 10),
+      internal_deadline: deadlineIso,
+      request_type: reqType || 'design',
+      deliverable_type: [deliverable],
+      priority: (adsDetail(o).priority === 'critical' ? 'critical' : (adsDetail(o).priority === 'urgent' ? 'urgent' : 'normal')),
+      department: 'Content Team',
+      requester_name: user.name || 'Lead Content',
+      requester_email: (user && user.email) || 'content-team@cb.vn',
+      requester_role: 'lead_content',
+      origin: 'ads_order',
+      order_kind: 'internal_ads_media_request',
+      client_visible: false,
+      source_ads_order_id: o.order_id,
+      account_status: 'confirmed',
+      brief_wording_status: 'completed',
+      created_at: new Date().toISOString()
+    };
+    try { await window.MH.store.orders.create(payload); }
+    catch (e) { console.warn('[ctm-ads] create ads-media order failed:', e); toast('warning', 'Chưa tạo được', 'Kiểm tra add-ads-orders.sql + RLS lead_content insert ads-media.'); return false; }
+    await persistAds(o, { ads_status: 'media_request_created', ads_media_order_id: orderId }, 'Tạo Internal Media Request → ' + orderId);
+    notifyRoles(['admin', 'account', 'lead_media'], { type: 'order_new', title: 'Internal Media Request (Ads)', message: orderId + ' · ' + (o.project_name || '') + ' — creative cho Ads (push Production).', link: 'database-orders.html?id=' + orderId, related_entity_type: 'orders', related_entity_id: orderId });
+    toast('success', 'Đã tạo Media Request', orderId + ' — nội bộ, không lộ Client.');
+    closeModal();
+    await reloadAndReopenAds();
+    return true;
+  }
+
   /* ---------- Wiring Phase 2 (chạy lúc IIFE init, element đã có ở cuối body) ---------- */
   (function wirePhase2() {
     const on = function (id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
@@ -1758,26 +2131,37 @@
   });
   document.getElementById('ctm-drawer-close').addEventListener('click', closeDrawer);
   document.getElementById('ctm-drawer-backdrop').addEventListener('click', closeDrawer);
+  document.getElementById('ctm-ads-close').addEventListener('click', closeAdsDrawer);
+  document.getElementById('ctm-ads-backdrop').addEventListener('click', closeAdsDrawer);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (document.getElementById('ctm-modal').classList.contains('is-open')) { closeModal(); return; }
+    if (document.getElementById('ctm-ads-drawer').classList.contains('is-open')) { closeAdsDrawer(); return; }
     if (document.getElementById('ctm-task-drawer').classList.contains('is-open')) { closeTaskDrawer(); return; }
     if (document.getElementById('ctm-plan-drawer').classList.contains('is-open')) { closePlanDrawer(); return; }
     if (document.getElementById('ctm-drawer').classList.contains('is-open')) closeDrawer();
   });
   // Delegation chung: mọi phần tử [data-open] (inbox card, kanban card, row button) → drawer.
   document.addEventListener('click', function (e) {
+    const ab = e.target.closest('[data-ads-open]');
+    if (ab) { const a = ADS_ORDERS.find(function (x) { return x.order_id === ab.getAttribute('data-ads-open'); }); if (a) openAdsDrawer(a); return; }
     const b = e.target.closest('[data-open]'); if (!b) return;
     const o = ORDERS.find(function (x) { return x.order_id === b.getAttribute('data-open'); }); if (o) openDrawer(o);
   });
 
   Promise.all([loadContentUsers(), loadOrders(), loadContentData()]).then(function () {
     const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'ads-orders' && (isLead || isAccountAdmin || isSupervisor)) { view = 'ads-orders'; renderTabs(); }
     const id = params.get('id');
     if (id) {
-      const all = window.__CTM_ALL || [];
-      const o = ORDERS.find(function (x) { return x.order_id === id; }) || all.find(function (x) { return x.order_id === id; });
-      if (o) openDrawer(o);
+      const ad = ADS_ORDERS.find(function (x) { return x.order_id === id; });
+      if (ad) { view = 'ads-orders'; renderTabs(); openAdsDrawer(ad); }
+      else {
+        const all = window.__CTM_ALL || [];
+        const o = ORDERS.find(function (x) { return x.order_id === id; }) || all.find(function (x) { return x.order_id === id; });
+        if (o) openDrawer(o);
+      }
     }
     // Deep-link Plan / Content Task (Phase 2).
     const planId = params.get('plan');

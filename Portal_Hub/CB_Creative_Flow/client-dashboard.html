@@ -27,6 +27,9 @@
 .client-welcome-text h2{font-size:clamp(1.25rem,1rem + 1vw,1.625rem);color:#fff;margin:0 0 var(--space-2);letter-spacing:-.01em}
 .client-welcome-text p{font-size:var(--text-sm);opacity:.75;margin:0;max-width:44ch;line-height:1.5}
 .client-welcome-cta{position:relative;z-index:1;flex-shrink:0}
+.client-welcome-cta--2{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.client-welcome-cta--2 .btn{justify-content:flex-start;white-space:nowrap}
+@media(max-width:600px){.client-welcome-cta--2{width:100%}}
 @media(max-width:600px){.client-welcome{flex-direction:column;align-items:flex-start;padding:var(--space-5)}}
 
 /* KPI 6-col */
@@ -215,8 +218,12 @@
         <span>Tổng quan</span>
       </a></li>
       <li><a href="request.html">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-        <span>Tạo yêu cầu mới</span>
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+        <span>Yêu cầu thiết kế / Media</span>
+      </a></li>
+      <li><a href="request.html?type=ads">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg></span>
+        <span>Yêu cầu chạy Ads</span>
       </a></li>
       <li><a href="#" data-tab="orders">
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
@@ -280,10 +287,14 @@
           <h2 id="welcome-name">Ngọc Hân</h2>
           <p>Theo dõi các yêu cầu thiết kế, video, quay/chụp và nội dung Media của bạn tại CB Centres.</p>
         </div>
-        <div class="client-welcome-cta">
+        <div class="client-welcome-cta client-welcome-cta--2">
           <a class="btn btn-lg" href="request.html" style="background:#fff;color:#191970;font-weight:700">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Tạo yêu cầu mới
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Gửi yêu cầu thiết kế / Media
+          </a>
+          <a class="btn btn-lg" href="request.html?type=ads" style="background:rgba(255,255,255,.14);color:#fff;font-weight:700;border:1px solid rgba(255,255,255,.5)">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h7l4-6v15l-4-6H3z"/><path d="M19 7a4 4 0 0 1 0 6"/></svg>
+            Gửi yêu cầu chạy Ads
           </a>
         </div>
       </div>

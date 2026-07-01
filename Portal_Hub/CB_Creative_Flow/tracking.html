@@ -62,7 +62,7 @@
     <div class="card result-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <h3>Chưa có kết quả</h3>
-      <p class="mt-2">Nhập mã đơn hàng dạng <code class="mono">MEDIA-2026-0001</code> hoặc bấm một mã ví dụ ở trên để xem demo.</p>
+      <p class="mt-2">Nhập mã đơn hàng dạng <code class="mono">MEDIA-2026-0001</code> (Thiết kế / Media) hoặc <code class="mono">ADS-2026-0001</code> (yêu cầu chạy Ads).</p>
     </div>
   </div>
 </section>
@@ -379,8 +379,29 @@
         return fmtDate(s) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
       } catch (e) { return s; }
     }
-    const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide / Proposal' };
+    const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Yêu cầu chạy Ads', post: 'Post', slide: 'Slide / Proposal' };
     const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
+    // Ads Order (order_kind='ads_order') — map ads_status → trạng thái public (client chỉ thấy tổng).
+    const ADS_TRACK = {
+      draft:                 { key: 'received', label: 'Nháp',                          stage: 'Yêu cầu Ads đang ở dạng nháp',                       pct: 5 },
+      submitted:             { key: 'received', label: 'Đã nhận yêu cầu Ads',            stage: 'Content Team đã nhận yêu cầu chạy Ads',              pct: 12 },
+      lead_checking:         { key: 'received', label: 'Đã nhận yêu cầu Ads',            stage: 'Lead Content đang kiểm tra yêu cầu',                 pct: 16 },
+      assigned_to_content:   { key: 'progress', label: 'Đang chuẩn bị nội dung',         stage: 'Đã phân công PIC Content chuẩn bị nội dung Ads',     pct: 32 },
+      writing_ads_content:   { key: 'progress', label: 'Đang chuẩn bị nội dung',         stage: 'PIC Content đang viết nội dung Ads',                 pct: 44 },
+      submitted_to_lead:     { key: 'preview',  label: 'Đang kiểm tra nội dung',         stage: 'Lead Content đang duyệt nội dung Ads',               pct: 56 },
+      lead_revision:         { key: 'progress', label: 'Đang kiểm tra nội dung',         stage: 'Đang chỉnh nội dung theo góp ý của Lead',            pct: 52 },
+      lead_approved:         { key: 'progress', label: 'Đang chuẩn bị nội dung',         stage: 'Nội dung đã được duyệt, đang hoàn thiện',            pct: 60 },
+      need_creative:         { key: 'progress', label: 'Đang chuẩn bị thiết kế/creative', stage: 'Đang chuẩn bị thiết kế/creative cho Ads',           pct: 66 },
+      media_request_created: { key: 'progress', label: 'Đang chuẩn bị thiết kế/creative', stage: 'Media đang sản xuất creative cho Ads',              pct: 72 },
+      creative_ready:        { key: 'preview',  label: 'Sẵn sàng chạy Ads',              stage: 'Creative đã sẵn sàng, chuẩn bị chạy',                pct: 85 },
+      ready_to_launch:       { key: 'preview',  label: 'Sẵn sàng chạy Ads',              stage: 'Sẵn sàng lên chiến dịch',                            pct: 88 },
+      running:               { key: 'progress', label: 'Đang chạy',                      stage: 'Chiến dịch Ads đang chạy',                           pct: 92 },
+      paused:                { key: 'progress', label: 'Đang chạy',                      stage: 'Chiến dịch tạm dừng',                                pct: 92 },
+      completed:             { key: 'completed',label: 'Hoàn thành',                     stage: 'Chiến dịch Ads đã hoàn tất',                         pct: 100 },
+      report_updated:        { key: 'completed',label: 'Hoàn thành',                     stage: 'Đã cập nhật báo cáo chiến dịch',                     pct: 100 },
+      archived:              { key: 'completed',label: 'Hoàn thành',                     stage: 'Chiến dịch đã lưu trữ',                              pct: 100 },
+      cancelled:             { key: 'received', label: 'Đã hủy',                         stage: 'Yêu cầu Ads đã hủy',                                 pct: 0 }
+    };
     const STATUS_PUB = {
       pending:    { key: 'received', label: 'Yêu cầu đã gửi',        stage: 'Yêu cầu đã gửi tới CB Media Hub, chờ Account tiếp nhận', pct: 10 },
       checking:   { key: 'received', label: 'Đã nhận yêu cầu',       stage: 'Account đã nhận và đang kiểm tra brief',             pct: 15 },
@@ -396,9 +417,15 @@
       completed:  { key: 'completed',label: 'Hoàn thành',            stage: 'Order hoàn tất',                                    pct: 100 },
       cancelled:  { key: 'received', label: 'Đã hủy',                stage: 'Order đã hủy',                                      pct: 0 }
     };
-    // Production status ưu tiên hơn account status nếu đã push sản xuất.
-    const effStatus = (o.production_status && o.production_status !== 'unassigned') ? o.production_status : o.account_status;
-    const meta = STATUS_PUB[effStatus] || STATUS_PUB.pending;
+    // Ads Order dùng lifecycle riêng (ads_status); Media dùng account/production_status.
+    let meta;
+    if (o.order_kind === 'ads_order') {
+      meta = ADS_TRACK[o.ads_status] || ADS_TRACK.submitted;
+    } else {
+      const effStatus = (o.production_status && o.production_status !== 'unassigned') ? o.production_status : o.account_status;
+      meta = STATUS_PUB[effStatus] || STATUS_PUB.pending;
+    }
+    const isAds = o.order_kind === 'ads_order';
     const picName = o.production_pic || o.account_pic || null;
     return {
       project: o.project_name || '—',
@@ -407,12 +434,14 @@
       priority: PRIORITY_LABEL[o.priority] || o.priority || '—',
       created: fmtDate(o.created_at),
       updated: fmtDateTime(o.last_updated || o.created_at),
-      percent: typeof o.progress === 'number' ? o.progress : meta.pct,
+      // Ads: dùng % theo lifecycle (o.progress không cập nhật cho ads); Media giữ nguyên.
+      percent: isAds ? meta.pct : (typeof o.progress === 'number' ? o.progress : meta.pct),
       statusKey: meta.key,
       statusLabel: meta.label,
       stage: meta.stage,
-      assignee: picName ? 'Production — ' + picName : (o.account_pic ? 'Account — ' + o.account_pic : 'Đang phân công'),
-      avatar: picName ? picName.substring(0, 2).toUpperCase() : 'CB',
+      // Ads: KHÔNG lộ PIC Content nội bộ cho client → chỉ ghi Content Team.
+      assignee: isAds ? 'Content Team' : (picName ? 'Production — ' + picName : (o.account_pic ? 'Account — ' + o.account_pic : 'Đang phân công')),
+      avatar: isAds ? 'CT' : (picName ? picName.substring(0, 2).toUpperCase() : 'CB'),
       __rawOrder: o   // giữ raw để scope check biết requester_email / requester_id
     };
   }
@@ -454,6 +483,18 @@
       notFoundMsg.textContent = 'Mã đơn không tồn tại trong hệ thống. Kiểm tra lại hoặc liên hệ Account team.';
       show('notfound');
       return;
+    }
+    // Đơn NỘI BỘ (Internal Media Request / Internal Ads Media / order Content nội bộ) KHÔNG tra cứu ở đây.
+    {
+      const ro = data.__rawOrder;
+      const internal = ro && (ro.client_visible === false
+        || ro.order_kind === 'internal_media_request' || ro.order_kind === 'internal_ads_media_request'
+        || ro.origin === 'content_team' || ro.origin === 'ads_order');
+      if (internal) {
+        notFoundMsg.textContent = 'Mã đơn không hợp lệ để tra cứu. Đây là yêu cầu nội bộ, không hiển thị ở trang tra cứu.';
+        show('notfound');
+        return;
+      }
     }
     // Client scope: chỉ cho client xem đơn của mình (match requester_email / requester_id / legacy client_scope)
     if (user && user.role === 'client') {

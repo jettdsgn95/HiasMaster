@@ -46,7 +46,8 @@ Email hợp lệ khác sẽ được gán quyền Admin để demo nhanh toàn s
 | Area | Status | Ghi chú |
 |---|:---:|---|
 | Public site | Done | `index`, `request`, `tracking`, `help`, `login`; homepage targets Nội bộ CB Centres + request smart flow stepper |
-| Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile |
+| Client Portal | Done | `client-dashboard.html` — xem orders, tracking, request, profile; **2 CTA riêng** (thiết kế/Media + chạy Ads) |
+| Ads Orders (Client→Content) | Done | Luồng Ads campaign TÁCH khỏi Media/Production: `request.html?type=ads` (`ads-order-form.js`, form 5 section — không hỏi Creative) → order `order_kind='ads_order'` (prefix `ADS-2026-xxx`) → tab **Ads Orders** trong `content-team.html` (Lead Content: gán PIC · tách Content Tasks · tạo **Internal Media Request** `ADS-MEDIA-2026-xxx`). Client chỉ thấy public status. ⚠ `add-ads-orders.sql` |
 | Internal ops | Done | Dashboard, orders, production, reports, AI, chatbot, users, settings; Order Workbench + Task Workbench drawers. _(Delivery Log đã gỡ 2026-06-03 — bàn giao Preview/Final trong Order drawer; Production Status order tự sync theo task.)_ **Reports wired LIVE 2026-06-12**: `reports.js` load orders/tasks/users qua `MH.store`, aggregate client-side, filters recompute thật, empty-state khi chưa có data, poll 60s. |
 | Preview → Feedback → Final | Done | Bàn giao **trong Order drawer** (Client Portal đọc `orders.preview_link` / `orders.final_delivery_link`). Bàn giao đầu luôn là **"Preview"**; order **design** tối đa **03 vòng feedback** (Vòng 1 ~60% · Vòng 2 ~30% · Vòng 3 chỉ chỉnh nhỏ), **vòng 4** → ghi nhận thành task/order mới. Client có nút **"Duyệt Preview"**. Order drawer: **Order Lifecycle Timeline** (Brief → Production → Preview & Feedback → Final & Rating, display-only) + **"Gửi feedback cho PIC"** + **"Links from Task Tracker"** (Dùng làm Preview/Final — chỉ điền ô, không tự gửi). Task drawer hiện **Client Feedback Round N/3**. Chỉ Account/Admin gửi Preview/Final. Notif: `delivery_preview` · `client_feedback_received` · `client_preview_approved` · `delivery_final` · `rating_received`. SQL: `add-revision-rounds.sql` + `add-preview-approval.sql`. _(KHÔNG khôi phục Delivery Log; KHÔNG dùng bảng `deliveries`; KHÔNG lộ Task Tracker cho client.)_ |
 | Calendar / Lịch | Done | `calendar.html` — Month/Week/Agenda. Chấm 4 loại sự kiện theo ngày: **Deadline Task** (`tasks.internal_deadline`) · **Deadline Order** (`orders.requested_deadline`) · **Lịch quay/chụp** (`shoot_date`, fallback parse `content_brief`) · **Bàn giao** (`delivery_date`/final). **Role-filtered**: admin/account thấy full; design/editor chỉ task mình PIC (`isMyTask`); content chỉ order đang wording. Read-only — click sự kiện → popover → mở `production-board.html?id=` / `database-orders.html?id=`. Nav inject qua `app.js injectCalendarNav()`. ⚠ cần `add-shoot-date.sql` để shoot_date lưu cột thật. |
@@ -85,7 +86,7 @@ CB_Creative_Flow/
 │
 ├── index.html            Public homepage
 ├── login.html            Login + 5 demo account tiles
-├── request.html          Order Form (auth-gated submit + smart flow stepper)
+├── request.html          Order Form Media (stepper) + Ads 5-section (?type=ads)
 ├── tracking.html         Client tracking by MEDIA-* code
 ├── help.html             FAQ + search + accordion
 │
@@ -110,7 +111,8 @@ CB_Creative_Flow/
     ├── logo.png
     ├── styles.css            Design system, all page styles
     ├── app.js                Shared: theme, toast, profile modal, header chip
-    ├── order-form.js         request.html — 7-section form, auth guard, draft, flow progress
+    ├── order-form.js         request.html — Media form, auth guard, draft, flow progress
+    ├── ads-order-form.js     request.html?type=ads — form Ads 6 section (Client → Content Team)
     ├── client-dashboard.js   client-dashboard.html — Client Portal logic
     ├── database-orders.js
     ├── production-board.js
@@ -148,6 +150,7 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 16. [`add-media-lead-production.sql`](supabase/add-media-lead-production.sql) — Media Lead = quyền vận hành Production **ngang Account**: CREATE OR REPLACE `is_staff()` + `is_admin_or_account()` thêm `lead_media` (đọc orders/tasks + ghi task + quản lý order). KHÔNG đụng `is_admin()` (Settings/User Mgmt vẫn admin). Chạy sau `rls.sql` + `add-supervisor-planning.sql`.
 17. [`add-content-initiatives.sql`](supabase/add-content-initiatives.sql) — **Content Team Deep Workflow Phase 1 (Foundation)**: 3 bảng mới `content_plans` (kế hoạch/campaign cha) + `content_tasks` (task con giao PIC Content — gồm Workspace multi-output, Missing Info/Assumptions, Revision history no-limit, Production Handoff Package) + `content_task_comments` (revision/comment/activity). `source` enum `client_order`/`content_initiated`/`strategy_board`/`campaign_package`. RLS Content-Team-only (admin full · lead_content full · content đọc-all + sửa task assigned_pic=mình · account đọc task source=client_order) — **KHÔNG đụng `is_staff()`** nên content/lead_content vẫn KHÔNG thấy Production tasks; client KHÔNG thấy. + index + trigger updated_at + Realtime. Chạy sau `rls.sql` + `add-content-team.sql`.
 18. [`add-content-to-media-order.sql`](supabase/add-content-to-media-order.sql) — **Content Team Deep Workflow Phase 5 (Internal Media Request)**: thêm cột `orders.origin`/`order_kind`/`client_visible`(default true)/`source_content_task_id`/`source_content_plan_id`/`requester_role` + index + RLS **lead_content INSERT/UPDATE order nội bộ** (chỉ `order_kind='internal_media_request'` + `client_visible=false`). Cho phép Lead Content tạo Internal Media Request (order nội bộ KHÔNG lộ Client Portal) sau khi duyệt content. Chạy sau `add-content-initiatives.sql`.
+19. [`add-ads-orders.sql`](supabase/add-ads-orders.sql) — **Ads Orders (Client → Content Team)**: cột `orders.owner_team`/`ads_status`/`ads_detail`(jsonb)/`source_ads_order_id` + index; `request_type` CHECK **+= `post`** (tile Media "Ads/Post Basic" đổi thành "Post"); `content_tasks.source` CHECK **+= `ads_order`**; RLS **lead_content UPDATE `ads_order`** + **lead_content/content INSERT `internal_ads_media_request`** (client_visible=false). Ads Order route thẳng Content Team, KHÔNG qua Account/Production; Internal Ads Media Request KHÔNG lộ Client Portal. Chạy sau `add-content-to-media-order.sql`.
 
 ### Order ↔ Task ↔ Delivery relationship
 
@@ -382,4 +385,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-06-17 · Module **Supervisor Planning** (`supervisor-planning.html`+`.js`, bảng `lead_tasks`, role mới `lead_media`, ⚠ `add-supervisor-planning.sql`) · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*
+*Last updated: 2026-07-01 · **Ads Orders** — luồng Client → Content Team (`request.html?type=ads` + `ads-order-form.js` + tab Ads Orders trong content-team + Internal Media Request `ADS-MEDIA-`; prefix `ADS-`/`MEDIA-`/`ADS-MEDIA-`; ⚠ `add-ads-orders.sql`) · Module **Supervisor Planning** (`supervisor-planning.html`+`.js`, bảng `lead_tasks`, role mới `lead_media`, ⚠ `add-supervisor-planning.sql`) · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*

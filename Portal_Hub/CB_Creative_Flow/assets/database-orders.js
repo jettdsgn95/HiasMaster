@@ -83,9 +83,12 @@
       if (Array.isArray(remote)) {
         // Always replace khi Supabase enabled (kể cả empty) — DB là source of truth,
         // không fallback về mock array nữa.
+        // Ads Order (order_kind='ads_order') thuộc Content Team → KHÔNG hiện ở Client Orders
+        // của Account (không phải bottleneck). Internal Ads Media Request vẫn hiện (push Production).
+        const visible = remote.filter(function (r) { return r.order_kind !== 'ads_order'; });
         localOrders.length = 0;
-        remote.forEach(function (r) { localOrders.push(r); });
-        return remote.length;
+        visible.forEach(function (r) { localOrders.push(r); });
+        return visible.length;
       }
     } catch (e) { console.warn('[database-orders] remote load failed:', e); }
     return null;
@@ -993,9 +996,11 @@
     // Phase 5: badge order nội bộ (Internal Media Request từ Content Team).
     var _ib = document.getElementById('d-internal-badge');
     if (_ib) {
-      var _isInternal = o.order_kind === 'internal_media_request' || o.origin === 'content_team' || o.client_visible === false;
+      var _isInternal = o.order_kind === 'internal_media_request' || o.order_kind === 'internal_ads_media_request' || o.origin === 'content_team' || o.origin === 'ads_order' || o.client_visible === false;
       _ib.hidden = !_isInternal;
-      if (_isInternal && o.source_content_task_id) { _ib.title = 'Order nội bộ từ Content Task — không hiển thị Client Portal'; }
+      var _fromAds = o.order_kind === 'internal_ads_media_request' || o.origin === 'ads_order';
+      _ib.textContent = _fromAds ? 'Internal · From Ads' : 'Internal · From Content';
+      if (_isInternal && (o.source_content_task_id || o.source_ads_order_id)) { _ib.title = 'Order nội bộ' + (_fromAds ? ' phục vụ Ads Order ' + (o.source_ads_order_id || '') : ' từ Content Task') + ' — không hiển thị Client Portal'; }
     }
 
     const safeJoin = (a) => Array.isArray(a) ? a.map((v) => `<span class="chip-mini">${escapeHtml(v)}</span>`).join('') : (a || '<em class="muted">—</em>');
@@ -1686,7 +1691,7 @@
      - INSERT vào notifications table với related_entity_type=orders + entity_id=order_id
      - Fire-and-forget: không block UI nếu lookup hoặc INSERT fail (log warning) */
   function isInternalOrder(order) {
-    return !!(order && (order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false || order.source_content_task_id));
+    return !!(order && (order.order_kind === 'internal_media_request' || order.order_kind === 'internal_ads_media_request' || order.origin === 'content_team' || order.origin === 'ads_order' || order.client_visible === false || order.source_content_task_id || order.source_ads_order_id));
   }
   // Badge NEW: order client = chờ Account xác nhận (pending); order NỘI BỘ auto-confirmed (Option A)
   // → "new" cho tới khi Lead Media/Account push Production (production_status còn unassigned/null).
@@ -1736,9 +1741,12 @@
      (fillMediaTrack đọc order). related_entity_type='orders' (CHECK constraint). */
   async function notifyContentRequester(order, isFinal, linkVal) {
     if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
-    if (!order || !order.source_content_task_id) return;
+    if (!order || !(order.source_content_task_id || order.source_ads_order_id)) return;
     try {
-      const ctId = order.source_content_task_id;
+      // Ads Media Request → deep-link Ads Orders; Content Task → deep-link content task.
+      const link = order.source_ads_order_id
+        ? 'content-team.html?tab=ads-orders&id=' + order.source_ads_order_id
+        : 'content-team.html?task=' + order.source_content_task_id;
       const { data: leads } = await window.MH.supabase
         .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
       if (!Array.isArray(leads) || !leads.length) return;
@@ -1747,7 +1755,7 @@
         type: isFinal ? 'delivery_final' : 'delivery_preview',
         title: isFinal ? 'Media đã bàn giao Final' : 'Media đã gửi Preview',
         message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media ' + (isFinal ? 'đã bàn giao Final' : 'đã có Preview') + '. Mở để xem.',
-        link: 'content-team.html?task=' + ctId,
+        link: link,
         related_entity_type: 'orders',
         related_entity_id: order.order_id
       })));

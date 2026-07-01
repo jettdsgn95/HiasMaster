@@ -107,6 +107,7 @@
     <div class="saved-views ctm-tabs" id="ctm-tabs">
       <button class="saved-view-chip" data-ctm-view="dashboard">Dashboard</button>
       <button class="saved-view-chip" data-ctm-view="inbox">Content Inbox <span class="count" id="ctm-count-inbox">0</span></button>
+      <button class="saved-view-chip" data-ctm-view="ads-orders">Ads Orders <span class="count" id="ctm-count-ads">0</span></button>
       <button class="saved-view-chip" data-ctm-view="plans">Content Plans <span class="count" id="ctm-count-plans">0</span></button>
       <button class="saved-view-chip" data-ctm-view="initiatives">Initiatives <span class="count" id="ctm-count-initiatives">0</span></button>
       <button class="saved-view-chip" data-ctm-view="board">Content Board</button>
@@ -172,6 +173,34 @@
         <div class="table-card ctm-panel">
           <div class="table-head"><h3>Chờ Lead duyệt</h3><span class="rinfo" id="ctm-inbox-review-count">0</span></div>
           <div class="ctm-panel-body" id="ctm-inbox-review"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: ADS ORDERS (Client → Content Team) ═ -->
+    <section id="ctm-view-ads-orders" hidden>
+      <div class="ctm-section-head">
+        <div>
+          <h3 class="ctm-section-title">Ads Orders — Yêu cầu chạy Ads</h3>
+          <p class="text-xs muted" style="margin:2px 0 0">Yêu cầu chạy Ads từ Client → Content Team xử lý trực tiếp (KHÔNG qua Account/Production). Cần creative thì tạo Internal Media Request cho Media.</p>
+        </div>
+      </div>
+      <div class="table-card ctm-panel" style="margin-bottom:var(--space-4)">
+        <div class="table-head"><h3>Ads mới — chờ tiếp nhận</h3><span class="rinfo" id="ctm-ads-new-count">0</span></div>
+        <div class="ctm-panel-body" id="ctm-ads-inbox"></div>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><span class="rinfo" id="ctm-ads-info">—</span></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mã Ads</th><th>Chiến dịch</th><th>Mục tiêu</th><th>Ngân sách</th>
+                <th>PIC Content</th><th>Trạng thái</th><th>Cần creative</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="ctm-ads-tbody"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -343,6 +372,27 @@
   </div>
   <div class="drawer-actions" id="ctm-task-actions"></div>
   <div class="drawer-body" id="ctm-task-body"></div>
+</aside>
+
+<!-- ═ ADS ORDER DRAWER (Lead Content) ═ -->
+<div class="drawer-backdrop" id="ctm-ads-backdrop"></div>
+<aside class="drawer content-wording-drawer ctm-drawer ctm-ads-drawer" id="ctm-ads-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="order-id-large"><span id="ctm-ad-id">ADS-0000</span></div>
+      <h2 id="ctm-ad-title">—</h2>
+      <div class="head-status">
+        <span class="tb-status" id="ctm-ad-status">—</span>
+        <span class="priority-pill" id="ctm-ad-priority"><span class="dot"></span>—</span>
+        <span class="text-xs muted" id="ctm-ad-pic">PIC: —</span>
+      </div>
+    </div>
+    <button class="icon-btn" id="ctm-ads-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-actions" id="ctm-ads-actions"></div>
+  <div class="drawer-body" id="ctm-ads-body"></div>
 </aside>
 
 <!-- ═ GENERIC MODAL (tạo Plan / Initiative / Task con) ═ -->

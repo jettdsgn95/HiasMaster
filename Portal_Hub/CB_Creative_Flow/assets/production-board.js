@@ -735,10 +735,14 @@
     if (!task.order_id || !CONTENT_PROD_NOTIFY[newStatus]) return;
     try {
       const order = await window.MH.store.orders.get(task.order_id);
-      if (!order || !order.source_content_task_id) return;
-      const isInternal = order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false;
+      if (!order || !(order.source_content_task_id || order.source_ads_order_id)) return;
+      const fromAds = order.order_kind === 'internal_ads_media_request' || order.origin === 'ads_order';
+      const isInternal = order.order_kind === 'internal_media_request' || order.origin === 'content_team' || order.client_visible === false || fromAds;
       if (!isInternal) return;
-      const ctId = order.source_content_task_id;
+      // Ads Media Request → deep-link Ads Orders; Content Task → deep-link content task.
+      const link = order.source_ads_order_id
+        ? 'content-team.html?tab=ads-orders&id=' + order.source_ads_order_id
+        : 'content-team.html?task=' + order.source_content_task_id;
       // Chỉ báo Lead Content (sở hữu handoff Media + có block tracking ở content-team).
       // KHÔNG báo PIC content: role 'content' bị guard đá khỏi content-team → deep-link bounce.
       const { data: leads } = await window.MH.supabase
@@ -749,8 +753,8 @@
         user_id: u.id,
         type: 'task_status_changed',
         title: label,
-        message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media: ' + label.toLowerCase() + '.',
-        link: 'content-team.html?task=' + ctId,
+        message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media' + (fromAds ? ' (Ads)' : '') + ': ' + label.toLowerCase() + '.',
+        link: link,
         related_entity_type: 'orders',
         related_entity_id: order.order_id
       })));

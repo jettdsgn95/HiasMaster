@@ -35,6 +35,43 @@ const PUB_PROGRESS = {
   completed:100, paused:0, cancelled:0,
 };
 
+/* ===== ADS ORDER — public status (client chỉ thấy 8 nhãn tổng) ===== */
+// Map ads_status nội bộ → nhãn/tiến độ/timeline-stage cho Client. KHÔNG lộ status nội bộ.
+const ADS_PUB = {
+  draft:                 { label:'Nháp',                         cls:'s--pending',    pg:0,   tl:0 },
+  submitted:             { label:'Đã nhận yêu cầu Ads',          cls:'s--pending',    pg:8,   tl:0 },
+  lead_checking:         { label:'Đã nhận yêu cầu Ads',          cls:'s--checking',   pg:12,  tl:0 },
+  assigned_to_content:   { label:'Đang chuẩn bị nội dung',       cls:'s--inprogress', pg:30,  tl:1 },
+  writing_ads_content:   { label:'Đang chuẩn bị nội dung',       cls:'s--inprogress', pg:42,  tl:1 },
+  submitted_to_lead:     { label:'Đang kiểm tra nội dung',       cls:'s--review',     pg:55,  tl:2 },
+  lead_revision:         { label:'Đang kiểm tra nội dung',       cls:'s--review',     pg:50,  tl:2 },
+  lead_approved:         { label:'Đang chuẩn bị nội dung',       cls:'s--inprogress', pg:58,  tl:2 },
+  need_creative:         { label:'Đang chuẩn bị thiết kế/creative', cls:'s--inprogress', pg:64, tl:3 },
+  media_request_created: { label:'Đang chuẩn bị thiết kế/creative', cls:'s--inprogress', pg:70, tl:3 },
+  creative_ready:        { label:'Sẵn sàng chạy Ads',            cls:'s--ready',      pg:84,  tl:4 },
+  ready_to_launch:       { label:'Sẵn sàng chạy Ads',            cls:'s--ready',      pg:88,  tl:4 },
+  running:               { label:'Đang chạy',                    cls:'s--inprogress', pg:92,  tl:4 },
+  paused:                { label:'Đang chạy',                    cls:'s--paused',     pg:92,  tl:4 },
+  completed:             { label:'Hoàn thành',                   cls:'s--completed',  pg:100, tl:5 },
+  report_updated:        { label:'Hoàn thành',                   cls:'s--completed',  pg:100, tl:5 },
+  archived:              { label:'Hoàn thành',                   cls:'s--completed',  pg:100, tl:5 },
+  cancelled:             { label:'Đã hủy',                       cls:'s--cancelled',  pg:0,   tl:0 },
+};
+const ADS_TL_STAGES = ['Đã nhận yêu cầu Ads','Chuẩn bị nội dung','Kiểm tra nội dung','Chuẩn bị creative','Sẵn sàng / Chạy','Hoàn thành'];
+function isAdsOrder(o) { return !!(o && o.order_kind === 'ads_order'); }
+function adsInfo(o) { return ADS_PUB[o && o.ads_status] || ADS_PUB.submitted; }
+function adsTlHtml(o) {
+  const curIdx = adsInfo(o).tl;
+  const isDone = ['completed','report_updated','archived'].includes(o && o.ads_status);
+  return ADS_TL_STAGES.map(function (label, i) {
+    const done = i < curIdx || (i === curIdx && isDone);
+    const cur = i === curIdx && !isDone;
+    const cls = done ? 'done' : cur ? 'current' : '';
+    const dot = done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+    return '<div class="pub-tl-step ' + cls + '"><div class="pub-tl-dot">' + dot + '</div><div class="pub-tl-label">' + label + '</div></div>';
+  }).join('');
+}
+
 const TL_STAGES = [
   { label:'Đã nhận',           statuses:['pending','checking','needinfo','wording'] },
   { label:'Đã tiếp nhận',      statuses:['confirmed'] },
@@ -227,6 +264,10 @@ async function loadClientOrdersFromStore() {
         rating_comment: o.client_feedback || '',
         need_info: o.account_status === 'needinfo' ? (o.internal_note || 'Vui lòng bổ sung brief — liên hệ Account team.') : '',
         request_type: o.request_type || '',
+        // Ads Order fields (client_visible=true → hiện ở Portal, chỉ public status).
+        order_kind: o.order_kind || '',
+        ads_status: o.ads_status || '',
+        ads_detail: o.ads_detail || null,
         shoot_location: o.shoot_location || '',
         revision_round: o.revision_round || 0,
         revision_limit: o.revision_limit || 3,
@@ -263,13 +304,20 @@ async function loadClientOrdersFromStore() {
 // không kẹt ở feedback_wait. Tránh tình huống order đã đánh giá mà timeline vẫn đứng "Kiểm tra nội bộ".
 function pubEffStatus(o) {
   if (!o) return 'pending';
+  // Ads Order: map ads_status → bucket media để filter/sort dùng chung.
+  if (isAdsOrder(o)) {
+    const s = o.ads_status || 'submitted';
+    if (s === 'cancelled') return 'cancelled';
+    if (['completed', 'report_updated', 'archived'].includes(s)) return 'completed';
+    return 'inprogress';
+  }
   if (o.status === 'cancelled') return 'cancelled';
   if (o.rating || o.status === 'completed') return 'completed';
   if (isFinalDelivered(o)) return 'delivered';
   return o.status;
 }
-function pubStatus(o) { const s = pubEffStatus(o); return PUB_STATUS[s] || { label: s, cls: '' }; }
-function pubProgress(o) { return PUB_PROGRESS[pubEffStatus(o)] ?? 0; }
+function pubStatus(o) { if (isAdsOrder(o)) { const a = adsInfo(o); return { label: a.label, cls: a.cls }; } const s = pubEffStatus(o); return PUB_STATUS[s] || { label: s, cls: '' }; }
+function pubProgress(o) { if (isAdsOrder(o)) return adsInfo(o).pg; return PUB_PROGRESS[pubEffStatus(o)] ?? 0; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 // Order đã bàn giao Final khi có final_link / rating (chắc chắn nhất) HOẶC status delivered/completed HOẶC feedback_status=final_sent.
 // Dùng cho Action Center / drawer / bảng để client luôn thấy bảng "đánh giá + tạo Order mới" sau khi nhận Final.
@@ -436,13 +484,13 @@ function renderCurrentOrders() {
       <div class="co-card" data-action="open-order" data-order-id="${o.id}">
         <div class="co-card-head">
           <div>
-            <div class="co-card-id">${o.id}</div>
+            <div class="co-card-id">${o.id}${isAdsOrder(o) ? ' <span class="badge-ads-order">Ads Order</span>' : ''}</div>
             <div class="co-card-name">${o.name}</div>
           </div>
           <span class="tb-status ${st.cls}">${st.label}</span>
         </div>
         <div class="co-card-meta">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${o.type}</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${isAdsOrder(o) ? 'Ads' : o.type}</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>HSD ${o.deadline}</span>
         </div>
         <div class="co-card-prog">
@@ -450,7 +498,7 @@ function renderCurrentOrders() {
           <div class="co-progress-label"><span>${st.label}</span><span>${pg}%</span></div>
         </div>
         <div class="co-card-foot">
-          <span style="font-size:var(--text-xs);color:var(--text-muted)">PIC: ${o.pic || '—'}</span>
+          <span style="font-size:var(--text-xs);color:var(--text-muted)">${isAdsOrder(o) ? 'Content Team' : 'PIC: ' + (o.pic || '—')}</span>
           <span style="font-size:var(--text-xs);color:var(--primary);font-weight:600">Chi tiết →</span>
         </div>
       </div>`;
@@ -522,9 +570,9 @@ function renderOrdersTable() {
         : '—');
     return `
       <tr style="cursor:pointer" data-action="open-order" data-order-id="${o.id}">
-        <td class="mono text-xs">${o.id}</td>
-        <td><b>${o.name}</b><br><span class="text-xs muted">${o.category}</span></td>
-        <td class="text-sm">${o.type}</td>
+        <td class="mono text-xs">${o.id}${isAdsOrder(o) ? '<br><span class="badge-ads-order">Ads Order</span>' : ''}</td>
+        <td><b>${o.name}</b><br><span class="text-xs muted">${isAdsOrder(o) ? 'Yêu cầu chạy Ads' : o.category}</span></td>
+        <td class="text-sm">${isAdsOrder(o) ? 'Ads' : o.type}</td>
         <td class="text-xs muted">${o.date}</td>
         <td class="text-xs">${o.deadline}</td>
         <td><span class="tb-status ${st.cls}">${st.label}</span></td>
@@ -581,6 +629,52 @@ function openOrderDrawer(orderId) {
 
   document.getElementById('dr-order-id').textContent = o.id;
   document.getElementById('dr-order-name').textContent = o.name;
+
+  // ===== ADS ORDER: chỉ hiển thị public status + tóm tắt chiến dịch (KHÔNG lộ task nội bộ / PIC / creative request) =====
+  if (isAdsOrder(o)) {
+    const d = o.ads_detail || {};
+    const OBJ = { lead_generation: 'Lead Generation', inbox: 'Inbox / Tin nhắn', awareness: 'Awareness', event: 'Sự kiện', opening: 'Khai trương', remarketing: 'Remarketing', traffic: 'Traffic', video_view: 'Video View' };
+    const row = (label, val) => (val && String(val).trim()) ? `<div class="detail-row"><span class="detail-dt">${label}</span><span class="detail-dd">${esc(val)}</span></div>` : '';
+    const budget = d.budget_type === 'daily'
+      ? (d.daily_budget ? Number(d.daily_budget).toLocaleString('vi-VN') + ' đ/ngày' : '')
+      : (d.budget_amount ? Number(d.budget_amount).toLocaleString('vi-VN') + ' đ (tổng)' : '');
+    const platforms = Array.isArray(d.platforms) ? d.platforms.join(', ') : '';
+    document.getElementById('drawer-body').innerHTML = `<div class="drawer-block">
+      <div class="drawer-detail-section">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--space-3)">
+          <span class="badge-ads-order">Ads Order</span>
+        </div>
+        <h4>Chiến dịch Ads</h4>
+        <div>
+          <div class="detail-row"><span class="detail-dt">Mã yêu cầu</span><span class="detail-dd mono">${o.id}</span></div>
+          <div class="detail-row"><span class="detail-dt">Tên chiến dịch</span><span class="detail-dd">${esc(o.name)}</span></div>
+          ${row('Mục tiêu', OBJ[d.objective] || d.objective)}
+          ${row('Sản phẩm / Chương trình', d.product_program_name)}
+          ${row('Ưu đãi', d.offer_message)}
+          ${row('Kênh', platforms)}
+          ${row('Ngân sách', budget)}
+          ${row('KPI kỳ vọng', d.expected_kpi)}
+          ${row('Landing / Form', d.landing_or_form_url)}
+          ${row('Bắt đầu', d.campaign_start_date)}
+          ${row('Kết thúc', d.campaign_end_date)}
+          <div class="detail-row"><span class="detail-dt">Ngày gửi</span><span class="detail-dd">${o.date}</span></div>
+          <div class="detail-row"><span class="detail-dt">Trạng thái</span><span class="detail-dd"><span class="tb-status ${st.cls}">${st.label}</span></span></div>
+        </div>
+      </div>
+      <div class="drawer-detail-section"><h4>Tiến độ</h4>
+        <div class="co-progress-bar"><div class="co-progress-fill" style="width:${pg}%"></div></div>
+        <div class="co-progress-label" style="margin-top:4px"><span>${st.label}</span><span>${pg}%</span></div>
+        <div class="pub-timeline">${adsTlHtml(o)}</div>
+      </div>
+      <div class="drawer-detail-section">
+        <div class="dw-callout dw--info"><p>Yêu cầu chạy Ads do <b>Content Team</b> tiếp nhận và triển khai. Bạn sẽ nhận thông báo khi trạng thái cập nhật.</p></div>
+      </div>
+    </div>`;
+    document.getElementById('order-drawer').setAttribute('aria-hidden', 'false');
+    document.getElementById('order-drawer').classList.add('is-open');
+    document.getElementById('drawer-backdrop').classList.add('is-open');
+    return;
+  }
 
   // Action block
   let actionBlock = '';

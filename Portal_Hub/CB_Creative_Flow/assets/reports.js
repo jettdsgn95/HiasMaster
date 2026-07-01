@@ -56,10 +56,10 @@
   // Snapshot orders/tasks/users từ store — filter chỉ recompute từ đây, không refetch
   const RAW = { orders: [], tasks: [], users: [] };
 
-  const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads', slide: 'Slide', media: 'Quay / Chụp', other: 'Khác' };
-  const TYPE_COLOR = { design: '#191970', digital: '#3849b3', video: '#BA110F', motion: '#d62a28', shoot: '#f59e0b', photo: '#10b981', ads: '#0ea5e9', slide: '#6c5ec0', media: '#f59e0b', other: '#94a3b8' };
+  const TYPE_LABEL = { design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads (campaign)', post: 'Post', slide: 'Slide', media: 'Quay / Chụp', other: 'Khác' };
+  const TYPE_COLOR = { design: '#191970', digital: '#3849b3', video: '#BA110F', motion: '#d62a28', shoot: '#f59e0b', photo: '#10b981', ads: '#0ea5e9', post: '#7e8acd', slide: '#6c5ec0', media: '#f59e0b', other: '#94a3b8' };
   // Vị trí đảm nhiệm suy từ task_type — khớp value của #filter-role (design/editor/shoot)
-  const ROLE_OF_TASK_TYPE = { design: 'design', digital: 'design', ads: 'design', slide: 'design', video: 'editor', motion: 'editor', shoot: 'shoot', photo: 'shoot' };
+  const ROLE_OF_TASK_TYPE = { design: 'design', digital: 'design', ads: 'design', post: 'design', slide: 'design', video: 'editor', motion: 'editor', shoot: 'shoot', photo: 'shoot' };
   const ROLE_BAR_LABEL = { design: 'Design', editor: 'Editor (Video)', shoot: 'Media (Quay/Chụp)' };
   const TASK_STATUS_LABEL = { pending: 'Chờ nhận', received: 'Đã nhận', inprogress: 'Đang xử lý', review: 'Chờ duyệt', revision: 'Chỉnh sửa', feedback_wait: 'Chờ feedback', feedback_fix: 'Sửa feedback', ready: 'Sẵn sàng', delivered: 'Đã bàn giao', completed: 'Hoàn thành', paused: 'Tạm dừng', cancelled: 'Đã hủy' };
 

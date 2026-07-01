@@ -487,7 +487,7 @@
     design: 'Thiết kế / POSM', digital: 'Digital Design', video: 'Video Editing',
     motion: 'Motion Graphic', media: 'Quay / Chụp ảnh',
     shoot: 'Quay', photo: 'Chụp ảnh', // giữ cho order cũ
-    ads: 'Ads / Post Basic', slide: 'Slide / Proposal', other: 'Khác'
+    post: 'Post / Bài đăng', ads: 'Yêu cầu chạy Ads', slide: 'Slide / Proposal', other: 'Khác'
   };
   const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
 

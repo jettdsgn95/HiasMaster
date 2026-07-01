@@ -51,7 +51,9 @@
     // Fallback allowlist các cột optional đã biết (phòng khi format message khác).
     const optional = ['shoot_location', 'feedback_status', 'revision_round', 'revision_limit', 'latest_feedback_note', 'last_feedback_at', 'last_feedback_by', 'approved_at', 'approved_by', 'parent_order_id', 'order_origin',
       // Internal Media Request (Content→Media, add-content-to-media-order.sql)
-      'origin', 'order_kind', 'client_visible', 'source_content_task_id', 'source_content_plan_id', 'requester_role'];
+      'origin', 'order_kind', 'client_visible', 'source_content_task_id', 'source_content_plan_id', 'requester_role',
+      // Ads Orders (Client→Content, add-ads-orders.sql)
+      'owner_team', 'ads_status', 'ads_detail', 'source_ads_order_id'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {
