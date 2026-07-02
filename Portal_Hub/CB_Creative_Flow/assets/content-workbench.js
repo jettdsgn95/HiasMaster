@@ -646,6 +646,24 @@
     const d = new Date(); const p = function (n) { return String(n).padStart(2, '0'); };
     return 'MEDIA-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-CT' + Math.random().toString(36).slice(2, 5).toUpperCase();
   }
+  // Media request phục vụ Ads Order dùng prefix riêng (badge "Internal · From Ads").
+  function genAdsMediaId() {
+    const d = new Date(); return 'ADS-MEDIA-' + d.getFullYear() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  }
+  // Task nguồn Ads Order (source='ads_order', order_id=ADS-xxx)?
+  function isAdsTask(t) { return !!(t && t.source === 'ads_order' && t.order_id); }
+  // Auto-sync ads_status trên Ads Order theo tiến độ Content Task (PIC side).
+  // allowedFrom: chỉ sync khi ads_status hiện tại thuộc list (không clobber trạng thái launch về sau).
+  async function syncAdsOrderFromTask(t, patch, allowedFrom) {
+    if (!isAdsTask(t) || !window.MH || !window.MH.store) return;
+    try {
+      const o = await window.MH.store.orders.get(t.order_id);
+      if (!o || o.order_kind !== 'ads_order') return;
+      const cur = o.ads_status || 'submitted';
+      if (allowedFrom && allowedFrom.indexOf(cur) < 0) return;
+      await window.MH.store.orders.update(t.order_id, patch);
+    } catch (e) { console.warn('[cwb] sync ads order failed (đã chạy add-ads-orders.sql + RLS content update ads chưa?):', e); }
+  }
   function toLocalInput(s) { if (!s) return ''; const d = new Date(/[Z+]/.test(String(s).slice(10)) ? s : String(s).replace(' ', 'T') + 'Z'); if (isNaN(d.getTime())) return ''; const p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function mrField(id, label, val, opts) {
     opts = opts || {};
@@ -972,6 +990,8 @@
     if (['pic_assigned', 'lead_revision', 'new', 'assigned'].indexOf(currentTask.status) < 0 && currentTask.status !== 'in_progress') return;
     if (currentTask.status === 'in_progress') { toast('info', 'Đang viết', currentTask.title); return; }
     await persistTask(currentTask, { status: 'in_progress' }, currentTask.status === 'lead_revision' ? 'PIC chỉnh theo Lead' : 'PIC bắt đầu viết');
+    // Ads Order: PIC bắt đầu viết → ads_status='writing_ads_content'.
+    syncAdsOrderFromTask(currentTask, { ads_status: 'writing_ads_content' }, ['submitted', 'lead_checking', 'assigned_to_content', 'lead_revision']);
     toast('info', 'Bắt đầu viết', currentTask.title);
     reloadTaskAndReopen();
   }
@@ -991,6 +1011,8 @@
     data.status = 'submitted_to_lead';
     data.lead_review_status = 'pending';
     await persistTask(currentTask, data, 'PIC gửi Lead Content duyệt');
+    // Ads Order: gửi Lead duyệt → ads_status='submitted_to_lead' (client thấy "Đang kiểm tra nội dung").
+    syncAdsOrderFromTask(currentTask, { ads_status: 'submitted_to_lead' }, ['submitted', 'lead_checking', 'assigned_to_content', 'writing_ads_content', 'lead_revision']);
     notifyLeadTask(currentTask, '📨 Content task chờ Lead duyệt', (currentTask.title || 'Content task') + ' — ' + (user.name || 'Content') + ' đã gửi bản thảo.');
     toast('success', 'Đã gửi Lead Content duyệt', currentTask.title + ' — chờ Lead review.');
     reloadTaskAndReopen();
@@ -1038,11 +1060,15 @@
     if (missing.length) { toast('warning', 'Thiếu handoff', 'Cần điền: ' + missing.join(', ') + '.'); return; }
     const deadlineIso = new Date(dlRaw).toISOString();
     const deadlineYmd = deadlineIso.slice(0, 10); // requested_deadline là DATE
-    const orderId = genOrderId();
+    // Task nguồn Ads Order → order nội bộ loại "internal_ads_media_request" (prefix ADS-MEDIA-,
+    // badge "Internal · From Ads", link ngược source_ads_order_id) — KHÔNG dùng kind From Content.
+    const adsTask = isAdsTask(t);
+    const orderId = adsTask ? genAdsMediaId() : genOrderId();
     const briefParts = [vals.final_body_or_script];
     if (vals.cta) briefParts.push('CTA: ' + vals.cta);
     if (vals.mandatory_info) briefParts.push('Thông tin bắt buộc: ' + vals.mandatory_info);
-    const noteParts = ['[Internal Media Request từ Content Team]', 'Content Task: ' + (t.title || t.id)];
+    const noteParts = [adsTask ? '[Internal Media Request từ Ads Order]' : '[Internal Media Request từ Content Team]', 'Content Task: ' + (t.title || t.id)];
+    if (adsTask) noteParts.push('Nguồn Ads: ' + t.order_id);
     if (vals.media_note) noteParts.push('Ghi chú Media: ' + vals.media_note);
     const payload = {
       order_id: orderId,
@@ -1061,8 +1087,8 @@
       requester_name: user.name || 'Content',
       requester_email: (user && user.email) || 'content-team@cb.vn',
       requester_role: 'content',
-      origin: 'content_team',
-      order_kind: 'internal_media_request',
+      origin: adsTask ? 'ads_order' : 'content_team',
+      order_kind: adsTask ? 'internal_ads_media_request' : 'internal_media_request',
       client_visible: false,
       source_content_task_id: t.id,
       source_content_plan_id: t.content_plan_id || null,
@@ -1070,6 +1096,7 @@
       brief_wording_status: 'completed',
       created_at: new Date().toISOString()
     };
+    if (adsTask) payload.source_ads_order_id = t.order_id;
     try { await window.MH.store.orders.create(payload); }
     catch (e) {
       console.warn('[cwb] create media order failed:', e);
@@ -1084,10 +1111,13 @@
       media_note: vals.media_note, production_deadline: deadlineIso, request_type: vals.request_type,
       deliverable_type: vals.deliverable_type
     }, 'PIC gửi Internal Media Request → ' + orderId);
-    notifyRoles(['admin', 'account', 'lead_media'], 'order_new', '🎬 Internal Media Request từ Content',
+    // Ads: cập nhật Ads Order gốc (status + link media order) để Lead drawer/Client status theo kịp.
+    if (adsTask) syncAdsOrderFromTask(t, { ads_status: 'media_request_created', ads_media_order_id: orderId },
+      ['submitted', 'lead_checking', 'assigned_to_content', 'writing_ads_content', 'submitted_to_lead', 'lead_revision', 'lead_approved', 'need_creative']);
+    notifyRoles(['admin', 'account', 'lead_media'], 'order_new', adsTask ? '🎬 Internal Media Request (Ads)' : '🎬 Internal Media Request từ Content',
       orderId + ' · ' + (vals.final_headline || t.title || '') + ' — cần Media sản xuất (push Production).',
       'database-orders.html?id=' + orderId, orderId);
-    notifyLeadTask(t, '🎬 PIC đã gửi Media Request', (t.title || 'Content task') + ' → ' + orderId + ' (order nội bộ).');
+    notifyLeadTask(t, '🎬 PIC đã gửi Media Request', (t.title || 'Content task') + ' → ' + orderId + ' (order nội bộ' + (adsTask ? ' · phục vụ Ads ' + t.order_id : '') + ').');
     toast('success', 'Đã gửi sang Media', orderId + ' — order nội bộ, không lộ Client Portal.');
     reloadTaskAndReopen();
   }
@@ -1138,6 +1168,8 @@
       if (!orderFinalDelivered(o)) { toast('warning', 'Chưa thể hoàn tất', 'Media chưa bàn giao Final cho order ' + (t.media_order_id || '') + '.'); return; }
     }
     await persistTask(t, { status: 'completed' }, 'Hoàn tất task (Media đã bàn giao Final)');
+    // Ads Order: creative đã có Final → ads_status='creative_ready' (Lead bấm tiếp Sẵn sàng/Chạy).
+    syncAdsOrderFromTask(t, { ads_status: 'creative_ready' }, ['media_request_created', 'need_creative', 'lead_approved']);
     notifyLeadTask(t, '✅ Content task đã hoàn tất', (t.title || 'Content task') + ' — Media bàn giao Final, PIC đã hoàn tất.');
     toast('success', 'Đã hoàn tất task', t.title || t.id);
     reloadTaskAndReopen();

@@ -1373,6 +1373,8 @@
       last_revision_reason: reason || 'Khác', lead_review_note: note
     });
     pushTaskActivity(currentTask.id, 'Lead trả chỉnh (vòng ' + cnt + ')' + (reason ? ': ' + reason : ''));
+    // Ads: Lead trả chỉnh task ads → ads_status='lead_revision'.
+    await syncAdsFromContentTask(currentTask, 'lead_revision', ['submitted_to_lead', 'writing_ads_content', 'assigned_to_content']);
     if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✍️ Lead yêu cầu chỉnh content', message: (currentTask.title || 'Content task') + (reason ? ' · ' + reason : '') + ' — ' + note, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
     toast('info', 'Đã trả Content chỉnh', currentTask.title || currentTask.id);
@@ -1393,6 +1395,9 @@
     else { patch.status = 'completed'; nextMsg = ' — hoàn tất nội bộ.'; }
     await window.MH.store.contentTasks.update(currentTask.id, patch);
     pushTaskActivity(currentTask.id, 'Lead duyệt nội dung' + nextMsg);
+    // Ads: Lead duyệt task ads → cần Media thì 'need_creative' (chờ Media Request), không thì 'lead_approved'.
+    await syncAdsFromContentTask(currentTask, currentTask.need_media_production ? 'need_creative' : 'lead_approved',
+      ['submitted_to_lead', 'lead_revision', 'writing_ads_content', 'assigned_to_content']);
     if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✅ Lead đã duyệt content', message: (currentTask.title || 'Content task') + nextMsg, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (patch.status === 'submitted_to_account') notifyRoles(['admin', 'account'], { type: 'task_status_changed', title: '✅ Content task đã được Lead duyệt', message: (currentTask.title || 'Content task') + ' — sẵn sàng cho Account.', link: 'content-team.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
@@ -1782,6 +1787,17 @@
     const o = ADS_ORDERS.find(function (x) { return x.order_id === id; });
     if (o) openAdsDrawer(o); else closeAdsDrawer();
   }
+  // Auto-sync ads_status theo hành động Lead trên Content Task nguồn ads (return/approve).
+  // allowedFrom: chỉ sync khi ads_status hiện tại thuộc list (không kéo lùi trạng thái launch).
+  async function syncAdsFromContentTask(t, newStatus, allowedFrom) {
+    if (!t || t.source !== 'ads_order' || !t.order_id) return;
+    const o = ADS_ORDERS.find(function (x) { return x.order_id === t.order_id; })
+      || (window.__CTM_ALL || []).find(function (x) { return x.order_id === t.order_id && x.order_kind === 'ads_order'; });
+    if (!o) return;
+    const cur = o.ads_status || 'submitted';
+    if (allowedFrom && allowedFrom.indexOf(cur) < 0) return;
+    await persistAds(o, { ads_status: newStatus }, 'Đồng bộ từ Content Task → ' + (ADS_STATUS[newStatus] || newStatus));
+  }
 
   /* ---------- RENDER: Ads view ---------- */
   function renderAdsOrders() {
@@ -1816,6 +1832,50 @@
             + '</tr>';
         }).join('')
       : '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có Ads Order nào từ Client.</td></tr>';
+
+    renderAdsDashboard(list);
+  }
+
+  /* ---------- Dashboard: Ads Orders KPI (Fix 4a) ---------- */
+  function renderAdsDashboard(list) {
+    const dash = document.getElementById('ctm-ads-dash');
+    const attn = document.getElementById('ctm-ads-attn');
+    if (!dash && !attn) return;
+    const BUCKETS = [
+      { label: 'Mới — chờ tiếp nhận', match: ['submitted', 'lead_checking'], color: '#191970' },
+      { label: 'Đang chuẩn bị nội dung', match: ['assigned_to_content', 'writing_ads_content', 'submitted_to_lead', 'lead_revision', 'lead_approved'], color: '#1D4ED8' },
+      { label: 'Đang chuẩn bị creative', match: ['need_creative', 'media_request_created'], color: '#B07600' },
+      { label: 'Sẵn sàng / Đang chạy', match: ['creative_ready', 'ready_to_launch', 'running', 'paused'], color: '#0E7490' },
+      { label: 'Hoàn thành', match: ['completed', 'report_updated', 'archived'], color: '#0A7A52' },
+      { label: 'Đã hủy', match: ['cancelled'], color: '#94a3b8' }
+    ];
+    if (dash) {
+      if (!list.length) {
+        dash.innerHTML = '<p class="text-xs muted" style="margin:0">Chưa có Ads Order nào.</p>';
+      } else {
+        const max = Math.max.apply(null, BUCKETS.map(function (b) { return list.filter(function (o) { return b.match.indexOf(o.ads_status || 'submitted') >= 0; }).length; }).concat([1]));
+        dash.innerHTML = BUCKETS.map(function (b) {
+          const n = list.filter(function (o) { return b.match.indexOf(o.ads_status || 'submitted') >= 0; }).length;
+          return '<div style="display:flex;align-items:center;gap:10px;padding:4px 0">'
+            + '<span class="text-xs" style="flex:0 0 168px;color:var(--text-muted)">' + b.label + '</span>'
+            + '<span style="flex:1;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden"><i style="display:block;height:100%;width:' + Math.round(n / max * 100) + '%;background:' + b.color + ';border-radius:99px"></i></span>'
+            + '<b class="text-xs" style="flex:0 0 20px;text-align:right">' + n + '</b></div>';
+        }).join('');
+      }
+    }
+    if (attn) {
+      // Cần chú ý: mới chưa nhận + đang chờ Lead duyệt + creative chờ xử lý.
+      const ATTN = ['submitted', 'lead_checking', 'submitted_to_lead', 'need_creative'];
+      const items = list.filter(function (o) { return ATTN.indexOf(o.ads_status || 'submitted') >= 0; });
+      const cnt = document.getElementById('ctm-ads-attn-count'); if (cnt) cnt.textContent = items.length;
+      attn.innerHTML = items.length
+        ? items.slice(0, 6).map(function (o) {
+            const st = o.ads_status || 'submitted';
+            return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b><span class="badge-campaign">Ads</span></div>'
+              + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_STATUS[st] || st) + ' · PIC: ' + esc(adsPicOf(o) || 'chưa gán') + '</div></button>';
+          }).join('')
+        : '<p class="text-xs muted" style="margin:0">Không có Ads Order nào cần chú ý.</p>';
+    }
   }
 
   /* ---------- Ads drawer ---------- */
@@ -1874,8 +1934,12 @@
     }).join('') : '<p class="text-xs muted" style="margin:0">Chưa tách Content Task nào.</p>';
     const taskBtn = (isLead && ADS_TERMINAL.indexOf(st) < 0) ? '<button class="btn btn-secondary btn-sm" id="ads-split-tasks" style="margin-top:8px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tách Content Tasks</button>' : '';
 
-    // Internal Media Request
-    const mediaId = o.ads_media_order_id;
+    // Internal Media Request — fallback tìm theo source_ads_order_id (khi PIC tạo từ workbench
+    // trước lúc cột ads_media_order_id kịp sync, hoặc DB thiếu cột).
+    const mediaId = o.ads_media_order_id || (function () {
+      const m = (window.__CTM_ALL || []).find(function (x) { return x.order_kind === 'internal_ads_media_request' && x.source_ads_order_id === o.order_id; });
+      return m ? m.order_id : null;
+    })();
     let mediaBlock;
     if (mediaId) {
       mediaBlock = '<div class="dw-callout dw--brand"><p><b>Đã tạo Internal Media Request:</b> <span class="mono">' + esc(mediaId) + '</span> <span class="badge-internal-src">Internal · From Ads</span></p><p class="text-xs muted" style="margin:6px 0 0">Media team sản xuất creative; không lộ Client Portal.</p></div>';
@@ -1949,7 +2013,8 @@
       const note = prompt('Lý do trả chỉnh cho Content:', o.wording_lead_note || '');
       if (note === null) return;
       await persistAds(o, { ads_status: 'lead_revision', wording_lead_note: note }, 'Lead trả chỉnh nội dung Ads');
-      notifyByName(adsPicOf(o), { type: 'task_status_changed', title: 'Ads — Lead trả chỉnh', message: o.order_id + ': ' + (note || ''), link: 'content-team.html?tab=ads-orders&id=' + o.order_id, related_entity_type: 'orders', related_entity_id: o.order_id });
+      // PIC role content bị guard đá khỏi content-team → link về Content Wording (nơi PIC làm task ads).
+      notifyByName(adsPicOf(o), { type: 'task_status_changed', title: 'Ads — Lead trả chỉnh', message: o.order_id + ': ' + (note || ''), link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
     } else if (newStatus === 'cancelled') {
       if (!confirm('Hủy Ads Order ' + o.order_id + '?')) return;
       await persistAds(o, { ads_status: 'cancelled' }, 'Hủy Ads Order');
@@ -1966,7 +2031,8 @@
     const patch = { brief_wording_pic: pic };
     if (ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0) patch.ads_status = 'assigned_to_content';
     await persistAds(o, patch, 'Gán PIC Content: ' + pic);
-    notifyByName(pic, { type: 'task_assigned', title: 'Bạn được gán Ads Order', message: o.order_id + ' · ' + (o.project_name || ''), link: 'content-team.html?tab=ads-orders&id=' + o.order_id, related_entity_type: 'orders', related_entity_id: o.order_id });
+    // PIC role content không vào được content-team → link Content Wording (task ads sẽ được tách về đó).
+    notifyByName(pic, { type: 'task_assigned', title: 'Bạn được gán Ads Order', message: o.order_id + ' · ' + (o.project_name || '') + ' — Lead sẽ tách Content Task cho bạn.', link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
     toast('success', 'Đã gán PIC', pic);
     await reloadAndReopenAds();
   }

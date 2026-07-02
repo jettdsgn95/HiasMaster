@@ -92,6 +92,18 @@ CREATE POLICY "orders content insert ads-media" ON public.orders
     AND client_visible = false
   );
 
+-- PIC Content cập nhật Ads Order (auto-sync ads_status khi bắt đầu viết / gửi Lead /
+-- gửi Media Request / hoàn tất — flow content-workbench). Chỉ scope order_kind='ads_order'.
+DROP POLICY IF EXISTS "orders content update ads" ON public.orders;
+CREATE POLICY "orders content update ads" ON public.orders
+  FOR UPDATE USING (
+    public.current_user_role() = 'content'
+    AND order_kind = 'ads_order'
+  ) WITH CHECK (
+    public.current_user_role() = 'content'
+    AND order_kind = 'ads_order'
+  );
+
 -- Verify (tùy chọn):
 -- SELECT column_name FROM information_schema.columns WHERE table_name='orders' AND column_name IN ('owner_team','ads_status','ads_detail','source_ads_order_id');
 -- SELECT policyname FROM pg_policies WHERE tablename='orders' AND policyname LIKE '%ads%';

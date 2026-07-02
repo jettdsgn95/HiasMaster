@@ -36,7 +36,7 @@
   const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']; // Monday-first (giống ref)
   const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
   const TYPE_LABEL = { media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', slide: 'Slide', ads: 'Ads / Post', other: 'Khác' };
-  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording', 'ct-deadline': 'Hạn Content Task', 'cplan-deadline': 'Hạn Content Plan' };
+  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording', 'ct-deadline': 'Hạn Content Task', 'cplan-deadline': 'Hạn Content Plan', 'ads-launch': 'Lịch lên Ads' };
 
   /* ---------- State ---------- */
   let cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng đang xem (Month/Week)
@@ -45,7 +45,7 @@
   let selectedDay = new Date(TODAY); // ngày đang mở ở Day view
   let miniCursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng hiển thị ở mini-calendar
   let allEvents = [];
-  const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery', 'wording-deadline', 'ct-deadline', 'cplan-deadline']);
+  const activeTypes = new Set(['task-deadline', 'order-deadline', 'shoot', 'delivery', 'wording-deadline', 'ct-deadline', 'cplan-deadline', 'ads-launch']);
 
   /* ---------- DOM ---------- */
   const $ = (id) => document.getElementById(id);
@@ -162,6 +162,23 @@
       if (o.account_status === 'rejected' || o.production_status === 'cancelled') return;
       // Phạm vi role:
       if (IS_PRODUCTION) return; // design/editor không xem order-level
+      // Ads Order (Client→Content): chấm "Lịch lên Ads" theo desired_launch_date — lead_content/admin/account.
+      // KHÔNG rơi xuống order-deadline chung (tránh nhãn "Deadline Order" sai ngữ cảnh).
+      if (o.order_kind === 'ads_order') {
+        if (ROLE === 'content') return; // PIC theo dõi qua Hạn Content Task
+        const ast = o.ads_status || 'submitted';
+        if (['completed', 'report_updated', 'archived', 'cancelled'].includes(ast)) return;
+        let ad = o.ads_detail; if (typeof ad === 'string') { try { ad = JSON.parse(ad); } catch (e) { ad = {}; } }
+        ad = ad || {};
+        const ld = parseDate(ad.desired_launch_date || o.requested_deadline);
+        if (ld) {
+          events.push(makeEvent(ld, 'ads-launch', o.project_name || o.order_id, {
+            pic: o.brief_wording_pic, sub: (o.order_id || '') + ' · Ngày mong muốn lên Ads',
+            refKind: 'adsorder', refId: o.order_id, status: ast
+          }));
+        }
+        return;
+      }
       if (IS_CONTENT) {
         // Content CHỈ thấy "Hạn Content Wording" (Account đã đặt) — ẩn deadline order + shoot.
         const ws = o.brief_wording_status;
@@ -368,7 +385,7 @@
   }
 
   function dotClass(type) {
-    return type === 'task-deadline' ? 'task' : type === 'order-deadline' ? 'order' : type === 'shoot' ? 'shoot' : (type === 'wording-deadline' || type === 'ct-deadline') ? 'wording' : type === 'cplan-deadline' ? 'order' : 'delivery';
+    return type === 'task-deadline' ? 'task' : (type === 'order-deadline' || type === 'ads-launch') ? 'order' : type === 'shoot' ? 'shoot' : (type === 'wording-deadline' || type === 'ct-deadline') ? 'wording' : type === 'cplan-deadline' ? 'order' : 'delivery';
   }
 
   function groupByDay(events) {
@@ -425,6 +442,8 @@
     // Content Task / Plan (Phase 6)
     if (ev.refKind === 'ctask') return (ROLE === 'content' ? 'content-workbench.html?task=' : 'content-team.html?task=') + encodeURIComponent(ev.refId);
     if (ev.refKind === 'cplan') return 'content-team.html?plan=' + encodeURIComponent(ev.refId);
+    // Ads Order → tab Ads Orders (lead_content/admin/account xem được).
+    if (ev.refKind === 'adsorder') return 'content-team.html?tab=ads-orders&id=' + encodeURIComponent(ev.refId);
     return '';
   }
 
