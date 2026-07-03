@@ -28,13 +28,14 @@
   /* ---------- Context ---------- */
   let user;
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
-  if (!user || !user.role || user.role === 'client') return;
+  if (!user || !user.role) return;
 
   const MEDIA_ROLES = ['admin', 'account', 'lead_media'];
   const READ_ALL_ROLES = MEDIA_ROLES.concat(['system_supervisor']);
   const isMedia = MEDIA_ROLES.indexOf(user.role) >= 0;
   const seesAll = READ_ALL_ROLES.indexOf(user.role) >= 0;
   const isSupervisor = user.role === 'system_supervisor';
+  const isClient = user.role === 'client';   // giáo viên/chi nhánh tự kiểm
 
   const remote = function () { return !!(window.MH && window.MH.supabaseEnabled); };
 
@@ -187,6 +188,37 @@
     if (score >= 85) return 'bc-score--pass';
     if (score >= 70) return 'bc-score--rev';
     return 'bc-score--fail';
+  }
+
+  // Kết luận HÀNH ĐỘNG theo (trạng thái AI × nhóm nội dung) — người dùng biết
+  // ngay ĐƯỢC DÙNG / CẦN SỬA / PHẢI GỬI MEDIA. Nhóm 1&2 đạt → tự dùng (planning).
+  function actionVerdict(check) {
+    const g = check.usage_group;
+    switch (check.ai_status) {
+      case 'REQUIRES_MEDIA_REVIEW':
+        return { cls: 'bc-verdict--review', title: 'Bắt buộc gửi Media duyệt',
+          text: 'Nội dung này CHƯA được tự đăng/dùng công khai. Đã chuyển vào hàng đợi để Media kiểm tra và phản hồi cho bạn.' };
+      case 'FAIL':
+        return { cls: 'bc-verdict--fail', title: 'Không đạt',
+          text: 'Không nên sử dụng ảnh này. Xem lỗi bên dưới và tạo lại theo gợi ý.' };
+      case 'NEEDS_REVISION':
+        return { cls: 'bc-verdict--rev', title: 'Cần chỉnh sửa',
+          text: 'Chỉnh theo gợi ý bên dưới rồi kiểm lại trước khi dùng.' };
+      case 'PASS':
+        if (g === 'group_1_internal')
+          return { cls: 'bc-verdict--pass', title: 'Được dùng nội bộ',
+            text: 'Đạt — dùng được trong lớp / worksheet / slide nội bộ, không cần Media duyệt.' };
+        if (g === 'group_2_self_check')
+          return { cls: 'bc-verdict--pass', title: 'Đủ điều kiện tự đăng',
+            text: 'Đạt — chi nhánh được tự đăng. Nên đối chiếu nhanh brand guideline trước khi đăng.' };
+        return { cls: 'bc-verdict--review', title: 'Cần Media duyệt',
+          text: 'Đạt về hình ảnh, nhưng nhóm nội dung này vẫn cần Media duyệt trước khi dùng.' };
+      case 'NEEDS_MANUAL_REVIEW':
+        return { cls: 'bc-verdict--review', title: 'Chờ Media kiểm tra tay',
+          text: 'AI chưa phân tích được — ảnh đã lưu và chuyển Media kiểm tra thủ công.' };
+      default:
+        return null;
+    }
   }
 
   /* =====================================================================
@@ -721,9 +753,14 @@
     const overrides = Array.isArray(check.override_rules) && check.override_rules.length
       ? check.override_rules : (ai.override_rules_triggered || []);
 
+    const verdict = actionVerdict(check);
     body.innerHTML =
+      // Kết luận hành động (nổi bật, ai cũng đọc được ngay)
+      (verdict
+        ? '<div class="bc-verdict ' + verdict.cls + '"><b>' + esc(verdict.title) + '</b><span>' + esc(verdict.text) + '</span></div>'
+        : '')
       // Ảnh
-      '<div class="bc-d-section"><div class="bc-d-img" id="bcd-img-wrap">'
+      + '<div class="bc-d-section"><div class="bc-d-img" id="bcd-img-wrap">'
         + '<div class="bc-d-img-loading text-xs muted">Đang tải ảnh…</div>'
       + '</div>'
       + '<div class="text-xs muted">' + esc(check.image_file_name || '') + ' · ' + fmtSize(check.image_file_size) + '</div></div>'
