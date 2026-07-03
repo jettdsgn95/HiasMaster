@@ -2,17 +2,18 @@
 // CB AI Brand Safety Checker — Edge Function `brand-check-analyze`
 //
 // Nhiệm vụ: nhận storage path ảnh + metadata → tải ảnh (service role) →
-// gọi AI Vision (Anthropic mặc định; OpenAI/Gemini qua env) → parse JSON →
+// gọi AI Vision (Gemini mặc định; OpenAI/Anthropic qua env) → parse JSON →
 // chạy override rule engine server-side → trả kết quả cuối cho frontend.
 //
 // API key CHỈ nằm ở đây (Supabase secrets) — không bao giờ lộ ra frontend.
 //
-// Deploy:
+// Deploy (mặc định Gemini):
 //   supabase functions deploy brand-check-analyze
-//   supabase secrets set BRAND_CHECK_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-...
-//   # tùy chọn: BRAND_CHECK_MODEL (mặc định claude-opus-4-8)
-//   # đổi provider: BRAND_CHECK_PROVIDER=openai + OPENAI_API_KEY (+ BRAND_CHECK_MODEL=gpt-4o...)
-//   #               BRAND_CHECK_PROVIDER=gemini + GEMINI_API_KEY (+ BRAND_CHECK_MODEL=gemini-2.0-flash...)
+//   supabase secrets set GEMINI_API_KEY=AIza...
+//   # tùy chọn: BRAND_CHECK_MODEL (mặc định gemini-2.5-flash; nếu tài khoản chưa có
+//   #           model này → set gemini-2.0-flash)
+//   # đổi provider: BRAND_CHECK_PROVIDER=openai + OPENAI_API_KEY (+ BRAND_CHECK_MODEL=gpt-4o…)
+//   #               BRAND_CHECK_PROVIDER=anthropic + ANTHROPIC_API_KEY (+ BRAND_CHECK_MODEL=claude-opus-4-8)
 //
 // Request body (JSON, gọi qua supabase.functions.invoke — JWT user tự đính kèm):
 //   { storage_path: string, mime_type: string, metadata: {...form fields...} }
@@ -102,6 +103,42 @@ const RESULT_SCHEMA = {
     "override_rules_triggered", "confidence",
   ],
   additionalProperties: false,
+};
+
+// ---------- Gemini responseSchema (định dạng KHÁC Anthropic) ----------
+// Gemini dùng subset OpenAPI: type CHỮ HOA, KHÔNG có additionalProperties.
+const GEMINI_CRITERION = {
+  type: "OBJECT",
+  properties: {
+    code: { type: "STRING", enum: ["logo_identity", "brand_color", "text_quality", "ai_artifacts", "education_suitability", "communication_risk"] },
+    name: { type: "STRING" },
+    status: { type: "STRING", enum: ["pass", "warning", "fail"] },
+    score: { type: "INTEGER" },
+    max_score: { type: "INTEGER" },
+    findings: { type: "STRING" },
+    recommendation: { type: "STRING" },
+  },
+  required: ["code", "name", "status", "score", "max_score", "findings", "recommendation"],
+};
+const GEMINI_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    overall_score: { type: "INTEGER" },
+    status: { type: "STRING", enum: ["PASS", "NEEDS_REVISION", "FAIL", "REQUIRES_MEDIA_REVIEW"] },
+    risk_group_recommendation: { type: "STRING", enum: ["group_1_internal", "group_2_self_check", "group_3_media_review"] },
+    requires_media_review: { type: "BOOLEAN" },
+    summary: { type: "STRING" },
+    criteria: { type: "ARRAY", items: GEMINI_CRITERION },
+    detected_issues: { type: "ARRAY", items: { type: "STRING" } },
+    required_actions: { type: "ARRAY", items: { type: "STRING" } },
+    override_rules_triggered: { type: "ARRAY", items: { type: "STRING" } },
+    confidence: { type: "STRING", enum: ["low", "medium", "high"] },
+  },
+  required: [
+    "overall_score", "status", "risk_group_recommendation", "requires_media_review",
+    "summary", "criteria", "detected_issues", "required_actions",
+    "override_rules_triggered", "confidence",
+  ],
 };
 
 // ---------- User prompt kèm metadata (mục 17 planning doc) ----------
@@ -242,20 +279,45 @@ async function callOpenAI(imageB64: string, mimeType: string, userPrompt: string
   return JSON.parse(data.choices?.[0]?.message?.content || "null");
 }
 
-// ---------- Provider: Gemini (đổi bằng BRAND_CHECK_PROVIDER=gemini) ----------
+// Bóc JSON an toàn kể cả khi model bọc trong ```json fences (phòng hờ).
+function parseJsonLoose(text: string): any {
+  if (!text) throw new Error("AI trả text rỗng");
+  let s = text.trim();
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) s = fence[1].trim();
+  else {
+    const a = s.indexOf("{"); const b = s.lastIndexOf("}");
+    if (a >= 0 && b > a) s = s.slice(a, b + 1);
+  }
+  return JSON.parse(s);
+}
+
+// ---------- Provider: Gemini (MẶC ĐỊNH) ----------
+// Ép JSON đúng GEMINI_SCHEMA (responseSchema) + nới safety để không chặn nhầm
+// ảnh giáo dục/quảng cáo (đây là công cụ kiểm duyệt — CẦN model mô tả ảnh, không refuse).
 async function callGemini(imageB64: string, mimeType: string, userPrompt: string): Promise<any> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) throw new Error("GEMINI_API_KEY chưa cấu hình");
-  const model = Deno.env.get("BRAND_CHECK_MODEL") || "gemini-2.0-flash";
+  if (!apiKey) throw new Error("GEMINI_API_KEY chưa cấu hình (supabase secrets set GEMINI_API_KEY=...)");
+  const model = Deno.env.get("BRAND_CHECK_MODEL") || "gemini-2.5-flash";
+
+  const safety = ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+    "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
+    .map((c) => ({ category: c, threshold: "BLOCK_ONLY_HIGH" }));
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 4096 },
+        safetySettings: safety,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: GEMINI_SCHEMA,
+          maxOutputTokens: 8192,
+          temperature: 0.2,
+        },
         contents: [{
           role: "user",
           parts: [
@@ -268,7 +330,19 @@ async function callGemini(imageB64: string, mimeType: string, userPrompt: string
   );
   if (!res.ok) throw new Error(`Gemini API ${res.status}: ${(await res.text()).slice(0, 400)}`);
   const data = await res.json();
-  return JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "null");
+
+  // Prompt bị chặn hẳn (không có candidate).
+  if (data.promptFeedback && data.promptFeedback.blockReason) {
+    throw new Error(`Gemini chặn prompt: ${data.promptFeedback.blockReason}`);
+  }
+  const cand = data.candidates && data.candidates[0];
+  if (!cand) throw new Error("Gemini không trả candidate");
+  if (cand.finishReason && cand.finishReason !== "STOP" && cand.finishReason !== "MAX_TOKENS") {
+    throw new Error(`Gemini dừng bất thường: ${cand.finishReason}`);
+  }
+  const text = (cand.content && cand.content.parts || [])
+    .map((p: any) => p.text || "").join("").trim();
+  return parseJsonLoose(text);
 }
 
 // ---------- Sanity check kết quả AI (schema đã ép nhưng vẫn guard tối thiểu) ----------
@@ -303,11 +377,11 @@ Deno.serve(async (req) => {
     const imageB64 = toBase64(await file.arrayBuffer());
     const userPrompt = buildUserPrompt(metadata || {});
 
-    const provider = (Deno.env.get("BRAND_CHECK_PROVIDER") || "anthropic").toLowerCase();
+    const provider = (Deno.env.get("BRAND_CHECK_PROVIDER") || "gemini").toLowerCase();
     let aiResult: any;
     if (provider === "openai") aiResult = await callOpenAI(imageB64, mime_type, userPrompt);
-    else if (provider === "gemini") aiResult = await callGemini(imageB64, mime_type, userPrompt);
-    else aiResult = await callAnthropic(imageB64, mime_type, userPrompt);
+    else if (provider === "anthropic") aiResult = await callAnthropic(imageB64, mime_type, userPrompt);
+    else aiResult = await callGemini(imageB64, mime_type, userPrompt);
 
     validateResult(aiResult);
 

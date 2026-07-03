@@ -237,10 +237,10 @@ END $$;
 -- =====================================================================
 -- B6. Edge Function (NGOÀI SQL — làm 1 lần trong Supabase CLI/Dashboard):
 --   supabase functions deploy brand-check-analyze
---   supabase secrets set BRAND_CHECK_PROVIDER=anthropic
---   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
---   supabase secrets set BRAND_CHECK_MODEL=claude-opus-4-8   (tùy chọn)
---   (OpenAI: OPENAI_API_KEY · Gemini: GEMINI_API_KEY — xem functions/brand-check-analyze/index.ts)
+--   supabase secrets set GEMINI_API_KEY=AIza...            (provider mặc định = gemini)
+--   supabase secrets set BRAND_CHECK_MODEL=gemini-2.5-flash   (tùy chọn; hoặc gemini-2.0-flash)
+--   (đổi provider: BRAND_CHECK_PROVIDER=openai+OPENAI_API_KEY · anthropic+ANTHROPIC_API_KEY
+--    — xem functions/brand-check-analyze/index.ts)
 -- Chưa deploy function → app chạy chế độ DEMO (kết quả mô phỏng, flag rõ trong UI).
 -- =====================================================================
 
