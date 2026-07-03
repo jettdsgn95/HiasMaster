@@ -319,15 +319,28 @@
   /* =====================================================================
      AI CALL — Edge Function `brand-check-analyze`
      ===================================================================== */
-  async function invokeAnalyze(storagePath, mimeType, metadata) {
-    await window.MH.supabaseReady;
-    const client = window.MH.supabase;
-    const { data, error } = await client.functions.invoke('brand-check-analyze', {
-      body: { storage_path: storagePath, mime_type: mimeType, metadata: metadata }
-    });
+  async function invokeOnce(client, body) {
+    const { data, error } = await client.functions.invoke('brand-check-analyze', { body: body });
     if (error) throw error;
     if (data && data.error) throw new Error(data.error);
     return data;
+  }
+  async function invokeAnalyze(storagePath, mimeType, metadata) {
+    await window.MH.supabaseReady;
+    const client = window.MH.supabase;
+    const body = { storage_path: storagePath, mime_type: mimeType, metadata: metadata };
+    try {
+      return await invokeOnce(client, body);
+    } catch (e) {
+      // Lỗi cold-start / mạng (FunctionsFetchError "Failed to send a request") →
+      // chờ function nóng máy rồi thử lại 1 lần. Lỗi khác (function trả 500) → ném luôn.
+      const transient = (e && e.name === 'FunctionsFetchError')
+        || /failed to send a request/i.test(String(e && e.message));
+      if (!transient) throw e;
+      console.warn('[brand-check] Edge Function cold-start, thử lại sau 1.8s…');
+      await new Promise(function (r) { setTimeout(r, 1800); });
+      return await invokeOnce(client, body);
+    }
   }
 
   // AI lỗi/chưa deploy → kết quả fallback: rủi ro cao → REQUIRES_MEDIA_REVIEW, còn lại chờ duyệt tay.
