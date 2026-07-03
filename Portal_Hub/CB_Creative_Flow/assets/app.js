@@ -656,10 +656,32 @@
     if ((location.pathname.split('/').pop() || '') === 'supervisor-planning.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
     opsUl.appendChild(li);
   }
+  /* AI Brand Safety Checker: chèn nav "Brand Safety" vào nhóm "Hệ thống" (idempotent).
+     Mọi role nội bộ đều thấy (ai cũng upload ảnh tự kiểm); client không vào (guard ở
+     brand-check.html). Chèn TRƯỚC "AI Tools" trong group cuối; không có anchor → append. */
+  function injectBrandCheckNav() {
+    var u = getUser();
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor', 'system_supervisor', 'lead_media'];
+    if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
+    var sidebar = document.querySelector('.dash-sidebar');
+    if (!sidebar) return;
+    if (sidebar.querySelector('a[href="brand-check.html"]')) return; // hardcode/đã inject → không lặp
+    var li = document.createElement('li');
+    li.setAttribute('data-show-roles', 'admin,account,design,editor,content,lead_content,lead_media,system_supervisor');
+    li.innerHTML = '<a href="brand-check.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><span>Brand Safety</span></a>';
+    if ((location.pathname.split('/').pop() || '') === 'brand-check.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
+    var anchor = sidebar.querySelector('a[href="ai-tools.html"]');
+    if (anchor && anchor.parentElement && anchor.parentElement.parentElement) {
+      anchor.parentElement.parentElement.insertBefore(li, anchor.parentElement);
+    } else {
+      var groups = sidebar.querySelectorAll('.dash-nav');
+      if (groups.length) groups[groups.length - 1].appendChild(li);
+    }
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); }, 0);
+    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */

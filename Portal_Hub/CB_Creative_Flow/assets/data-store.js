@@ -1039,10 +1039,117 @@
   }
   seedContentDemo();
 
+  /* ---------- BRAND CHECKS (AI Brand Safety Checker) ----------
+     Kiểm duyệt hình ảnh AI theo tiêu chí thương hiệu CB. Pattern y hệt leadTasks:
+     Supabase → bảng `brand_checks`/`brand_check_criteria` (add-brand-check.sql),
+     fallback localStorage `mh-brand-checks` (KHÔNG lưu ảnh lớn offline — chỉ dataURL nhỏ).
+     AI Vision gọi qua Edge Function `brand-check-analyze` (xem brand-check.js). */
+  function readBrandChecks() {
+    var ls = readJSON('mh-brand-checks', null);
+    if (ls && ls.length) { window.MH_MOCK_BRAND_CHECKS = ls; return ls; }
+    return window.MH_MOCK_BRAND_CHECKS || [];
+  }
+  function writeBrandChecks(list) { window.MH_MOCK_BRAND_CHECKS = list; writeJSON('mh-brand-checks', list.slice(0, 100)); }
+  const brandChecks = {
+    async list(filters) {
+      const s = await sb();
+      if (s) {
+        let q = s.from('brand_checks').select('*').order('created_at', { ascending: false });
+        if (filters && filters.ai_status)     q = q.eq('ai_status', filters.ai_status);
+        if (filters && filters.manual_status) q = q.eq('manual_status', filters.manual_status);
+        if (filters && filters.usage_group)   q = q.eq('usage_group', filters.usage_group);
+        if (filters && filters.uploader_id)   q = q.eq('uploader_id', filters.uploader_id);
+        const { data, error } = await q;
+        if (error) console.warn('[store.brandChecks.list]', error);
+        return data || [];
+      }
+      let list = readBrandChecks();
+      if (filters) {
+        if (filters.ai_status)     list = list.filter((c) => c.ai_status === filters.ai_status);
+        if (filters.manual_status) list = list.filter((c) => c.manual_status === filters.manual_status);
+        if (filters.usage_group)   list = list.filter((c) => c.usage_group === filters.usage_group);
+        if (filters.uploader_id)   list = list.filter((c) => c.uploader_id === filters.uploader_id);
+      }
+      return list;
+    },
+    async get(id) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('brand_checks').select('*').eq('id', id).maybeSingle();
+        if (error) console.warn('[store.brandChecks.get]', error);
+        return data;
+      }
+      return readBrandChecks().find((c) => c.id === id) || null;
+    },
+    async create(payload) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('brand_checks').insert(payload).select().maybeSingle();
+        if (error) { console.warn('[store.brandChecks.create]', error); throw error; }
+        return data;
+      }
+      const list = readBrandChecks();
+      const row = Object.assign({ manual_status: 'PENDING', override_rules: [] }, payload);
+      if (!row.id) row.id = genId('bcheck');
+      if (!row.created_at) row.created_at = nowIso();
+      row.updated_at = nowIso();
+      list.unshift(row);
+      writeBrandChecks(list);
+      return row;
+    },
+    async update(id, patch) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('brand_checks').update(patch).eq('id', id).select().maybeSingle();
+        if (error) { console.warn('[store.brandChecks.update]', error); throw error; }
+        return data;
+      }
+      const list = readBrandChecks();
+      const idx = list.findIndex((c) => c.id === id);
+      if (idx >= 0) { list[idx] = Object.assign({}, list[idx], patch, { updated_at: nowIso() }); writeBrandChecks(list); return list[idx]; }
+      return null;
+    },
+    async delete(id) {
+      const s = await sb();
+      if (s) {
+        const { error } = await s.from('brand_checks').delete().eq('id', id);
+        if (error) { console.warn('[store.brandChecks.delete]', error); throw error; }
+        return true;
+      }
+      writeBrandChecks(readBrandChecks().filter((c) => c.id !== id));
+      return true;
+    },
+    // Criteria: fallback lưu inline trong row (field `criteria`), Supabase → bảng riêng.
+    async criteriaByCheck(checkId) {
+      const s = await sb();
+      if (s) {
+        const { data, error } = await s.from('brand_check_criteria').select('*').eq('brand_check_id', checkId).order('created_at', { ascending: true });
+        if (error) console.warn('[store.brandChecks.criteriaByCheck]', error);
+        return data || [];
+      }
+      const row = readBrandChecks().find((c) => c.id === checkId);
+      return (row && row.criteria) || [];
+    },
+    async addCriteria(checkId, rows) {
+      const s = await sb();
+      const list = (rows || []).map((r) => Object.assign({ brand_check_id: checkId }, r));
+      if (s) {
+        const { data, error } = await s.from('brand_check_criteria').insert(list).select();
+        if (error) { console.warn('[store.brandChecks.addCriteria]', error); return []; }
+        return data || [];
+      }
+      const all = readBrandChecks();
+      const idx = all.findIndex((c) => c.id === checkId);
+      if (idx >= 0) { all[idx].criteria = list; writeBrandChecks(all); }
+      return list;
+    }
+  };
+
   /* ---------- Expose ---------- */
   window.MH.store = {
     users, orders, tasks, taskComments, deliveries, aiUsage, chatbot, files, notifications, auth, activity, leadTasks, leadTaskComments,
     contentPlans, contentTasks, contentTaskComments, contentEnums: CONTENT_ENUMS,
+    brandChecks,
     isRemote: function () { return !!window.MH.supabaseEnabled; }
   };
 })();
