@@ -53,7 +53,9 @@
       // Internal Media Request (Content→Media, add-content-to-media-order.sql)
       'origin', 'order_kind', 'client_visible', 'source_content_task_id', 'source_content_plan_id', 'requester_role',
       // Ads Orders (Client→Content, add-ads-orders.sql)
-      'owner_team', 'ads_status', 'ads_detail', 'source_ads_order_id'];
+      'owner_team', 'ads_status', 'ads_detail', 'source_ads_order_id',
+      // Brand Check approval (add-brand-check.sql — chạy lại nếu thiếu)
+      'approved_at', 'approval_source'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {
@@ -1084,9 +1086,17 @@
     async create(payload) {
       const s = await sb();
       if (s) {
-        const { data, error } = await s.from('brand_checks').insert(payload).select().maybeSingle();
-        if (error) { console.warn('[store.brandChecks.create]', error); throw error; }
-        return data;
+        // Loop-strip cột optional thiếu (vd approved_at/approval_source khi chưa
+        // chạy lại add-brand-check.sql) — giữ được cột lõi để vẫn tạo record.
+        let p = payload;
+        for (let i = 0; i < 6; i++) {
+          const { data, error } = await s.from('brand_checks').insert(p).select().maybeSingle();
+          if (!error) return data;
+          const reduced = stripMissingOptionalColumn(p, error, '[store.brandChecks.create]');
+          if (!reduced) { console.warn('[store.brandChecks.create]', error); throw error; }
+          p = reduced;
+        }
+        throw new Error('[store.brandChecks.create] quá nhiều cột thiếu — chạy lại add-brand-check.sql.');
       }
       const list = readBrandChecks();
       const row = Object.assign({ manual_status: 'PENDING', override_rules: [] }, payload);
@@ -1100,9 +1110,15 @@
     async update(id, patch) {
       const s = await sb();
       if (s) {
-        const { data, error } = await s.from('brand_checks').update(patch).eq('id', id).select().maybeSingle();
-        if (error) { console.warn('[store.brandChecks.update]', error); throw error; }
-        return data;
+        let p = patch;
+        for (let i = 0; i < 6; i++) {
+          const { data, error } = await s.from('brand_checks').update(p).eq('id', id).select().maybeSingle();
+          if (!error) return data;
+          const reduced = stripMissingOptionalColumn(p, error, '[store.brandChecks.update]');
+          if (!reduced) { console.warn('[store.brandChecks.update]', error); throw error; }
+          p = reduced;
+        }
+        throw new Error('[store.brandChecks.update] quá nhiều cột thiếu — chạy lại add-brand-check.sql.');
       }
       const list = readBrandChecks();
       const idx = list.findIndex((c) => c.id === id);

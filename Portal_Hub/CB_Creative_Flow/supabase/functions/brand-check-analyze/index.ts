@@ -55,14 +55,21 @@ You must inspect:
 6. Risk of misleading viewers into believing an AI image is a real CB Centres event, student, teacher, branch, classroom, or partner activity.
 7. Whether the image should require Media team approval.
 
-Important decision rules:
-- If the image contains a distorted or incorrect CB logo, mark as FAIL or REQUIRES_MEDIA_REVIEW.
-- If the image uses CB logo, mascot Cici, CB uniform, CB branch/facility, recruitment/admission, promotion, partner/school, certificate, tuition fee, test/exam/certificate claim, or campaign-level message, set requires_media_review = true.
-- If the image contains sensitive, inappropriate, unsafe, or non-education-friendly content, mark as FAIL.
-- If text is unreadable, misspelled, or looks like AI gibberish, flag it clearly.
-- If you are unsure, be conservative and recommend Media review.
+Important decision rules — SCORING and MEDIA-REVIEW RECOMMENDATION are two SEPARATE things:
 
-Write "summary", "findings", "recommendation", "detected_issues", "required_actions" in Vietnamese.
+A) SCORING (overall_score, criteria scores, status) — judge IMAGE QUALITY ONLY, objectively:
+- Score each criterion on actual visual quality: is the logo rendered correctly (not distorted/misspelled/blurred)? Are brand colors right? Is text readable and correctly spelled? Are there AI artifacts (hands, faces, gibberish text)? Is it appropriate for an education environment?
+- Do NOT lower any score merely because the image CONTAINS the CB logo, mascot Cici, uniforms, promotion content, or partner references. Presence of brand assets is NOT a quality defect. A well-made official poster with a correct logo deserves a HIGH score.
+- status must follow the score: 85-100 = PASS, 70-84 = NEEDS_REVISION, below 70 = FAIL. Do NOT output REQUIRES_MEDIA_REVIEW as status — that decision belongs to the app's rule engine, not you.
+- Only genuine defects lower scores: distorted/incorrect logo, wrong brand colors, unreadable/misspelled text, AI artifacts, content unsuitable for education, or imagery misleading viewers into believing an AI image is a real CB event/student/teacher.
+- If the image contains sensitive, inappropriate, unsafe, or non-education-friendly content, score it FAIL.
+
+B) MEDIA-REVIEW RECOMMENDATION (requires_media_review + media_review_reasons) — an independent advisory flag:
+- Set requires_media_review = true when a human Media reviewer SHOULD double-check: image uses CB logo, mascot Cici, CB uniform, CB branch/facility, recruitment/admission, promotion, partner/school, certificate, tuition fee, exam claims, or campaign-level message — or when you are unsure.
+- List each reason briefly in Vietnamese in media_review_reasons (e.g. "Ảnh sử dụng logo CB Centres chính thức", "Nội dung mang tính thông báo chính thức về nhân sự").
+- This flag must NOT affect any score. A perfect image can still have requires_media_review = true.
+
+Write "summary", "findings", "recommendation", "detected_issues", "required_actions", "media_review_reasons" in Vietnamese.
 Return only valid JSON. Do not include markdown. Do not include explanations outside JSON.`;
 
 // ---------- JSON schema (mục 15 planning doc) — ép output hợp lệ ----------
@@ -94,6 +101,7 @@ const RESULT_SCHEMA = {
       enum: ["group_1_internal", "group_2_self_check", "group_3_media_review"],
     },
     requires_media_review: { type: "boolean" },
+    media_review_reasons: { type: "array", items: { type: "string" } },
     summary: { type: "string" },
     criteria: { type: "array", items: CRITERION_SCHEMA },
     detected_issues: { type: "array", items: { type: "string" } },
@@ -103,7 +111,7 @@ const RESULT_SCHEMA = {
   },
   required: [
     "overall_score", "status", "risk_group_recommendation", "requires_media_review",
-    "summary", "criteria", "detected_issues", "required_actions",
+    "media_review_reasons", "summary", "criteria", "detected_issues", "required_actions",
     "override_rules_triggered", "confidence",
   ],
   additionalProperties: false,
@@ -131,6 +139,7 @@ const GEMINI_SCHEMA = {
     status: { type: "STRING", enum: ["PASS", "NEEDS_REVISION", "FAIL", "REQUIRES_MEDIA_REVIEW"] },
     risk_group_recommendation: { type: "STRING", enum: ["group_1_internal", "group_2_self_check", "group_3_media_review"] },
     requires_media_review: { type: "BOOLEAN" },
+    media_review_reasons: { type: "ARRAY", items: { type: "STRING" } },
     summary: { type: "STRING" },
     criteria: { type: "ARRAY", items: GEMINI_CRITERION },
     detected_issues: { type: "ARRAY", items: { type: "STRING" } },
@@ -140,7 +149,7 @@ const GEMINI_SCHEMA = {
   },
   required: [
     "overall_score", "status", "risk_group_recommendation", "requires_media_review",
-    "summary", "criteria", "detected_issues", "required_actions",
+    "media_review_reasons", "summary", "criteria", "detected_issues", "required_actions",
     "override_rules_triggered", "confidence",
   ],
 };
@@ -167,43 +176,55 @@ Usage metadata:
 Evaluate the image according to the CB Centres brand safety criteria. Be conservative for public-facing content. Return only valid JSON.`;
 }
 
-// ---------- Override rule engine (mục 18 planning doc) — chạy server-side ----------
-// Frontend cũng có bản mirror trong brand-check.js (demo mode); nguồn chuẩn là đây.
-function applyOverrideRules(aiResult: any, metadata: Record<string, unknown>) {
-  const overrides: string[] = [];
+// ---------- Rule engine v2 (2026-07-04) — chạy server-side, nguồn chuẩn ----------
+// Frontend có bản MIRROR trong brand-check.js (demo/fallback) — sửa là sửa CẢ HAI.
+//
+// Nguyên tắc (chốt với Media):
+//   • CHỈ Nhóm 3 mới ép status REQUIRES_MEDIA_REVIEW.
+//   • Nhóm 1/2: status cuối = theo ĐIỂM (statusFromScore). Nếu AI khuyến nghị
+//     Media xem (requires_media_review / status REQUIRES / logo fail) → gom vào
+//     `ai_warnings[]` (khuyến nghị, KHÔNG chặn, KHÔNG notify Media).
+function statusFromScore(score: number): string {
+  if (score >= 85) return "PASS";
+  if (score >= 70) return "NEEDS_REVISION";
+  return "FAIL";
+}
 
-  if (metadata.usage_group === "group_3_media_review") {
-    overrides.push("Nội dung thuộc Nhóm 3 - bắt buộc Media duyệt");
-  }
-  if (metadata.has_mascot && metadata.usage_channel !== "internal_classroom") {
-    overrides.push("Có mascot Cici trong nội dung công khai");
-  }
-  if (metadata.is_admission_or_ads) {
-    overrides.push("Nội dung tuyển sinh/quảng cáo/ưu đãi/chiến dịch");
-  }
-  if (metadata.involves_partner) {
-    overrides.push("Nội dung liên quan đối tác/trường học/đơn vị bên ngoài");
-  }
-  if (metadata.contains_sensitive_info) {
-    overrides.push("Nội dung có thông tin nhạy cảm/học phí/chứng chỉ/cam kết");
-  }
+function applyOverrideRules(aiResult: any, metadata: Record<string, unknown>) {
+  const aiReasons: string[] = Array.isArray(aiResult.media_review_reasons)
+    ? aiResult.media_review_reasons.filter(Boolean) : [];
   const logoCriterion = (aiResult.criteria || []).find((c: any) => c.code === "logo_identity");
   if (logoCriterion && logoCriterion.status === "fail") {
-    overrides.push("Logo/nhận diện CB không đạt");
+    aiReasons.push("Logo/nhận diện CB không đạt — cần Media kiểm tra");
   }
 
-  if (overrides.length > 0) {
+  // Nhóm 3: luôn bắt buộc Media duyệt (điểm cao vẫn phải gửi).
+  if (metadata.usage_group === "group_3_media_review") {
     return {
       ...aiResult,
       status: "REQUIRES_MEDIA_REVIEW",
       requires_media_review: true,
+      ai_warnings: [],
       override_rules_triggered: [
-        ...(aiResult.override_rules_triggered || []),
-        ...overrides,
+        "Nội dung thuộc Nhóm 3 - bắt buộc Media duyệt",
+        ...aiReasons,
       ],
     };
   }
-  return aiResult;
+
+  // Nhóm 1/2: status theo điểm; khuyến nghị của AI chỉ là warning.
+  const score = typeof aiResult.overall_score === "number" ? aiResult.overall_score : 0;
+  const wantsReview = aiResult.requires_media_review === true
+    || aiResult.status === "REQUIRES_MEDIA_REVIEW" || aiReasons.length > 0;
+  return {
+    ...aiResult,
+    status: statusFromScore(score),
+    requires_media_review: false,
+    override_rules_triggered: [],
+    ai_warnings: wantsReview
+      ? (aiReasons.length ? aiReasons : ["AI khuyến nghị nên để Media xem lại nội dung này"])
+      : [],
+  };
 }
 
 // ---------- base64 encode ảnh (chunk tránh tràn call stack với ảnh lớn) ----------

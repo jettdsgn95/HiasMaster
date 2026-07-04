@@ -6941,6 +6941,27 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .bc-verdict--fail b { color: var(--danger-fg); }
 .bc-verdict--review { border-left-color: var(--red-600); background: rgba(186,17,15,.06); }
 .bc-verdict--review b { color: var(--red-600); }
+
+/* Tag ĐÃ DUYỆT + mã duyệt (BSC-... · ĐÃ DUYỆT) */
+.bc-approved-badge { font-weight: 700; letter-spacing: 0.02em; }
+.bc-approve-line { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); flex-wrap: wrap; }
+.bc-approve-code {
+  font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700;
+  color: var(--success-fg); background: var(--surface);
+  border: 1px dashed var(--success); border-radius: var(--radius);
+  padding: 6px 12px;
+}
+
+/* Box khuyến nghị của AI (Nhóm 1/2 — warning, không chặn) */
+.bc-ai-warnings {
+  border: 1px solid rgba(245,158,11,.45); background: var(--warning-soft);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.bc-ai-warnings b { font-size: var(--text-sm); color: var(--warning-fg); }
+.bc-ai-warnings ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.bc-ai-warnings li { font-size: var(--text-sm); }
 .bc-d-section h4 {
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   color: var(--text-muted); margin-bottom: var(--space-3);

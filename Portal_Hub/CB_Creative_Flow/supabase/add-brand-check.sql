@@ -70,6 +70,13 @@ CREATE TABLE IF NOT EXISTS public.brand_checks (
 -- Idempotent: thêm cột check_code nếu bảng có sẵn từ bản migration cũ.
 ALTER TABLE public.brand_checks ADD COLUMN IF NOT EXISTS check_code text;
 
+-- Tag ĐÃ DUYỆT (v2 2026-07-04): PASS Nhóm 1/2 → auto-duyệt nguồn 'auto_ai';
+-- Media bấm APPROVED → 'media'; REJECTED/REVISION_REQUIRED → thu hồi (NULL).
+-- Mã duyệt = chính check_code (không cấp mã riêng).
+ALTER TABLE public.brand_checks ADD COLUMN IF NOT EXISTS approved_at timestamptz;
+ALTER TABLE public.brand_checks ADD COLUMN IF NOT EXISTS approval_source text; -- 'auto_ai' | 'media'
+CREATE INDEX IF NOT EXISTS idx_brand_checks_approved ON public.brand_checks (approved_at) WHERE approved_at IS NOT NULL;
+
 -- Mã kiểm duyệt tuần tự người-đọc-được: BSC-<năm>-<4 số> (vd BSC-2026-0001).
 -- Trigger tự sinh khi INSERT nếu client không gửi → dùng để quản lý + tra cứu.
 CREATE SEQUENCE IF NOT EXISTS public.brand_check_code_seq;

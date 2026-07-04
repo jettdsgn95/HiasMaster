@@ -190,29 +190,55 @@
     return 'bc-score--fail';
   }
 
-  // Kết luận HÀNH ĐỘNG theo (trạng thái AI × nhóm nội dung) — người dùng biết
-  // ngay ĐƯỢC DÙNG / CẦN SỬA / PHẢI GỬI MEDIA. Nhóm 1&2 đạt → tự dùng (planning).
+  // Lý do KHÔNG ĐẠT: lấy tối đa 3 lỗi cụ thể từ AI (detected_issues → summary).
+  function failReasons(check) {
+    const ai = check.ai_result_json || {};
+    const issues = (ai.detected_issues || []).slice(0, 3);
+    if (issues.length) return 'Lý do: ' + issues.join(' · ');
+    return check.ai_summary ? 'Lý do: ' + check.ai_summary : '';
+  }
+
+  // Kết luận HÀNH ĐỘNG — nói thẳng ĐẠT / KHÔNG ĐẠT (+lý do) + tag ĐÃ DUYỆT.
+  // Ưu tiên kết quả hậu kiểm của Media (nếu có) trước kết quả AI.
+  // approved = true → drawer render thêm dòng mã duyệt + nút copy.
   function actionVerdict(check) {
     const g = check.usage_group;
+    const code = check.check_code || '';
+
+    // 1) Media đã hậu kiểm → phán quyết của Media là cuối cùng.
+    if (check.manual_status === 'APPROVED') {
+      return { cls: 'bc-verdict--pass', title: 'ĐẠT — ĐÃ DUYỆT (Media)', approved: true,
+        text: 'Media đã duyệt nội dung này. Dùng mã ' + code + ' làm bằng chứng duyệt khi đăng/in.' };
+    }
+    if (check.manual_status === 'REJECTED') {
+      return { cls: 'bc-verdict--fail', title: 'KHÔNG ĐẠT — Media từ chối',
+        text: (check.manual_note ? 'Lý do: ' + check.manual_note : 'Media từ chối sử dụng nội dung này.') };
+    }
+    if (check.manual_status === 'REVISION_REQUIRED') {
+      return { cls: 'bc-verdict--rev', title: 'KHÔNG ĐẠT — Media yêu cầu chỉnh sửa',
+        text: (check.manual_note ? 'Lý do: ' + check.manual_note : 'Chỉnh theo yêu cầu của Media rồi kiểm lại.') };
+    }
+
+    // 2) Chưa hậu kiểm → theo kết quả AI + nhóm.
     switch (check.ai_status) {
       case 'REQUIRES_MEDIA_REVIEW':
-        return { cls: 'bc-verdict--review', title: 'Bắt buộc gửi Media duyệt',
-          text: 'Nội dung này CHƯA được tự đăng/dùng công khai. Đã chuyển vào hàng đợi để Media kiểm tra và phản hồi cho bạn.' };
+        return { cls: 'bc-verdict--review', title: 'Bắt buộc gửi Media duyệt (Nhóm 3)',
+          text: 'Nội dung Nhóm 3 CHƯA được tự đăng/dùng công khai. Đã chuyển vào hàng đợi để Media kiểm tra và phản hồi cho bạn.' };
       case 'FAIL':
-        return { cls: 'bc-verdict--fail', title: 'Không đạt',
-          text: 'Không nên sử dụng ảnh này. Xem lỗi bên dưới và tạo lại theo gợi ý.' };
+        return { cls: 'bc-verdict--fail', title: 'KHÔNG ĐẠT',
+          text: (failReasons(check) || 'Không nên sử dụng ảnh này.') + ' — Tạo lại theo gợi ý bên dưới rồi kiểm lại.' };
       case 'NEEDS_REVISION':
-        return { cls: 'bc-verdict--rev', title: 'Cần chỉnh sửa',
-          text: 'Chỉnh theo gợi ý bên dưới rồi kiểm lại trước khi dùng.' };
-      case 'PASS':
-        if (g === 'group_1_internal')
-          return { cls: 'bc-verdict--pass', title: 'Được dùng nội bộ',
-            text: 'Đạt — dùng được trong lớp / worksheet / slide nội bộ, không cần Media duyệt.' };
-        if (g === 'group_2_self_check')
-          return { cls: 'bc-verdict--pass', title: 'Đủ điều kiện tự đăng',
-            text: 'Đạt — chi nhánh được tự đăng. Nên đối chiếu nhanh brand guideline trước khi đăng.' };
-        return { cls: 'bc-verdict--review', title: 'Cần Media duyệt',
-          text: 'Đạt về hình ảnh, nhưng nhóm nội dung này vẫn cần Media duyệt trước khi dùng.' };
+        return { cls: 'bc-verdict--rev', title: 'KHÔNG ĐẠT (cần chỉnh sửa)',
+          text: (failReasons(check) || 'Chưa đạt chuẩn thương hiệu.') + ' — Chỉnh xong kiểm lại để lấy tag ĐÃ DUYỆT.' };
+      case 'PASS': {
+        const scope = g === 'group_1_internal'
+          ? 'Dùng được trong lớp / worksheet / slide nội bộ.'
+          : 'Chi nhánh được tự đăng — nên đối chiếu nhanh brand guideline trước khi đăng.';
+        if (check.approved_at) {
+          return { cls: 'bc-verdict--pass', title: 'ĐẠT — ĐÃ DUYỆT', approved: true, text: scope };
+        }
+        return { cls: 'bc-verdict--pass', title: 'ĐẠT', text: scope };
+      }
       case 'NEEDS_MANUAL_REVIEW':
         return { cls: 'bc-verdict--review', title: 'Chờ Media kiểm tra tay',
           text: 'AI chưa phân tích được — ảnh đã lưu và chuyển Media kiểm tra thủ công.' };
@@ -222,43 +248,47 @@
   }
 
   /* =====================================================================
-     RULE ENGINE (mirror của Edge Function — mục 18 planning doc)
+     RULE ENGINE v2 (MIRROR của Edge Function index.ts — sửa là sửa CẢ HAI)
+     • CHỈ Nhóm 3 ép REQUIRES_MEDIA_REVIEW.
+     • Nhóm 1/2: status cuối theo ĐIỂM; khuyến nghị của AI → ai_warnings[]
+       (warning + khuyến nghị, KHÔNG chặn, KHÔNG notify Media).
      ===================================================================== */
-  function applyOverrideRules(aiResult, metadata) {
-    const overrides = [];
-    if (metadata.usage_group === 'group_3_media_review') {
-      overrides.push('Nội dung thuộc Nhóm 3 - bắt buộc Media duyệt');
-    }
-    if (metadata.has_mascot && metadata.usage_channel !== 'internal_classroom') {
-      overrides.push('Có mascot Cici trong nội dung công khai');
-    }
-    if (metadata.is_admission_or_ads) {
-      overrides.push('Nội dung tuyển sinh/quảng cáo/ưu đãi/chiến dịch');
-    }
-    if (metadata.involves_partner) {
-      overrides.push('Nội dung liên quan đối tác/trường học/đơn vị bên ngoài');
-    }
-    if (metadata.contains_sensitive_info) {
-      overrides.push('Nội dung có thông tin nhạy cảm/học phí/chứng chỉ/cam kết');
-    }
-    const logoCrit = (aiResult.criteria || []).find(function (c) { return c.code === 'logo_identity'; });
-    if (logoCrit && logoCrit.status === 'fail') {
-      overrides.push('Logo/nhận diện CB không đạt');
-    }
-    if (overrides.length > 0) {
-      return Object.assign({}, aiResult, {
-        status: 'REQUIRES_MEDIA_REVIEW',
-        requires_media_review: true,
-        override_rules_triggered: (aiResult.override_rules_triggered || []).concat(overrides)
-      });
-    }
-    return aiResult;
-  }
-
   function statusFromScore(score) {
     if (score >= 85) return 'PASS';
     if (score >= 70) return 'NEEDS_REVISION';
     return 'FAIL';
+  }
+
+  function applyOverrideRules(aiResult, metadata) {
+    const aiReasons = (Array.isArray(aiResult.media_review_reasons)
+      ? aiResult.media_review_reasons : []).filter(Boolean).slice();
+    const logoCrit = (aiResult.criteria || []).find(function (c) { return c.code === 'logo_identity'; });
+    if (logoCrit && logoCrit.status === 'fail') {
+      aiReasons.push('Logo/nhận diện CB không đạt — cần Media kiểm tra');
+    }
+
+    // Nhóm 3: luôn bắt buộc Media duyệt (điểm cao vẫn phải gửi).
+    if (metadata.usage_group === 'group_3_media_review') {
+      return Object.assign({}, aiResult, {
+        status: 'REQUIRES_MEDIA_REVIEW',
+        requires_media_review: true,
+        ai_warnings: [],
+        override_rules_triggered: ['Nội dung thuộc Nhóm 3 - bắt buộc Media duyệt'].concat(aiReasons)
+      });
+    }
+
+    // Nhóm 1/2: status theo điểm; khuyến nghị AI chỉ là warning.
+    const score = typeof aiResult.overall_score === 'number' ? aiResult.overall_score : 0;
+    const wantsReview = aiResult.requires_media_review === true
+      || aiResult.status === 'REQUIRES_MEDIA_REVIEW' || aiReasons.length > 0;
+    return Object.assign({}, aiResult, {
+      status: statusFromScore(score),
+      requires_media_review: false,
+      override_rules_triggered: [],
+      ai_warnings: wantsReview
+        ? (aiReasons.length ? aiReasons : ['AI khuyến nghị nên để Media xem lại nội dung này'])
+        : []
+    });
   }
 
   /* =====================================================================
@@ -279,11 +309,8 @@
   function simulateAiResult(metadata) {
     const rnd = seededRand(metadata.title + '|' + (metadata.image_file_name || ''));
     const criteria = CRITERIA_DEF.map(function (def) {
-      // 0.82–1.0 của max, trừ điểm theo flag liên quan
+      // 0.82–1.0 của max, ai_artifacts dao động nhẹ để có case warning minh hoạ.
       let ratio = 0.82 + rnd() * 0.18;
-      if (def.code === 'logo_identity' && metadata.has_logo) ratio -= rnd() * 0.3;
-      if (def.code === 'communication_risk' && (metadata.is_admission_or_ads || metadata.involves_partner)) ratio -= rnd() * 0.35;
-      if (def.code === 'education_suitability' && metadata.has_cb_facility) ratio -= rnd() * 0.2;
       if (def.code === 'ai_artifacts') ratio -= rnd() * 0.2;
       ratio = Math.max(0.35, Math.min(1, ratio));
       const score = Math.round(def.max * ratio);
@@ -299,11 +326,20 @@
       };
     });
     const total = criteria.reduce(function (s, c) { return s + c.score; }, 0);
+    // Demo minh hoạ khuyến nghị: mục đích/kênh "nhạy" → AI đề nghị Media xem (không chặn).
+    const demoReasons = [];
+    if (metadata.usage_purpose === 'admission_ads' || metadata.usage_purpose === 'system_campaign') {
+      demoReasons.push('[DEMO] Nội dung mang tính quảng bá — nên để Media xem lại');
+    }
+    if (metadata.usage_channel === 'main_fanpage' || metadata.usage_channel === 'website') {
+      demoReasons.push('[DEMO] Kênh chính thức hệ thống — nên để Media xem lại');
+    }
     let result = {
       overall_score: total,
       status: statusFromScore(total),
       risk_group_recommendation: metadata.usage_group || 'group_2_self_check',
-      requires_media_review: false,
+      requires_media_review: demoReasons.length > 0,
+      media_review_reasons: demoReasons,
       summary: '[DEMO] Kết quả mô phỏng — chưa kết nối AI Vision. Điểm và nhận xét chỉ minh họa flow, KHÔNG dùng làm căn cứ duyệt thật.',
       criteria: criteria,
       detected_issues: criteria.filter(function (c) { return c.status !== 'pass'; })
@@ -343,26 +379,24 @@
     }
   }
 
-  // AI lỗi/chưa deploy → kết quả fallback: rủi ro cao → REQUIRES_MEDIA_REVIEW, còn lại chờ duyệt tay.
+  // AI lỗi/chưa deploy → fallback: Nhóm 3 → REQUIRES_MEDIA_REVIEW; Nhóm 1/2 →
+  // NEEDS_MANUAL_REVIEW (chờ duyệt tay — KHÔNG chấm điểm nên không thể tự duyệt).
   function fallbackResult(metadata, reason) {
-    const risky = metadata.usage_group === 'group_3_media_review' || metadata.has_mascot
-      || metadata.is_admission_or_ads || metadata.involves_partner || metadata.contains_sensitive_info;
-    let result = {
+    const isGroup3 = metadata.usage_group === 'group_3_media_review';
+    return {
       overall_score: null,
-      status: risky ? 'REQUIRES_MEDIA_REVIEW' : 'NEEDS_MANUAL_REVIEW',
+      status: isGroup3 ? 'REQUIRES_MEDIA_REVIEW' : 'NEEDS_MANUAL_REVIEW',
       risk_group_recommendation: metadata.usage_group || 'group_2_self_check',
-      requires_media_review: risky,
+      requires_media_review: isGroup3,
+      media_review_reasons: [],
+      ai_warnings: [],
       summary: 'AI Vision không phân tích được (' + reason + '). Ảnh đã được lưu — cần Media kiểm tra thủ công.',
       criteria: [],
       detected_issues: [],
       required_actions: ['Media kiểm tra thủ công theo checklist thương hiệu'],
-      override_rules_triggered: [],
+      override_rules_triggered: isGroup3 ? ['Nội dung thuộc Nhóm 3 - bắt buộc Media duyệt'] : [],
       confidence: 'low'
     };
-    // Vẫn chạy override để log lý do bắt buộc duyệt.
-    const applied = applyOverrideRules(result, metadata);
-    if (applied.status === 'REQUIRES_MEDIA_REVIEW') return applied;
-    return result;
   }
 
   /* =====================================================================
@@ -492,6 +526,12 @@
         override_rules: aiResult.override_rules_triggered || [],
         manual_status: 'PENDING'
       };
+      // AUTO-APPROVE: Nhóm 1/2 ĐẠT (AI chấm PASS) → cấp tag ĐÃ DUYỆT ngay,
+      // mã duyệt = chính check_code (BSC-...). Nhóm 3 chỉ duyệt qua tay Media.
+      if (aiResult.status === 'PASS') {
+        row.approved_at = new Date().toISOString();
+        row.approval_source = 'auto_ai';
+      }
       const saved = await db.create(row);
       const savedId = saved && saved.id;
 
@@ -579,12 +619,16 @@
     const fs = $('bc-filter-status').value;
     const fm = $('bc-filter-manual').value;
     const fg = $('bc-filter-group').value;
+    const fa = $('bc-filter-approved') ? $('bc-filter-approved').value : '';
     return CHECKS.filter(function (c) {
       if (fs && c.ai_status !== fs) return false;
       if (fm && (c.manual_status || 'PENDING') !== fm) return false;
       if (fg && c.usage_group !== fg) return false;
+      if (fa === 'approved' && !c.approved_at) return false;
+      if (fa === 'not_approved' && c.approved_at) return false;
       if (q) {
-        const hay = [c.title, c.uploader_name, c.uploader_email, c.branch_name, c.unit_name].join(' ').toLowerCase();
+        // Tìm được cả theo MÃ KIỂM DUYỆT (BSC-...) — tra cứu ảnh đã duyệt.
+        const hay = [c.check_code, c.title, c.uploader_name, c.uploader_email, c.branch_name, c.unit_name].join(' ').toLowerCase();
         if (hay.indexOf(q) < 0) return false;
       }
       return true;
@@ -604,7 +648,9 @@
         + '<td><span class="text-xs">' + esc(GROUP_LABEL[c.usage_group] || '—') + '</span></td>'
         + '<td><b class="bc-score ' + scoreClass(c.ai_score) + '">' + (c.ai_score == null ? '—' : c.ai_score) + '</b></td>'
         + '<td>' + aiBadge(c.ai_status) + '</td>'
-        + '<td>' + manualBadge(c.manual_status || 'PENDING') + '</td>'
+        + '<td>' + (c.approved_at
+            ? '<span class="badge badge-success bc-approved-badge">ĐÃ DUYỆT' + (c.approval_source === 'media' ? ' (Media)' : ' (AI)') + '</span>'
+            : manualBadge(c.manual_status || 'PENDING')) + '</td>'
         + '<td class="text-xs muted">' + fmtDate(c.created_at) + '</td>'
         + '</tr>';
     }).join('');
@@ -618,7 +664,7 @@
   function exportCsv() {
     const rows = filteredChecks();
     if (!rows.length) { toast({ type: 'info', title: 'Không có dữ liệu để xuất' }); return; }
-    const header = ['check_code', 'title', 'uploader', 'branch', 'unit', 'usage_group', 'usage_channel', 'ai_score', 'ai_status', 'manual_status', 'override_rules', 'created_at', 'id'];
+    const header = ['check_code', 'title', 'uploader', 'branch', 'unit', 'usage_group', 'usage_channel', 'ai_score', 'ai_status', 'approved', 'approved_at', 'approval_source', 'manual_status', 'override_rules', 'created_at', 'id'];
     const lines = [header.join(',')].concat(rows.map(function (c) {
       const cell = function (v) {
         const s = String(v == null ? '' : v).replace(/"/g, '""');
@@ -626,7 +672,9 @@
       };
       return [
         c.check_code || '', c.title, c.uploader_name || c.uploader_email, c.branch_name, c.unit_name,
-        c.usage_group, c.usage_channel, c.ai_score, c.ai_status, c.manual_status || 'PENDING',
+        c.usage_group, c.usage_channel, c.ai_score, c.ai_status,
+        (c.approved_at ? 'DA_DUYET' : ''), c.approved_at || '', c.approval_source || '',
+        c.manual_status || 'PENDING',
         (Array.isArray(c.override_rules) ? c.override_rules.join(' | ') : ''), c.created_at, c.id
       ].map(cell).join(',');
     }));
@@ -754,6 +802,7 @@
     $('bcd-id').textContent = check.check_code || ('CHECK · ' + String(check.id).slice(0, 8).toUpperCase());
     $('bcd-title').textContent = check.title || 'Không tên';
     $('bcd-badges').innerHTML = aiBadge(check.ai_status) + ' ' + manualBadge(check.manual_status || 'PENDING')
+      + (check.approved_at ? ' <span class="badge badge-success bc-approved-badge">ĐÃ DUYỆT' + (check.approval_source === 'media' ? ' (Media)' : ' (AI)') + '</span>' : '')
       + (check.ai_provider === 'demo' ? ' <span class="badge badge-info">DEMO</span>' : '');
 
     const body = $('bc-drawer-body');
@@ -761,12 +810,25 @@
     const crits = (ai.criteria && ai.criteria.length) ? ai.criteria : (check.criteria || []);
     const overrides = Array.isArray(check.override_rules) && check.override_rules.length
       ? check.override_rules : (ai.override_rules_triggered || []);
+    const warnings = (ai.ai_warnings || []).filter(Boolean);
 
     const verdict = actionVerdict(check);
+    const approvalTag = (check.check_code || '') + ' · ĐÃ DUYỆT';
     body.innerHTML =
       // Kết luận hành động (nổi bật, ai cũng đọc được ngay)
       (verdict
-        ? '<div class="bc-verdict ' + verdict.cls + '"><b>' + esc(verdict.title) + '</b><span>' + esc(verdict.text) + '</span></div>'
+        ? '<div class="bc-verdict ' + verdict.cls + '"><b>' + esc(verdict.title) + '</b><span>' + esc(verdict.text) + '</span>'
+          + (verdict.approved && check.check_code
+            ? '<div class="bc-approve-line"><span class="bc-approve-code">' + esc(approvalTag) + '</span>'
+              + '<button type="button" class="btn btn-secondary btn-sm" id="bcd-copy-code">Copy mã duyệt</button></div>'
+            : '')
+          + '</div>'
+        : '')
+      // Khuyến nghị của AI (Nhóm 1/2 — không bắt buộc, người dùng tự quyết)
+      + (warnings.length
+        ? '<div class="bc-ai-warnings"><b>Khuyến nghị của AI (không bắt buộc)</b><ul>'
+          + warnings.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('')
+          + '</ul><span class="text-xs muted">Bạn vẫn được phép sử dụng theo kết luận ở trên; nếu phân vân, chủ động gửi Media xem giúp.</span></div>'
         : '')
       // Ảnh
       + '<div class="bc-d-section"><div class="bc-d-img" id="bcd-img-wrap">'
@@ -835,6 +897,21 @@
 
     // Ảnh: dataURL (demo) hoặc signed URL (bucket private).
     loadDrawerImage(check);
+
+    // Copy mã duyệt (clipboard có thể không sẵn trên http thường → fallback toast).
+    const copyBtn = $('bcd-copy-code');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        const tag = approvalTag;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(tag).then(function () {
+            toast({ type: 'success', title: 'Đã copy mã duyệt', msg: tag });
+          }).catch(function () { toast({ type: 'info', title: 'Mã duyệt', msg: tag }); });
+        } else {
+          toast({ type: 'info', title: 'Mã duyệt', msg: tag });
+        }
+      });
+    }
 
     // Wire manual review buttons.
     if (isMedia) {
@@ -910,6 +987,15 @@
         manual_reviewer_name: user.name || user.email || user.role,
         reviewed_at: new Date().toISOString()
       };
+      // Tag ĐÃ DUYỆT: Media APPROVED → cấp/ghi đè duyệt nguồn 'media';
+      // REJECTED / REVISION_REQUIRED → THU HỒI duyệt (kể cả auto_ai trước đó).
+      if (status === 'APPROVED') {
+        patch.approved_at = new Date().toISOString();
+        patch.approval_source = 'media';
+      } else if (status === 'REJECTED' || status === 'REVISION_REQUIRED') {
+        patch.approved_at = null;
+        patch.approval_source = null;
+      }
       if (!DEMO) {
         const me = await window.MH.store.users.me();
         if (me && me.id) patch.manual_reviewer_id = me.id;
@@ -1055,7 +1141,8 @@
     $('bc-submit').addEventListener('click', doSubmit);
 
     // History filters
-    ['bc-search', 'bc-filter-status', 'bc-filter-manual', 'bc-filter-group'].forEach(function (id) {
+    ['bc-search', 'bc-filter-status', 'bc-filter-manual', 'bc-filter-group', 'bc-filter-approved'].forEach(function (id) {
+      if (!$(id)) return;
       $(id).addEventListener('input', renderHistory);
       $(id).addEventListener('change', renderHistory);
     });
