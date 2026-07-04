@@ -25,6 +25,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 // ---------- System prompt (mục 16 planning doc) ----------
@@ -354,7 +356,7 @@ function validateResult(r: any): void {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
   try {
     const { storage_path, mime_type, metadata } = await req.json();
