@@ -6785,11 +6785,11 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .bc-tab.is-active { background: var(--surface); color: var(--brand-600); box-shadow: var(--shadow-sm); }
 [data-theme="dark"] .bc-tab.is-active { color: var(--text); }
 
-/* Layout view Kiểm tra mới */
-.bc-new-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-5); align-items: start; }
-.bc-new-main { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
-.bc-new-side { display: flex; flex-direction: column; gap: var(--space-5); position: sticky; top: 84px; }
-@media (max-width: 980px) { .bc-new-layout { grid-template-columns: 1fr; } .bc-new-side { position: static; } }
+/* Layout view Kiểm tra mới — 2 cột: trái ảnh (sticky) · phải thông tin */
+.bc-new-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.bc-new-col-img { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; position: sticky; top: 84px; }
+.bc-new-col-info { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
+@media (max-width: 900px) { .bc-new-layout { grid-template-columns: 1fr; } .bc-new-col-img { position: static; } }
 
 .bc-req { color: var(--red-600); }
 
@@ -6819,11 +6819,13 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 
 /* Form grid */
 .bc-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4); }
+.bc-form-grid--1 { grid-template-columns: 1fr; }
 .bc-span-2 { grid-column: span 2; }
 @media (max-width: 700px) { .bc-form-grid { grid-template-columns: 1fr; } .bc-span-2 { grid-column: span 1; } }
 
 /* Nhóm nội dung — radio cards */
 .bc-group-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: var(--space-4); }
+.bc-group-cards--stack { grid-template-columns: 1fr; }
 @media (max-width: 900px) { .bc-group-cards { grid-template-columns: 1fr; } }
 .bc-group-card {
   display: flex; flex-direction: column; gap: 6px;

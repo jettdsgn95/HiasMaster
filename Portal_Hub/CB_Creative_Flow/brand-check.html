@@ -116,10 +116,10 @@
     <!-- ============ VIEW: Kiểm tra mới ============ -->
     <section id="bc-view-new">
       <div class="bc-new-layout">
-        <!-- Cột trái: upload + form -->
-        <div class="bc-new-main">
+        <!-- CỘT TRÁI: ảnh cần kiểm tra + hướng dẫn -->
+        <div class="bc-new-col-img">
           <div class="dash-card">
-            <h3>1 · Ảnh cần kiểm tra</h3>
+            <h3>Ảnh cần kiểm tra</h3>
             <p class="desc">JPG / PNG / WEBP, tối đa 10MB. Ảnh được lưu làm dữ liệu đối chứng.</p>
             <div class="bc-dropzone" id="bc-dropzone" tabindex="0" role="button" aria-label="Chọn hoặc kéo thả ảnh">
               <input type="file" id="bc-file" accept="image/jpeg,image/png,image/webp" hidden />
@@ -140,20 +140,37 @@
           </div>
 
           <div class="dash-card">
-            <h3>2 · Thông tin sử dụng</h3>
-            <div class="bc-form-grid">
-              <div class="field bc-span-2">
+            <h3>Tiêu chí AI chấm điểm</h3>
+            <ul class="bc-criteria-legend">
+              <li><b>25</b><span>Logo &amp; nhận diện CB</span></li>
+              <li><b>15</b><span>Màu sắc &amp; style thương hiệu</span></li>
+              <li><b>15</b><span>Text &amp; thông tin hiển thị</span></li>
+              <li><b>15</b><span>Lỗi AI về hình ảnh / nhân vật</span></li>
+              <li><b>15</b><span>Phù hợp môi trường giáo dục</span></li>
+              <li><b>15</b><span>Rủi ro truyền thông / pháp lý</span></li>
+            </ul>
+            <div class="bc-score-scale">
+              <span><i class="bc-dot bc-dot--pass"></i> 85–100 Đạt</span>
+              <span><i class="bc-dot bc-dot--rev"></i> 70–84 Cần chỉnh sửa</span>
+              <span><i class="bc-dot bc-dot--fail"></i> &lt;70 Không đạt</span>
+            </div>
+            <ul class="bc-notes">
+              <li>App là <b>lớp kiểm tra ban đầu</b> — không thay quyền duyệt cuối của Media với nội dung rủi ro cao.</li>
+              <li>AI có thể sai; kết quả kèm độ tin cậy và được lưu log để hậu kiểm.</li>
+              <li>"AI báo Đạt" <b>không</b> đồng nghĩa được đăng trong mọi trường hợp — đọc kỹ kết luận.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- CỘT PHẢI: thông tin sử dụng + nhóm nội dung -->
+        <div class="bc-new-col-info">
+          <div class="dash-card">
+            <h3>Thông tin sử dụng</h3>
+            <p class="desc">Chi nhánh / phòng ban lấy tự động theo tài khoản của bạn.</p>
+            <div class="bc-form-grid bc-form-grid--1">
+              <div class="field">
                 <label for="bc-title">Tên nội dung <b class="bc-req">*</b></label>
-                <input class="input" id="bc-title" type="text" placeholder="VD: Poster khai giảng lớp Starters — CB Quận 7" maxlength="160" />
-              </div>
-              <div class="field">
-                <label for="bc-branch">Chi nhánh</label>
-                <input class="input" id="bc-branch" type="text" placeholder="VD: CB Quận 7" list="bc-branch-list" />
-                <datalist id="bc-branch-list"></datalist>
-              </div>
-              <div class="field">
-                <label for="bc-unit">Phòng ban / đơn vị</label>
-                <input class="input" id="bc-unit" type="text" placeholder="VD: Academic, Marketing chi nhánh…" />
+                <input class="input" id="bc-title" type="text" placeholder="VD: Poster khai giảng lớp Starters" maxlength="160" />
               </div>
               <div class="field">
                 <label for="bc-purpose">Mục đích sử dụng</label>
@@ -182,17 +199,13 @@
                   <option value="other">Khác</option>
                 </select>
               </div>
-              <div class="field">
-                <label for="bc-date">Ngày dự kiến đăng / in / dùng</label>
-                <input class="input" id="bc-date" type="date" />
-              </div>
             </div>
           </div>
 
           <div class="dash-card">
-            <h3>3 · Nhóm nội dung <b class="bc-req">*</b></h3>
+            <h3>Nhóm nội dung <b class="bc-req">*</b></h3>
             <p class="desc">Chọn đúng nhóm để hệ thống phân tầng rủi ro. Nhóm 3 luôn phải gửi Media duyệt, kể cả khi AI chấm điểm cao.</p>
-            <div class="bc-group-cards" id="bc-group-cards">
+            <div class="bc-group-cards bc-group-cards--stack" id="bc-group-cards">
               <label class="bc-group-card">
                 <input type="radio" name="bc-group" value="group_1_internal" />
                 <b>Nhóm 1 — Nội bộ</b>
@@ -211,20 +224,6 @@
             </div>
           </div>
 
-          <div class="dash-card">
-            <h3>4 · Checklist khai báo nhanh</h3>
-            <p class="desc">Khai báo trung thực — các flag này chạy qua rule override, quyết định có bắt buộc gửi Media duyệt hay không.</p>
-            <div class="bc-flags">
-              <label class="bc-flag"><input type="checkbox" id="bc-f-logo" /> <span>Có dùng <b>logo CB Centres</b></span></label>
-              <label class="bc-flag"><input type="checkbox" id="bc-f-mascot" /> <span>Có <b>mascot Cici</b></span></label>
-              <label class="bc-flag"><input type="checkbox" id="bc-f-uniform" /> <span>Có <b>đồng phục CB</b></span></label>
-              <label class="bc-flag"><input type="checkbox" id="bc-f-facility" /> <span>Có <b>bảng hiệu / cơ sở vật chất / lớp học CB</b></span></label>
-              <label class="bc-flag"><input type="checkbox" id="bc-f-ads" /> <span>Là <b>tuyển sinh / quảng cáo / ưu đãi / chiến dịch</b></span></label>
-              <label class="bc-flag"><input type="checkbox" id="bc-f-partner" /> <span>Liên quan <b>đối tác / trường học / cơ quan bên ngoài</b></span></label>
-              <label class="bc-flag"><input type="checkbox" id="bc-f-sensitive" /> <span>Có <b>học phí / chứng chỉ / cam kết chất lượng / thi cử</b></span></label>
-            </div>
-          </div>
-
           <div class="bc-submit-bar">
             <span class="text-xs muted" id="bc-submit-hint">Điền tên nội dung, chọn nhóm và tải ảnh lên để kiểm tra.</span>
             <button class="btn btn-primary" id="bc-submit" disabled>
@@ -233,35 +232,6 @@
             </button>
           </div>
         </div>
-
-        <!-- Cột phải: hướng dẫn -->
-        <aside class="bc-new-side">
-          <div class="dash-card">
-            <h3>Tiêu chí AI chấm điểm</h3>
-            <ul class="bc-criteria-legend">
-              <li><b>25</b><span>Logo &amp; nhận diện CB</span></li>
-              <li><b>15</b><span>Màu sắc &amp; style thương hiệu</span></li>
-              <li><b>15</b><span>Text &amp; thông tin hiển thị</span></li>
-              <li><b>15</b><span>Lỗi AI về hình ảnh / nhân vật</span></li>
-              <li><b>15</b><span>Phù hợp môi trường giáo dục</span></li>
-              <li><b>15</b><span>Rủi ro truyền thông / pháp lý</span></li>
-            </ul>
-            <div class="bc-score-scale">
-              <span><i class="bc-dot bc-dot--pass"></i> 85–100 Đạt</span>
-              <span><i class="bc-dot bc-dot--rev"></i> 70–84 Cần chỉnh sửa</span>
-              <span><i class="bc-dot bc-dot--fail"></i> &lt;70 Không đạt</span>
-            </div>
-          </div>
-          <div class="dash-card">
-            <h3>Lưu ý quan trọng</h3>
-            <ul class="bc-notes">
-              <li>App là <b>lớp kiểm tra ban đầu</b> — không thay quyền duyệt cuối của Media với nội dung rủi ro cao.</li>
-              <li>AI có thể sai. Kết quả kèm độ tin cậy (confidence) và được lưu log để hậu kiểm.</li>
-              <li>"AI báo Đạt" <b>không</b> đồng nghĩa được đăng trong mọi trường hợp — đọc kỹ rule override.</li>
-              <li>Không đưa brand asset gốc lên AI tool ngoài khi chưa được phép.</li>
-            </ul>
-          </div>
-        </aside>
       </div>
     </section>
 

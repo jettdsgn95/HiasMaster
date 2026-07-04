@@ -372,19 +372,22 @@
     const groupInput = document.querySelector('input[name="bc-group"]:checked');
     return {
       title: $('bc-title').value.trim(),
-      unit_name: $('bc-unit').value.trim(),
-      branch_name: $('bc-branch').value.trim(),
+      // Chi nhánh / phòng ban lấy TỰ ĐỘNG theo tài khoản (không còn ô nhập).
+      unit_name: (user.department || user.unit_name || '').trim(),
+      branch_name: (user.branch_name || user.branch || '').trim(),
       usage_purpose: $('bc-purpose').value,
       usage_channel: $('bc-channel').value,
       usage_group: groupInput ? groupInput.value : '',
-      planned_publish_date: $('bc-date').value || null,
-      has_logo: $('bc-f-logo').checked,
-      has_mascot: $('bc-f-mascot').checked,
-      has_uniform: $('bc-f-uniform').checked,
-      has_cb_facility: $('bc-f-facility').checked,
-      is_admission_or_ads: $('bc-f-ads').checked,
-      involves_partner: $('bc-f-partner').checked,
-      contains_sensitive_info: $('bc-f-sensitive').checked,
+      planned_publish_date: null,
+      // Checklist khai báo đã bỏ — rule override giờ dựa trên nhóm nội dung +
+      // đánh giá trực quan của AI (Gemini phát hiện logo/mascot/quảng cáo… trong ảnh).
+      has_logo: false,
+      has_mascot: false,
+      has_uniform: false,
+      has_cb_facility: false,
+      is_admission_or_ads: false,
+      involves_partner: false,
+      contains_sensitive_info: false,
       image_file_name: selectedFile ? selectedFile.name : null
     };
   }
@@ -569,13 +572,6 @@
       });
     }
     CHECKS = list || [];
-    // Build datalist chi nhánh từ data sẵn có.
-    const dl = $('bc-branch-list');
-    if (dl) {
-      const branches = {};
-      CHECKS.forEach(function (c) { if (c.branch_name) branches[c.branch_name] = 1; });
-      dl.innerHTML = Object.keys(branches).map(function (b) { return '<option value="' + esc(b) + '"></option>'; }).join('');
-    }
   }
 
   function filteredChecks() {
@@ -989,11 +985,9 @@
 
   function resetForm() {
     clearFile();
-    ['bc-title', 'bc-unit', 'bc-branch', 'bc-date'].forEach(function (id) { $(id).value = ''; });
+    $('bc-title').value = '';
     ['bc-purpose', 'bc-channel'].forEach(function (id) { $(id).value = ''; });
     document.querySelectorAll('input[name="bc-group"]').forEach(function (r) { r.checked = false; });
-    ['bc-f-logo', 'bc-f-mascot', 'bc-f-uniform', 'bc-f-facility', 'bc-f-ads', 'bc-f-partner', 'bc-f-sensitive']
-      .forEach(function (id) { $(id).checked = false; });
     validateForm(true);
   }
 
