@@ -378,10 +378,15 @@ Deno.serve(async (req) => {
     const userPrompt = buildUserPrompt(metadata || {});
 
     const provider = (Deno.env.get("BRAND_CHECK_PROVIDER") || "gemini").toLowerCase();
+    // Log chẩn đoán (KHÔNG in giá trị key — chỉ có/không).
+    console.log("[brand-check] provider=" + provider
+      + " gemini_key=" + (Deno.env.get("GEMINI_API_KEY") ? "set" : "MISSING")
+      + " model=" + (Deno.env.get("BRAND_CHECK_MODEL") || "(default)"));
     let aiResult: any;
     if (provider === "openai") aiResult = await callOpenAI(imageB64, mime_type, userPrompt);
     else if (provider === "anthropic") aiResult = await callAnthropic(imageB64, mime_type, userPrompt);
     else aiResult = await callGemini(imageB64, mime_type, userPrompt);
+    console.log("[brand-check] AI OK — score=" + aiResult.overall_score + " status=" + aiResult.status);
 
     validateResult(aiResult);
 
