@@ -26,7 +26,7 @@ window.MH_CONFIG = {
   // SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtZmRpY2pqeXJtYmxleXFlbXVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjcyOTAsImV4cCI6MjA5NDc0MzI5MH0.p4s-KigKCAMRdB34q5aLp1cERbjNEG6xt_mpx_ngnB4 (PUBLIC-SAFE — frontend dùng key này;
   // backend service-role key KHÔNG được đặt ở đây).
   // Để trống = data-store.js auto fallback localStorage (giữ static demo flow).
-  SUPABASE_URL: 'https://lmfdicjjyrmbleyqemul.supabase.co/',
+  SUPABASE_URL: 'https://lmfdicjjyrmbleyqemul.supabase.co',
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtZmRpY2pqeXJtYmxleXFlbXVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjcyOTAsImV4cCI6MjA5NDc0MzI5MH0.p4s-KigKCAMRdB34q5aLp1cERbjNEG6xt_mpx_ngnB4',
 
   // App metadata
