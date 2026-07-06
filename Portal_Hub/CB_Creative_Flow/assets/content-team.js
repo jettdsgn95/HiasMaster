@@ -913,8 +913,10 @@
     }
     tb.innerHTML = list.map(function (t) {
       const overdue = ctIsOverdue(t);
+      // Task do PIC content tự tạo (created_by = assigned_pic) → nhãn phân biệt với Initiative Lead tạo.
+      const selfMade = t.created_by && t.assigned_pic && t.created_by === t.assigned_pic;
       return '<tr data-task="' + esc(t.id) + '">'
-        + '<td><b>' + esc(t.title || '—') + '</b></td>'
+        + '<td><b>' + esc(t.title || '—') + '</b>' + (selfMade ? ' <span class="chip-mini">PIC tự đề xuất</span>' : '') + '</td>'
         + '<td>' + outputChips(t.output_types) + '</td>'
         + '<td><span class="text-xs">' + esc(t.assigned_pic || '—') + '</span></td>'
         + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'

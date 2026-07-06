@@ -786,7 +786,7 @@
         + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(CT_STATUS[t.status] || t.status) + '</span></td>'
         + '<td><button class="btn btn-secondary btn-sm" data-ctask-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
-    }).join('') : '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text-muted)">' + (isContent ? 'Bạn chưa được gán content task nào.' : 'Chưa có content task.') + '</td></tr>';
+    }).join('') : '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text-muted)">' + (isContent ? 'Bạn chưa có content task nào. Bấm “Đề xuất task mới” để tự tạo, hoặc chờ Lead gán.' : 'Chưa có content task.') + '</td></tr>';
   }
 
   /* ---------- Content Task Drawer ---------- */
@@ -1183,6 +1183,96 @@
     document.querySelectorAll('#ctask-drawer-body .cwbt-check').forEach(function (el) { el.addEventListener('change', refreshTaskSubmit); });
     refreshTaskSubmit();
   }
+
+  /* ===================================================================
+     CONTENT TỰ ĐỀ XUẤT TASK (source=content_initiated, PIC = chính mình)
+     1 gate duy nhất: Lead duyệt NỘI DUNG (submitted_to_lead → lead_approved)
+     rồi PIC mới gửi được sang Media (canSendMediaTask giữ nguyên).
+     Lead được notify ngay khi tạo — không cần gate "chấp thuận đề xuất".
+     =================================================================== */
+  let selfModalSaving = false;
+  function openSelfModal() {
+    const body = ''
+      + mrField('cst-title', 'Tiêu đề task', '', { req: true, ph: 'VD: Post khai trương chi nhánh Q7' })
+      + mrField('cst-brief', 'Brief / Mục tiêu nội dung', '', { area: true, rows: 3, ph: 'Bối cảnh, mục tiêu, thông tin chính cần truyền tải...' })
+      + '<div class="field"><label class="label">Output types</label><div class="ctm-chk-group" id="cst-outputs">'
+        + (ENUMS.OUTPUT_TYPES || []).map(function (k) { return '<label class="ctm-chk-chip"><input type="checkbox" class="cst-out-chk" value="' + k + '" ' + (k === 'social_post' ? 'checked' : '') + '/><span>' + esc(OUTPUT_LABEL[k] || k) + '</span></label>'; }).join('')
+      + '</div></div>'
+      + '<div class="field"><label class="label">Ưu tiên</label><select class="select" id="cst-priority">' + ['low', 'normal', 'high', 'urgent'].map(function (k) { return '<option value="' + k + '"' + (k === 'normal' ? ' selected' : '') + '>' + PRIO_VI[k] + '</option>'; }).join('') + '</select></div>'
+      + mrField('cst-deadline', 'Hạn wording (dự kiến)', '', { type: 'datetime-local' })
+      + '<div class="field"><label class="checkbox"><input type="checkbox" id="cst-media" /><div><span class="checkbox-text">Cần Media thiết kế / sản xuất</span></div></label></div>'
+      + '<div id="cst-media-wrap" style="display:none">'
+        + mrField('cst-media-type', 'Loại Media Request', '', { ph: 'VD: KV, post design, video teaser' })
+        + mrField('cst-media-deadline', 'Hạn Media (dự kiến)', '', { type: 'datetime-local' })
+        + mrField('cst-media-notes', 'Ghi chú cho Media', '', { area: true, rows: 2, ph: 'Định hướng hình ảnh sơ bộ cho Media team' })
+      + '</div>'
+      + '<p class="text-xs muted" style="margin:0">Task tạo xong bạn viết luôn. Gate duy nhất trước khi sang Media: <b>Lead Content duyệt nội dung</b> (Lead được thông báo ngay khi tạo).</p>';
+    document.getElementById('cwbt-modal-body').innerHTML = body;
+    document.getElementById('cwbt-modal').classList.add('is-open');
+    document.getElementById('cwbt-modal').setAttribute('aria-hidden', 'false');
+    document.getElementById('cwbt-modal-backdrop').classList.add('is-open');
+    const mc = document.getElementById('cst-media');
+    mc.addEventListener('change', function () { document.getElementById('cst-media-wrap').style.display = mc.checked ? '' : 'none'; });
+  }
+  function closeSelfModal() {
+    document.getElementById('cwbt-modal').classList.remove('is-open');
+    document.getElementById('cwbt-modal').setAttribute('aria-hidden', 'true');
+    document.getElementById('cwbt-modal-backdrop').classList.remove('is-open');
+  }
+  async function saveSelfTask() {
+    if (selfModalSaving) return;
+    const gv = function (id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const title = gv('cst-title');
+    if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề task trước khi tạo.'); return; }
+    const needMedia = document.getElementById('cst-media').checked;
+    const outputs = Array.prototype.slice.call(document.querySelectorAll('#cst-outputs .cst-out-chk:checked')).map(function (c) { return c.value; });
+    const payload = {
+      source: 'content_initiated', content_plan_id: null,
+      title: title, brief: gv('cst-brief'),
+      output_types: outputs.length ? outputs : ['social_post'],
+      assigned_pic: user.name || user.role,
+      priority: gv('cst-priority') || 'normal',
+      need_media_production: needMedia,
+      status: 'in_progress', // tạo xong viết luôn — không chờ gate "chấp thuận"
+      created_by: user.name || user.role
+    };
+    const dl = gv('cst-deadline'); if (dl) payload.wording_deadline = new Date(dl).toISOString();
+    if (needMedia) {
+      payload.request_type = gv('cst-media-type');
+      payload.media_note = gv('cst-media-notes');
+      const md = gv('cst-media-deadline'); if (md) payload.production_deadline = new Date(md).toISOString();
+    }
+    selfModalSaving = true;
+    const btn = document.getElementById('cwbt-modal-save'); if (btn) { btn.disabled = true; btn.textContent = 'Đang tạo…'; }
+    let created;
+    try { created = await window.MH.store.contentTasks.create(payload); }
+    catch (e) {
+      console.warn('[cwb] create self task failed:', e);
+      toast('error', 'Chưa tạo được task', 'Kiểm tra đã chạy add-content-self-initiative.sql (RLS cho content tự tạo task) chưa.');
+      selfModalSaving = false; if (btn) { btn.disabled = false; btn.textContent = 'Tạo task'; }
+      return;
+    }
+    pushTaskActivity(created.id, 'Content tự đề xuất task (PIC: ' + (user.name || user.role) + ')');
+    notifyLeadTask(created, '📝 Content tự đề xuất task mới', title + ' — ' + (user.name || 'Content') + ' tự đề xuất' + (needMedia ? ' · cần Media thiết kế' : '') + '. Gate: Lead duyệt nội dung trước khi sang Media.');
+    toast('success', 'Đã tạo task', title + ' — viết nội dung rồi gửi Lead Content duyệt.');
+    closeSelfModal();
+    selfModalSaving = false; if (btn) { btn.disabled = false; btn.textContent = 'Tạo task'; }
+    await loadTasks();
+    const t = TASKS.find(function (x) { return x.id === created.id; }) || created;
+    cwbView = 'tasks'; renderCwbTabs();
+    openTaskDrawer(t);
+  }
+  (function wireSelfTask() {
+    const nb = document.getElementById('cwbt-new-task');
+    if (nb && (isContent || isAdmin)) {
+      nb.hidden = false;
+      nb.addEventListener('click', openSelfModal);
+    }
+    const w = function (id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+    w('cwbt-modal-close', closeSelfModal); w('cwbt-modal-cancel', closeSelfModal); w('cwbt-modal-backdrop', closeSelfModal);
+    w('cwbt-modal-save', saveSelfTask);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('cwbt-modal').classList.contains('is-open')) closeSelfModal(); });
+  })();
 
   /* ---------- Wiring Phase 3 (tabs + task delegation) ---------- */
   (function wirePhase3() {

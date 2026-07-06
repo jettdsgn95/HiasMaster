@@ -146,6 +146,11 @@
         <button class="saved-view-chip" data-cwbt-sub="revision">Cần chỉnh <span class="count" id="cwbt-c-revision">0</span></button>
         <button class="saved-view-chip" data-cwbt-sub="submitted">Đã gửi Lead <span class="count" id="cwbt-c-submitted">0</span></button>
         <button class="saved-view-chip" data-cwbt-sub="approved">Đã duyệt <span class="count" id="cwbt-c-approved">0</span></button>
+        <!-- Content tự đề xuất task (source=content_initiated) — JS hiện cho role content/admin -->
+        <button class="btn btn-primary btn-sm" id="cwbt-new-task" hidden style="margin-left:auto">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Đề xuất task mới
+        </button>
       </div>
       <div class="cwb-filters">
         <div class="s-wrap"><input class="input" type="search" id="cwbt-search" placeholder="Tìm task / plan / campaign..." /></div>
@@ -207,6 +212,22 @@
   <div class="drawer-actions" id="cwb-drawer-actions"></div>
   <div class="drawer-body" id="cwb-drawer-body"></div>
 </aside>
+
+<!-- ═ MODAL: Content tự đề xuất task mới (source=content_initiated) ═ -->
+<div class="drawer-backdrop" id="cwbt-modal-backdrop"></div>
+<div class="task-modal" id="cwbt-modal" aria-hidden="true" role="dialog" aria-labelledby="cwbt-modal-title">
+  <div class="task-modal-head">
+    <h3 id="cwbt-modal-title">Đề xuất task mới</h3>
+    <button class="icon-btn" id="cwbt-modal-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <form class="task-modal-body" id="cwbt-modal-body" autocomplete="off"></form>
+  <div class="task-modal-foot">
+    <button class="btn btn-secondary btn-sm" id="cwbt-modal-cancel" type="button">Hủy</button>
+    <button class="btn btn-primary btn-sm" id="cwbt-modal-save" type="button">Tạo task</button>
+  </div>
+</div>
 
 <script src="assets/config.js"></script>
 <script src="assets/supabase-client.js"></script>
