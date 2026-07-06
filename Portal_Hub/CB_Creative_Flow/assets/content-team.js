@@ -493,6 +493,9 @@
     }
     if (isAccountAdmin && ['submitted_to_account', 'sent_to_client', 'client_feedback', 'client_approved'].indexOf(ws) >= 0) {
       btns.push('<a class="btn btn-secondary btn-sm" href="database-orders.html?id=' + esc(o.order_id) + '">Mở Client Orders</a>');
+    } else if (isLead && o.order_id) {
+      // Lead Content theo dõi order gốc read-only (guard database-orders đã mở 2026-07-06).
+      btns.push('<a class="btn btn-ghost btn-sm" href="database-orders.html?id=' + esc(o.order_id) + '">Mở Order gốc (chỉ xem)</a>');
     }
     return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div></div>' : '';
   }
@@ -1231,11 +1234,12 @@
         + '<button class="btn btn-primary btn-sm" id="ctm-rev-approve">' + approveLabel + '</button>'
         + '</div></div>';
     }
-    // Phase 5 — đã có Media Order. Lead Content KHÔNG vào được database-orders (guard)
-    // → KHÔNG hiện link đó cho Lead; theo dõi qua block "Media Order" read-only trong body.
-    // Admin/Account vào được → cho link mở thẳng.
+    // Phase 5 — đã có Media Order. Admin/Account mở thẳng; Lead Content từ
+    // 2026-07-06 CŨNG vào được database-orders ở chế độ READ-ONLY + comment
+    // (guard đã mở) → hiện link "Mở Order gốc (chỉ xem)".
     if (t.media_request_created && t.media_order_id) {
       if (isAdmin || isAccount) return '<div class="wf-actions"><div class="wf-actions-flow"><a class="btn btn-secondary btn-sm" href="database-orders.html?id=' + esc(t.media_order_id) + '">Mở Media Order</a></div></div>';
+      if (isLead) return '<div class="wf-actions"><div class="wf-actions-flow"><a class="btn btn-ghost btn-sm" href="database-orders.html?id=' + esc(t.media_order_id) + '">Mở Order gốc (chỉ xem)</a></div></div>';
       return '';
     }
     // Phase 5 — PIC Content gửi Internal Media Request (trong content-workbench). Lead KHÔNG tạo nữa,

@@ -7034,3 +7034,21 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 #bcd-review-actions { margin-top: var(--space-3); }
 .bc-btn-danger { color: var(--danger-fg); border-color: rgba(186,17,15,.4); }
 .bc-btn-danger:hover { background: rgba(186,17,15,.08); }
+
+/* =====================================================================
+   DATABASE ORDERS — Lead Content read-only + comment (2026-07-06)
+   ===================================================================== */
+/* Badge "Chế độ chỉ xem" cạnh H1 (system_supervisor + lead_content) */
+.do-viewonly-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; vertical-align: middle;
+  margin-left: 10px; padding: 4px 10px;
+}
+/* Thread comment Lead Content trong Order Drawer */
+.lc-notes-view {
+  white-space: pre-line; font-size: var(--text-sm); line-height: 1.6;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: var(--space-3) var(--space-4);
+  max-height: 260px; overflow-y: auto;
+}
+.lc-notes-empty { color: var(--text-subtle); font-style: italic; }

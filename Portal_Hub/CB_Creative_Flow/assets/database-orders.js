@@ -15,19 +15,35 @@
   try { user = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { user = null; }
   if (!user || !user.role) { location.replace('login.html'); return; }
   // admin / account / lead_media = full quyền. system_supervisor = monitor read-only.
-  if (!['admin', 'account', 'system_supervisor', 'lead_media'].includes(user.role)) {
+  // lead_content = READ-ONLY + comment nội bộ (theo dõi brief gốc/status/timeline — 2026-07-06).
+  if (!['admin', 'account', 'system_supervisor', 'lead_media', 'lead_content'].includes(user.role)) {
     window.MH.toast({ type: 'error', title: 'Không đủ quyền', message: 'Client Orders chỉ dành cho Admin / Account / Media Lead.' });
-    const home = user.role === 'lead_content' ? 'content-team.html' : (user.role === 'content' ? 'content-workbench.html' : 'dashboard.html');
+    const home = user.role === 'content' ? 'content-workbench.html' : 'dashboard.html';
     setTimeout(() => location.replace(home), 1200);
     return;
   }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
-  // READONLY = Giám sát hệ thống: chỉ xem (ẩn kebab action, khóa input drawer, ẩn nút Quick Actions/Bàn giao).
-  const READONLY = user.role === 'system_supervisor';
+  // READONLY: system_supervisor (monitor toàn hệ thống) + lead_content (theo dõi order).
+  // Mọi mutation UI bị khóa; lead_content có THÊM đúng 1 quyền ghi: comment nội bộ
+  // qua RPC append_lead_content_order_note (không đụng cột nghiệp vụ nào).
+  const IS_LEAD_CONTENT = user.role === 'lead_content';
+  const READONLY = user.role === 'system_supervisor' || IS_LEAD_CONTENT;
   // Media Lead = quyền vận hành NGANG Account → alias cho mọi check ['admin','account'] bên dưới.
   // data-user-role giữ 'lead_media' thật (CSS/nav); RLS DB thấy role thật qua current_user_role().
   if (user.role === 'lead_media') user.role = 'account';
+
+  // Banner READ-ONLY trên page head — UI phải nói rõ đang ở chế độ chỉ xem.
+  if (READONLY) {
+    const head = document.querySelector('.dash-page-head h1');
+    if (head) {
+      const tag = document.createElement('span');
+      tag.className = 'badge badge-info do-viewonly-badge';
+      tag.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Chế độ chỉ xem'
+        + (IS_LEAD_CONTENT ? ' · Lead Content' : ' · Giám sát');
+      head.appendChild(tag);
+    }
+  }
 
   // Profile chip
   const pcName = document.getElementById('pc-name');
@@ -1161,6 +1177,19 @@
         </div>
       </section>
 
+      <section class="drawer-block ow-lc-comments" ${(!IS_LEAD_CONTENT && !o.lead_content_notes) ? 'hidden' : ''}>
+        <div class="drawer-block-head"><span class="block-letter">C2</span><h4>Comment Lead Content</h4></div>
+        <p class="ow-comment-help">Kênh comment nội bộ của Lead Content (chỉ hiển thị nội bộ — Client Portal không thấy).</p>
+        ${o.lead_content_notes
+          ? `<div class="lc-notes-view" id="lc-notes-view">${escapeHtml(o.lead_content_notes)}</div>`
+          : `<div class="lc-notes-view lc-notes-empty" id="lc-notes-view">Chưa có comment nào.</div>`}
+        ${IS_LEAD_CONTENT ? `
+        <textarea class="textarea" id="lc-comment-input" placeholder="Comment nội bộ cho Account/Admin (ghi danh Lead Content)…" style="min-height:80px; margin-top: var(--space-3)"></textarea>
+        <div class="row" style="justify-content: flex-end; margin-top: var(--space-2)">
+          <button class="btn btn-primary btn-sm" id="lc-send-comment">Gửi comment (Lead Content)</button>
+        </div>` : ''}
+      </section>
+
       <section class="drawer-block ow-push">
         <div class="drawer-block-head"><span class="block-letter">E</span><h4>Điều kiện tạo task</h4></div>
         ${buildPushCheck(o)}
@@ -1423,6 +1452,10 @@
     // Update stepper state theo account_status + production_status
     updateStepperState(o);
 
+    // Wire nút "Gửi comment (Lead Content)" (chỉ render khi IS_LEAD_CONTENT).
+    const lcBtn = document.getElementById('lc-send-comment');
+    if (lcBtn) lcBtn.addEventListener('click', () => sendLeadContentComment(o));
+
     // Read-only monitor: khóa toàn bộ input + ẩn mọi nút mutation trong drawer (giữ link điều hướng <a>).
     if (READONLY) applyDrawerReadonly();
 
@@ -1432,13 +1465,79 @@
     document.body.style.overflow = 'hidden';
   }
 
-  /* Read-only monitor (system_supervisor): khóa mọi control trong order drawer.
-     Disable input/select/textarea + ẩn mọi <button> (trừ nút đóng). Link <a> giữ để điều hướng. */
+  /* Read-only (system_supervisor + lead_content): khóa mọi control trong order drawer.
+     Disable input/select/textarea + ẩn mọi <button> (trừ nút đóng). Link <a> giữ để điều hướng.
+     NGOẠI LỆ duy nhất cho lead_content: ô comment + nút gửi comment (kênh Lead Content). */
+  const RO_KEEP_IDS = ['drawer-close', 'lc-comment-input', 'lc-send-comment'];
   function applyDrawerReadonly() {
     const root = document.getElementById('order-drawer');
     if (!root) return;
-    root.querySelectorAll('input, select, textarea').forEach((el) => { el.disabled = true; });
-    root.querySelectorAll('button').forEach((b) => { if (b.id !== 'drawer-close') b.style.display = 'none'; });
+    root.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (RO_KEEP_IDS.includes(el.id)) return;
+      el.disabled = true;
+    });
+    root.querySelectorAll('button').forEach((b) => {
+      if (RO_KEEP_IDS.includes(b.id)) return;
+      b.style.display = 'none';
+    });
+  }
+
+  /* Lead Content gửi comment nội bộ — đường ghi DUY NHẤT: RPC
+     append_lead_content_order_note (SECURITY DEFINER, chỉ append text,
+     không đụng cột nghiệp vụ). Fallback demo (Supabase off): mutate mock. */
+  let lcSending = false;
+  async function sendLeadContentComment(o) {
+    if (lcSending) return;
+    const input = document.getElementById('lc-comment-input');
+    const btn = document.getElementById('lc-send-comment');
+    const text = (input && input.value.trim()) || '';
+    if (!text) { window.MH.toast({ type: 'warning', title: 'Comment rỗng', message: 'Nhập nội dung trước khi gửi.' }); return; }
+    lcSending = true;
+    if (btn) { btn.disabled = true; btn.textContent = 'Đang gửi…'; }
+    try {
+      let updatedNotes;
+      if (window.MH.supabaseEnabled) {
+        await window.MH.supabaseReady;
+        const { data, error } = await window.MH.supabase.rpc('append_lead_content_order_note', {
+          p_order_id: o.order_id, p_text: text
+        });
+        if (error) throw error;
+        updatedNotes = data && data.lead_content_notes;
+      } else {
+        // Demo/offline: append trực tiếp vào mock (cùng format với RPC).
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const stamp = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        const line = `[${stamp} · ${user.name || 'Lead Content'} · Lead Content] ${text}`;
+        updatedNotes = (o.lead_content_notes ? o.lead_content_notes + '\n\n' : '') + line;
+        await window.MH.store.orders.update(o.order_id, { lead_content_notes: updatedNotes });
+      }
+      o.lead_content_notes = updatedNotes || o.lead_content_notes;
+      const view = document.getElementById('lc-notes-view');
+      if (view) { view.textContent = o.lead_content_notes || ''; view.classList.remove('lc-notes-empty'); }
+      if (input) input.value = '';
+      window.MH.toast({ type: 'success', title: 'Đã gửi comment', message: 'Account/Admin sẽ thấy trong Order Drawer.' });
+      // Báo Admin + Account có comment mới (type 'system' — nằm trong CHECK notifications).
+      try {
+        const usersList = await window.MH.store.users.list();
+        const targets = (usersList || []).filter((u) => u && u.id && (u.role === 'admin' || u.role === 'account'));
+        for (const t of targets) {
+          await window.MH.store.notifications.create({
+            user_id: t.id, type: 'system',
+            title: 'Lead Content comment trên order ' + o.order_id,
+            message: text.slice(0, 140),
+            link: 'database-orders.html?id=' + o.order_id,
+            related_entity_type: 'orders', related_entity_id: o.order_id
+          });
+        }
+      } catch (e) { console.warn('[lc-comment] notify lỗi:', e); }
+    } catch (err) {
+      console.error('[lc-comment] gửi lỗi:', err);
+      window.MH.toast({ type: 'error', title: 'Không gửi được comment', message: String(err && err.message || err).slice(0, 200) + ' — đã chạy supabase/add-lead-content-order-view.sql chưa?' });
+    } finally {
+      lcSending = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Gửi comment (Lead Content)'; }
+    }
   }
 
   /* ---------- Drawer state update ----------
@@ -2190,7 +2289,9 @@
 
   // Auto-open drawer cho record cụ thể nếu ?id=MEDIA-* được pass (Dashboard Alert Center, notification click...).
   // Helper: thử mở drawer ngay; nếu chưa có thì caller phải retry sau khi data load.
-  const focusId = new URLSearchParams(location.search).get('id');
+  // Deep-link mở drawer: nhận cả ?id= lẫn ?order= (alias — link từ Content Team/notification).
+  const _dlParams = new URLSearchParams(location.search);
+  const focusId = _dlParams.get('id') || _dlParams.get('order');
   function tryFocusOrder(showToast) {
     if (!focusId) return false;
     const order = ORDERS.find((o) => o.order_id === focusId);

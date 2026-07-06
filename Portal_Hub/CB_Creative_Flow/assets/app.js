@@ -678,10 +678,35 @@
       if (groups.length) groups[groups.length - 1].appendChild(li);
     }
   }
+  /* Lead Content xem Client Orders (read-only, 2026-07-06): reveal mục nav
+     "Client Orders" + badge "View only". CHỈ chỉnh attribute lúc RUNTIME khi
+     role === 'lead_content' → tránh substring trap "content" ⊂ "lead_content"
+     (attr tĩnh vẫn là "admin,account" nên role content không bao giờ thấy). */
+  function revealClientOrdersForLeadContent() {
+    var u = getUser();
+    if (!u || u.role !== 'lead_content') return;
+    var link = document.querySelector('.dash-sidebar a[href="database-orders.html"]');
+    if (!link) return;
+    var li = link.closest('li');
+    if (!li) return;
+    var roles = li.getAttribute('data-show-roles') || '';
+    if (roles.indexOf('lead_content') < 0) li.setAttribute('data-show-roles', roles ? roles + ',lead_content' : 'lead_content');
+    // Marker class riêng — link có thể ĐÃ có nav-badge đếm (vd #nav-pending),
+    // không được vì thế mà bỏ badge "View only".
+    if (!link.querySelector('.viewonly-badge')) {
+      var b = document.createElement('span');
+      b.className = 'nav-badge viewonly-badge';
+      b.textContent = 'View only';
+      link.appendChild(b);
+    }
+    // Badge đếm đơn mới (nav-pending) là tín hiệu XỬ LÝ — ẩn với lead (chỉ xem).
+    var pending = link.querySelector('#nav-pending');
+    if (pending) pending.style.display = 'none';
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); }, 0);
+    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */

@@ -28,7 +28,7 @@ Role Content Team (tạo tay trong Supabase Auth + metadata `{name, role}` SAU k
 
 | Role | Redirect sau login | Quyền chính |
 |---|---|---|
-| `lead_content` | `content-team.html` (Content Workspace) | Nhận request ở Content Inbox, gán PIC, đặt hạn wording, duyệt / trả chỉnh |
+| `lead_content` | `content-team.html` (Content Workspace) | Nhận request ở Content Inbox, gán PIC, đặt hạn wording, duyệt / trả chỉnh. **Từ 2026-07-06**: vào được `database-orders.html` chế độ **READ-ONLY** (nav "Client Orders · View only") — xem brief gốc/status/timeline/links + **comment nội bộ** (kênh riêng, client không thấy); mọi mutation nghiệp vụ bị khóa. ⚠ `add-lead-content-order-view.sql` |
 | `content` | `content-workbench.html` (Content Wording) | Làm wording được gán, lưu nháp, **gửi Lead Content duyệt** |
 
 Sidebar có nhóm **Content Team** riêng với 2 sub: *Content Workspace* (lead) · *Content Wording* (content); admin/account thấy cả hai.
@@ -157,6 +157,8 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 19. [`add-ads-orders.sql`](supabase/add-ads-orders.sql) — **Ads Orders (Client → Content Team)**: cột `orders.owner_team`/`ads_status`/`ads_detail`(jsonb)/`source_ads_order_id` + index; `request_type` CHECK **+= `post`** (tile Media "Ads/Post Basic" đổi thành "Post"); `content_tasks.source` CHECK **+= `ads_order`**; RLS **lead_content UPDATE `ads_order`** + **lead_content/content INSERT `internal_ads_media_request`** (client_visible=false). Ads Order route thẳng Content Team, KHÔNG qua Account/Production; Internal Ads Media Request KHÔNG lộ Client Portal. Chạy sau `add-content-to-media-order.sql`.
 
 20. [`add-brand-check.sql`](supabase/add-brand-check.sql) — **AI Brand Safety Checker**: bảng `brand_checks` (metadata + flags + ảnh + kết quả AI `ai_result_json` + override + manual review) + `brand_check_criteria` (điểm 6 tiêu chí) + RLS (mọi user INSERT/SELECT lượt của mình · admin/account/lead_media SELECT all + UPDATE hậu kiểm · system_supervisor SELECT all) + bucket Storage private **`brand-check-images`** (JPG/PNG/WEBP ≤10MB, path `{uploader_id}/{check_id}/…`, policy prefix `cbbrand_`) + Realtime. Chạy sau `rls.sql`. **Kèm Edge Function** [`functions/brand-check-analyze/`](supabase/functions/brand-check-analyze/index.ts): deploy `supabase functions deploy brand-check-analyze` + `supabase secrets set GEMINI_API_KEY=AIza...` (**provider mặc định = gemini**, model `gemini-2.5-flash` ép JSON qua `responseSchema` + nới safety; tùy chọn `BRAND_CHECK_MODEL`; đổi provider: `BRAND_CHECK_PROVIDER=openai`+`OPENAI_API_KEY` / `anthropic`+`ANTHROPIC_API_KEY`). Chưa deploy function → app fallback `NEEDS_MANUAL_REVIEW`; Supabase off → demo mô phỏng.
+
+21. [`add-lead-content-order-view.sql`](supabase/add-lead-content-order-view.sql) — **Lead Content xem Client Orders (read-only + comment)**: cột `orders.lead_content_notes` (thread comment nội bộ, TÁCH `internal_note` vì internal_note lộ ra Client Portal khi needinfo) + RPC **`append_lead_content_order_note`** (SECURITY DEFINER — lead_content/admin, CHỈ append text kèm `[thời gian · tên · Lead Content]`, không đụng cột nghiệp vụ). Đọc orders của lead_content đã có sẵn (add-content-team.sql). Frontend: guard database-orders mở cho lead_content ở chế độ READONLY (cơ chế monitor của system_supervisor) + section "Comment Lead Content" trong Order drawer + nav "Client Orders · View only" + link "Mở Order gốc (chỉ xem)" từ Content Team + deep-link `?order=` alias. Chạy sau `add-content-team.sql`.
 
 ### Order ↔ Task ↔ Delivery relationship
 

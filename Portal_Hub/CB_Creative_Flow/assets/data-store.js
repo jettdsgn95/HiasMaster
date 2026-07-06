@@ -55,7 +55,9 @@
       // Ads Orders (Client→Content, add-ads-orders.sql)
       'owner_team', 'ads_status', 'ads_detail', 'source_ads_order_id',
       // Brand Check approval (add-brand-check.sql — chạy lại nếu thiếu)
-      'approved_at', 'approval_source'];
+      'approved_at', 'approval_source',
+      // Lead Content order comment (add-lead-content-order-view.sql)
+      'lead_content_notes'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {
