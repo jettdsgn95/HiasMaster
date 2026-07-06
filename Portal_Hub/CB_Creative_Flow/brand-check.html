@@ -348,21 +348,47 @@
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
 
-  // Client (giáo viên/chi nhánh) được tự kiểm ảnh — thay sidebar nội bộ bằng
-  // sidebar tối giản hướng về Client Portal (không lộ Master Dashboard/Task Tracker…).
+  // Client (giáo viên/chi nhánh): thay sidebar nội bộ bằng sidebar ĐỒNG BỘ 1:1
+  // với Client Portal (cùng nhóm/nhãn/thứ tự/icon; Tổng quan/Yêu cầu/Thông báo
+  // deep-link về client-dashboard.html?tab=… — client-dashboard.js đã hỗ trợ ?tab=).
   if (user.role === 'client') {
     var sbEl = document.getElementById('dash-sb');
     var footEl = sbEl && sbEl.querySelector('.dash-sidebar-foot');
     if (sbEl) {
       sbEl.innerHTML =
-        '<h6>Brand Safety</h6><ul class="dash-nav">'
-        + '<li><a href="brand-check.html" class="is-active"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><span>Kiểm tra ảnh AI</span></a></li>'
-        + '</ul><h6>Cổng của tôi</h6><ul class="dash-nav">'
-        + '<li><a href="client-dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg></span><span>Yêu cầu của tôi</span></a></li>'
+        '<h6>Yêu cầu</h6><ul class="dash-nav">'
+        + '<li><a href="client-dashboard.html?tab=overview"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span><span>Tổng quan</span></a></li>'
+        + '<li><a href="client-dashboard.html?tab=orders"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span><span>Yêu cầu của tôi</span><span class="nav-badge" id="bc-cs-active">—</span></a></li>'
+        + '</ul><h6>Công cụ</h6><ul class="dash-nav">'
+        + '<li><a href="brand-check.html" class="is-active"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><span>Kiểm tra ảnh AI (Brand Safety)</span></a></li>'
         + '<li><a href="ai-tools.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span><span>AI Tools</span></a></li>'
         + '<li><a href="chatbot.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>CB Assistant</span></a></li>'
+        + '<li><a href="client-dashboard.html?tab=notif"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span>Thông báo</span><span class="nav-badge" id="bc-cs-notif">—</span></a></li>'
         + '<li><a href="help.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Hỗ trợ</span></a></li>'
         + '</ul>' + (footEl ? footEl.outerHTML : '');
+
+      // Badge số đếm (best-effort, cùng nguồn data với Portal): yêu cầu đang
+      // hoạt động + thông báo chưa đọc. Không có data → giữ "—" như Portal.
+      (async function fillClientBadges() {
+        try {
+          var orders = await window.MH.store.orders.list();
+          var mine = (orders || []).filter(function (o) {
+            return !o.requester_email || o.requester_email === user.email;
+          });
+          var active = mine.filter(function (o) {
+            var done = o.production_status === 'delivered'
+              || o.account_status === 'completed' || o.account_status === 'cancelled';
+            return !done;
+          }).length;
+          var el = document.getElementById('bc-cs-active');
+          if (el && mine.length) el.textContent = active;
+        } catch (e) { /* badge best-effort */ }
+        try {
+          var unread = await window.MH.store.notifications.listUnread();
+          var el2 = document.getElementById('bc-cs-notif');
+          if (el2) el2.textContent = (unread && unread.length) ? unread.length : '—';
+        } catch (e) { /* badge best-effort */ }
+      })();
     }
   }
 

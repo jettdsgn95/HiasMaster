@@ -1550,6 +1550,13 @@ function openOrderFromQuery() {
   return false;
 }
 
+// Deep-link ?tab=overview|orders|notif — dùng bởi sidebar client trên trang khác
+// (vd brand-check.html) để về đúng tab thay vì luôn rơi vào Tổng quan.
+try {
+  const wantTab = new URLSearchParams(location.search).get('tab');
+  if (wantTab && ['overview', 'orders', 'notif'].indexOf(wantTab) >= 0) switchTab(wantTab);
+} catch (e) {}
+
 // Phase 1: swap dataset từ Supabase nếu enabled, re-render khi xong.
 loadClientOrdersFromStore().then(function (n) {
   if (typeof n === 'number') {
