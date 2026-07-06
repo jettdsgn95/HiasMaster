@@ -834,12 +834,13 @@
           catch (e) { console.warn('[order-form] cột parent_order_id/order_origin chưa có (chạy supabase/add-revision-link.sql nếu muốn lưu cấu trúc):', e); }
         }
 
-        // Notify TẤT CẢ admin + account user về order mới (realtime + bell badge)
+        // Notify TẤT CẢ admin + account + lead_media về order mới (realtime + bell badge).
+        // lead_media = Trưởng nhóm Production quyền ngang Account → cần biết order mới như Account.
         try {
           const { data: staff } = await window.MH.supabase
             .from('users')
             .select('id, name')
-            .in('role', ['admin', 'account'])
+            .in('role', ['admin', 'account', 'lead_media'])
             .eq('status', 'active');
           if (Array.isArray(staff) && staff.length) {
             const notifPayloads = staff.map(function (u) {

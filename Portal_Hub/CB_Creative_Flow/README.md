@@ -113,6 +113,7 @@ CB_Creative_Flow/
     ├── logo.png
     ├── styles.css            Design system, all page styles
     ├── app.js                Shared: theme, toast, profile modal, header chip
+    ├── home-motion.js        index.html — GSAP motion (count-up, reveal, parallax)
     ├── order-form.js         request.html — Media form, auth guard, draft, flow progress
     ├── ads-order-form.js     request.html?type=ads — form Ads 6 section (Client → Content Team)
     ├── client-dashboard.js   client-dashboard.html — Client Portal logic
@@ -130,7 +131,7 @@ CB_Creative_Flow/
     └── settings.js
 ```
 
-Build hiện tại: **20 HTML pages · 17 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations + 1 Edge Function** (AI Brand Safety Checker thêm 2026-07-03; Supervisor Planning thêm 2026-06-17; Content Team Workspace thêm 2026-06-11; Calendar/Lịch thêm 2026-06-08). (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
+Build hiện tại: **21 HTML pages (+5 trang demo/preview `_*.html` không tính) · 21 JS files · 1 CSS file · 1 logo asset · Supabase SQL migrations + 1 Edge Function** (AI Brand Safety Checker thêm 2026-07-03; Supervisor Planning thêm 2026-06-17; Content Team Workspace thêm 2026-06-11; Calendar/Lịch thêm 2026-06-08). (Delivery Log page removed 2026-06-03 — bàn giao link nay nằm trong Order drawer.)
 
 Phase 1+2 added JS modules: `assets/config.js`, `assets/supabase-client.js`, `assets/data-store.js` (zero-build, loaded via ESM CDN). Shared UI module: `assets/notif-icons.js` (`window.MH.notifIcons` — single source of truth cho icon thông báo, dùng bởi bell dropdown + client panel).
 
@@ -390,4 +391,4 @@ Sau mỗi task hoàn thành:
 
 Brand: **CB Centres** · Project owner: CB Centres Media Team
 
-*Last updated: 2026-07-01 · **Ads Orders** — luồng Client → Content Team (`request.html?type=ads` + `ads-order-form.js` + tab Ads Orders trong content-team + Internal Media Request `ADS-MEDIA-`; prefix `ADS-`/`MEDIA-`/`ADS-MEDIA-`; ⚠ `add-ads-orders.sql`) · Module **Supervisor Planning** (`supervisor-planning.html`+`.js`, bảng `lead_tasks`, role mới `lead_media`, ⚠ `add-supervisor-planning.sql`) · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*
+*Last updated: 2026-07-06 · **Ads client notify + lead_media order_new** — Ads lifecycle giờ báo client 3 nấc `running`/`completed`/`cancelled` (type `order_status_changed`, gọi trong `adsAdvance`; resume `paused`→`running` không re-notify); order mới từ client notify thêm role `lead_media` (ngang Account) · **Ads Orders** — luồng Client → Content Team (`request.html?type=ads` + `ads-order-form.js` + tab Ads Orders trong content-team + Internal Media Request `ADS-MEDIA-`; prefix `ADS-`/`MEDIA-`/`ADS-MEDIA-`; ⚠ `add-ads-orders.sql`) · Module **Supervisor Planning** (`supervisor-planning.html`+`.js`, bảng `lead_tasks`, role mới `lead_media`, ⚠ `add-supervisor-planning.sql`) · Role `system_supervisor` (Giám sát hệ thống) — monitor read-only toàn hệ thống (⚠ `add-system-supervisor.sql`) · Reports wired LIVE Supabase (module cuối cùng nối DB) + Content Team Workspace (role lead_content + content, content-team.html, ⚠ add-content-team.sql) + Workflow notifications khép kín + bàn giao trong Order drawer (Delivery Log gỡ) + order media Quay/Chụp gộp tách 2 task + Order Form rút gọn theo type + New Orders card*

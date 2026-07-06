@@ -2007,8 +2007,45 @@
     document.getElementById('ctm-ads-backdrop').classList.remove('is-open');
   }
 
+  /* Khép kín noti phía CLIENT cho Ads lifecycle: Media flow client nhận noti ở
+     checking/confirmed/preview/final, Ads trước đây câm hoàn toàn sau submit.
+     Báo client 3 nấc: running (bắt đầu chạy) · completed · cancelled.
+     resume paused→running KHÔNG re-notify (client đã biết chiến dịch đang chạy).
+     Type 'order_status_changed' (có sẵn trong CHECK constraint); bell client tự
+     resolve về client-dashboard.html?order=<ADS-id> qua related_entity_id. */
+  const ADS_CLIENT_NOTIFY = {
+    running:   { title: 'Chiến dịch Ads đã bắt đầu chạy', msg: 'chiến dịch của anh/chị đã được lên Ads và đang chạy. Theo dõi trạng thái trong Cổng của tôi.' },
+    completed: { title: 'Chiến dịch Ads đã hoàn thành', msg: 'chiến dịch đã kết thúc. Content Team sẽ cập nhật báo cáo kết quả (nếu có) qua kênh liên hệ của anh/chị.' },
+    cancelled: { title: 'Yêu cầu chạy Ads đã hủy', msg: 'yêu cầu chạy Ads đã được hủy. Vui lòng liên hệ Content Team nếu anh/chị cần thêm thông tin.' }
+  };
+  async function notifyAdsClient(o, newStatus, prevStatus) {
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    const info = ADS_CLIENT_NOTIFY[newStatus];
+    if (!info) return;
+    if (newStatus === 'running' && prevStatus === 'paused') return;
+    try {
+      let uid = o.requester_id || null;
+      if (!uid && o.requester_email) {
+        const { data } = await window.MH.supabase
+          .from('users').select('id').eq('email', o.requester_email).maybeSingle();
+        if (data && data.id) uid = data.id;
+      }
+      if (!uid) { console.warn('[ctm-ads] notify client: không tìm thấy user cho', o.requester_email); return; }
+      await window.MH.supabase.from('notifications').insert({
+        user_id: uid,
+        type: 'order_status_changed',
+        title: info.title,
+        message: o.order_id + ' · ' + (o.project_name || '') + ' — ' + info.msg,
+        link: 'tracking.html?code=' + encodeURIComponent(o.order_id),
+        related_entity_type: 'orders',
+        related_entity_id: o.order_id
+      });
+    } catch (e) { console.warn('[ctm-ads] notify client failed:', e); }
+  }
+
   async function adsAdvance(o, newStatus) {
     if (!isLead || !newStatus) return;
+    const prevStatus = o.ads_status || 'submitted';
     if (newStatus === 'lead_revision') {
       const note = prompt('Lý do trả chỉnh cho Content:', o.wording_lead_note || '');
       if (note === null) return;
@@ -2018,8 +2055,10 @@
     } else if (newStatus === 'cancelled') {
       if (!confirm('Hủy Ads Order ' + o.order_id + '?')) return;
       await persistAds(o, { ads_status: 'cancelled' }, 'Hủy Ads Order');
+      notifyAdsClient(o, 'cancelled', prevStatus);
     } else {
       await persistAds(o, { ads_status: newStatus }, 'Ads chuyển trạng thái → ' + (ADS_STATUS[newStatus] || newStatus));
+      notifyAdsClient(o, newStatus, prevStatus);
     }
     toast('success', 'Đã cập nhật', o.order_id + ' → ' + (ADS_STATUS[newStatus] || newStatus));
     await reloadAndReopenAds();
