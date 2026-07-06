@@ -977,8 +977,20 @@
       + '</div>';
   }
 
+  let manualSaving = false; // chống double-click / request chồng nhau
+
+  function setManualButtonsBusy(busy) {
+    document.querySelectorAll('#bc-drawer [data-manual]').forEach(function (b) {
+      b.disabled = busy;
+      b.style.opacity = busy ? '0.55' : '';
+      b.style.pointerEvents = busy ? 'none' : '';
+    });
+  }
+
   async function saveManualReview(status) {
-    if (!drawerCheckId || !isMedia) return;
+    if (!drawerCheckId || !isMedia || manualSaving) return;
+    manualSaving = true;
+    setManualButtonsBusy(true);
     const note = ($('bcd-manual-note') && $('bcd-manual-note').value.trim()) || null;
     try {
       const patch = {
@@ -1001,8 +1013,14 @@
         if (me && me.id) patch.manual_reviewer_id = me.id;
       }
       const updated = await db.update(drawerCheckId, patch);
+      // QUAN TRỌNG: PostgREST update 0 dòng KHÔNG throw (data=null) — thường do
+      // RLS chặn (tài khoản không phải admin/account/lead_media trong bảng users)
+      // → phải báo lỗi rõ thay vì toast thành công sai.
+      if (!updated) {
+        throw new Error('Hệ thống không ghi nhận thay đổi. Kiểm tra: tài khoản đang đăng nhập có role admin/account/lead_media trong bảng users chưa (RLS), và đã chạy lại supabase/add-brand-check.sql chưa.');
+      }
       // Notify người upload (nếu backend + có uploader_id).
-      if (!DEMO && updated && updated.uploader_id) {
+      if (!DEMO && updated.uploader_id) {
         window.MH.store.notifications.create({
           user_id: updated.uploader_id,
           type: 'system',
@@ -1013,15 +1031,20 @@
           related_entity_id: String(updated.id)
         }).catch(function (e) { console.warn('[brand-check] notify uploader lỗi:', e); });
       }
-      window.MH.store.activity.log({ action: 'brand_check_manual_review', entity_type: 'brand_checks', entity_id: drawerCheckId });
+      if (!DEMO) {
+        window.MH.store.activity.log({ action: 'brand_check_manual_review', entity_type: 'brand_checks', entity_id: drawerCheckId });
+      }
       toast({ type: 'success', title: 'Đã lưu hậu kiểm', msg: MANUAL_STATUS[status] ? MANUAL_STATUS[status].label : status });
       await loadChecks();
       renderHistory();
       renderDashboard();
-      openDrawer(drawerCheckId);
+      openDrawer(drawerCheckId); // re-render drawer → badge/verdict/panel cập nhật ngay
     } catch (err) {
       console.error('[brand-check] manual review lỗi:', err);
-      toast({ type: 'error', title: 'Không lưu được hậu kiểm', msg: String(err && err.message || err).slice(0, 160) });
+      toast({ type: 'error', title: 'Không lưu được hậu kiểm', msg: String(err && err.message || err).slice(0, 220) });
+      setManualButtonsBusy(false); // lỗi → mở khóa để thử lại
+    } finally {
+      manualSaving = false;
     }
   }
 
