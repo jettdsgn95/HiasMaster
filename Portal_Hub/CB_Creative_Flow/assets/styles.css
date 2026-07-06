@@ -6856,19 +6856,21 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .bc-flag:hover { background: var(--surface-2); }
 .bc-flag input { width: 16px; height: 16px; accent-color: var(--brand-600); flex-shrink: 0; }
 
-/* Submit bar — chừa 88px bên phải né floating CB Assistant (.chat-fab góc dưới phải) */
+/* Submit bar — NÚT BÊN TRÁI (né hẳn floating CB Assistant góc phải), hint bên phải.
+   Vẫn chừa 88px phải để hint không chui xuống dưới fab. */
 .bc-submit-bar {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  display: flex; align-items: center; justify-content: flex-start; gap: var(--space-4);
   padding: var(--space-4) var(--space-5);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   position: sticky; bottom: 12px; z-index: 5;
   margin-right: 88px;
 }
-/* Nút Kiểm tra thương hiệu: gradient đỏ brand, nằm bên phải bar */
+.bc-submit-bar #bc-submit-hint { text-align: right; margin-left: auto; }
+/* Nút Kiểm tra thương hiệu: gradient đỏ brand */
 .bc-submit-bar .btn-primary {
   background: var(--grad-red); border-color: transparent; color: #fff;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 .bc-submit-bar .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .bc-submit-bar .btn-primary:disabled { opacity: 0.55; }
