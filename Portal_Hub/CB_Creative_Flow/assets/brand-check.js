@@ -918,6 +918,15 @@
       body.querySelectorAll('[data-manual]').forEach(function (b) {
         b.addEventListener('click', function () { saveManualReview(b.getAttribute('data-manual')); });
       });
+      // "Đổi quyết định": mở lại khối 4 nút (mặc định ẩn sau khi đã hậu kiểm).
+      const changeBtn = $('bcd-change-review');
+      if (changeBtn) {
+        changeBtn.addEventListener('click', function () {
+          const acts = $('bcd-review-actions');
+          if (acts) acts.hidden = false;
+          changeBtn.hidden = true;
+        });
+      }
     }
 
     $('bc-drawer').classList.add('is-open');
@@ -962,18 +971,28 @@
           + '</div>'
         : '';
     }
-    return '<div class="bc-d-section bc-d-manual"><h4>Hậu kiểm của Media</h4>'
-      + '<div class="field"><label for="bcd-manual-note">Ghi chú</label>'
+    // Đã hậu kiểm rồi → KHÔNG bày 4 nút nóng nữa (tránh bấm lặp/bấm nhầm).
+    // Chỉ hiện kết quả + nút "Đổi quyết định" khi thật sự muốn đổi.
+    const reviewed = check.manual_status && check.manual_status !== 'PENDING';
+    const actionsHtml =
+      '<div class="field"><label for="bcd-manual-note">Ghi chú</label>'
       + '<textarea class="textarea" id="bcd-manual-note" rows="3" placeholder="Lý do duyệt / yêu cầu chỉnh / từ chối…">' + esc(check.manual_note || '') + '</textarea></div>'
       + '<div class="bc-d-manual-actions">'
       + '<button class="btn btn-primary btn-sm" data-manual="APPROVED">Duyệt (Approved)</button>'
       + '<button class="btn btn-secondary btn-sm" data-manual="REVISION_REQUIRED">Yêu cầu chỉnh sửa</button>'
       + '<button class="btn btn-secondary btn-sm bc-btn-danger" data-manual="REJECTED">Từ chối</button>'
       + '<button class="btn btn-ghost btn-sm" data-manual="ARCHIVED">Lưu trữ</button>'
-      + '</div>'
-      + (check.manual_reviewer_name
-        ? '<span class="text-xs muted">Lần hậu kiểm gần nhất: ' + esc(check.manual_reviewer_name) + ' · ' + fmtDate(check.reviewed_at) + '</span>'
-        : '')
+      + '</div>';
+    return '<div class="bc-d-section bc-d-manual"><h4>Hậu kiểm của Media</h4>'
+      + (reviewed
+        ? '<div class="bc-d-manual-done">'
+          + manualBadge(check.manual_status)
+          + '<span class="text-xs muted">' + esc(check.manual_reviewer_name || '') + ' · ' + fmtDate(check.reviewed_at) + '</span>'
+          + (check.manual_note ? '<p class="bc-d-manual-note-view">' + esc(check.manual_note) + '</p>' : '')
+          + '<button type="button" class="btn btn-ghost btn-sm" id="bcd-change-review">Đổi quyết định</button>'
+          + '</div>'
+          + '<div id="bcd-review-actions" hidden>' + actionsHtml + '</div>'
+        : actionsHtml)
       + '</div>';
   }
 
