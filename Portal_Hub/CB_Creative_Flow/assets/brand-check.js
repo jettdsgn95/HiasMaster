@@ -1105,10 +1105,7 @@
     document.querySelectorAll('.bc-tab').forEach(function (t) {
       t.addEventListener('click', function () { switchView(t.getAttribute('data-view')); });
     });
-    $('bc-new-btn').addEventListener('click', function () {
-      switchView('new');
-      $('bc-title').focus();
-    });
+    // (Nút "Kiểm tra hình ảnh AI" ở page-head đã gỡ 2026-07-04 — tab "Kiểm tra mới" là lối vào duy nhất.)
 
     // Dropzone
     const dz = $('bc-dropzone');
@@ -1128,7 +1125,12 @@
     dz.addEventListener('drop', function (e) {
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
     });
-    $('bc-remove-file').addEventListener('click', function (e) { e.stopPropagation(); clearFile(); });
+    // "Chọn ảnh khác" = bỏ ảnh hiện tại + MỞ NGAY hộp chọn file (1 chạm, công dụng rõ).
+    $('bc-remove-file').addEventListener('click', function (e) {
+      e.stopPropagation();
+      clearFile();
+      fileInput.click();
+    });
 
     // Form validate on input
     ['bc-title'].forEach(function (id) { $(id).addEventListener('input', function () { validateForm(true); }); });
