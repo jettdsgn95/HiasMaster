@@ -1632,6 +1632,11 @@
       window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Bạn không có quyền chỉnh sửa thông tin công việc. Vui lòng liên hệ Account/Admin.' });
       return;
     }
+    // Và chỉ Admin/Account được TẠO/GIAO việc nội bộ — Design/Editor chỉ nhận & thực hiện.
+    if (!editId && !['admin', 'account'].includes(user.role)) {
+      window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Bạn không có quyền giao việc nội bộ. Vui lòng liên hệ Account/Admin.' });
+      return;
+    }
     editingTaskId = editId || null;
     modalTitle.textContent = editId ? 'Sửa công việc nội bộ' : 'Giao việc nội bộ mới';
     const p = prefill || {};
@@ -1824,7 +1829,9 @@
   (function handleCreateFromURL() {
     const params = new URLSearchParams(location.search);
     if (params.get('createTask') !== '1') return;
-    if (user.role === 'client') return;
+    // Chỉ Admin/Account (lead_media đã alias→account) được tạo task qua deep-link.
+    // Design/Editor/Client bị chặn — không mở modal dù có ?createTask=1.
+    if (!['admin', 'account'].includes(user.role)) return;
     const prefill = {
       order_id: params.get('order_id') || '',
       project_name: params.get('project_name') || '',

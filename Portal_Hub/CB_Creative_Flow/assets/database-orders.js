@@ -1905,7 +1905,7 @@
 
   // Phase 2 — Account chuyển order sang Content Wording (cổng bắt buộc trước Confirm Brief).
   // account_status='wording', brief_wording_status='assigned', round=1 nếu đang 0.
-  function transferToWording(o) {
+  async function transferToWording(o) {
     if (!o) return;
     if (o.account_status === 'rejected' || o.production_status === 'cancelled') {
       window.MH.toast({ type: 'warning', title: 'Order đã hủy', message: 'Không thể chuyển Content Wording cho order đã hủy.' }); return;
@@ -1914,26 +1914,40 @@
     if (isWordingApproved(o)) { window.MH.toast({ type: 'info', title: 'Wording đã hoàn tất', message: 'Content Wording của order này đã được Client xác nhận.' }); return; }
     if (ws !== 'none') { window.MH.toast({ type: 'info', title: 'Đang Content Wording', message: 'Order đã được chuyển Content Wording (' + (WORDING_STATUS_LABEL[ws] || ws) + ').' }); return; }
     const nowIso = new Date().toISOString();
-    o.account_status = 'wording';
-    o.brief_wording_status = 'assigned';
-    o.brief_wording_round = (o.brief_wording_round || 0) === 0 ? 1 : o.brief_wording_round;
-    o.wording_last_updated_at = nowIso;
-    o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
+    const round = (o.brief_wording_round || 0) === 0 ? 1 : o.brief_wording_round;
     const patch = {
       account_status: 'wording',
       brief_wording_status: 'assigned',
-      brief_wording_round: o.brief_wording_round,
+      brief_wording_round: round,
       wording_last_updated_at: nowIso,
       last_updated: nowIso
     };
     // Kèm "Hạn hoàn thành wording" nếu Account đã nhập ô deadline trong block.
     const dlEl = document.getElementById('ow-wording-deadline');
-    if (dlEl && dlEl.value) {
-      const iso = new Date(dlEl.value).toISOString();
-      o.wording_deadline = iso; patch.wording_deadline = iso;
+    if (dlEl && dlEl.value) patch.wording_deadline = new Date(dlEl.value).toISOString();
+
+    // GHI DB TRƯỚC + XÁC NHẬN row đã đổi rồi mới notify — tránh noti "ma" (Lead nhận
+    // thông báo nhưng Content Inbox rỗng) khi update KHÔNG land: lỗi CHECK/thiếu migration
+    // (23514), hoặc RLS khớp 0 dòng (update trả về null KHÔNG kèm error → im lặng).
+    if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+      let saved = null;
+      try { saved = await window.MH.store.orders.update(o.order_id, patch); }
+      catch (err) {
+        console.warn('[database-orders] transferToWording persist failed:', err);
+        window.MH.toast({ type: 'danger', title: 'Chuyển Content Wording THẤT BẠI', message: 'Không ghi được trạng thái vào hệ thống — kiểm tra đã chạy add-brief-wording-fields.sql + add-content-team.sql (giá trị account_status="wording"/brief_wording_status="assigned") và quyền RLS. CHƯA gửi cho Content.' });
+        return;
+      }
+      if (!saved || saved.brief_wording_status !== 'assigned' || saved.account_status !== 'wording') {
+        console.warn('[database-orders] transferToWording: update matched 0 rows / RLS blocked', { orderId: o.order_id, saved: saved });
+        window.MH.toast({ type: 'danger', title: 'Chuyển Content Wording KHÔNG lưu', message: 'Hệ thống không cập nhật được trạng thái đơn (có thể do quyền RLS hoặc đơn không tồn tại). Content Inbox sẽ KHÔNG thấy đơn — CHƯA gửi thông báo cho Content.' });
+        return;
+      }
+      Object.assign(o, saved); // đồng bộ đúng row DB đã lưu
+    } else {
+      Object.assign(o, patch);
+      o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
     }
-    persistOrder(o.order_id, patch);
-    notifyContentWording(o); // báo team Content có order cần wording (kèm hạn nếu có)
+    notifyContentWording(o); // chỉ báo team Content khi trạng thái ĐÃ lưu thật
     window.MH.toast({ type: 'success', title: 'Đã chuyển Content Wording', message: o.order_id + (o.wording_deadline ? ' · Hạn wording ' + fmtDateTime(o.wording_deadline) : '') + ' — chờ Content xử lý & Client xác nhận brief wording.' });
     render(); openDrawer(o);
   }

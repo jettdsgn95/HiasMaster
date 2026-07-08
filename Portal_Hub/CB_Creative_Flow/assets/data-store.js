@@ -57,7 +57,9 @@
       // Brand Check approval (add-brand-check.sql — chạy lại nếu thiếu)
       'approved_at', 'approval_source',
       // Lead Content order comment (add-lead-content-order-view.sql)
-      'lead_content_notes'];
+      'lead_content_notes',
+      // Content review SLA + PIC self-checklist (add-content-review-sla.sql)
+      'lead_review_due', 'pic_checklist'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {
@@ -902,9 +904,15 @@
     async create(payload) {
       const s = await sb();
       if (s) {
-        const { data, error } = await s.from('content_tasks').insert(payload).select().maybeSingle();
-        if (error) { console.warn('[store.contentTasks.create]', error); throw error; }
-        return data;
+        let p = payload;
+        for (let i = 0; i < 6; i++) {
+          const { data, error } = await s.from('content_tasks').insert(p).select().maybeSingle();
+          if (!error) return data;
+          const reduced = stripMissingOptionalColumn(p, error, '[store.contentTasks.create]');
+          if (!reduced) { console.warn('[store.contentTasks.create]', error); throw error; }
+          p = reduced;
+        }
+        throw new Error('contentTasks.create: too many missing columns');
       }
       const list = readContentTasks();
       const row = Object.assign({
@@ -921,9 +929,15 @@
     async update(id, patch) {
       const s = await sb();
       if (s) {
-        const { data, error } = await s.from('content_tasks').update(patch).eq('id', id).select().maybeSingle();
-        if (error) { console.warn('[store.contentTasks.update]', error); throw error; }
-        return data;
+        let p = patch;
+        for (let i = 0; i < 6; i++) {
+          const { data, error } = await s.from('content_tasks').update(p).eq('id', id).select().maybeSingle();
+          if (!error) return data;
+          const reduced = stripMissingOptionalColumn(p, error, '[store.contentTasks.update]');
+          if (!reduced) { console.warn('[store.contentTasks.update]', error); throw error; }
+          p = reduced;
+        }
+        throw new Error('contentTasks.update: too many missing columns');
       }
       const list = readContentTasks();
       const idx = list.findIndex((t) => t.id === id);

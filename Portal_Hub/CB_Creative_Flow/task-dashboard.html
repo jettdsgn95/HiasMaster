@@ -109,7 +109,7 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Internal Task Tracker
         </a>
-        <a class="btn btn-primary btn-sm" href="production-board.html?createTask=1">
+        <a class="btn btn-primary btn-sm" id="td-create-task" href="production-board.html?createTask=1">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Giao việc nội bộ
         </a>
@@ -404,6 +404,11 @@
   if (user.role === 'content') { location.replace('content-workbench.html'); return; }
   document.body.setAttribute('data-user', user.email || user.role);
   document.body.setAttribute('data-user-role', user.role);
+
+  // Chỉ Admin/Account/Lead Media được giao việc nội bộ — Design/Editor chỉ NHẬN & thực hiện task.
+  if (!['admin', 'account', 'lead_media'].includes(user.role)) {
+    var _ct = document.getElementById('td-create-task'); if (_ct) _ct.style.display = 'none';
+  }
 
   const sb = document.getElementById('dash-sb');
   const sbd = document.getElementById('sb-backdrop');

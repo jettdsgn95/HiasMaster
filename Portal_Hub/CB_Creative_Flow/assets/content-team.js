@@ -508,11 +508,10 @@
     }
     if (!canAssign(o)) return '';
     const ws = o.brief_wording_status || 'none';
-    const opts = CONTENT_USERS.map(function (u) { return '<option value="' + esc(u.name) + '"></option>'; }).join('');
     const btnLabel = ws === 'assigned' ? 'Gán PIC & bắt đầu' : 'Cập nhật phân công';
     return '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công</h4></div>'
       + '<div class="ctm-assign-grid">'
-      + '<div class="field"><label class="label">PIC Content</label><input class="input" id="ct-pic" list="ct-pic-list" value="' + esc(o.brief_wording_pic || '') + '" placeholder="Tên Content phụ trách..." /><datalist id="ct-pic-list">' + opts + '</datalist></div>'
+      + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ct-pic">' + picSelectOptions(o.brief_wording_pic || '') + '</select></div>'
       + '<div class="field"><label class="label">Hạn hoàn thành wording</label><input class="input" type="datetime-local" id="ct-deadline" value="' + toLocalInput(o.wording_deadline) + '" /></div>'
       + '</div>'
       + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" id="ct-assign">' + btnLabel + '</button></div>'
@@ -654,7 +653,7 @@
     const picEl = document.getElementById('ct-pic');
     const dlEl = document.getElementById('ct-deadline');
     const pic = (picEl && picEl.value || '').trim();
-    if (!pic) { toast('warning', 'Thiếu PIC', 'Nhập tên Content phụ trách trước khi gán.'); if (picEl) picEl.focus(); return; }
+    if (!pic) { toast('warning', 'Thiếu PIC', 'Chọn PIC Content trong danh sách trước khi gán.'); if (picEl) picEl.focus(); return; }
     const ws = current.brief_wording_status || 'none';
     const patch = { brief_wording_pic: pic };
     if (dlEl && dlEl.value) patch.wording_deadline = new Date(dlEl.value).toISOString();
@@ -846,13 +845,26 @@
     else if (reopen === 'task' && currentTask) openTaskDrawer(currentTask);
   }
 
-  /* ---------- PIC datalist (gộp users content + PIC đã dùng) ---------- */
-  function picDatalistOptions() {
+  /* ---------- PIC Content options (đồng bộ, dropdown thật — như PIC Media) ----------
+     Nguồn gộp: users role=content (Supabase) + PIC đã dùng trong task/order + fallback seed.
+     Fallback đảm bảo LUÔN có option kể cả demo/Supabase off/chưa seed (giống Media hardcode). */
+  const FALLBACK_CONTENT_PICS = ['Thu Hà', 'Minh Anh', 'Bảo Trân'];
+  function contentPicNames(current) {
     const names = {};
     CONTENT_USERS.forEach(function (u) { if (u.name) names[u.name] = 1; });
     CONTENT_TASKS.forEach(function (t) { if (t.assigned_pic) names[t.assigned_pic] = 1; });
     ORDERS.forEach(function (o) { if (o.brief_wording_pic) names[o.brief_wording_pic] = 1; });
-    return Object.keys(names).map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
+    FALLBACK_CONTENT_PICS.forEach(function (n) { names[n] = 1; });
+    if (current) names[current] = 1; // luôn giữ giá trị hiện tại để select hiển thị đúng
+    return Object.keys(names).sort(function (a, b) { return a.localeCompare(b, 'vi'); });
+  }
+  // Dropdown thật: <option> list kèm selected + option rỗng "— Chọn PIC —".
+  function picSelectOptions(current) {
+    current = current || '';
+    return '<option value="">— Chọn PIC Content —</option>'
+      + contentPicNames(current).map(function (n) {
+        return '<option value="' + esc(n) + '"' + (n === current ? ' selected' : '') + '>' + esc(n) + '</option>';
+      }).join('');
   }
   function outputCheckboxes(selected) {
     selected = arrayOf(selected);
@@ -922,7 +934,7 @@
         + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
         + '<td><span class="priority-pill p--' + (t.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_VI[t.priority] || t.priority || '—') + '</span></td>'
         + '<td><span class="text-xs">' + (t.need_media_production ? '<span class="chip-mini">Cần Media</span>' : '—') + '</span></td>'
-        + '<td>' + ctStatusBadge(t.status) + '</td>'
+        + '<td>' + ctStatusBadge(t.status) + (reviewLateCT(t) ? ' <span class="chip-mini" style="background:var(--danger);color:#fff;border:0">quá hạn duyệt</span>' : '') + '</td>'
         + '<td><button class="btn btn-secondary btn-sm" data-task-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
     }).join('');
@@ -1022,7 +1034,7 @@
         + '<td><b>' + esc(t.title || '—') + '</b><div class="text-xs muted">' + outputChips(t.output_types) + '</div></td>'
         + '<td><span class="text-xs">' + esc(t.assigned_pic || '<em>chưa gán</em>') + '</span></td>'
         + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
-        + '<td>' + ctStatusBadge(t.status) + '</td>'
+        + '<td>' + ctStatusBadge(t.status) + (reviewLateCT(t) ? ' <span class="chip-mini" style="background:var(--danger);color:#fff;border:0">quá hạn duyệt</span>' : '') + '</td>'
         + '<td><button class="btn btn-secondary btn-sm" data-task-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
     }).join('') : '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted)">Chưa có task con. ' + (isLead ? 'Bấm “Thêm task con”.' : '') + '</td></tr>';
@@ -1116,9 +1128,15 @@
   /* ===================================================================
      CONTENT TASK DRAWER (Lead follow / reassign)
      =================================================================== */
+  function reviewLateCT(t) { return t && t.status === 'submitted_to_lead' && t.lead_review_due && new Date(t.lead_review_due) < new Date(); }
   function buildTaskBody(t) {
     const v = function (x) { return x ? esc(x) : '<em class="muted">—</em>'; };
     const overdue = ctIsOverdue(t);
+    const reviewLate = reviewLateCT(t);
+    // Q3 — PIC self-checklist (read-only cho Lead)
+    const pcArr = (Array.isArray(t.pic_checklist) ? t.pic_checklist : []).map(function (x) { return typeof x === 'string' ? { label: x, done: false } : { label: (x && x.label) || '', done: !!(x && x.done) }; }).filter(function (x) { return x.label; });
+    const pcBlock = pcArr.length ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Checklist của PIC (' + pcArr.filter(function (x) { return x.done; }).length + '/' + pcArr.length + ')</h4></div><ul class="ctm-chk-readonly">'
+      + pcArr.map(function (x) { return '<li class="' + (x.done ? 'is-on' : '') + '">' + (x.done ? '✓ ' : '○ ') + esc(x.label) + '</li>'; }).join('') + '</ul></section>' : '';
     const plan = t.content_plan_id ? CONTENT_PLANS.find(function (p) { return p.id === t.content_plan_id; }) : null;
     const acts = ((loadCache()['task:' + t.id] || {}).activity) || [];
     const actHtml = acts.length ? acts.slice(-12).reverse().map(function (a) { return '<li><span>' + esc(a.text) + ' — <b>' + esc(a.by) + '</b></span><time>' + fmtDT(a.at) + '</time></li>'; }).join('') : '<li><span class="muted">Chưa có hoạt động.</span></li>';
@@ -1128,7 +1146,7 @@
       const planDl = plan && plan.plan_deadline ? ' data-plan-deadline="' + esc(plan.plan_deadline) + '"' : '';
       assignHtml = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead — Phân công &amp; follow</h4></div>'
         + '<div class="ctm-assign-grid">'
-        + '<div class="field"><label class="label">PIC Content</label><input class="input" id="ctm-t-pic" list="ctm-t-pic-list" value="' + esc(t.assigned_pic || '') + '" placeholder="Tên Content phụ trách..." /><datalist id="ctm-t-pic-list">' + picDatalistOptions() + '</datalist></div>'
+        + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ctm-t-pic">' + picSelectOptions(t.assigned_pic || '') + '</select></div>'
         + '<div class="field"><label class="label">Hạn wording</label><input class="input" type="datetime-local" id="ctm-t-deadline"' + planDl + ' value="' + toLocalInput(t.wording_deadline) + '" /></div>'
         + '</div>'
         + '<div class="ctm-assign-grid">'
@@ -1173,6 +1191,7 @@
     let reviewPanel = '';
     if (isLead && t.status === 'submitted_to_lead') {
       reviewPanel = '<section class="drawer-block ctm-review"><div class="drawer-block-head"><span class="block-letter">R</span><h4>Lead Review Panel</h4></div>'
+        + (reviewLate ? '<div class="dw-callout dw--warning" style="margin:0 0 8px"><p><b>⚠ Quá hạn duyệt</b> — hạn ' + esc(fmtDT(t.lead_review_due)) + '. Ưu tiên xử lý để không treo Content.</p></div>' : (t.lead_review_due ? '<p class="text-xs muted" style="margin:0 0 6px">Hạn duyệt: <b>' + esc(fmtDT(t.lead_review_due)) + '</b></p>' : ''))
         + '<p class="text-xs muted" style="margin:0 0 8px">PIC đã gửi bản thảo. Duyệt để chuyển bước, hoặc trả chỉnh (KHÔNG giới hạn vòng) kèm lý do + ghi chú.</p>'
         + '<div class="field"><label class="label">Lý do trả chỉnh</label><select class="select" id="ctm-rev-reason"><option value="">— Chọn lý do —</option>' + REVISION_REASONS.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join('') + '</select></div>'
         + '<div class="field"><label class="label">Ghi chú Lead (bắt buộc khi trả chỉnh)</label><textarea class="textarea" id="ctm-rev-note" rows="2" placeholder="Điểm cần Content chỉnh...">' + esc(t.lead_review_note || '') + '</textarea></div>'
@@ -1215,6 +1234,7 @@
         + '<dt>PIC Content</dt><dd>' + v(t.assigned_pic) + '</dd>'
         + '<dt>Hạn wording</dt><dd>' + (t.wording_deadline ? '<span class="' + (overdue ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.wording_deadline)) + '</span>' + (overdue ? ' · ⚠ trễ' : '') : '<em class="muted">—</em>') + '</dd>'
         + '<dt>Vòng sửa nội bộ</dt><dd>' + (t.internal_revision_count || 0) + '</dd>'
+        + ((t.lead_review_due || t.status === 'submitted_to_lead') ? '<dt>Hạn Lead duyệt</dt><dd>' + (t.lead_review_due ? '<span class="' + (reviewLate ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.lead_review_due)) + '</span>' + (reviewLate ? ' · ⚠ quá hạn duyệt' : '') : '<em class="muted">—</em>') + '</dd>' : '')
         + '<dt>Cần Media</dt><dd>' + (t.need_media_production ? 'Có' + (t.media_request_created ? ' · đã tạo Media Request' : '') : 'Không') + '</dd>'
       + '</dl></section>'
       + mediaTrack
@@ -1222,6 +1242,7 @@
       + draftBlock
       + missing
       + checklistBlock
+      + pcBlock
       + handoffBlock
       + revBlock
       + reviewPanel
@@ -1636,7 +1657,7 @@
       + fieldText('cct-title', 'Tiêu đề task', '', { req: true, ph: 'VD: Bài social khai trương' })
       + fieldText('cct-brief', 'Brief', '', { area: true, rows: 3, ph: 'Mô tả nội dung cần viết...' })
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Output types</label><div class="ctm-chk-group" id="cct-outputs">' + outputCheckboxes([]) + '</div></div>'
-      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><input class="input" id="cct-pic" list="cct-pic-list" placeholder="Tên Content phụ trách..." /><datalist id="cct-pic-list">' + picDatalistOptions() + '</datalist></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="cct-pic">' + picSelectOptions('') + '</select></div>'
       + fieldText('cct-deadline', 'Hạn wording', '', { type: 'datetime-local' })
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Ưu tiên</label><select class="select" id="cct-priority">' + ['low', 'normal', 'high', 'urgent'].map(function (k) { return '<option value="' + k + '"' + (k === 'normal' ? ' selected' : '') + '>' + ({ low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp' }[k]) + '</option>'; }).join('') + '</select></div>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label class="checkbox"><input type="checkbox" id="cct-media" /><div><span class="checkbox-text">Cần Media sản xuất (tạo Internal Media Request sau khi duyệt)</span></div></label></div>'
@@ -1685,7 +1706,7 @@
       + fieldText('cim-keymsg', 'Key message', '', { ph: 'Thông điệp chính' })
       + fieldText('cim-cta', 'CTA', '', { ph: 'Kêu gọi hành động' })
       + fieldText('cim-assets', 'Asset links (phân cách bằng dấu phẩy)', '', { ph: 'https://..., https://...' })
-      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><input class="input" id="cim-pic" list="cim-pic-list" placeholder="Tên Content phụ trách..." /><datalist id="cim-pic-list">' + picDatalistOptions() + '</datalist></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="cim-pic">' + picSelectOptions('') + '</select></div>'
       + fieldText('cim-deadline', 'Hạn wording', '', { type: 'datetime-local' })
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Ưu tiên</label><select class="select" id="cim-priority">' + ['low', 'normal', 'high', 'urgent'].map(function (k) { return '<option value="' + k + '"' + (k === 'normal' ? ' selected' : '') + '>' + ({ low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp' }[k]) + '</option>'; }).join('') + '</select></div>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label class="checkbox"><input type="checkbox" id="cim-media" /><div><span class="checkbox-text">Cần Media sản xuất</span></div></label></div>'
@@ -1927,9 +1948,8 @@
     // Assign PIC panel (Lead)
     let assign = '';
     if (isLead && ADS_TERMINAL.indexOf(st) < 0) {
-      const opts = CONTENT_USERS.map(function (u) { return '<option value="' + esc(u.name) + '"></option>'; }).join('');
       assign = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công PIC</h4></div>'
-        + '<div class="ctm-assign-grid"><div class="field"><label class="label">PIC Content</label><input class="input" id="ads-pic" list="ads-pic-list" value="' + esc(adsPicOf(o)) + '" placeholder="Tên Content phụ trách..." /><datalist id="ads-pic-list">' + opts + '</datalist></div></div>'
+        + '<div class="ctm-assign-grid"><div class="field"><label class="label">PIC Content</label><select class="select" id="ads-pic">' + picSelectOptions(adsPicOf(o)) + '</select></div></div>'
         + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" id="ads-assign">Gán PIC Content</button></div></section>';
     }
 
@@ -2095,7 +2115,7 @@
     const chips = ADS_TASK_TYPES.map(function (t) { return '<label class="ctm-chk-chip"><input type="checkbox" name="ads-tt" value="' + t.k + '" /> ' + t.label + '</label>'; }).join('');
     const body = '<p class="text-xs muted" style="margin:0 0 8px">Chọn hạng mục nội dung cần tách. Mỗi hạng mục tạo 1 Content Task cho PIC xử lý ở Content Wording.</p>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Hạng mục</label><div class="ctm-chk-group">' + chips + '</div></div>'
-      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><input class="input" id="ads-tt-pic" list="ads-tt-pic-list" value="' + esc(adsPicOf(o)) + '" placeholder="Tên PIC..." /><datalist id="ads-tt-pic-list">' + CONTENT_USERS.map(function (u) { return '<option value="' + esc(u.name) + '"></option>'; }).join('') + '</datalist></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="ads-tt-pic">' + picSelectOptions(adsPicOf(o)) + '</select></div>'
       + fieldText('ads-tt-deadline', 'Hạn wording', '', { type: 'datetime-local' });
     openModal('Tách Content Tasks — ' + (o.project_name || o.order_id), body, function () { return createAdsContentTasks(o); });
   }

@@ -1212,6 +1212,8 @@ document.getElementById('rating-submit').addEventListener('click', async () => {
   if (!checked) { toast('warning','Chọn mức đánh giá','Vui lòng chọn từ 1 đến 5 sao.'); return; }
   const score = +checked.value;
   const comment = document.getElementById('rating-comment').value.trim();
+  // Bắt buộc để lại nhận xét khi đã chọn sao — chỉ rating sao không đủ để submit.
+  if (!comment) { toast('warning','Cần nhận xét','Vui lòng để lại nhận xét trước khi gửi đánh giá.'); document.getElementById('rating-comment').focus(); return; }
   const prev = state.ratingOrderId;
   state.ratings[prev] = { score: score, comment: comment };
   // Sync luôn vào order (mọi mode) để chống đánh giá trùng kể cả khi Supabase tắt.

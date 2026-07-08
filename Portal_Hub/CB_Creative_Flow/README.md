@@ -162,6 +162,8 @@ Supabase migrations (chạy theo thứ tự trong [`supabase/`](supabase/) folde
 
 22. [`add-content-self-initiative.sql`](supabase/add-content-self-initiative.sql) — **Content tự đề xuất task**: policy INSERT `content_tasks` cho role `content` — WITH CHECK `source='content_initiated'` + `assigned_pic` = tên chính mình (từ `users`). Cho phép content chủ động tạo task (VD: post cần Media thiết kế) ở content-workbench; **1 gate duy nhất** trước Media = Lead duyệt nội dung (flow submit/duyệt/gửi Media dùng policy sẵn có). Chạy sau `add-content-initiatives.sql`.
 
+23. [`add-content-review-sla.sql`](supabase/add-content-review-sla.sql) — **SLA Lead duyệt content + PIC self-checklist**: cột `content_tasks.lead_review_due` (timestamptz — hạn Lead phải duyệt sau khi PIC "Gửi Lead Content duyệt"; PIC nhập tay hoặc auto +24h; UI tô đỏ "quá hạn duyệt" khi past due & vẫn `submitted_to_lead`) + `pic_checklist` (jsonb `[{label,done}]` — PIC tự thêm/xóa mục checklist riêng theo task, tách khỏi `quality_checklist` 9 mục cứng, KHÔNG bắt buộc để gửi duyệt; Lead xem read-only) + index `submitted_to_lead`. KHÔNG đụng RLS (dùng policy update assigned/lead sẵn có); `data-store contentTasks.create/update` loop-strip 2 cột → chưa chạy vẫn submit được. Chạy sau `add-content-initiatives.sql`. Idempotent.
+
 ### Order ↔ Task ↔ Delivery relationship
 
 ```text

@@ -794,6 +794,58 @@
     const c = loadCache(); const key = 'task:' + taskId; const e = c[key] || (c[key] = {}); e.activity = e.activity || [];
     e.activity.push({ text: text, by: user.name || user.role, at: new Date().toISOString() }); saveCache(c);
   }
+  /* ---------- Q2: SLA Lead duyệt ---------- */
+  const REVIEW_SLA_HOURS = 24; // auto-hạn nếu PIC để trống khi gửi
+  function reviewOverdue(t) {
+    return t && t.status === 'submitted_to_lead' && t.lead_review_due && new Date(t.lead_review_due) < new Date();
+  }
+  /* ---------- Q3: PIC self-checklist ---------- */
+  function picChkList(t) {
+    return arrayOf(t && t.pic_checklist).map(function (x) {
+      return (typeof x === 'string') ? { label: x, done: false } : { label: (x && x.label) || '', done: !!(x && x.done) };
+    }).filter(function (x) { return x.label; });
+  }
+  function picChkRowsHtml(t, editable) {
+    const items = picChkList(t);
+    if (!items.length) return '<p class="text-xs muted" style="margin:0">Chưa có mục nào — PIC tự thêm việc cần làm cho task này.</p>';
+    return items.map(function (it, i) {
+      return '<label class="checkbox pic-chk-row" data-idx="' + i + '"><input type="checkbox" class="pic-chk" ' + (it.done ? 'checked' : '') + ' ' + (editable ? '' : 'disabled') + ' /><div style="display:flex;align-items:center;gap:6px;flex:1"><span class="checkbox-text" style="flex:1">' + esc(it.label) + '</span>'
+        + (editable ? '<button type="button" class="pic-chk-del" data-idx="' + i + '" title="Xóa mục" aria-label="Xóa" style="border:0;background:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>' : '') + '</div></label>';
+    }).join('');
+  }
+  function collectPicChk() {
+    return Array.prototype.slice.call(document.querySelectorAll('#wt-picchk-list .pic-chk-row')).map(function (row) {
+      const cb = row.querySelector('.pic-chk'); const lbl = row.querySelector('.checkbox-text');
+      return { label: (lbl ? lbl.textContent : '').trim(), done: !!(cb && cb.checked) };
+    }).filter(function (x) { return x.label; });
+  }
+  function updatePicChkBar() {
+    const items = collectPicChk(); const total = items.length; const done = items.filter(function (x) { return x.done; }).length;
+    const bar = document.getElementById('wt-picchk-bar'); const txt = document.getElementById('wt-picchk-text');
+    if (bar) bar.style.width = (total ? Math.round(done / total * 100) : 0) + '%';
+    if (txt) txt.textContent = done + '/' + total;
+  }
+  function rerenderPicChk() {
+    const cont = document.getElementById('wt-picchk-list'); if (!cont || !currentTask) return;
+    cont.innerHTML = picChkRowsHtml(currentTask, canEditTask(currentTask));
+    updatePicChkBar();
+  }
+  async function addPicChkItem() {
+    if (!canEditTask(currentTask)) return;
+    const ni = document.getElementById('wt-picchk-new'); const label = (ni && ni.value || '').trim();
+    if (!label) { if (ni) ni.focus(); return; }
+    const list = collectPicChk(); list.push({ label: label, done: false });
+    await persistTask(currentTask, { pic_checklist: list }, 'PIC thêm mục checklist: ' + label);
+    rerenderPicChk();
+    const ni2 = document.getElementById('wt-picchk-new'); if (ni2) { ni2.value = ''; ni2.focus(); }
+  }
+  async function removePicChkItem(idx) {
+    if (!canEditTask(currentTask)) return;
+    const list = collectPicChk(); if (idx < 0 || idx >= list.length) return;
+    list.splice(idx, 1);
+    await persistTask(currentTask, { pic_checklist: list }, 'PIC xóa mục checklist');
+    rerenderPicChk();
+  }
   function buildTaskActions(t) {
     const btns = [];
     if (canEditTask(t)) {
@@ -907,6 +959,27 @@
     const checklist = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Quality Checklist</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>'
       + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Tích đủ checklist + ít nhất 1 ô nội dung trước khi "Gửi Lead Content duyệt".</p>' : '') + '</section>';
 
+    // 7b. Checklist của PIC (Q3 — PIC tự thêm/xóa mục, không block gửi duyệt)
+    const pcItems = picChkList(t); const pcTotal = pcItems.length; const pcDone = pcItems.filter(function (x) { return x.done; }).length;
+    const pcPct = pcTotal ? Math.round(pcDone / pcTotal * 100) : 0;
+    const picChk = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Checklist của PIC</h4></div>'
+      + '<p class="text-xs muted" style="margin:0 0 8px">Việc PIC tự đặt cho task này (ngoài Quality Checklist). KHÔNG bắt buộc để gửi duyệt.</p>'
+      + '<div id="wt-picchk-list" style="display:flex;flex-direction:column;gap:8px">' + picChkRowsHtml(t, editable) + '</div>'
+      + (editable ? '<div class="row" style="gap:6px;margin-top:10px"><input class="input" id="wt-picchk-new" placeholder="Thêm việc cần làm..." style="flex:1" /><button type="button" class="btn btn-secondary btn-sm" id="wt-picchk-add">Thêm mục</button></div>' : '')
+      + '<div style="margin-top:10px"><span class="ctm-progress"><i id="wt-picchk-bar" style="width:' + pcPct + '%"></i></span> <span class="text-xs" id="wt-picchk-text">' + pcDone + '/' + pcTotal + '</span></div>'
+      + '</section>';
+
+    // 7c. SLA — Hạn Lead duyệt (Q2). Editable khi PIC sắp gửi; hiển thị + tô đỏ khi quá hạn.
+    const showSla = editable && (CT_SUBMITTABLE.indexOf(t.status) >= 0 || t.status === 'submitted_to_lead');
+    const slaDue = t.lead_review_due;
+    const slaHtml = (showSla || slaDue)
+      ? '<section class="drawer-block' + (reviewOverdue(t) ? ' ctm-review' : '') + '"><div class="drawer-block-head"><span class="block-letter">S</span><h4>Hạn Lead duyệt (SLA)</h4></div>'
+        + (showSla
+          ? '<div class="field"><label class="label">Hạn Lead Content phải duyệt</label><input class="input" type="datetime-local" id="wt-review-due" value="' + toLocalInput(slaDue) + '" /></div><p class="text-xs muted" style="margin:0">Để trống khi gửi → tự đặt +' + REVIEW_SLA_HOURS + 'h. Quá hạn mà Lead chưa duyệt sẽ bị đánh dấu đỏ ở Content Workspace.</p>'
+          : '<p class="text-xs" style="margin:0"><b>Hạn duyệt:</b> <span class="' + (reviewOverdue(t) ? 'cwb-overdue' : '') + '">' + esc(fmtDT(slaDue)) + '</span>' + (reviewOverdue(t) ? ' · ⚠ Lead trễ duyệt' : '') + '</p>')
+        + '</section>'
+      : '';
+
     // 8. Files/Links
     const links = arrayOf(t.asset_links);
     const filesHtml = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">F</span><h4>Files / Links</h4></div>'
@@ -921,7 +994,7 @@
     const actHtml = acts.length ? acts.map(function (a) { return '<li><span>' + esc(a.text) + ' — <b>' + esc(a.by) + '</b></span><time>' + fmtDT(a.at) + '</time></li>'; }).join('') : '<li><span class="muted">Chưa có hoạt động.</span></li>';
     const activity = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">A</span><h4>Activity / Revision History</h4></div>' + revHtml + '<ul class="activity-mini">' + actHtml + '</ul></section>';
 
-    return revisionNote + summary + mediaTrackHtml + mediaFormHtml + completionHtml + missing + workspace + handoff + checklist + filesHtml + activity;
+    return revisionNote + summary + mediaTrackHtml + mediaFormHtml + completionHtml + missing + workspace + handoff + checklist + picChk + slaHtml + filesHtml + activity;
   }
   function openTaskDrawer(t) {
     currentTask = t;
@@ -960,6 +1033,8 @@
     // checklist
     const cl = {}; CT_CHECKLIST.forEach(function (c) { const el = document.getElementById('wtcl-' + c.k); cl[c.k] = !!(el && el.checked); });
     data.quality_checklist = cl;
+    // PIC self-checklist (Q3) — chỉ ghi khi section có mặt
+    if (document.getElementById('wt-picchk-list')) data.pic_checklist = collectPicChk();
     return data;
   }
   function taskHasContent() {
@@ -1010,6 +1085,10 @@
     const data = collectTaskForm();
     data.status = 'submitted_to_lead';
     data.lead_review_status = 'pending';
+    // Q2 — hạn Lead duyệt: PIC nhập, hoặc auto = giờ gửi + SLA mặc định.
+    const dueEl = document.getElementById('wt-review-due');
+    const dueVal = dueEl && dueEl.value ? new Date(dueEl.value) : new Date(Date.now() + REVIEW_SLA_HOURS * 3600 * 1000);
+    data.lead_review_due = dueVal.toISOString();
     await persistTask(currentTask, data, 'PIC gửi Lead Content duyệt');
     // Ads Order: gửi Lead duyệt → ads_status='submitted_to_lead' (client thấy "Đang kiểm tra nội dung").
     syncAdsOrderFromTask(currentTask, { ads_status: 'submitted_to_lead' }, ['submitted', 'lead_checking', 'assigned_to_content', 'writing_ads_content', 'lead_revision']);
@@ -1179,6 +1258,15 @@
     w('wt-start', startTask); w('wt-save', saveTaskDraft); w('wt-submit', submitTaskToLead);
     w('wt-make-media', function () { createMediaRequestInline(currentTask); });
     w('wt-complete', function () { completeTask(currentTask); });
+    // Q3 — PIC self-checklist: add / remove (delegation) / toggle-bar
+    w('wt-picchk-add', addPicChkItem);
+    const pcNew = document.getElementById('wt-picchk-new');
+    if (pcNew) pcNew.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addPicChkItem(); } });
+    const pcList = document.getElementById('wt-picchk-list');
+    if (pcList) {
+      pcList.addEventListener('click', function (e) { const del = e.target.closest('.pic-chk-del'); if (del) { e.preventDefault(); e.stopPropagation(); removePicChkItem(parseInt(del.getAttribute('data-idx'), 10)); } });
+      pcList.addEventListener('change', function (e) { if (e.target.classList.contains('pic-chk')) updatePicChkBar(); });
+    }
     document.querySelectorAll('#ctask-drawer-body .cwbt-field').forEach(function (el) { el.addEventListener('input', refreshTaskSubmit); });
     document.querySelectorAll('#ctask-drawer-body .cwbt-check').forEach(function (el) { el.addEventListener('change', refreshTaskSubmit); });
     refreshTaskSubmit();
