@@ -37,31 +37,62 @@
         }
       });
       window.MH.supabase = client;
-      // Mirror Supabase session sang `mh-user` cho compat với code hiện tại
+
+      function readMhUser() {
+        try { return JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { return null; }
+      }
+
+      // Mirror Supabase session sang `mh-user` cho compat với code hiện tại.
+      //
+      // QUAN TRỌNG (fix "tự đăng xuất" / bị đá về login — 2026-07-10):
+      // Handler này chạy MỖI auth event (SIGNED_IN / INITIAL_SESSION /
+      // TOKEN_REFRESHED / USER_UPDATED / SIGNED_OUT). Trước đây nó:
+      //   (a) ghi đè mh-user vô điều kiện — nếu query users row transient-fail
+      //       (mạng/RLS) thì res.data=null → fallback role='client' (SSO user
+      //       không có user_metadata.role) → admin/account bị HẠ role → guard
+      //       trang đá về login = cảm giác "tự đăng xuất".
+      //   (b) xóa mh-user ngay khi có SIGNED_OUT — nhưng token-refresh churn /
+      //       nhiều tab cũng phát SIGNED_OUT tạm thời → mất session oan.
+      // Giờ: chỉ ghi khi LẤY ĐƯỢC users row (hoặc lần đầu chưa có mh-user),
+      // luôn MERGE với mh-user cũ để không bao giờ regress role/name; và khi
+      // SIGNED_OUT còn double-check getSession() trước khi xóa.
       client.auth.onAuthStateChange(function (event, session) {
         try {
           if (session && session.user) {
-            // Lấy public.users row để có role/name/initials/avatar
             client.from('users').select('*').eq('id', session.user.id).maybeSingle()
               .then(function (res) {
+                var prev = readMhUser() || {};
+                var samePrev = prev && prev.id === session.user.id ? prev : {};
                 var u = res && res.data ? res.data : null;
+                var meta = session.user.user_metadata || {};
+
+                // Không có users row + đã có mh-user hợp lệ của CHÍNH user này
+                // → GIỮ NGUYÊN, tuyệt đối không hạ role về 'client'.
+                if (!u && samePrev.role) return;
+
                 var mhUser = {
                   id: session.user.id,
-                  email: session.user.email,
-                  role: (u && u.role) || (session.user.user_metadata && session.user.user_metadata.role) || 'client',
-                  name: (u && u.name) || (session.user.user_metadata && session.user.user_metadata.name) || session.user.email,
-                  initials: (u && u.initials) || '',
-                  title: (u && u.title) || '',
-                  avatar: (u && u.avatar_url) || '',
-                  phone: (u && u.phone) || '',
-                  department: (u && u.department) || '',
-                  bio: (u && u.bio) || ''
+                  email: session.user.email || samePrev.email || '',
+                  role: (u && u.role) || samePrev.role || meta.role || 'client',
+                  name: (u && u.name) || samePrev.name || meta.name || session.user.email,
+                  initials: (u && u.initials) || samePrev.initials || '',
+                  title: (u && u.title) || samePrev.title || '',
+                  avatar: (u && u.avatar_url) || samePrev.avatar || '',
+                  phone: (u && u.phone) || samePrev.phone || '',
+                  department: (u && u.department) || samePrev.department || '',
+                  bio: (u && u.bio) || samePrev.bio || ''
                 };
                 localStorage.setItem('mh-user', JSON.stringify(mhUser));
               })
-              .catch(function () { /* swallow */ });
+              .catch(function () { /* transient — giữ mh-user cũ, không đụng */ });
           } else if (event === 'SIGNED_OUT') {
-            localStorage.removeItem('mh-user');
+            // Double-check: token-refresh churn có thể phát SIGNED_OUT tạm thời
+            // dù session vẫn còn → chỉ xóa khi THỰC SỰ hết session.
+            client.auth.getSession()
+              .then(function (r) {
+                if (!(r && r.data && r.data.session)) localStorage.removeItem('mh-user');
+              })
+              .catch(function () { localStorage.removeItem('mh-user'); });
           }
         } catch (e) { /* swallow */ }
       });
