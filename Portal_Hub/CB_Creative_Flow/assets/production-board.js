@@ -770,21 +770,43 @@
       const link = order.source_ads_order_id
         ? 'content-team.html?tab=ads-orders&id=' + order.source_ads_order_id
         : 'content-team.html?task=' + order.source_content_task_id;
-      // Chỉ báo Lead Content (sở hữu handoff Media + có block tracking ở content-team).
-      // KHÔNG báo PIC content: role 'content' bị guard đá khỏi content-team → deep-link bounce.
+      const label = CONTENT_PROD_NOTIFY[newStatus];
+      const msg = order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media' + (fromAds ? ' (Ads)' : '') + ': ' + label.toLowerCase() + '.';
+      // 1) Lead Content (sở hữu handoff Media + block tracking ở content-team) — link content-team.
       const { data: leads } = await window.MH.supabase
         .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
-      if (!Array.isArray(leads) || !leads.length) return;
-      const label = CONTENT_PROD_NOTIFY[newStatus];
-      await window.MH.supabase.from('notifications').insert(leads.map((u) => ({
-        user_id: u.id,
-        type: 'task_status_changed',
-        title: label,
-        message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media' + (fromAds ? ' (Ads)' : '') + ': ' + label.toLowerCase() + '.',
-        link: link,
-        related_entity_type: 'orders',
-        related_entity_id: order.order_id
-      })));
+      if (Array.isArray(leads) && leads.length) {
+        await window.MH.supabase.from('notifications').insert(leads.map((u) => ({
+          user_id: u.id,
+          type: 'task_status_changed',
+          title: label,
+          message: msg,
+          link: link,
+          related_entity_type: 'orders',
+          related_entity_id: order.order_id
+        })));
+      }
+      // 2) PIC Content (người tạo Media Request) — để biết mà "Hoàn tất task".
+      //    Deep-link content-workbench (content role MỞ ĐƯỢC; content-team sẽ bounce).
+      //    Chỉ path Content Task (source_content_task_id); Ads do Lead lo.
+      if (order.source_content_task_id) {
+        const ct = await window.MH.store.contentTasks.get(order.source_content_task_id).catch(function () { return null; });
+        const picName = ct && ct.assigned_pic;
+        if (picName) {
+          const picId = await window.MH.store.notifications.findUserIdByName(picName);
+          if (picId && !(Array.isArray(leads) ? leads : []).some(function (l) { return l.id === picId; })) {
+            await window.MH.store.notifications.create({
+              user_id: picId,
+              type: 'task_status_changed',
+              title: label,
+              message: msg,
+              link: 'content-workbench.html?task=' + order.source_content_task_id,
+              related_entity_type: 'orders',
+              related_entity_id: order.order_id
+            });
+          }
+        }
+      }
     } catch (e) { console.warn('[task] notify content requester failed:', e); }
   }
   /* #4/#5: báo PIC khi được GÁN task (tạo mới có PIC hoặc đổi PIC). type task_assigned (base-safe). */
