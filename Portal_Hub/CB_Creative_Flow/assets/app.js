@@ -709,14 +709,37 @@
      request.html tự lo qua order-form updateHeaderAuth (đặt tên user) — hàm này
      vẫn chạy trước, order-form override sau, cả hai đều trỏ dashboard nên nhất quán. */
   function syncPublicLoginPill() {
-    var u = getUser();
-    if (!u || !u.role) return;
-    var ROLE_HOME = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html' };
-    var home = ROLE_HOME[u.role] || 'dashboard.html';
     var btn = document.getElementById('header-login-btn');
-    if (btn) { btn.textContent = 'Vào Dashboard'; btn.setAttribute('href', home); btn.title = 'Đã đăng nhập: ' + (u.name || u.email || ''); }
     var f = document.getElementById('footer-login-link');
-    if (f) { f.textContent = 'Vào Dashboard'; f.setAttribute('href', home); }
+    if (!btn && !f) return;
+    // Mặc định HTML = "Đăng nhập" (đúng cho trạng thái CHƯA login). Chỉ đổi thành
+    // "Vào Dashboard" khi XÁC THỰC được session THẬT — KHÔNG tin mh-user (có thể
+    // còn sót sau khi session hết hạn / logout tab khác → hiện nhầm "Vào Dashboard").
+    function apply(u) {
+      var ROLE_HOME = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html' };
+      var home = ROLE_HOME[u.role] || 'dashboard.html';
+      if (btn) { btn.textContent = 'Vào Dashboard'; btn.setAttribute('href', home); btn.title = 'Đã đăng nhập: ' + (u.name || u.email || ''); }
+      if (f) { f.textContent = 'Vào Dashboard'; f.setAttribute('href', home); }
+    }
+    if (window.MH && window.MH.supabaseEnabled && window.MH.supabaseReady) {
+      window.MH.supabaseReady.then(function (sb) {
+        if (!sb) return; // SDK load fail → giữ "Đăng nhập"
+        sb.auth.getSession().then(function (r) {
+          var session = r && r.data && r.data.session;
+          if (!session || !session.user) return; // chưa login → giữ "Đăng nhập"
+          var u = getUser();
+          if (!u || !u.role) {
+            var meta = session.user.user_metadata || {};
+            u = { role: meta.role || 'client', name: meta.name || session.user.email, email: session.user.email };
+          }
+          apply(u);
+        }).catch(function () { /* giữ "Đăng nhập" */ });
+      }).catch(function () { /* giữ "Đăng nhập" */ });
+      return;
+    }
+    // Supabase off (demo/local, không có auth server) → fallback theo mh-user.
+    var lu = getUser();
+    if (lu && lu.role) apply(lu);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0); });
