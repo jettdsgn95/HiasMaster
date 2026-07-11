@@ -199,6 +199,58 @@
     });
   });
 
+  /* ---------- Deadline tối thiểu = ngày gửi + 3 ngày (chặn task gấp qua form) ---------- */
+  const deadlineInput = document.getElementById('requested_deadline');
+  const MIN_LEAD_DAYS = 3;
+  function minDeadlineDate() {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + MIN_LEAD_DAYS); return d;
+  }
+  function toDateInputValue(d) {
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function fmtViDate(d) {
+    const p = (n) => String(n).padStart(2, '0');
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+  }
+  const MIN_DL = minDeadlineDate();
+  if (deadlineInput) deadlineInput.setAttribute('min', toDateInputValue(MIN_DL));
+
+  function deadlineTooSoon() {
+    if (!deadlineInput || !deadlineInput.value) return false;
+    return new Date(deadlineInput.value + 'T00:00:00') < MIN_DL;
+  }
+  // Pop-up cảnh báo: chọn deadline < min ⇒ task gấp ⇒ liên hệ Marketing.
+  function openRushWarn() {
+    let ov = document.getElementById('rush-warn-modal');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'rush-warn-modal';
+      ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;background:rgba(15,17,40,.55);padding:20px;';
+      ov.innerHTML = '<div style="background:var(--surface,#fff);color:var(--text,#111);max-width:440px;width:100%;border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3);">'
+        + '<div style="display:flex;gap:12px;align-items:flex-start;">'
+        + '<span style="flex:0 0 auto;width:40px;height:40px;border-radius:9999px;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;">'
+        + '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>'
+        + '<div style="flex:1;"><h3 style="margin:0 0 6px;font-size:17px;">Yêu cầu gấp — cần liên hệ trực tiếp</h3>'
+        + '<p style="margin:0;font-size:14px;line-height:1.5;color:var(--text-muted,#555);">Deadline mong muốn sớm hơn <b id="rush-min-date"></b> (dưới 3 ngày kể từ ngày gửi) được xem là <b>task gấp</b>. Hệ thống chưa nhận yêu cầu gấp qua form — vui lòng <b>liên hệ trực tiếp phòng Marketing</b> để được ưu tiên xử lý.</p>'
+        + '<p style="margin:10px 0 0;font-size:13px;color:var(--text-muted,#555);">Marketing · <b>1900 866 855</b> · marketing@cbcentres.com</p>'
+        + '</div></div>'
+        + '<div style="display:flex;justify-content:flex-end;margin-top:18px;"><button type="button" id="rush-warn-ok" class="btn btn-primary">Đã hiểu</button></div>'
+        + '</div>';
+      document.body.appendChild(ov);
+      ov.addEventListener('click', (e) => { if (e.target === ov) ov.style.display = 'none'; });
+    }
+    const md = ov.querySelector('#rush-min-date'); if (md) md.textContent = fmtViDate(MIN_DL);
+    const ok = ov.querySelector('#rush-warn-ok'); if (ok) ok.onclick = () => { ov.style.display = 'none'; };
+    ov.style.display = 'flex';
+  }
+  if (deadlineInput) {
+    deadlineInput.addEventListener('change', () => {
+      if (deadlineTooSoon()) { openRushWarn(); deadlineInput.value = ''; }
+    });
+  }
+
   /* ---------- File uploader ---------- */
   const uploader = document.getElementById('uploader');
   const fileInput = document.getElementById('file-input');
@@ -435,6 +487,14 @@
     let firstInvalid = null;
     function fail(el) { markErrorField(el); if (!firstInvalid) firstInvalid = el; }
 
+    // Deadline < ngày gửi + 3 ngày ⇒ task gấp: chặn submit + popup liên hệ Marketing.
+    if (deadlineTooSoon()) {
+      openRushWarn();
+      markErrorField(deadlineInput);
+      deadlineInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
     // Standard required
     form.querySelectorAll('[required], [data-conditional-req]').forEach((el) => {
       if (el.offsetParent === null) return; // hidden
@@ -573,9 +633,8 @@
       <div class="preview-block">
         <h5>F. Deadline</h5>
         <dl>
-          <dt>Deadline</dt><dd>${val(d.requested_deadline)} ${d.requested_deadline_time ? '· ' + d.requested_deadline_time : ''}</dd>
+          <dt>Deadline</dt><dd>${val(d.requested_deadline)}</dd>
           <dt>Ưu tiên</dt><dd>${val(PRIORITY_LABEL[d.priority] || d.priority)}</dd>
-          <dt>Cố định?</dt><dd>${d.is_fixed_deadline === 'yes' ? 'Có' : (d.is_fixed_deadline === 'no' ? 'Không' : '—')}</dd>
           ${d.priority === 'critical' ? `<dt>Lý do gấp</dt><dd>${val(d.urgent_reason)}</dd>` : ''}
         </dl>
       </div>

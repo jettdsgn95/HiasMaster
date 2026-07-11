@@ -692,34 +692,19 @@
               <span>Thời gian hoàn thành dự kiến: <b>1–7 ngày làm việc</b> kể từ khi brief được xác nhận đầy đủ, tùy độ phức tạp. Video / quay / chụp sẽ trao đổi deadline riêng khi tiếp nhận.</span>
             </div>
 
-            <div class="grid-2">
-              <div class="field">
-                <label class="label" for="requested_deadline">Deadline mong muốn <span class="req">*</span></label>
-                <input class="input" id="requested_deadline" name="requested_deadline" type="date" required />
-                <span class="error">Vui lòng chọn deadline.</span>
-              </div>
-              <div class="field">
-                <label class="label" for="requested_deadline_time">Giờ mong muốn hoàn thành</label>
-                <input class="input" id="requested_deadline_time" name="requested_deadline_time" type="time" />
-                <span class="helper">Tùy chọn — VD: 17:00.</span>
-              </div>
+            <div class="field">
+              <label class="label" for="requested_deadline">Deadline mong muốn <span class="req">*</span></label>
+              <input class="input" id="requested_deadline" name="requested_deadline" type="date" required />
+              <span class="helper" id="deadline-helper">Sớm nhất là sau <b>3 ngày</b> kể từ ngày gửi yêu cầu. Cần gấp hơn, vui lòng liên hệ trực tiếp phòng Marketing.</span>
+              <span class="error">Vui lòng chọn deadline.</span>
             </div>
 
-            <div class="grid-2">
-              <div class="field">
-                <label class="label">Mức độ ưu tiên <span class="req">*</span></label>
-                <div class="chips" id="priority_chips" role="radiogroup">
-                  <label class="chip"><input type="radio" name="priority" value="normal" checked hidden /> Bình thường</label>
-                  <label class="chip"><input type="radio" name="priority" value="urgent" hidden /> Gấp</label>
-                  <label class="chip"><input type="radio" name="priority" value="critical" hidden /> Rất gấp</label>
-                </div>
-              </div>
-              <div class="field">
-                <label class="label">Deadline có cố định không? <span class="req">*</span></label>
-                <div class="chips" id="fixed_chips" role="radiogroup">
-                  <label class="chip"><input type="radio" name="is_fixed_deadline" value="yes" hidden required /> Có — bắt buộc đúng</label>
-                  <label class="chip"><input type="radio" name="is_fixed_deadline" value="no" hidden /> Không — có thể trao đổi</label>
-                </div>
+            <div class="field">
+              <label class="label">Mức độ ưu tiên <span class="req">*</span></label>
+              <div class="chips" id="priority_chips" role="radiogroup">
+                <label class="chip"><input type="radio" name="priority" value="normal" checked hidden /> Bình thường</label>
+                <label class="chip"><input type="radio" name="priority" value="urgent" hidden /> Gấp</label>
+                <label class="chip"><input type="radio" name="priority" value="critical" hidden /> Rất gấp</label>
               </div>
             </div>
 
