@@ -720,60 +720,6 @@
             message: `${task.task_id} · ${task.project_name || ''} — đã duyệt nội bộ, sẵn sàng bàn giao.`
           }));
         }
-      } else if (newStatus === 'inprogress') {
-        // PIC bắt đầu sản xuất → báo Account/Admin (họ mở được Task Tracker).
-        const { data: staff } = await window.MH.supabase
-          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-        if (Array.isArray(staff) && staff.length) {
-          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
-            user_id: u.id,
-            type: 'task_status_changed',
-            title: 'PIC đã bắt đầu task',
-            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã bắt đầu sản xuất.`
-          })));
-        }
-      } else if (newStatus === 'delivered' || newStatus === 'completed') {
-        const label = newStatus === 'completed' ? 'Task hoàn tất' : 'Task đã bàn giao';
-        // 1) Account/Admin — link Task Tracker (staff mở được).
-        const { data: staff } = await window.MH.supabase
-          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-        if (Array.isArray(staff) && staff.length) {
-          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
-            user_id: u.id,
-            type: 'task_status_changed',
-            title: label,
-            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'}: ${label.toLowerCase()}.`
-          })));
-        }
-        // 2) Requester của order. Order NỘI BỘ (Content) → notifyContentOnProdStatus
-        //    lo (deep-link content-team, an toàn) — bỏ qua ở đây tránh double.
-        //    Order CLIENT → link client-dashboard.html?order= (KHÔNG production-board:
-        //    client bị guard đá về login). Không tự-báo actor.
-        if (task.order_id) {
-          const order = await window.MH.store.orders.get(task.order_id);
-          const internal = !!(order && (order.order_kind === 'internal_media_request' || order.order_kind === 'internal_ads_media_request' || order.origin === 'content_team' || order.origin === 'ads_order' || order.client_visible === false || order.source_content_task_id || order.source_ads_order_id));
-          if (order && !internal) {
-            let reqId = order.requester_id || null;
-            if (!reqId && order.requester_email) {
-              try {
-                const { data } = await window.MH.supabase
-                  .from('users').select('id').eq('email', order.requester_email).maybeSingle();
-                if (data && data.id) reqId = data.id;
-              } catch (_) { /* swallow */ }
-            }
-            if (reqId && reqId !== (user && user.id)) {
-              await window.MH.store.notifications.create({
-                user_id: reqId,
-                type: 'task_status_changed',
-                title: label,
-                message: `${order.project_name || order.order_id} — ${label.toLowerCase()}.`,
-                link: 'client-dashboard.html?order=' + encodeURIComponent(order.order_id),
-                related_entity_type: 'orders',
-                related_entity_id: order.order_id
-              });
-            }
-          }
-        }
       }
     } catch (e) { console.warn('[task] notify status change failed:', e); }
   }
@@ -783,7 +729,7 @@
      → đẩy noti cho Lead Content + PIC Content, deep-link content-team.html?task=<content_task_id>.
      Chỉ insert notifications (quyền staff) — KHÔNG ghi content_tasks (RLS chặn Media/Account).
      related_entity_type='orders' (CHECK constraint: chỉ tasks|orders|deliveries|comments|NULL). */
-  const CONTENT_PROD_NOTIFY = { inprogress: 'Media đang sản xuất', ready: 'Media sẵn sàng bàn giao', delivered: 'Media đã bàn giao', completed: 'Media hoàn tất' };
+  const CONTENT_PROD_NOTIFY = { inprogress: 'Media đang sản xuất', ready: 'Media sẵn sàng bàn giao' };
   async function notifyContentOnProdStatus(task, newStatus) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !window.MH.supabase) return;
     if (!task.order_id || !CONTENT_PROD_NOTIFY[newStatus]) return;
