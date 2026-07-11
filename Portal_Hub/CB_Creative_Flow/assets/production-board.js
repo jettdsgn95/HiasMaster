@@ -720,6 +720,33 @@
             message: `${task.task_id} · ${task.project_name || ''} — đã duyệt nội bộ, sẵn sàng bàn giao.`
           }));
         }
+      } else if (newStatus === 'inprogress') {
+        // PIC bắt đầu sản xuất → báo Account/Admin (nội bộ, họ mở được Task Tracker).
+        const { data: staff } = await window.MH.supabase
+          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+        if (Array.isArray(staff) && staff.length) {
+          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
+            user_id: u.id,
+            type: 'task_status_changed',
+            title: 'PIC đã bắt đầu task',
+            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã bắt đầu sản xuất.`
+          })));
+        }
+      } else if (newStatus === 'delivered' || newStatus === 'completed') {
+        // Bàn giao / hoàn tất → báo Account/Admin (NỘI BỘ). KHÔNG đụng client:
+        // notif client (delivery Preview/Final) do database-orders lo, đã OK.
+        // Order nội bộ (Content) → Lead Content nhận qua notifyContentOnProdStatus.
+        const label = newStatus === 'completed' ? 'Task hoàn tất' : 'Task đã bàn giao';
+        const { data: staff } = await window.MH.supabase
+          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
+        if (Array.isArray(staff) && staff.length) {
+          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
+            user_id: u.id,
+            type: 'task_status_changed',
+            title: label,
+            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'}: ${label.toLowerCase()}.`
+          })));
+        }
       }
     } catch (e) { console.warn('[task] notify status change failed:', e); }
   }
@@ -729,7 +756,7 @@
      → đẩy noti cho Lead Content + PIC Content, deep-link content-team.html?task=<content_task_id>.
      Chỉ insert notifications (quyền staff) — KHÔNG ghi content_tasks (RLS chặn Media/Account).
      related_entity_type='orders' (CHECK constraint: chỉ tasks|orders|deliveries|comments|NULL). */
-  const CONTENT_PROD_NOTIFY = { inprogress: 'Media đang sản xuất', ready: 'Media sẵn sàng bàn giao' };
+  const CONTENT_PROD_NOTIFY = { inprogress: 'Media đang sản xuất', ready: 'Media sẵn sàng bàn giao', delivered: 'Media đã bàn giao', completed: 'Media hoàn tất' };
   async function notifyContentOnProdStatus(task, newStatus) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !window.MH.supabase) return;
     if (!task.order_id || !CONTENT_PROD_NOTIFY[newStatus]) return;
