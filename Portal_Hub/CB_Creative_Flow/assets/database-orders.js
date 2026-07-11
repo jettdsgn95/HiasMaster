@@ -75,7 +75,7 @@
 
   /* ---------- Mock data ---------- */
   const TYPE_LABEL = {
-    design: 'Design / POSM', digital: 'Digital Design', video: 'Video', motion: 'Motion',
+    design: 'Thiết kế / Digital', digital: 'Digital Design', video: 'Video', motion: 'Motion',
     media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', ads: 'Ads / Post', slide: 'Slide / Proposal', other: 'Khác'
   };
   const PRIORITY_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };

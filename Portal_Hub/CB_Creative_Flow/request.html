@@ -324,12 +324,7 @@
                 <label class="service-tile">
                   <input type="radio" name="request_type" value="design" required />
                   <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 0-4h-2a4 4 0 1 1 0-8h7a4 4 0 0 0 0-8H12z"/></svg></span>
-                  <span class="tile-body"><b>Thiết kế / POSM</b><span>Backdrop, standee, poster...</span></span>
-                </label>
-                <label class="service-tile">
-                  <input type="radio" name="request_type" value="digital" />
-                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-                  <span class="tile-body"><b>Digital Design</b><span>Banner web, social, OA</span></span>
+                  <span class="tile-body"><b>Thiết kế / Digital</b><span>POSM, banner web, social, OA, poster, bài đăng...</span></span>
                 </label>
                 <label class="service-tile">
                   <input type="radio" name="request_type" value="video" />
@@ -345,11 +340,6 @@
                   <input type="radio" name="request_type" value="media" />
                   <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
                   <span class="tile-body"><b>Quay / Chụp ảnh</b><span>Sự kiện, ngoại khóa, sản phẩm</span></span>
-                </label>
-                <label class="service-tile">
-                  <input type="radio" name="request_type" value="post" />
-                  <span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-                  <span class="tile-body"><b>Post / Bài đăng</b><span>Caption, headline, CTA — 1 bài post</span></span>
                 </label>
                 <label class="service-tile">
                   <input type="radio" name="request_type" value="slide" />
@@ -369,8 +359,8 @@
             <div class="field" data-subform-hide-for="media">
               <label class="label">Hạng mục cần sản xuất</label>
 
-              <div class="deliverable-group" data-deliverable-for="design,digital">
-                <div class="group-label">Thiết kế / POSM</div>
+              <div class="deliverable-group" data-deliverable-for="design">
+                <div class="group-label">Thiết kế / Digital</div>
                 <div class="deliverable-grid">
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Backdrop" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Backdrop</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Standee" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Standee</label>
@@ -428,8 +418,8 @@
                 </div>
               </div>
 
-              <div class="deliverable-group" data-deliverable-for="post">
-                <div class="group-label">Post / Bài đăng</div>
+              <div class="deliverable-group" data-deliverable-for="design">
+                <div class="group-label">Bài đăng / Social</div>
                 <div class="deliverable-grid">
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Facebook Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Facebook Post</label>
                   <label class="deliverable-tile"><input type="checkbox" name="deliverable_type" value="Instagram Post" /><span class="tile-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Instagram Post</label>
@@ -566,12 +556,12 @@
               </div>
             </div>
 
-            <!-- Sub-form: Post -->
-            <div class="sub-form" data-subform-for="post">
+            <!-- Sub-form: Bài đăng / Social (gộp từ Post — chỉ điền khi yêu cầu có bài đăng) -->
+            <div class="sub-form" data-subform-for="design">
               <div class="sub-head">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Thông tin bài Post
-                <span class="sub-badge">Post</span>
+                Thông tin bài đăng <span class="helper" style="font-weight:400">(nếu yêu cầu có Social/bài post — không bắt buộc)</span>
+                <span class="sub-badge">Bài đăng</span>
               </div>
               <div class="grid-2">
                 <div class="field">
@@ -828,11 +818,9 @@
             SLA tham khảo
           </h4>
           <ul>
-            <li><b>Design / POSM</b> — 1–7 ngày làm việc</li>
-            <li><b>Digital Design</b> — 1–3 ngày làm việc</li>
+            <li><b>Thiết kế / Digital</b> — 1–7 ngày làm việc (bài đăng đơn 0.5–2 ngày)</li>
             <li><b>Video Editing</b> — 3–10 ngày tùy footage</li>
             <li><b>Quay / Chụp</b> — cần xác nhận lịch riêng</li>
-            <li><b>Post / Bài đăng</b> — 0.5–2 ngày làm việc</li>
             <li><b>Slide / Proposal</b> — 2–7 ngày làm việc</li>
           </ul>
         </div>

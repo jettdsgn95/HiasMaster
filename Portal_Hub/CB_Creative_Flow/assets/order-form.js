@@ -484,7 +484,7 @@
   const previewSubmit = document.getElementById('preview-submit');
 
   const REQ_TYPE_LABEL = {
-    design: 'Thiết kế / POSM', digital: 'Digital Design', video: 'Video Editing',
+    design: 'Thiết kế / Digital', digital: 'Digital Design', video: 'Video Editing',
     motion: 'Motion Graphic', media: 'Quay / Chụp ảnh',
     shoot: 'Quay', photo: 'Chụp ảnh', // giữ cho order cũ
     post: 'Post / Bài đăng', ads: 'Yêu cầu chạy Ads', slide: 'Slide / Proposal', other: 'Khác'
@@ -818,6 +818,19 @@
         if (row.request_type === 'slide' && orderPayload.slide_source_link) {
           const slideNote = 'Link nội dung thô (Doc / Slide): ' + orderPayload.slide_source_link;
           row.content_brief = row.content_brief ? (slideNote + '\n\n' + row.content_brief) : slideNote;
+        }
+        // Bài đăng (gộp từ type 'post' vào 'design'): các ô Mục tiêu/CTA/Thông điệp là
+        // optional, DB chưa có cột riêng → gói vào content_brief để Account + PIC thấy đủ,
+        // không mất dữ liệu người dùng đã nhập.
+        if (row.request_type === 'design') {
+          const pparts = [];
+          if (orderPayload.ads_objective) pparts.push('Mục tiêu: ' + orderPayload.ads_objective);
+          if (orderPayload.ads_cta) pparts.push('CTA: ' + orderPayload.ads_cta);
+          if (orderPayload.ads_key_message) pparts.push('Thông điệp: ' + orderPayload.ads_key_message);
+          if (pparts.length) {
+            const postNote = '[Bài đăng] ' + pparts.join(' · ');
+            row.content_brief = row.content_brief ? (row.content_brief + '\n\n' + postNote) : postNote;
+          }
         }
         // Revision: nhúng quan hệ order gốc vào content_brief (chắc chắn không cần migration).
         if (REVISION_MODE && REF_ORDER) {
