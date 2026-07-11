@@ -703,10 +703,25 @@
     var pending = link.querySelector('#nav-pending');
     if (pending) pending.style.display = 'none';
   }
+  /* Public pages (index/help/tracking): nút header "Đăng nhập" (#header-login-btn)
+     KHÔNG được hiện khi đã login (gây hiểu nhầm bị đăng xuất — session vẫn còn).
+     Đổi thành "Vào Dashboard" + link home theo role. Áp MỌI role.
+     request.html tự lo qua order-form updateHeaderAuth (đặt tên user) — hàm này
+     vẫn chạy trước, order-form override sau, cả hai đều trỏ dashboard nên nhất quán. */
+  function syncPublicLoginPill() {
+    var u = getUser();
+    if (!u || !u.role) return;
+    var ROLE_HOME = { client: 'client-dashboard.html', content: 'content-workbench.html', lead_content: 'content-team.html' };
+    var home = ROLE_HOME[u.role] || 'dashboard.html';
+    var btn = document.getElementById('header-login-btn');
+    if (btn) { btn.textContent = 'Vào Dashboard'; btn.setAttribute('href', home); btn.title = 'Đã đăng nhập: ' + (u.name || u.email || ''); }
+    var f = document.getElementById('footer-login-link');
+    if (f) { f.textContent = 'Vào Dashboard'; f.setAttribute('href', home); }
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0);
+    setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */
