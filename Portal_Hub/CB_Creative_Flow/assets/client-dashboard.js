@@ -166,6 +166,24 @@ NOTIFS.filter(n => n.read).forEach(n => state.notifRead.add(n.id));
 window.MH_MOCK_CLIENT_ORDERS = ORDERS;
 window.MH_MOCK_CLIENT_NOTIFS = NOTIFS;
 
+/* ===== Notify role nội bộ qua RPC notify_roles (SECURITY DEFINER) =====
+   Client KHÔNG đọc được bảng users theo role dưới RLS ("users self read") →
+   lookup from('users').in('role',...) trả [] IM LẶNG → 0 noti được insert.
+   RPC lookup + insert hộ bên trong DB. ⚠ cần chạy supabase/add-notify-roles-rpc.sql. */
+async function notifyRolesRpc(roles, n) {
+  if (!window.MH || !window.MH.supabase) return;
+  const { error } = await window.MH.supabase.rpc('notify_roles', {
+    p_roles: roles,
+    p_type: n.type,
+    p_title: n.title,
+    p_message: n.message || null,
+    p_link: n.link || null,
+    p_entity_type: n.related_entity_type || null,
+    p_entity_id: n.related_entity_id || null
+  });
+  if (error) console.warn('[client-dashboard] notify_roles failed (chạy supabase/add-notify-roles-rpc.sql nếu RPC chưa có):', error);
+}
+
 /* ===== Load notifications thật của client từ Supabase ===== */
 async function loadNotificationsFromStore() {
   if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return null;
@@ -930,22 +948,17 @@ async function approveWording(orderId) {
       wording_approved_at: nowIso,
       wording_approved_by: by
     });
-    const { data: staff } = await window.MH.supabase
-      .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-    if (Array.isArray(staff) && staff.length) {
-      await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
-        return {
-          user_id: u.id,
-          // type base-CHECK-safe (không phụ thuộc add-brief-wording-confirmation/add-revision-rounds đã chạy chưa).
-          type: 'order_status_changed',
-          title: 'Client đã xác nhận brief wording',
-          message: `Client đã xác nhận brief wording cho yêu cầu ${o.id} · ${o.name || ''}. Account có thể Confirm Brief và Push Production.`,
-          link: 'database-orders.html?id=' + o.id,
-          related_entity_type: 'orders',
-          related_entity_id: o.id
-        };
-      }));
-    }
+    // Qua RPC notify_roles — client không đọc được users theo role dưới RLS
+    // (lookup trực tiếp trả [] im lặng → Account không nhận noti).
+    await notifyRolesRpc(['admin', 'account'], {
+      // type base-CHECK-safe (không phụ thuộc add-brief-wording-confirmation/add-revision-rounds đã chạy chưa).
+      type: 'order_status_changed',
+      title: 'Client đã xác nhận brief wording',
+      message: `Client đã xác nhận brief wording cho yêu cầu ${o.id} · ${o.name || ''}. Account có thể Confirm Brief và Push Production.`,
+      link: 'database-orders.html?id=' + o.id,
+      related_entity_type: 'orders',
+      related_entity_id: o.id
+    });
   } catch (err) {
     console.warn('[client-dashboard] approve wording failed:', err);
     toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng kiểm tra lại nếu Account chưa nhận thông báo.');
@@ -1083,22 +1096,14 @@ async function approvePreview(orderId) {
     });
     if (o.__raw) Object.assign(o.__raw, { feedback_status: 'approved', approved_at: nowIso, approved_by: by });
 
-    const { data: staff } = await window.MH.supabase
-      .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-    if (Array.isArray(staff) && staff.length) {
-      const payloads = staff.map(function (u) {
-        return {
-          user_id: u.id,
-          type: 'client_preview_approved',
-          title: 'Client đã duyệt Preview',
-          message: `Client đã đồng ý bản Preview của yêu cầu ${o.id}. Vui lòng chuẩn bị và gửi Final Link.`,
-          link: 'database-orders.html?id=' + o.id,
-          related_entity_type: 'orders',
-          related_entity_id: o.id
-        };
-      });
-      await window.MH.supabase.from('notifications').insert(payloads);
-    }
+    await notifyRolesRpc(['admin', 'account'], {
+      type: 'client_preview_approved',
+      title: 'Client đã duyệt Preview',
+      message: `Client đã đồng ý bản Preview của yêu cầu ${o.id}. Vui lòng chuẩn bị và gửi Final Link.`,
+      link: 'database-orders.html?id=' + o.id,
+      related_entity_type: 'orders',
+      related_entity_id: o.id
+    });
   } catch (err) {
     console.warn('[client-dashboard] approve preview failed:', err);
     toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng thử lại nếu Account chưa nhận thông báo.');
@@ -1229,23 +1234,14 @@ document.getElementById('rating-submit').addEventListener('click', async () => {
         client_feedback: comment || null,
         last_updated: new Date().toISOString()
       });
-      if (window.MH.supabase) {
-        const { data: staff } = await window.MH.supabase
-          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-        if (Array.isArray(staff) && staff.length) {
-          await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
-            return {
-              user_id: u.id,
-              type: 'rating_received',
-              title: 'Client đã đánh giá',
-              message: `${prev} — ${score}★ (${STAR_LABELS[score] || ''})${comment ? ' · "' + comment + '"' : ''}`,
-              link: 'database-orders.html?id=' + prev,
-              related_entity_type: 'orders',
-              related_entity_id: prev
-            };
-          }));
-        }
-      }
+      await notifyRolesRpc(['admin', 'account'], {
+        type: 'rating_received',
+        title: 'Client đã đánh giá',
+        message: `${prev} — ${score}★ (${STAR_LABELS[score] || ''})${comment ? ' · "' + comment + '"' : ''}`,
+        link: 'database-orders.html?id=' + prev,
+        related_entity_type: 'orders',
+        related_entity_id: prev
+      });
     } catch (e) {
       console.warn('[client-dashboard] rating persist/notify failed:', e);
       toast('warning','Sync lỗi','Đánh giá đã lưu tạm, vui lòng thử lại nếu chưa cập nhật.');
@@ -1317,26 +1313,19 @@ document.getElementById('feedback-modal').addEventListener('click', e => { if (e
         wording_client_feedback: fbText,
         wording_client_feedback_at: nowIso
       });
-      const { data: staff } = await window.MH.supabase
-        .from('users').select('id, role').in('role', ['admin', 'account', 'lead_content', 'content']).eq('status', 'active');
-      if (Array.isArray(staff) && staff.length) {
-        await window.MH.supabase.from('notifications').insert(staff.map(function (u) {
-          // Link theo surface của từng role: content → Content Wording; lead_content → Content Workspace;
-          // admin/account → Client Orders drawer (nơi Account kiểm tra & gửi Client).
-          const link = (u.role === 'content' ? 'content-workbench.html?id='
-            : (u.role === 'lead_content' ? 'content-team.html?id=' : 'database-orders.html?id=')) + o.id;
-          return {
-            user_id: u.id,
-            // type base-CHECK-safe (chạy không phụ thuộc migration pending).
-            type: 'order_status_changed',
-            title: 'Client yêu cầu chỉnh brief wording',
-            message: `Client yêu cầu chỉnh brief wording (Vòng ${nextRound}) cho yêu cầu ${o.id} · ${o.name || ''}. Content cần chỉnh & gửi lại Account duyệt.`,
-            link: link,
-            related_entity_type: 'orders',
-            related_entity_id: o.id
-          };
-        }));
-      }
+      // Link theo surface của từng role: content → Content Wording; lead_content → Content Workspace;
+      // admin/account → Client Orders drawer (nơi Account kiểm tra & gửi Client) → 3 lượt RPC theo nhóm link.
+      const wfbBase = {
+        // type base-CHECK-safe (chạy không phụ thuộc migration pending).
+        type: 'order_status_changed',
+        title: 'Client yêu cầu chỉnh brief wording',
+        message: `Client yêu cầu chỉnh brief wording (Vòng ${nextRound}) cho yêu cầu ${o.id} · ${o.name || ''}. Content cần chỉnh & gửi lại Account duyệt.`,
+        related_entity_type: 'orders',
+        related_entity_id: o.id
+      };
+      await notifyRolesRpc(['admin', 'account'], Object.assign({ link: 'database-orders.html?id=' + o.id }, wfbBase));
+      await notifyRolesRpc(['lead_content'], Object.assign({ link: 'content-team.html?id=' + o.id }, wfbBase));
+      await notifyRolesRpc(['content'], Object.assign({ link: 'content-workbench.html?id=' + o.id }, wfbBase));
     } catch (err) {
       console.warn('[client-dashboard] wording feedback failed:', err);
       toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng thử lại nếu team chưa nhận thông báo.');
@@ -1396,24 +1385,16 @@ document.getElementById('feedback-submit').addEventListener('click', async () =>
     });
     if (o.__raw) Object.assign(o.__raw, { revision_round: nextRound, feedback_status: 'feedback_received', latest_feedback_note: noteText, last_feedback_at: nowIso, last_feedback_by: by });
 
-    const { data: staff } = await window.MH.supabase
-      .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-    if (Array.isArray(staff) && staff.length) {
-      const payloads = staff.map(function (u) {
-        return {
-          user_id: u.id,
-          type: 'client_feedback_received',
-          title: isR3 ? 'Client đã gửi Feedback Vòng 3 — Final Check' : 'Client đã gửi feedback',
-          message: isR3
-            ? `Client đã gửi feedback vòng cuối cho yêu cầu ${o.id}. Account/Admin cần chuyển feedback này cho PIC xử lý. Sau khi xử lý, PIC cần cập nhật Final Link để bàn giao cho Client.`
-            : `Client đã gửi feedback Vòng ${nextRound} cho yêu cầu ${o.id} · ${o.name || ''}.`,
-          link: 'database-orders.html?id=' + o.id,
-          related_entity_type: 'orders',
-          related_entity_id: o.id
-        };
-      });
-      await window.MH.supabase.from('notifications').insert(payloads);
-    }
+    await notifyRolesRpc(['admin', 'account'], {
+      type: 'client_feedback_received',
+      title: isR3 ? 'Client đã gửi Feedback Vòng 3 — Final Check' : 'Client đã gửi feedback',
+      message: isR3
+        ? `Client đã gửi feedback vòng cuối cho yêu cầu ${o.id}. Account/Admin cần chuyển feedback này cho PIC xử lý. Sau khi xử lý, PIC cần cập nhật Final Link để bàn giao cho Client.`
+        : `Client đã gửi feedback Vòng ${nextRound} cho yêu cầu ${o.id} · ${o.name || ''}.`,
+      link: 'database-orders.html?id=' + o.id,
+      related_entity_type: 'orders',
+      related_entity_id: o.id
+    });
   } catch (err) {
     console.warn('[client-dashboard] submit feedback failed:', err);
     toast('warning', 'Sync lỗi', 'Đã lưu local. Vui lòng thử lại nếu Account chưa nhận thông báo.');
@@ -1469,26 +1450,14 @@ document.getElementById('info-submit').addEventListener('click', async () => {
     if (o.__raw) { o.__raw.internal_note = newNote; o.__raw.account_status = 'checking'; }
 
     // Notify admin + account active
-    const { data: staff } = await window.MH.supabase
-      .from('users')
-      .select('id, name')
-      .in('role', ['admin', 'account'])
-      .eq('status', 'active');
-    if (Array.isArray(staff) && staff.length) {
-      const projectName = o.name || '';
-      const payloads = staff.map(function (u) {
-        return {
-          user_id: u.id,
-          type: 'order_status_changed',
-          title: '📥 Client đã bổ sung brief',
-          message: `${o.id} · ${projectName} — Client đã gửi thông tin bổ sung. Vui lòng kiểm tra brief.`,
-          link: 'database-orders.html?id=' + o.id,
-          related_entity_type: 'orders',
-          related_entity_id: o.id
-        };
-      });
-      await window.MH.supabase.from('notifications').insert(payloads);
-    }
+    await notifyRolesRpc(['admin', 'account'], {
+      type: 'order_status_changed',
+      title: '📥 Client đã bổ sung brief',
+      message: `${o.id} · ${o.name || ''} — Client đã gửi thông tin bổ sung. Vui lòng kiểm tra brief.`,
+      link: 'database-orders.html?id=' + o.id,
+      related_entity_type: 'orders',
+      related_entity_id: o.id
+    });
   } catch (err) {
     console.warn('[client-dashboard] submit info supplement failed:', err);
     toast('warning','Sync lỗi','Đã lưu local. Vui lòng thử lại nếu Account chưa nhận thông báo.');

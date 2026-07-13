@@ -200,26 +200,22 @@
   }
 
   /* ---------- Notify Lead Content (+admin) ---------- */
+  // Qua RPC notify_roles — client không đọc được users theo role dưới RLS
+  // (lookup trực tiếp trả [] im lặng → Lead Content không nhận noti).
   async function notifyLeadContent(code, d) {
     if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
     try {
-      const { data: us } = await window.MH.supabase
-        .from('users').select('id').in('role', ['lead_content', 'admin']).eq('status', 'active');
-      if (Array.isArray(us) && us.length) {
-        const payloads = us.map(function (u) {
-          return {
-            user_id: u.id,
-            type: 'order_new',
-            title: 'Yêu cầu chạy Ads mới',
-            message: (d.campaign_name || code) + ' · ' + (d.branch_department || '') + ' · ' + (d.requester_name || ''),
-            link: 'content-team.html?tab=ads-orders&id=' + code,
-            related_entity_type: 'orders',
-            related_entity_id: code
-          };
-        });
-        await window.MH.supabase.from('notifications').insert(payloads);
-      }
-    } catch (e) { console.warn('[ads-order-form] notify lead_content failed:', e); }
+      const { error: nerr } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: ['lead_content', 'admin'],
+        p_type: 'order_new',
+        p_title: 'Yêu cầu chạy Ads mới',
+        p_message: (d.campaign_name || code) + ' · ' + (d.branch_department || '') + ' · ' + (d.requester_name || ''),
+        p_link: 'content-team.html?tab=ads-orders&id=' + code,
+        p_entity_type: 'orders',
+        p_entity_id: code
+      });
+      if (nerr) throw nerr;
+    } catch (e) { console.warn('[ads-order-form] notify lead_content failed (chạy supabase/add-notify-roles-rpc.sql nếu RPC chưa có):', e); }
   }
 
   /* ---------- Submit ---------- */

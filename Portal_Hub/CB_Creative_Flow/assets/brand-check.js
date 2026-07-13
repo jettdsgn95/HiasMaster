@@ -579,19 +579,36 @@
 
   // Thông báo cho admin + lead_media (type 'system' — nằm trong CHECK constraint notifications).
   async function notifyMedia(saved, aiResult) {
+    const title = aiResult.status === 'REQUIRES_MEDIA_REVIEW'
+      ? 'Brand check bắt buộc Media duyệt'
+      : 'Brand check chờ duyệt thủ công (AI lỗi)';
+    const message = (saved.title || 'Không tên') + ' — ' + (saved.uploader_name || saved.uploader_email || 'không rõ người upload');
+    // Backend thật: qua RPC notify_roles (SECURITY DEFINER) — client/giáo viên KHÔNG đọc
+    // được users theo role dưới RLS (users.list() trả mỗi chính mình → notify chết im lặng).
+    if (window.MH.supabaseEnabled && window.MH.supabase) {
+      const { error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: ['admin', 'lead_media'],
+        p_type: 'system',
+        p_title: title,
+        p_message: message,
+        p_link: 'brand-check.html?id=' + saved.id,
+        p_entity_type: null,
+        p_entity_id: String(saved.id)
+      });
+      if (error) console.warn('[brand-check] notify_roles failed (chạy supabase/add-notify-roles-rpc.sql nếu RPC chưa có):', error);
+      return;
+    }
+    // DEMO (Supabase off): giữ đường cũ qua store fallback localStorage.
     const users = await window.MH.store.users.list();
     const targets = (users || []).filter(function (u) {
       return u && (u.role === 'admin' || u.role === 'lead_media') && u.id;
     });
-    const title = aiResult.status === 'REQUIRES_MEDIA_REVIEW'
-      ? 'Brand check bắt buộc Media duyệt'
-      : 'Brand check chờ duyệt thủ công (AI lỗi)';
     for (let i = 0; i < targets.length; i++) {
       await window.MH.store.notifications.create({
         user_id: targets[i].id,
         type: 'system',
         title: title,
-        message: (saved.title || 'Không tên') + ' — ' + (saved.uploader_name || saved.uploader_email || 'không rõ người upload'),
+        message: message,
         link: 'brand-check.html?id=' + saved.id,
         related_entity_type: null,
         related_entity_id: String(saved.id)

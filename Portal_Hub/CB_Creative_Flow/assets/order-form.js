@@ -908,27 +908,20 @@
 
         // Notify TẤT CẢ admin + account + lead_media về order mới (realtime + bell badge).
         // lead_media = Trưởng nhóm Production quyền ngang Account → cần biết order mới như Account.
+        // Qua RPC notify_roles (SECURITY DEFINER) — client KHÔNG đọc được users theo role
+        // dưới RLS (lookup trực tiếp trả [] im lặng → admin/account không nhận noti).
         try {
-          const { data: staff } = await window.MH.supabase
-            .from('users')
-            .select('id, name')
-            .in('role', ['admin', 'account', 'lead_media'])
-            .eq('status', 'active');
-          if (Array.isArray(staff) && staff.length) {
-            const notifPayloads = staff.map(function (u) {
-              return {
-                user_id: u.id,
-                type: 'order_new',
-                title: (REVISION_MODE && REF_ORDER) ? ('↩ Order chỉnh sửa tiếp: ' + code) : ('📥 Order mới: ' + code),
-                message: (orderPayload.project_name || 'Untitled') + ' · ' + (orderPayload.requester_name || '') + ' · ' + (orderPayload.department || '') + ((REVISION_MODE && REF_ORDER) ? (' · tiếp nối từ ' + REF_ORDER + ' (sau 3 vòng feedback)') : ''),
-                link: 'database-orders.html?id=' + code,
-                related_entity_type: 'orders',
-                related_entity_id: code
-              };
-            });
-            await window.MH.supabase.from('notifications').insert(notifPayloads);
-          }
-        } catch (e) { console.warn('[order-form] notify staff failed:', e); }
+          const { error: nerr } = await window.MH.supabase.rpc('notify_roles', {
+            p_roles: ['admin', 'account', 'lead_media'],
+            p_type: 'order_new',
+            p_title: (REVISION_MODE && REF_ORDER) ? ('↩ Order chỉnh sửa tiếp: ' + code) : ('📥 Order mới: ' + code),
+            p_message: (orderPayload.project_name || 'Untitled') + ' · ' + (orderPayload.requester_name || '') + ' · ' + (orderPayload.department || '') + ((REVISION_MODE && REF_ORDER) ? (' · tiếp nối từ ' + REF_ORDER + ' (sau 3 vòng feedback)') : ''),
+            p_link: 'database-orders.html?id=' + code,
+            p_entity_type: 'orders',
+            p_entity_id: code
+          });
+          if (nerr) throw nerr;
+        } catch (e) { console.warn('[order-form] notify staff failed (chạy supabase/add-notify-roles-rpc.sql nếu RPC chưa có):', e); }
       } catch (e) {
         console.warn('[order-form] create order in Supabase failed:', e);
         window.MH.toast({ type: 'warning', title: 'Sync DB lỗi', message: 'Order lưu local. Liên hệ admin để re-submit.' });
