@@ -336,8 +336,8 @@
             status: r.status || 'active',
             phone: r.phone || '',
             department: r.department || '',
-            created_at: r.created_at,
-            last_login_at: r.last_login_at,
+            created_at: fmtStamp(r.created_at) || r.created_at,
+            last_login_at: fmtStamp(r.last_login_at),
             work_stats: r.work_stats || { assigned_tasks: 0, open_tasks: 0, overdue_tasks: 0, completed_tasks: 0, avg_progress: 0 },
             activity: r.activity || []
           }));
@@ -361,6 +361,17 @@
   function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function initials(name) { return (name || '').split(' ').map((s) => s[0]).filter(Boolean).slice(-2).join('').toUpperCase() || '?'; }
   function fmtDT() { return new Date().toISOString().slice(0, 16).replace('T', ' '); }
+  // Supabase trả timestamptz ISO ("2026-07-11T10:24:00.123+00:00"), còn UI (relTime +
+  // ô hiển thị) kỳ vọng format như mock: "YYYY-MM-DD HH:MM" theo giờ LOCAL.
+  // Không convert → render nguyên chuỗi ISO và relTime fallback trả cả chuỗi.
+  function fmtStamp(v) {
+    if (!v) return null;
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v;
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+      + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
   function relTime(s) {
     if (!s) return '';
     const d = new Date(s.replace(' ', 'T'));

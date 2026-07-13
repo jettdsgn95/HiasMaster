@@ -154,6 +154,24 @@
     return user;
   }
 
+  // Ghi users.last_login_at khi ĐĂNG NHẬP THẬT (password + Google SSO).
+  // Trước đây KHÔNG có producer nào ghi cột này → User Management luôn hiện
+  // "Chưa đăng nhập". Đặt ở đây (không ở onAuthStateChange) vì SIGNED_IN có thể
+  // bắn lại khi restore session/tab focus → sẽ ghi đè sai nghĩa "lần đăng nhập cuối".
+  // RLS: policy "users self update" (id = auth.uid()) cho phép user tự ghi.
+  async function touchLastLogin() {
+    try {
+      if (!window.MH || !window.MH.supabaseEnabled) return;
+      const sb = await window.MH.supabaseReady;
+      if (!sb) return;
+      const { data } = await sb.auth.getSession();
+      const uid = data && data.session && data.session.user && data.session.user.id;
+      if (!uid) return;
+      const { error } = await sb.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', uid);
+      if (error) console.warn('[login] update last_login_at failed:', error);
+    } catch (e) { console.warn('[login] update last_login_at threw:', e); }
+  }
+
   /* ---------- Google Workspace SSO (@cbcentres.com) ---------- */
   function gFail(msg) {
     if (gbtn) { gbtn.classList.remove('is-loading'); gbtn.disabled = false; }
@@ -188,6 +206,7 @@
     }
     const user = await pollUser();
     if (!user) { gFail('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
+    await touchLastLogin();
     finishLogin(user);
   }
   handleOAuthReturn();
@@ -210,6 +229,7 @@
       if (error) { failLogin(error.message || 'Email hoặc mật khẩu không đúng.'); return; }
       const user = await pollUser();
       if (!user) { failLogin('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
+      await touchLastLogin();
       finishLogin(user);
     } catch (e) {
       console.warn('[login] Supabase auth threw:', e);
