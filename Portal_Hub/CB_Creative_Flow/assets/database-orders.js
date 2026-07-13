@@ -117,6 +117,51 @@
     });
   }
 
+  /* ---------- PIC options từ Users thật (đồng bộ User Management) ----------
+     Dropdown gán PIC trước đây hardcode 4 tên seed → user tạo mới trong User Management
+     không xuất hiện để gán. Nay load users thật theo role, option kèm nhãn role
+     ("Khánh Du · Editor") để Account/Lead/Admin chọn đúng người.
+     Fallback seed chỉ dùng khi Supabase off / chưa load được users (demo). */
+  const ROLE_TAG = {
+    admin: 'Admin', account: 'Account', lead_media: 'Lead Media',
+    design: 'Design', editor: 'Editor',
+    lead_content: 'Lead Content', content: 'Content', system_supervisor: 'Giám sát'
+  };
+  const PROD_PIC_ROLES = ['design', 'editor'];
+  const ACCT_PIC_ROLES = ['admin', 'account', 'lead_media'];
+  const FALLBACK_PROD_PICS = [
+    { name: 'Duy', role: 'design' }, { name: 'Vinh', role: 'design' },
+    { name: 'Linh Chi', role: 'editor' }, { name: 'Mai Phương', role: 'admin' }
+  ];
+  const FALLBACK_ACCT_PICS = [
+    { name: 'Hậu', role: 'account' }, { name: 'Mai Phương', role: 'admin' }, { name: 'Đức Anh', role: 'account' }
+  ];
+  let STAFF_USERS = [];
+  async function loadStaffUsers() {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return 0;
+    try {
+      const list = await window.MH.store.users.list();
+      STAFF_USERS = (list || []).filter((u) => u && u.name && u.status !== 'inactive');
+    } catch (e) { console.warn('[database-orders] users load failed:', e); }
+    return STAFF_USERS.length;
+  }
+  function picUserPool(roles, fallback, current) {
+    const seen = {};
+    let pool = STAFF_USERS
+      .filter((u) => roles.includes(u.role) && !seen[u.name] && (seen[u.name] = 1))
+      .map((u) => ({ name: u.name, role: u.role }));
+    if (!pool.length) pool = fallback.slice(); // Supabase off / users chưa load
+    if (current && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' }); // giữ giá trị đang gán
+    return pool.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  }
+  function picOptions(current, roles, fallback) {
+    current = current || '';
+    return '<option value="">— Chưa gán —</option>' + picUserPool(roles, fallback, current).map((u) => {
+      const tag = ROLE_TAG[u.role] || u.role;
+      return `<option value="${escapeHtml(u.name)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
+    }).join('');
+  }
+
   /* ---------- Helpers ---------- */
   const ACCOUNT_STATUS_LABEL = {
     pending: 'Chờ xác nhận', checking: 'Đang kiểm tra', needinfo: 'Cần bổ sung',
@@ -1107,31 +1152,27 @@
         <div class="edit-row">
           <label>Account PIC</label>
           <select class="select" id="edit-account-pic">
-            <option value="">— Chưa gán —</option>
-            ${['Hậu', 'Mai Phương', 'Đức Anh'].map((p) => `<option ${o.account_pic === p ? 'selected' : ''}>${p}</option>`).join('')}
+            ${picOptions(o.account_pic, ACCT_PIC_ROLES, FALLBACK_ACCT_PICS)}
           </select>
         </div>
         ${o.request_type === 'media' ? `
         <div class="edit-row">
           <label>PIC Quay</label>
           <select class="select" id="edit-prod-pic-video" ${isOrderPushed(o) ? 'disabled' : ''}>
-            <option value="">— Chưa gán —</option>
-            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic_video === p ? 'selected' : ''}>${p}</option>`).join('')}
+            ${picOptions(o.production_pic_video, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
           </select>
         </div>
         <div class="edit-row">
           <label>PIC Chụp</label>
           <select class="select" id="edit-prod-pic-photo" ${isOrderPushed(o) ? 'disabled' : ''}>
-            <option value="">— Chưa gán —</option>
-            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic_photo === p ? 'selected' : ''}>${p}</option>`).join('')}
+            ${picOptions(o.production_pic_photo, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
           </select>
         </div>
         ` : `
         <div class="edit-row">
           <label>Production PIC</label>
           <select class="select" id="edit-prod-pic" ${isOrderPushed(o) ? 'disabled' : ''}>
-            <option value="">— Chưa gán —</option>
-            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${o.production_pic === p ? 'selected' : ''}>${p}</option>`).join('')}
+            ${picOptions(o.production_pic, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
           </select>
         </div>
         `}
@@ -2317,6 +2358,33 @@
   }
   // First attempt: với mock data hiện có (legacy demo nếu Supabase off).
   const focusedFromMock = tryFocusOrder(false);
+
+  // Load users thật cho dropdown PIC (fire-and-forget — thường xong trước khi mở drawer).
+  loadStaffUsers().then(function (n) {
+    if (!n) return;
+    // Filter "Mọi PIC" (static HTML) — bổ sung tên user thật chưa có trong options.
+    const filterSel = document.getElementById('filter-pic');
+    if (filterSel) {
+      const existing = new Set(Array.from(filterSel.options).map((op) => op.value || op.textContent));
+      picUserPool(PROD_PIC_ROLES.concat(ACCT_PIC_ROLES), [], '').forEach((u) => {
+        if (existing.has(u.name)) return;
+        const op = document.createElement('option');
+        op.textContent = u.name;
+        filterSel.appendChild(op);
+        existing.add(u.name);
+      });
+    }
+    // Drawer đang mở (options build trước khi users về) → refresh options tại chỗ.
+    if (!currentOrder) return;
+    [['edit-account-pic', currentOrder.account_pic, ACCT_PIC_ROLES, FALLBACK_ACCT_PICS],
+     ['edit-prod-pic', currentOrder.production_pic, PROD_PIC_ROLES, FALLBACK_PROD_PICS],
+     ['edit-prod-pic-video', currentOrder.production_pic_video, PROD_PIC_ROLES, FALLBACK_PROD_PICS],
+     ['edit-prod-pic-photo', currentOrder.production_pic_photo, PROD_PIC_ROLES, FALLBACK_PROD_PICS]
+    ].forEach(function (cfg) {
+      const el = document.getElementById(cfg[0]);
+      if (el) el.innerHTML = picOptions(el.value || cfg[1], cfg[2], cfg[3]);
+    });
+  });
 
   // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
   // Chạy fire-and-forget — không block initial paint với mock.

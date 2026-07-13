@@ -176,6 +176,49 @@
     { name: 'Vinh',        role: 'design'  },
     { name: 'Linh Chi',    role: 'editor'  }
   ];
+  /* ---------- PIC options từ Users thật (đồng bộ User Management) ----------
+     Dropdown gán P.I.C trước đây hardcode 4 tên seed → user tạo mới trong User Management
+     không xuất hiện để gán. Nay load users thật role design/editor, option kèm nhãn role
+     ("Khánh Du · Editor"). Fallback seed chỉ dùng khi Supabase off / users chưa load. */
+  const ROLE_TAG = {
+    admin: 'Admin', account: 'Account', lead_media: 'Lead Media',
+    design: 'Design', editor: 'Editor', lead_content: 'Lead Content', content: 'Content'
+  };
+  const PROD_PIC_ROLES = ['design', 'editor'];
+  const FALLBACK_PROD_PICS = [
+    { name: 'Duy', role: 'design' }, { name: 'Vinh', role: 'design' },
+    { name: 'Linh Chi', role: 'editor' }, { name: 'Mai Phương', role: 'admin' }
+  ];
+  let STAFF_USERS = [];
+  async function loadStaffUsers() {
+    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return 0;
+    try {
+      const list = await window.MH.store.users.list();
+      STAFF_USERS = (list || []).filter((u) => u && u.name && u.status !== 'inactive');
+      // @mention autocomplete dùng chung danh sách: bổ sung user thật (trừ client) vào TEAM_MEMBERS.
+      STAFF_USERS.forEach((u) => {
+        if (u.role !== 'client' && !TEAM_MEMBERS.some((m) => m.name === u.name)) TEAM_MEMBERS.push({ name: u.name, role: u.role });
+      });
+    } catch (e) { console.warn('[production-board] users load failed:', e); }
+    return STAFF_USERS.length;
+  }
+  function prodPicPool(current) {
+    const seen = {};
+    let pool = STAFF_USERS
+      .filter((u) => PROD_PIC_ROLES.includes(u.role) && !seen[u.name] && (seen[u.name] = 1))
+      .map((u) => ({ name: u.name, role: u.role }));
+    if (!pool.length) pool = FALLBACK_PROD_PICS.slice(); // Supabase off / users chưa load
+    if (current && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' }); // giữ giá trị đang gán
+    return pool.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  }
+  function prodPicOptions(current) {
+    current = current || '';
+    return '<option value="">— Chưa gán —</option>' + prodPicPool(current).map((u) => {
+      const tag = ROLE_TAG[u.role] || u.role;
+      return `<option value="${escapeHtml(u.name)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
+    }).join('');
+  }
+
   function teamMembersForUser(currentUserName) {
     const seen = new Set();
     const list = [];
@@ -1181,7 +1224,7 @@
         <div class="edit-row mt-4">
           <label>P.I.C</label>
           <select class="select" id="edit-pic">
-            ${['Duy', 'Vinh', 'Linh Chi', 'Mai Phương'].map((p) => `<option ${t.assigned_to === p ? 'selected' : ''}>${p}</option>`).join('')}
+            ${prodPicOptions(t.assigned_to)}
           </select>
         </div>
         <div class="edit-row">
@@ -1607,6 +1650,26 @@
   }
   const focusedFromMock = tryFocusTask(false);
 
+  // Load users thật cho dropdown P.I.C (fire-and-forget — thường xong trước khi mở drawer/modal).
+  loadStaffUsers().then(function (n) {
+    if (!n) return;
+    // Filter "Mọi PIC" (static HTML) — bổ sung tên user thật chưa có trong options.
+    const filterSel = document.getElementById('filter-pic');
+    if (filterSel) {
+      const existing = new Set(Array.from(filterSel.options).map((op) => op.value || op.textContent));
+      prodPicPool('').forEach((u) => {
+        if (existing.has(u.name)) return;
+        const op = document.createElement('option');
+        op.textContent = u.name;
+        filterSel.appendChild(op);
+        existing.add(u.name);
+      });
+    }
+    // Drawer đang mở (options build trước khi users về) → refresh select P.I.C tại chỗ.
+    const editPic = document.getElementById('edit-pic');
+    if (editPic && currentTask) editPic.innerHTML = prodPicOptions(editPic.value || currentTask.assigned_to);
+  });
+
   // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
   loadTasksFromStore(TASKS).then(function (n) {
     if (typeof n === 'number') {
@@ -1705,6 +1768,8 @@
     if (tmLocation) tmLocation.value = p.shoot_location || '';
     applyLocationUI();
     tmPriority.value = p.priority || 'normal';
+    // Rebuild options mỗi lần mở: users thật (kèm nhãn role) + giữ được PIC cũ nếu không còn trong pool.
+    tmPic.innerHTML = prodPicOptions(p.assigned_to || '');
     tmPic.value = p.assigned_to || '';
     if (p.internal_deadline) {
       tmDeadline.value = toLocalInput(p.internal_deadline);
@@ -1745,7 +1810,7 @@
     if (createBtn && !canCreateTask) createBtn.style.display = 'none';
     if (createBtn) createBtn.addEventListener('click', () => {
       if (!canCreateTask) return; // guard: Design/Editor/Client không tạo task
-      openTaskModal({ assigned_to: user.name && ['Duy','Vinh','Linh Chi','Mai Phương'].includes(user.name) ? user.name : '' });
+      openTaskModal({ assigned_to: user.name && prodPicPool('').some((u) => u.name === user.name) ? user.name : '' });
     });
   })();
   document.getElementById('task-modal-close').addEventListener('click', closeTaskModal);
