@@ -156,6 +156,94 @@
   window.MH = window.MH || {};
   window.MH.toast = toast;
 
+  /* ---------- PIC dropdown (custom select: tên + badge role) ----------
+     Native <option> không style được badge role → wrap mọi <select data-pic-dd>
+     bằng dropdown tùy biến (trigger + menu). Select gốc GIỮ NGUYÊN trong DOM (ẩn):
+     code cũ đọc/ghi .value / disabled / options vẫn chạy nguyên; chọn item = set
+     select.value + dispatch 'change'. Option kèm data-role="Nhãn" sẽ hiện badge.
+     Idempotent: gọi lại sau khi select.innerHTML đổi → rebuild menu + sync trigger.
+     Trigger là <div role="button"> CỐ Ý (không phải <button>) để applyDrawerReadonly
+     (ẩn mọi button) không làm biến mất field ở chế độ read-only — select disabled
+     thì trigger tự khóa (guard JS + CSS :has). */
+  function picDdEsc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  const PIC_DD_CARET = '<svg class="pic-dd-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+  function picDdRow(name, role, mutedName) {
+    return `<span class="pic-dd-name${mutedName ? ' muted' : ''}">${picDdEsc(name)}</span>`
+      + (role ? `<span class="pic-role-badge">${picDdEsc(role)}</span>` : '');
+  }
+  function picDdSync(sel) {
+    const wrap = sel.closest('.pic-dd');
+    if (!wrap) return;
+    const op = sel.options[sel.selectedIndex];
+    const role = op ? (op.getAttribute('data-role') || '') : '';
+    const label = sel.value || (op ? op.textContent : '— Chưa gán —');
+    wrap.querySelector('.pic-dd-trigger').innerHTML = picDdRow(label, role, !sel.value) + PIC_DD_CARET;
+    wrap.querySelectorAll('.pic-dd-item').forEach((it) => {
+      it.classList.toggle('is-selected', (it.getAttribute('data-value') || '') === sel.value);
+    });
+  }
+  function picDdBuildMenu(sel) {
+    const menu = sel.closest('.pic-dd').querySelector('.pic-dd-menu');
+    menu.innerHTML = Array.from(sel.options).map((op) => {
+      const val = op.value;
+      const role = op.getAttribute('data-role') || '';
+      return `<div class="pic-dd-item${val ? '' : ' is-empty'}" role="option" data-value="${picDdEsc(val)}">`
+        + picDdRow(val || op.textContent, role, !val) + '</div>';
+    }).join('');
+  }
+  function enhancePicSelects(root) {
+    (root || document).querySelectorAll('select[data-pic-dd]').forEach((sel) => {
+      let wrap = sel.closest('.pic-dd');
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.className = 'pic-dd';
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(sel);
+        const trg = document.createElement('div');
+        trg.className = 'select pic-dd-trigger';
+        trg.setAttribute('role', 'button');
+        trg.setAttribute('tabindex', '0');
+        trg.setAttribute('aria-haspopup', 'listbox');
+        const menu = document.createElement('div');
+        menu.className = 'pic-dd-menu';
+        menu.setAttribute('role', 'listbox');
+        menu.hidden = true;
+        wrap.appendChild(trg);
+        wrap.appendChild(menu);
+        const close = () => { menu.hidden = true; wrap.classList.remove('is-open'); };
+        trg.addEventListener('click', () => {
+          if (sel.disabled) return;
+          menu.hidden = !menu.hidden;
+          wrap.classList.toggle('is-open', !menu.hidden);
+        });
+        trg.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trg.click(); }
+          if (e.key === 'Escape') close();
+        });
+        menu.addEventListener('click', (e) => {
+          const it = e.target.closest('.pic-dd-item');
+          if (!it) return;
+          sel.value = it.getAttribute('data-value') || '';
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          close();
+        });
+        sel.addEventListener('change', () => picDdSync(sel));
+      }
+      picDdBuildMenu(sel);
+      picDdSync(sel);
+    });
+  }
+  // Outside-click đóng mọi pic-dd đang mở — 1 listener toàn cục (drawer rebuild không leak listener).
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.pic-dd.is-open').forEach((w) => {
+      if (w.contains(e.target)) return;
+      const m = w.querySelector('.pic-dd-menu');
+      if (m) m.hidden = true;
+      w.classList.remove('is-open');
+    });
+  });
+  window.MH.enhancePicSelects = enhancePicSelects;
+
   /* ---------- Copy helpers ---------- */
   document.addEventListener('click', async (e) => {
     const t = e.target.closest('[data-copy]');

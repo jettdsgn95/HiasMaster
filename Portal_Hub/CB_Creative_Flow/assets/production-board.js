@@ -213,9 +213,10 @@
   }
   function prodPicOptions(current) {
     current = current || '';
+    // data-role → badge role ở custom dropdown (app.js enhancePicSelects); text "Tên · Tag" = fallback native.
     return '<option value="">— Chưa gán —</option>' + prodPicPool(current).map((u) => {
       const tag = ROLE_TAG[u.role] || u.role;
-      return `<option value="${escapeHtml(u.name)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
+      return `<option value="${escapeHtml(u.name)}" data-role="${escapeHtml(tag)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
     }).join('');
   }
 
@@ -1223,7 +1224,7 @@
         ${['admin', 'account'].includes(user.role) ? `
         <div class="edit-row mt-4">
           <label>P.I.C</label>
-          <select class="select" id="edit-pic">
+          <select class="select" id="edit-pic" data-pic-dd>
             ${prodPicOptions(t.assigned_to)}
           </select>
         </div>
@@ -1533,6 +1534,9 @@
     // Async: hiện Client Feedback Round (nếu order liên kết có revision_round > 0)
     if (t.order_id && !t.is_standalone) loadOrderFeedbackIntoTaskDrawer(t.order_id, t.status);
 
+    // Custom dropdown P.I.C (tên + badge role).
+    if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(drawer);
+
     drawer.classList.add('is-open');
     drawer.setAttribute('aria-hidden', 'false');
     drawerBd.classList.add('is-open');
@@ -1667,7 +1671,10 @@
     }
     // Drawer đang mở (options build trước khi users về) → refresh select P.I.C tại chỗ.
     const editPic = document.getElementById('edit-pic');
-    if (editPic && currentTask) editPic.innerHTML = prodPicOptions(editPic.value || currentTask.assigned_to);
+    if (editPic && currentTask) {
+      editPic.innerHTML = prodPicOptions(editPic.value || currentTask.assigned_to);
+      if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(drawer);
+    }
   });
 
   // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
@@ -1771,6 +1778,8 @@
     // Rebuild options mỗi lần mở: users thật (kèm nhãn role) + giữ được PIC cũ nếu không còn trong pool.
     tmPic.innerHTML = prodPicOptions(p.assigned_to || '');
     tmPic.value = p.assigned_to || '';
+    // Custom dropdown P.I.C (tên + badge role) — rebuild menu theo options mới.
+    if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(modal);
     if (p.internal_deadline) {
       tmDeadline.value = toLocalInput(p.internal_deadline);
     } else {
