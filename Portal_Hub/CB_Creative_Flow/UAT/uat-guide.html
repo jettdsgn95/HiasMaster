@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Hướng dẫn UAT — CB Creative Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#191970; --navy-soft:#2a2a8f; --red:#BA110F;
+    --ink:#1c2130; --muted:#5b647a; --faint:#8a92a6;
+    --bg:#f5f6fa; --card:#ffffff; --line:#e4e7ef; --line-soft:#eef0f6;
+    --tint:#eef0fb; --tint-red:#fdeeee; --tint-green:#e9f7ef; --tint-amber:#fdf4e5;
+    --green:#1a7f4b; --amber:#b06a00;
+    --radius:14px; --radius-sm:10px;
+    --shadow:0 1px 2px rgba(25,25,112,.05),0 8px 24px -12px rgba(25,25,112,.12);
+    --font-body:'Inter',system-ui,sans-serif;
+    --font-head:'Plus Jakarta Sans','Inter',sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font-body);background:var(--bg);color:var(--ink);line-height:1.65;font-size:15.5px}
+  ::selection{background:var(--navy);color:#fff}
+
+  .icon{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+
+  /* ---------- Hero ---------- */
+  .hero{background:linear-gradient(140deg,#141457 0%,var(--navy) 55%,#232391 100%);color:#fff;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:0;background:
+    radial-gradient(600px 300px at 85% -10%,rgba(255,255,255,.09),transparent 60%),
+    radial-gradient(400px 260px at -5% 110%,rgba(186,17,15,.28),transparent 60%)}
+  .hero-inner{position:relative;z-index:1;max-width:1060px;margin:0 auto;padding:56px 24px 48px}
+  .hero-kicker{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c8cdf5;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 14px;margin-bottom:20px}
+  .hero-kicker .dot{width:7px;height:7px;border-radius:50%;background:#ff6b69;box-shadow:0 0 0 4px rgba(186,17,15,.35)}
+  .hero h1{font-family:var(--font-head);font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1.15;letter-spacing:-.01em;max-width:720px}
+  .hero h1 em{font-style:normal;color:#ffb3b2}
+  .hero p.lead{margin-top:16px;max-width:640px;color:#c9cee9;font-size:16.5px}
+  .hero-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:36px;max-width:760px}
+  .fact{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:var(--radius-sm);padding:14px 16px;backdrop-filter:blur(4px)}
+  .fact b{display:block;font-family:var(--font-head);font-size:26px;font-weight:800;line-height:1.1}
+  .fact span{font-size:12.5px;color:#b9bfe6}
+  @media(max-width:640px){.hero-facts{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- Sticky nav ---------- */
+  .topnav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topnav-inner{max-width:1060px;margin:0 auto;padding:0 24px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+  .topnav-inner::-webkit-scrollbar{display:none}
+  .topnav a{flex:none;font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;padding:13px 12px;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+  .topnav a:hover,.topnav a:focus-visible{color:var(--navy);border-color:var(--navy);outline:none}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1060px;margin:0 auto;padding:12px 24px 80px}
+  section{margin-top:52px;scroll-margin-top:70px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .sec-num{font-family:var(--font-head);font-weight:800;font-size:15px;color:#fff;background:var(--navy);border-radius:9px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;flex:none;transform:translateY(4px)}
+  .sec-head h2{font-family:var(--font-head);font-weight:800;font-size:clamp(21px,2.6vw,27px);letter-spacing:-.01em}
+  .sec-sub{color:var(--muted);margin:2px 0 22px 48px;max-width:680px}
+  @media(max-width:640px){.sec-sub{margin-left:0}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+
+  /* ---------- Steps ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{padding:22px;position:relative;display:flex;flex-direction:column;gap:10px}
+  .step-top{display:flex;align-items:center;gap:10px}
+  .step-badge{font-family:var(--font-head);font-weight:800;font-size:13px;color:var(--navy);background:var(--tint);border-radius:999px;padding:3px 12px}
+  .step h3{font-family:var(--font-head);font-size:16.5px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .step h3 .icon{color:var(--red)}
+  .step p{font-size:14.5px;color:var(--muted)}
+  .step .kbd-row{font-size:13.5px;color:var(--ink)}
+  kbd{font-family:var(--font-mono);font-size:12px;background:var(--tint);border:1px solid #d9ddf0;border-bottom-width:2px;border-radius:6px;padding:1px 7px;white-space:nowrap}
+  code{font-family:var(--font-mono);font-size:.86em;background:var(--tint);border-radius:6px;padding:1px 6px;color:var(--navy)}
+  .callout{display:flex;gap:12px;border-radius:var(--radius-sm);padding:14px 16px;font-size:14px;margin-top:16px}
+  .callout .icon{margin-top:3px}
+  .callout.warn{background:var(--tint-amber);color:#6b4a00}
+  .callout.danger{background:var(--tint-red);color:#7c1917}
+  .callout.info{background:var(--tint);color:#2c2c6e}
+  .callout b{font-weight:700}
+
+  /* ---------- Result chips & severity ---------- */
+  .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+  @media(max-width:820px){.grid-2{grid-template-columns:1fr}}
+  .pad{padding:22px}
+  .card h3.card-title{font-family:var(--font-head);font-size:16.5px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:9px}
+  .card h3.card-title .icon{color:var(--navy)}
+  .chips{display:flex;flex-direction:column;gap:10px}
+  .chip-row{display:flex;gap:12px;align-items:flex-start}
+  .chip{flex:none;width:88px;text-align:center;font-weight:700;font-size:13px;border-radius:999px;padding:5px 0;margin-top:1px}
+  .chip.pass{background:var(--tint-green);color:var(--green)}
+  .chip.fail{background:var(--tint-red);color:var(--red)}
+  .chip.blocked{background:var(--tint-amber);color:var(--amber)}
+  .chip-row p{font-size:14px;color:var(--muted)}
+  .sev{width:100%;border-collapse:collapse;font-size:14px}
+  .sev td{padding:10px 4px;border-top:1px solid var(--line-soft);vertical-align:top;color:var(--muted)}
+  .sev tr:first-child td{border-top:none}
+  .sev .tag{display:inline-block;font-weight:700;font-size:12.5px;border-radius:7px;padding:3px 10px;white-space:nowrap}
+  .tag.crit{background:var(--red);color:#fff}
+  .tag.major{background:var(--tint-red);color:var(--red)}
+  .tag.minor{background:var(--tint);color:var(--navy)}
+  .report-recipe{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .recipe-pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--navy);background:var(--tint);border-radius:999px;padding:6px 13px}
+  .recipe-arrow{color:var(--faint);align-self:center;font-weight:700}
+
+  /* ---------- Timeline (3 vòng) ---------- */
+  .timeline{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:round}
+  @media(max-width:820px){.timeline{grid-template-columns:1fr}}
+  .round{padding:22px;border-top:4px solid var(--navy);display:flex;flex-direction:column;gap:9px}
+  .round:nth-child(2){border-top-color:var(--red)}
+  .round:nth-child(3){border-top-color:var(--amber)}
+  .round .when{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .round h3{font-family:var(--font-head);font-size:18px;font-weight:800}
+  .round ul{list-style:none;display:flex;flex-direction:column;gap:7px;font-size:14.5px;color:var(--muted)}
+  .round li{display:flex;gap:9px}
+  .round li .icon{width:16px;height:16px;margin-top:4px;color:var(--navy)}
+  .triage{margin-top:16px}
+
+  /* ---------- Roles ---------- */
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:960px){.roles{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:620px){.roles{grid-template-columns:1fr}}
+  .role{padding:18px 18px 16px;display:flex;flex-direction:column;gap:8px}
+  .role-top{display:flex;align-items:center;gap:11px}
+  .avatar{width:38px;height:38px;border-radius:9999px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:14px;flex:none}
+  .role:nth-child(even) .avatar{background:var(--red)}
+  .role h3{font-family:var(--font-head);font-size:15px;font-weight:700;line-height:1.3}
+  .role .r-tag{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+  .role p{font-size:13.5px;color:var(--muted)}
+  .role .cases{font-size:12.5px;font-weight:600;color:var(--navy);background:var(--tint);border-radius:7px;padding:4px 9px;align-self:flex-start}
+
+  /* ---------- Flow groups ---------- */
+  .flows{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:720px){.flows{grid-template-columns:1fr}}
+  .flow{display:flex;gap:13px;padding:15px 17px;align-items:flex-start}
+  .flow .f-id{font-family:var(--font-head);font-weight:800;font-size:13px;color:#fff;background:var(--navy);border-radius:8px;padding:4px 9px;flex:none;margin-top:1px}
+  .flow:nth-child(2) .f-id,.flow:nth-child(5) .f-id{background:var(--red)}
+  .flow b{font-size:14.5px}
+  .flow p{font-size:13.5px;color:var(--muted)}
+  .flow .n{font-size:12px;color:var(--faint);font-weight:600}
+
+  /* ---------- Rules ---------- */
+  .rules{padding:6px 22px}
+  .rules li{list-style:none;display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line-soft);font-size:14.5px}
+  .rules li:first-child{border-top:none}
+  .rules .icon{color:var(--red);margin-top:3px}
+  .rules b{font-weight:700}
+
+  /* ---------- Admin details ---------- */
+  details.admin{border:1px dashed #c6cbe4;border-radius:var(--radius);background:#fbfbfe;overflow:hidden}
+  details.admin summary{cursor:pointer;list-style:none;padding:18px 22px;display:flex;align-items:center;gap:11px;font-family:var(--font-head);font-weight:700;font-size:15.5px;color:var(--navy)}
+  details.admin summary::-webkit-details-marker{display:none}
+  details.admin summary .icon{color:var(--red)}
+  details.admin summary .chev{margin-left:auto;transition:transform .2s;color:var(--faint)}
+  details.admin[open] summary .chev{transform:rotate(180deg)}
+  details.admin summary:hover{background:var(--tint)}
+  .admin-body{padding:4px 22px 22px;font-size:14.5px;color:var(--muted)}
+  .admin-body ol{margin-left:20px;display:flex;flex-direction:column;gap:9px}
+  .admin-body b{color:var(--ink)}
+  pre.sql{font-family:var(--font-mono);font-size:12.5px;line-height:1.7;background:#14143f;color:#dfe3ff;border-radius:var(--radius-sm);padding:14px 16px;overflow-x:auto;margin:10px 0}
+
+  footer{border-top:1px solid var(--line);margin-top:64px;background:var(--card)}
+  .foot-inner{max-width:1060px;margin:0 auto;padding:26px 24px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;font-size:13.5px;color:var(--muted)}
+  .foot-inner b{color:var(--navy)}
+  a.link{color:var(--navy);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-kicker"><span class="dot"></span>CB Centres · Media Team · Nội bộ</span>
+    <h1>Hướng dẫn test UAT<br>CB&nbsp;Creative&nbsp;Flow — <em>trước khi dùng thật</em></h1>
+    <p class="lead">Mỗi người đăng nhập bằng <strong>Gmail công ty @cbcentres.com</strong>, làm theo kịch bản trong Google Sheet và ghi lại kết quả. Trang này tóm tắt mọi thứ cần biết trong 5 phút.</p>
+    <div class="hero-facts">
+      <div class="fact"><b>78</b><span>test case trong Sheet</span></div>
+      <div class="fact"><b>7</b><span>nhóm flow F0 → F6</span></div>
+      <div class="fact"><b>3</b><span>vòng test / 5 ngày</span></div>
+      <div class="fact"><b>6</b><span>vai trò phân công</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="topnav" aria-label="Mục lục">
+  <div class="topnav-inner">
+    <a href="#chuan-bi">1 · Chuẩn bị</a>
+    <a href="#ghi-ket-qua">2 · Ghi kết quả</a>
+    <a href="#ke-hoach">3 · Kế hoạch 3 vòng</a>
+    <a href="#phan-vai">4 · Phân vai</a>
+    <a href="#nhom-case">5 · Nhóm case</a>
+    <a href="#quy-tac">6 · Quy tắc</a>
+    <a href="#admin">Dành cho Admin</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ======================= 1. CHUẨN BỊ ======================= -->
+<section id="chuan-bi">
+  <div class="sec-head"><span class="sec-num">1</span><h2>Trước khi test — làm 1 lần duy nhất</h2></div>
+  <p class="sec-sub">3 bước, mất khoảng 2 phút. Bỏ qua bước 1 là dễ gặp "data ma" từ bản demo cũ.</p>
+
+  <div class="steps">
+    <div class="card step">
+      <div class="step-top"><span class="step-badge">Bước 1</span></div>
+      <h3><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Xóa site data của browser</h3>
+      <p>Máy từng mở bản demo còn lưu dữ liệu cũ (<code>mh-user</code>, draft, task demo…) sẽ hiển thị sai lệch.</p>
+      <p class="kbd-row"><kbd>F12</kbd> → tab <b>Application</b> → <b>Storage</b> → <b>Clear site data</b>.<br>Hoặc đơn giản: dùng <b>cửa sổ ẩn danh</b> / profile Chrome mới.</p>
+    </div>
+    <div class="card step">
+      <div class="step-top"><span class="step-badge">Bước 2</span></div>
+      <h3><svg class="icon" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>Đăng nhập Gmail công ty</h3>
+      <p>Mở link app (anh Jett gửi trong nhóm) → bấm <b>Đăng nhập</b> → chọn nút <b>"Đăng nhập với Gmail công ty"</b> → chọn email <code>@cbcentres.com</code> của mình.</p>
+      <p>Gmail cá nhân sẽ bị hệ thống từ chối — đây là hành vi đúng.</p>
+    </div>
+    <div class="card step">
+      <div class="step-top"><span class="step-badge">Bước 3</span></div>
+      <h3><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Kiểm tra đúng vai trò</h3>
+      <p>Sau login, hệ thống tự đưa vào trang làm việc theo role: Account/Media → Dashboard · Lead Content → Content Workspace · Content → Content Wording…</p>
+      <p>Sai trang, sai tên hiển thị, hoặc bị coi là "client"? <b>Báo anh Jett ngay</b> — sửa 1 phút là xong.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <svg class="icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <div><b>Đây là môi trường test.</b> Toàn bộ data sẽ được xóa lại sau đợt UAT — cứ mạnh dạn tạo, sửa, hủy. Đặt tên order/task có tiền tố <code>[UAT]</code> để dễ lọc.</div>
+  </div>
+</section>
+
+<!-- ======================= 2. GHI KẾT QUẢ ======================= -->
+<section id="ghi-ket-qua">
+  <div class="sec-head"><span class="sec-num">2</span><h2>Cách ghi kết quả vào Google Sheet</h2></div>
+  <p class="sec-sub">Sheet chung do anh Jett share (import từ <code>UAT_TestPlan.csv</code>). Mỗi dòng là 1 case: làm theo cột <b>Bước thực hiện</b>, so với <b>Kết quả mong đợi</b>, rồi điền.</p>
+
+  <div class="grid-2">
+    <div class="card pad">
+      <h3 class="card-title"><svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Cột "Kết quả" — chọn 1 trong 3</h3>
+      <div class="chips">
+        <div class="chip-row"><span class="chip pass">Pass</span><p>Kết quả thực tế khớp kết quả mong đợi.</p></div>
+        <div class="chip-row"><span class="chip fail">Fail</span><p>Sai / thiếu / lỗi so với mong đợi → điền thêm <b>mức độ lỗi</b> + <b>ghi chú + ảnh</b>.</p></div>
+        <div class="chip-row"><span class="chip blocked">Blocked</span><p>Không làm được vì bị chặn bởi lỗi khác — ghi rõ <b>bị chặn bởi case số mấy</b>.</p></div>
+      </div>
+      <h3 class="card-title" style="margin-top:22px"><svg class="icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Report 1 bug cho chuẩn</h3>
+      <div class="report-recipe">
+        <span class="recipe-pill">Làm gì</span><span class="recipe-arrow">→</span>
+        <span class="recipe-pill">Thấy gì</span><span class="recipe-arrow">→</span>
+        <span class="recipe-pill">Mong đợi gì</span><span class="recipe-arrow">→</span>
+        <span class="recipe-pill">Ảnh chụp màn hình</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--muted);margin-top:12px">Ảnh upload Drive rồi dán link vào cột <b>Ghi chú</b>. Bug không có ảnh + bước tái hiện = gần như không fix được. Nhớ điền <b>Người test + Ngày</b>.</p>
+    </div>
+
+    <div class="card pad">
+      <h3 class="card-title"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>Mức độ lỗi (chỉ điền khi Fail)</h3>
+      <table class="sev">
+        <tr><td><span class="tag crit">Critical</span></td><td>Mất data, không đăng nhập được, flow chính đứt (không gửi được order, không push được production).</td></tr>
+        <tr><td><span class="tag major">Major</span></td><td>Chức năng sai / thiếu thông báo, nhưng vẫn có đường vòng để làm tiếp.</td></tr>
+        <tr><td><span class="tag minor">Minor</span></td><td>UI lệch, sai chữ, màu sắc — không chặn công việc.</td></tr>
+      </table>
+      <div class="callout info" style="margin-top:18px">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <div><b>Case cần 2 vai</b> (VD: client gửi → account nhận thông báo): phối hợp 2 người, hoặc tự mở 2 browser / 2 profile.</div>
+      </div>
+      <div class="callout danger" style="margin-top:10px">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+        <div><b>Gặp lỗi lạ?</b> Bấm <kbd>F12</kbd> → tab <b>Console</b> → chụp luôn dòng lỗi màu đỏ kèm vào report.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 3. KẾ HOẠCH ======================= -->
+<section id="ke-hoach">
+  <div class="sec-head"><span class="sec-num">3</span><h2>Kế hoạch test — 3 vòng / 5 ngày</h2></div>
+  <p class="sec-sub">Đi từ dễ đến khó: đảm bảo ai cũng vào được trước, rồi mới chạy kịch bản, cuối cùng là test phá.</p>
+
+  <div class="timeline">
+    <div class="card round">
+      <span class="when">Ngày 1</span>
+      <h3>Vòng 1 — Smoke</h3>
+      <ul>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Cả team đăng nhập SSO (nhóm F0).</span></li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Mỗi người đi hết menu theo role của mình, bấm thử mọi trang.</span></li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Mục tiêu: không ai bị chặn login, không trang nào vỡ.</span></li>
+      </ul>
+    </div>
+    <div class="card round">
+      <span class="when">Ngày 2 – 4</span>
+      <h3>Vòng 2 — Kịch bản</h3>
+      <ul>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Chạy F1 → F6 theo Sheet, <b>phân vai đúng role thật</b> — Account thật đóng Account, Content thật đóng Content.</span></li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>1 người đóng khách hàng bằng tài khoản <code>client@cb.vn</code>.</span></li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Chạy F1 trọn vẹn ít nhất 2 lần: 1 order thiết kế + 1 order Quay/Chụp.</span></li>
+      </ul>
+    </div>
+    <div class="card round">
+      <span class="when">Ngày 5</span>
+      <h3>Vòng 3 — Free test</h3>
+      <ul>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Test phá: nhập liệu lạ/dài, double-click nút, mở 2 tab song song, back/forward.</span></li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Mobile, dark mode, để máy idle 30 phút rồi thao tác tiếp.</span></li>
+        <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Bug ngoài kịch bản → thêm dòng cuối Sheet, cột Nhóm ghi <code>Free</code>.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout info triage">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+    <div><b>Triage cuối mỗi ngày:</b> anh Jett lọc các case Fail theo mức độ, gom Critical/Major đưa đi fix theo đợt → sáng hôm sau <b>re-test các case Fail trước</b> rồi mới test tiếp.</div>
+  </div>
+</section>
+
+<!-- ======================= 4. PHÂN VAI ======================= -->
+<section id="phan-vai">
+  <div class="sec-head"><span class="sec-num">4</span><h2>Phân vai — tối thiểu 6 người</h2></div>
+  <p class="sec-sub">Ít người hơn thì 1 người ôm nhiều vai, dùng nhiều browser profile. Số case xem trong Sheet.</p>
+
+  <div class="roles">
+    <div class="card role">
+      <div class="role-top"><span class="avatar">01</span><div><h3>Quản trị</h3><span class="r-tag">admin</span></div></div>
+      <p>Điều phối triage, kiểm tra chéo số liệu dashboard, quản lý user.</p>
+      <span class="cases">F0 · F6 (case 72–78)</span>
+    </div>
+    <div class="card role">
+      <div class="role-top"><span class="avatar">02</span><div><h3>Account</h3><span class="r-tag">account</span></div></div>
+      <p>Tiếp nhận order, xác nhận brief, push production, gửi Preview/Final.</p>
+      <span class="cases">F1 (case 13–38) phía Account</span>
+    </div>
+    <div class="card role">
+      <div class="role-top"><span class="avatar">03</span><div><h3>Content Team</h3><span class="r-tag">lead_content + content</span></div></div>
+      <p>2 email, 2 vai: Lead gán PIC &amp; duyệt wording; Content viết &amp; gửi duyệt.</p>
+      <span class="cases">F1 wording · F2 Ads · F3</span>
+    </div>
+    <div class="card role">
+      <div class="role-top"><span class="avatar">04</span><div><h3>Production</h3><span class="r-tag">design / editor</span></div></div>
+      <p>Nhận task, đổi trạng thái, gắn link sản phẩm, xử lý feedback 3 vòng.</p>
+      <span class="cases">F1 (case 26–35) · F6 (65–66)</span>
+    </div>
+    <div class="card role">
+      <div class="role-top"><span class="avatar">05</span><div><h3>Lead Media + Giám sát</h3><span class="r-tag">lead_media + system_supervisor</span></div></div>
+      <p>Strategy Board 2 chiều; kiểm chứng quyền ngang Account và chế độ chỉ-xem.</p>
+      <span class="cases">F4 · F6 (case 69–70)</span>
+    </div>
+    <div class="card role">
+      <div class="role-top"><span class="avatar">06</span><div><h3>Khách hàng</h3><span class="r-tag">client@cb.vn</span></div></div>
+      <p>Gửi order Media + Ads, feedback, duyệt preview, rating, tra cứu tracking.</p>
+      <span class="cases">F1/F2 phía client · F5 (62) · F6 (71)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 5. NHÓM CASE ======================= -->
+<section id="nhom-case">
+  <div class="sec-head"><span class="sec-num">5</span><h2>7 nhóm test case trong Sheet</h2></div>
+  <p class="sec-sub">78 case chia theo flow — biết mình thuộc nhóm nào để nhảy thẳng tới đúng dòng.</p>
+
+  <div class="flows">
+    <div class="card flow"><span class="f-id">F0</span><div><b>Đăng nhập / SSO</b> <span class="n">· case 1–12</span><p>Login từng role vào đúng trang, chặn Gmail ngoài công ty, ghi nhận lần đăng nhập.</p></div></div>
+    <div class="card flow"><span class="f-id">F1</span><div><b>Media Order end-to-end</b> <span class="n">· case 13–38 · flow chính</span><p>Client gửi order → wording → xác nhận → production → preview → 3 vòng feedback → final → rating.</p></div></div>
+    <div class="card flow"><span class="f-id">F2</span><div><b>Ads Order</b> <span class="n">· case 39–46</span><p>Client gửi yêu cầu Ads → Content Team xử lý → chạy Ads → thông báo khách theo trạng thái.</p></div></div>
+    <div class="card flow"><span class="f-id">F3</span><div><b>Content nội bộ</b> <span class="n">· case 47–53</span><p>Content tự đề xuất task, Lead duyệt, gửi sang Media, Content Plan roll-up.</p></div></div>
+    <div class="card flow"><span class="f-id">F4</span><div><b>Strategy Board</b> <span class="n">· case 54–58</span><p>Giao kế hoạch Supervisor ↔ Lead, nộp duyệt, trả chỉnh, đề xuất ngược.</p></div></div>
+    <div class="card flow"><span class="f-id">F5</span><div><b>Brand Safety</b> <span class="n">· case 59–64</span><p>Kiểm duyệt hình ảnh AI theo 3 nhóm nội dung, Media hậu kiểm, giáo viên tự kiểm.</p></div></div>
+    <div class="card flow"><span class="f-id">F6</span><div><b>Phân quyền + Cross</b> <span class="n">· case 65–78</span><p>Ai được làm gì / bị chặn gì; Calendar, Dashboard, Reports, noti realtime, mobile, dark mode.</p></div></div>
+  </div>
+</section>
+
+<!-- ======================= 6. QUY TẮC ======================= -->
+<section id="quy-tac">
+  <div class="sec-head"><span class="sec-num">6</span><h2>Quy tắc chung</h2></div>
+  <div class="card rules">
+    <ul>
+      <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span><b>Data test sẽ bị xóa sau đợt UAT</b> — mạnh dạn tạo/sửa/hủy, không sợ hỏng gì.</span></li>
+      <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Đặt tên order/task test có tiền tố <code>[UAT]</code> — ví dụ <code>[UAT] Poster khai giảng</code>.</span></li>
+      <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>Gặp lỗi lạ: <kbd>F12</kbd> → Console → chụp cả dòng lỗi đỏ kèm report.</span></li>
+      <li><svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span><b>Không sửa dòng của người khác</b> trong Sheet — mỗi người tự chịu trách nhiệm case của mình.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ======================= ADMIN ======================= -->
+<section id="admin">
+  <div class="sec-head"><span class="sec-num" style="background:var(--red)">A</span><h2>Dành riêng cho Admin (anh Jett)</h2></div>
+  <p class="sec-sub">Nhân sự không cần đọc phần này. Checklist chạy TRƯỚC khi mời team vào — trên Supabase Dashboard → SQL Editor, theo thứ tự.</p>
+
+  <details class="admin">
+    <summary>
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+      Pre-flight checklist — 6 bước trước giờ G
+      <svg class="icon chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+    </summary>
+    <div class="admin-body">
+      <ol>
+        <li><b>Migration pending đã chạy đủ</b> (thiếu là flow chết im lặng): <code>add-notify-roles-rpc.sql</code> (noti client→staff) · <code>add-content-self-initiative.sql</code> (case 47) · <code>add-content-review-sla.sql</code> (case 22–23) · <code>enable-realtime.sql</code> (case 76) · <code>add-google-sso-cbcentres.sql</code> (bắt buộc cho SSO). Kiểm nhanh:
+<pre class="sql">SELECT proname FROM pg_proc
+WHERE proname IN ('notify_roles','append_lead_content_order_note','handle_new_auth_user');
+
+SELECT to_regclass('public.user_role_map'), to_regclass('public.content_tasks'),
+       to_regclass('public.brand_checks'),  to_regclass('public.lead_tasks');</pre>
+        Kết quả nào NULL/thiếu → chạy file SQL tương ứng.</li>
+        <li><b>Google SSO sẵn sàng</b>: Supabase Auth → Providers → Google bật; OAuth Client trên Google Cloud (app Internal, domain cbcentres.com) đã cấu hình.</li>
+        <li><b>Seed roster</b>: điền email công ty thật + role + TÊN (khớp tuyệt đối tên gán PIC) vào <code>supabase/seed-user-role-map.sql</code> → Run.</li>
+        <li><b>Reset data</b>: chạy <code>supabase/clear-demo.sql</code> (bản v2) → query verify cuối file phải ra <b>0</b> hết (trừ <code>users_kept</code>).</li>
+        <li><b>Edge Functions</b> (optional): <code>brand-check-analyze</code> cho nhóm F5 (chưa deploy → fallback "chờ duyệt tay", vẫn test được hậu kiểm) · <code>notify-email</code> + Database Webhook bảng <code>orders</code> cho case 17, 37 phần email (chưa deploy → bỏ 2 case email).</li>
+        <li><b>Kiểm tra cuối</b>: login <code>admin@cb.vn</code> → mọi trang empty-state sạch, chuông noti trống, console không lỗi → gửi link app + link Sheet cho team.</li>
+      </ol>
+    </div>
+  </details>
+</section>
+
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <div><b>CB Creative Flow · UAT</b> — tài liệu nội bộ, cập nhật 15/07/2026</div>
+    <div>Thắc mắc / sai role: báo <b>anh Jett</b> · Chi tiết kỹ thuật: <span style="font-family:var(--font-mono);font-size:12.5px">UAT/UAT_HuongDan.md</span></div>
+  </div>
+</footer>
+
+</body>
+</html>
