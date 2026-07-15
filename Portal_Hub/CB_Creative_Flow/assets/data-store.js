@@ -59,7 +59,11 @@
       // Lead Content order comment (add-lead-content-order-view.sql)
       'lead_content_notes',
       // Content review SLA + PIC self-checklist (add-content-review-sla.sql)
-      'lead_review_due', 'pic_checklist'];
+      'lead_review_due', 'pic_checklist',
+      // Deadline thương lượng Client↔Account (add-agreed-deadline-flow.sql)
+      'agreed_deadline', 'deadline_proposal_status', 'deadline_proposal_reason',
+      'deadline_proposed_by', 'deadline_proposed_by_id', 'deadline_proposed_at',
+      'deadline_responded_at', 'deadline_response_by', 'deadline_response_note', 'deadline_history'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {

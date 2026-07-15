@@ -167,13 +167,9 @@
         <option>Editor</option>
         <option>Shooting</option>
       </select>
-      <select class="select">
-        <option>Tất cả PIC</option>
-        <option>Duy</option>
-        <option>Vinh</option>
-        <option>Hậu</option>
-        <option>Linh Chi</option>
-        <option>Đức Anh</option>
+      <!-- Options build động từ users + tasks thật (renderPicFilter) — không hardcode PIC. -->
+      <select class="select" id="filter-pic">
+        <option value="">Tất cả PIC</option>
       </select>
       <select class="select">
         <option>Tất cả chi nhánh</option>
@@ -182,7 +178,7 @@
         <option>ĐN</option>
       </select>
       <div class="grow"></div>
-      <span class="text-xs muted">Hiển thị <b style="color:var(--text)">0</b> orders</span>
+      <span class="text-xs muted">Hiển thị <b style="color:var(--text)" id="dash-orders-count">0</b> orders</span>
     </div>
 
     <!-- ============ MODULE 5: CLIENT ORDERS OVERVIEW ============ -->
@@ -308,13 +304,9 @@
           <div><h3>Workload by PIC</h3><p class="desc">Open task volume by PIC. Red segment means overdue. Pressure threshold: 8 open tasks.</p></div>
           <span class="badge badge-success" id="workload-pressure-badge"><span class="dot"></span> Trong ngưỡng</span>
         </div>
+        <!-- Workload rows render ĐỘNG từ users thật + tasks thật (renderDynamicWorkload) — không hardcode PIC. -->
         <div class="workload-list" id="module5-workload-list">
-          <div class="workload-row" data-pic="Duy"><span class="wname"><span class="ava">Du</span> Duy</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
-          <div class="workload-row" data-pic="Vinh"><span class="wname"><span class="ava">Vi</span> Vinh</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
-          <div class="workload-row" data-pic="Hậu"><span class="wname"><span class="ava">Hậ</span> Hậu</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
-          <div class="workload-row" data-pic="Linh Chi"><span class="wname"><span class="ava">LC</span> Linh Chi</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
-          <div class="workload-row" data-pic="Đức Anh"><span class="wname"><span class="ava">ĐA</span> Đức Anh</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
-          <div class="workload-row" data-pic="Mai Phương"><span class="wname"><span class="ava">MP</span> Mai Phương</span><div class="workload-bar"><span class="wb--progress" style="width:0%"></span><span class="wb--review" style="width:0%"></span><span class="wb--overdue" style="width:0%"></span><span class="wb--done" style="width:0%"></span></div><span class="wcount"><b>0</b> /max 8</span></div>
+          <div class="alert-empty" style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:var(--text-sm)">Đang tải workload từ dữ liệu thật...</div>
         </div>
         <div class="workload-legend">
           <span><i class="wl--progress"></i> Active tasks</span>
@@ -708,6 +700,90 @@
       <span class="badge ${level === 'critical' ? 'badge-danger' : level === 'warning' ? 'badge-warning' : 'badge-success'}">${count}</span>
     </a>`;
   }
+  /* ---------- Dynamic PIC workload (bỏ hardcode PIC list) ----------
+     Danh sách PIC build từ users thật (User Management) + tasks.assigned_to thực tế.
+     User active role production/vận hành chưa có task vẫn hiện 0/max; task của
+     nhân sự đã rời (không còn trong users) vẫn hiện row — không mất dữ liệu. */
+  const WORKLOAD_ROLES = ['design', 'editor', 'account', 'lead_media', 'admin'];
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function normalizeName(s) { return String(s || '').trim(); }
+  function initialsOf(name) {
+    const parts = normalizeName(name).split(/\s+/).filter(Boolean);
+    if (!parts.length) return '—';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  function roleLabel(role) {
+    const map = { admin: 'Admin', account: 'Account', lead_media: 'Lead Media', design: 'Design', editor: 'Editor', content: 'Content', lead_content: 'Lead Content', system_supervisor: 'Giám sát', client: 'Client' };
+    return map[role] || role || '';
+  }
+  function buildPicDirectory(users, tasks) {
+    const map = new Map();
+    (users || [])
+      .filter((u) => u && u.name && u.status !== 'inactive' && WORKLOAD_ROLES.includes(u.role))
+      .forEach((u) => {
+        const name = normalizeName(u.name);
+        if (name && !map.has(name)) map.set(name, { name, role: u.role, source: 'users' });
+      });
+    (tasks || []).forEach((t) => {
+      const name = normalizeName(t.assigned_to);
+      if (name && !map.has(name)) map.set(name, { name, role: '', source: 'tasks' });
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  }
+  function aggregateWorkload(tasks) {
+    const data = {};
+    (tasks || []).forEach((t) => {
+      const name = normalizeName(t.assigned_to);
+      if (!name) return; // unassigned có KPI riêng
+      if (!data[name]) data[name] = { progress: 0, review: 0, overdue: 0, done: 0, open: 0, total: 0 };
+      data[name].total++;
+      const completed = dbIsCompleted(t.status);
+      if (completed) { data[name].done++; return; }
+      if (t.status === 'cancelled' || t.status === 'paused') return;
+      if (dbIsOverdue(t.internal_deadline, false)) { data[name].overdue++; data[name].open++; }
+      else if (t.status === 'review') { data[name].review++; data[name].open++; }
+      else { data[name].progress++; data[name].open++; }
+    });
+    return data;
+  }
+  function renderDynamicWorkload(users, tasks) {
+    const mount = document.getElementById('module5-workload-list');
+    if (!mount) return;
+    const MAX_PER_PIC = 8;
+    const directory = buildPicDirectory(users, tasks);
+    const workload = aggregateWorkload(tasks);
+    const rows = directory.map((pic) => Object.assign({}, pic, workload[pic.name] || { progress: 0, review: 0, overdue: 0, done: 0, open: 0, total: 0 }));
+    rows.sort((a, b) => (b.open - a.open) || (b.overdue - a.overdue) || a.name.localeCompare(b.name, 'vi'));
+    if (!rows.length) {
+      mount.innerHTML = '<div class="alert-empty" style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:var(--text-sm)">Chưa có PIC hoặc task nào để hiển thị.</div>';
+      return;
+    }
+    const w = (n) => Math.min(100, n / MAX_PER_PIC * 100) + '%';
+    mount.innerHTML = rows.map((r) => `
+      <div class="workload-row" data-pic="${escapeHtml(r.name)}">
+        <span class="wname"><span class="ava">${escapeHtml(initialsOf(r.name))}</span> ${escapeHtml(r.name)}${r.role ? ` <small class="text-xs muted">· ${escapeHtml(roleLabel(r.role))}</small>` : ''}</span>
+        <div class="workload-bar"><span class="wb--progress" style="width:${w(r.progress)}"></span><span class="wb--review" style="width:${w(r.review)}"></span><span class="wb--overdue" style="width:${w(r.overdue)}"></span><span class="wb--done" style="width:${w(r.done)}"></span></div>
+        <span class="wcount"><b>${r.open}</b> /max ${MAX_PER_PIC}</span>
+      </div>`).join('');
+    const overloaded = rows.filter((r) => r.open > MAX_PER_PIC).length;
+    const pressureBadge = document.getElementById('workload-pressure-badge');
+    if (pressureBadge) {
+      pressureBadge.className = `badge ${overloaded ? 'badge-danger' : 'badge-success'}`;
+      pressureBadge.innerHTML = `<span class="dot"></span> ${overloaded ? overloaded + ' PIC quá tải' : 'Trong ngưỡng'}`;
+    }
+  }
+  function renderPicFilter(selectEl, users, tasks) {
+    if (!selectEl) return;
+    const selectedValue = selectEl.value;
+    const directory = buildPicDirectory(users, tasks);
+    selectEl.innerHTML = '<option value="">Tất cả PIC</option>' +
+      directory.map((p) => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}${p.role ? ' · ' + escapeHtml(roleLabel(p.role)) : ''}</option>`).join('');
+    if (selectedValue) selectEl.value = selectedValue;
+  }
+
   function renderModule5Dashboard(O, T) {
     const orderInProductionStatuses = ['received', 'inprogress', 'revision', 'feedback_fix'];
     const totalClientOrders = O.length;
@@ -782,54 +858,25 @@
     }
     try {
       await window.MH.supabaseReady;
-      const [orders, tasks] = await Promise.all([
+      // users.list() fail → vẫn render workload từ tasks.assigned_to (fallback []).
+      const [orders, tasks, users] = await Promise.all([
         window.MH.store.orders.list(),
-        window.MH.store.tasks.list()
+        window.MH.store.tasks.list(),
+        window.MH.store.users.list().catch(() => [])
       ]);
       const O = Array.isArray(orders) ? orders : [];
       const T = Array.isArray(tasks) ? tasks : [];
+      const U = Array.isArray(users) ? users : [];
 
       // Module 5: render 16 KPI cards (8 Client Orders + 8 Internal Tasks) + Alert Center.
       // Legacy mixed KPI row + Workflow Health đã removed. NO ambiguous mixed KPI.
       renderModule5Dashboard(O, T);
 
-      /* ============ Workload by PIC (Internal Tasks only, Module 5 Team Workload section) ============ */
-      const picData = {};  // { picName: { progress, review, overdue, done } }
-      T.forEach((t) => {
-        const p = t.assigned_to || '—';
-        if (!picData[p]) picData[p] = { progress: 0, review: 0, overdue: 0, done: 0 };
-        const completed = dbIsCompleted(t.status);
-        if (completed) picData[p].done++;
-        else if (dbIsOverdue(t.internal_deadline, false)) picData[p].overdue++;
-        else if (t.status === 'review') picData[p].review++;
-        else if (['received','inprogress','revision','feedback_fix','pending','feedback_wait','ready'].includes(t.status)) picData[p].progress++;
-      });
-      const MAX_PER_PIC = 8;
-      const overloadedPics = new Set();
-      document.querySelectorAll('[data-pic]').forEach((row) => {
-        const name = row.getAttribute('data-pic');
-        const d = picData[name] || { progress: 0, review: 0, overdue: 0, done: 0 };
-        const openCount = d.progress + d.review + d.overdue;
-        if (openCount > MAX_PER_PIC) overloadedPics.add(name);
-        const wcount = row.querySelector('.wcount b');
-        if (wcount) wcount.textContent = openCount;
-        // Segment widths as % of MAX_PER_PIC
-        const w = (n) => Math.min(100, n / MAX_PER_PIC * 100) + '%';
-        const progBar = row.querySelector('.wb--progress');
-        const revBar  = row.querySelector('.wb--review');
-        const odBar   = row.querySelector('.wb--overdue');
-        const dBar    = row.querySelector('.wb--done');
-        if (progBar) progBar.style.width = w(d.progress);
-        if (revBar)  revBar.style.width  = w(d.review);
-        if (odBar)   odBar.style.width   = w(d.overdue);
-        if (dBar)    dBar.style.width    = w(d.done);
-      });
-      const pressureBadge = document.getElementById('workload-pressure-badge');
-      if (pressureBadge) {
-        const overloadedPicCount = overloadedPics.size;
-        pressureBadge.className = `badge ${overloadedPicCount ? 'badge-danger' : 'badge-success'}`;
-        pressureBadge.innerHTML = `<span class="dot"></span> ${overloadedPicCount ? overloadedPicCount + ' PIC quá tải' : 'Trong ngưỡng'}`;
-      }
+      /* ============ Workload by PIC — DYNAMIC (users thật + tasks thật, hết hardcode) ============ */
+      renderDynamicWorkload(U, T);
+      renderPicFilter(document.getElementById('filter-pic'), U, T);
+      const ordersCountEl = document.getElementById('dash-orders-count');
+      if (ordersCountEl) ordersCountEl.textContent = O.length;
       setMasterUpdatedNow();
     } catch (e) {
       console.warn('[dashboard] load failed:', e);

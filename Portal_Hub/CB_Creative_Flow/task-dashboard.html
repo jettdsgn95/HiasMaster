@@ -345,13 +345,9 @@
           <p>Tasks by P.I.C — số task đang mở (chưa completed/cancelled/paused) per nhân sự.</p>
         </div>
       </div>
-      <div class="bar-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
-        <div class="bar-row" data-pic="Duy"><span style="width:140px"><b>Duy</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
-        <div class="bar-row" data-pic="Vinh"><span style="width:140px"><b>Vinh</b> · Design</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
-        <div class="bar-row" data-pic="Linh Chi"><span style="width:140px"><b>Linh Chi</b> · Editor</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
-        <div class="bar-row" data-pic="Hậu"><span style="width:140px"><b>Hậu</b> · Account</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
-        <div class="bar-row" data-pic="Đức Anh"><span style="width:140px"><b>Đức Anh</b> · Account</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-brand); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
-        <div class="bar-row" data-pic="Mai Phương"><span style="width:140px"><b>Mai Phương</b> · Admin</span><div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:0%; background:var(--grad-red); border-radius:var(--radius-pill)"></i></div><b style="width:80px; text-align:right">0 / 8</b></div>
+      <!-- Rows render ĐỘNG từ users thật + tasks thật (renderTaskDashboardWorkload) — không hardcode PIC. -->
+      <div class="bar-list" id="task-workload-list" style="display:flex; flex-direction:column; gap:var(--space-2); margin-top:var(--space-3)">
+        <div class="alert-empty" style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:var(--text-sm)">Đang tải workload theo PIC...</div>
       </div>
       <p class="text-xs muted" style="margin-top:var(--space-3)">Workload max 8 task / member. Bar đỏ = critical (vượt ngưỡng), brand = bình thường. Bao gồm linked + standalone tasks.</p>
     </section>
@@ -502,6 +498,64 @@
     return !isCompletedStatus(s) && s !== 'cancelled' && s !== 'paused';
   }
 
+  /* ---------- Dynamic PIC workload (bỏ hardcode PIC list) ----------
+     Directory = users thật (role production/vận hành, active) + tasks.assigned_to
+     thực tế (nhân sự cũ vẫn hiện row — không mất dữ liệu). */
+  const WORKLOAD_ROLES = ['design', 'editor', 'account', 'lead_media', 'admin'];
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function normalizeName(s) { return String(s || '').trim(); }
+  function roleLabel(role) {
+    const map = { admin: 'Admin', account: 'Account', lead_media: 'Lead Media', design: 'Design', editor: 'Editor', content: 'Content', lead_content: 'Lead Content', system_supervisor: 'Giám sát', client: 'Client' };
+    return map[role] || role || '';
+  }
+  function buildPicDirectory(users, tasks) {
+    const map = new Map();
+    (users || [])
+      .filter((u) => u && u.name && u.status !== 'inactive' && WORKLOAD_ROLES.includes(u.role))
+      .forEach((u) => {
+        const name = normalizeName(u.name);
+        if (name && !map.has(name)) map.set(name, { name, role: u.role, source: 'users' });
+      });
+    (tasks || []).forEach((t) => {
+      const name = normalizeName(t.assigned_to);
+      if (name && !map.has(name)) map.set(name, { name, role: '', source: 'tasks' });
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  }
+  function renderTaskDashboardWorkload(users, tasks) {
+    const mount = document.getElementById('task-workload-list');
+    if (!mount) return;
+    const MAX_PER_PIC = 8;
+    const counts = {}; const overdueCounts = {};
+    (tasks || []).forEach((t) => {
+      const name = normalizeName(t.assigned_to);
+      if (!name) return;
+      if (isOpenStatus(t.status)) {
+        counts[name] = (counts[name] || 0) + 1;
+        if (isOverdueD(t.internal_deadline, false)) overdueCounts[name] = (overdueCounts[name] || 0) + 1;
+      }
+    });
+    const rows = buildPicDirectory(users, tasks)
+      .map((p) => Object.assign({}, p, { open: counts[p.name] || 0, overdue: overdueCounts[p.name] || 0 }))
+      .sort((a, b) => (b.open - a.open) || a.name.localeCompare(b.name, 'vi'));
+    if (!rows.length) {
+      mount.innerHTML = '<div class="alert-empty" style="padding:24px 16px;text-align:center;color:var(--text-muted);font-size:var(--text-sm)">Chưa có task hoặc PIC.</div>';
+      return;
+    }
+    mount.innerHTML = rows.map((r) => {
+      const pct = Math.min(100, r.open / MAX_PER_PIC * 100);
+      const critical = r.open > MAX_PER_PIC;
+      return `
+      <div class="bar-row" data-pic="${escapeHtml(r.name)}">
+        <span style="width:180px"><b>${escapeHtml(r.name)}</b>${r.role ? ' · ' + escapeHtml(roleLabel(r.role)) : ''}</span>
+        <div class="bar" style="flex:1; height:10px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden"><i style="display:block; height:100%; width:${pct}%; background:${critical ? 'var(--red-600)' : 'var(--grad-brand)'}; border-radius:var(--radius-pill)"></i></div>
+        <b style="width:80px; text-align:right">${r.open} / ${MAX_PER_PIC}</b>
+      </div>`;
+    }).join('');
+  }
+
   async function loadTaskDashboard() {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) {
       console.warn('[task-dashboard] Supabase chưa enabled — giữ UI 0.');
@@ -509,7 +563,11 @@
     }
     try {
       await window.MH.supabaseReady;
-      const tasks = await window.MH.store.tasks.list();
+      // users.list() fail → workload vẫn render từ tasks.assigned_to (fallback []).
+      const [tasks, users] = await Promise.all([
+        window.MH.store.tasks.list(),
+        window.MH.store.users.list().catch(() => [])
+      ]);
       if (!Array.isArray(tasks)) return;
 
       const NOW = Date.now();
@@ -598,26 +656,8 @@
       setKpi('avg_completion_time', avgCompletionDays !== null ? avgCompletionDays : '—');
       setText('td-total-display', total);
 
-      /* ============ WORKLOAD by PIC (6 members, MAX 8) ============ */
-      const openTasks = tasks.filter((t) => isOpenStatus(t.status));
-      const picCounts = {};
-      openTasks.forEach((t) => {
-        const p = t.assigned_to || '— Chưa gán —';
-        picCounts[p] = (picCounts[p] || 0) + 1;
-      });
-      const MAX_PER_PIC = 8;
-      document.querySelectorAll('[data-pic]').forEach((row) => {
-        const name = row.getAttribute('data-pic');
-        const c = picCounts[name] || 0;
-        const count = row.querySelector('b[style*="text-align:right"]');
-        if (count) count.textContent = c + ' / ' + MAX_PER_PIC;
-        const bar = row.querySelector('.bar > i');
-        if (bar) {
-          bar.style.width = Math.min(100, c / MAX_PER_PIC * 100) + '%';
-          // Critical (overload): bar đỏ
-          bar.style.background = c > MAX_PER_PIC ? 'var(--red-600)' : 'var(--grad-brand)';
-        }
-      });
+      /* ============ WORKLOAD by PIC — DYNAMIC (users thật + tasks thật, hết hardcode) ============ */
+      renderTaskDashboardWorkload(users, tasks);
 
       /* ============ Task type distribution ============ */
       const typeCounts = {};

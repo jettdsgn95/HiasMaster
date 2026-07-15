@@ -197,11 +197,11 @@
       const typeLbl = TYPE_LABEL[o.request_type] || o.request_type || '';
       const picName = o.production_pic || o.production_pic_video || o.production_pic_photo || '';
 
-      // Deadline order (ưu tiên requested_deadline; fallback internal_deadline)
-      const dl = parseDate(o.requested_deadline || o.internal_deadline);
+      // Deadline order — effective = agreed (đã thống nhất với Client) || requested; fallback internal_deadline.
+      const dl = parseDate(o.agreed_deadline || o.requested_deadline || o.internal_deadline);
       if (dl) {
         events.push(makeEvent(dl, 'order-deadline', o.project_name || o.order_id, {
-          pic: picName, sub: (o.order_id || '') + (typeLbl ? ' · ' + typeLbl : ''),
+          pic: picName, sub: (o.order_id || '') + (typeLbl ? ' · ' + typeLbl : '') + (o.agreed_deadline ? ' · Đã thống nhất' : ''),
           refKind: 'order', refId: o.order_id, status: o.production_status
         }));
       }

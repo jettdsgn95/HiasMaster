@@ -156,9 +156,10 @@
   }
   function picOptions(current, roles, fallback) {
     current = current || '';
+    // data-role → badge role ở custom dropdown (app.js enhancePicSelects); text "Tên · Tag" = fallback native.
     return '<option value="">— Chưa gán —</option>' + picUserPool(roles, fallback, current).map((u) => {
       const tag = ROLE_TAG[u.role] || u.role;
-      return `<option value="${escapeHtml(u.name)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
+      return `<option value="${escapeHtml(u.name)}" data-role="${escapeHtml(tag)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
     }).join('');
   }
 
@@ -254,6 +255,38 @@
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
+  /* ---------- Effective deadline (P0 deadline flow) ----------
+     3 lớp deadline: requested_deadline (Client nhập, GIỮ NGUYÊN audit) →
+     agreed_deadline (Account đề xuất/đã thống nhất với Client) → internal_deadline (nội bộ giao PIC).
+     Hiển thị cho Client/Account = agreed || requested. Production vẫn dùng internal_deadline. */
+  function effectiveDeadline(o) { return (o && (o.agreed_deadline || o.requested_deadline)) || null; }
+  function fmtDeadlineDate(s) {
+    const d = parseDate(String(s || ''));
+    if (!d || isNaN(d.getTime())) return s || '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    // agreed_deadline là timestamptz (có giờ) — hiện kèm HH:MM; requested_deadline là date thuần.
+    const hasTime = /[T ]\d{2}:/.test(String(s));
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` + (hasTime ? ` ${pad(d.getHours())}:${pad(d.getMinutes())}` : '');
+  }
+  function deadlineLabel(o) {
+    if (!o) return '—';
+    if (o.agreed_deadline) return fmtDeadlineDate(o.agreed_deadline) + ' · Đã thống nhất';
+    if (o.requested_deadline) return fmtDeadlineDate(o.requested_deadline) + ' · Client đề xuất';
+    return '—';
+  }
+  // Internal deadline trễ hơn deadline đã thống nhất với Client → cảnh báo (không block cứng).
+  function internalPastEffective(o) {
+    if (!o || !o.internal_deadline) return false;
+    const eff = effectiveDeadline(o);
+    if (!eff) return false;
+    const di = parseDate(String(o.internal_deadline));
+    let de = parseDate(String(eff));
+    if (!di || !de || isNaN(di.getTime()) || isNaN(de.getTime())) return false;
+    // requested_deadline là date thuần → coi hạn = cuối ngày đó.
+    if (!/[T ]\d{2}:/.test(String(eff))) { de = new Date(de); de.setHours(23, 59, 59, 999); }
+    return di.getTime() > de.getTime();
+  }
+
   // Order media gán PIC qua production_pic_video/photo; còn lại dùng production_pic đơn.
   function orderHasPic(o) {
     return o.request_type === 'media' ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
@@ -466,7 +499,7 @@
       case 'unassigned': return o.account_status === 'confirmed' && !orderHasPic(o);
       case 'urgent': return o.priority === 'urgent' || o.priority === 'critical';
       case 'overdue': {
-        const days = diffDays(o.requested_deadline);
+        const days = diffDays(effectiveDeadline(o));
         return days !== null && days < 0 && o.production_status !== 'completed' && o.account_status !== 'rejected';
       }
       case 'completed': return o.production_status === 'completed';
@@ -511,11 +544,13 @@
   const tbody = document.getElementById('orders-tbody');
 
   function renderRow(o) {
-    const isOverdue = deadlineClass(o.requested_deadline, ['completed', 'delivered'].includes(o.production_status)) === 'is-overdue';
-    const dlCls = deadlineClass(o.requested_deadline, ['completed', 'delivered'].includes(o.production_status));
+    // Deadline hiển thị = effective (agreed || requested) — internal_deadline KHÔNG dùng ở đây.
+    const effDl = effectiveDeadline(o);
+    const isOverdue = deadlineClass(effDl, ['completed', 'delivered'].includes(o.production_status)) === 'is-overdue';
+    const dlCls = deadlineClass(effDl, ['completed', 'delivered'].includes(o.production_status));
     const ts = parseDate(o.created_at);
     const ts_fmt = ts ? `${String(ts.getDate()).padStart(2,'0')}/${String(ts.getMonth()+1).padStart(2,'0')} · ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}` : '—';
-    const dl = parseDate(o.requested_deadline);
+    const dl = parseDate(effDl);
     const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}/${dl.getFullYear()}` : '—';
     // PIC cell: order media gán qua production_pic_video/photo (KHÔNG phải production_pic đơn).
     let picCell;
@@ -535,7 +570,7 @@
         <td class="project-cell"><b>${escapeHtml(o.project_name)}</b><span>${o.deliverable_type ? o.deliverable_type.slice(0, 2).join(' · ') + (o.deliverable_type.length > 2 ? ' +' + (o.deliverable_type.length - 2) : '') : ''}</span></td>
         <td><span class="text-xs">${TYPE_LABEL[o.request_type] || o.request_type}</span></td>
         <td><span class="priority-pill p--${o.priority}"><span class="dot"></span>${PRIORITY_LABEL[o.priority]}</span></td>
-        <td><div class="deadline-cell ${dlCls}"><span class="date">${dl_fmt}</span><span class="relative">${fmtRelative(o.requested_deadline)}</span></div></td>
+        <td><div class="deadline-cell ${dlCls}"><span class="date">${dl_fmt}${o.agreed_deadline ? ' <span class="text-xs" title="Deadline đã thống nhất với Client" style="color:var(--success)">✓</span>' : ''}</span><span class="relative">${fmtRelative(effDl)}</span></div></td>
         <td><span class="tb-status s--${o.account_status}"><span class="dot"></span>${ACCOUNT_STATUS_LABEL[o.account_status]}</span></td>
         <td><span class="tb-status s--${o.production_status}"><span class="dot"></span>${PROD_STATUS_LABEL[o.production_status] || '—'}</span></td>
         <td>${picCell}</td>
@@ -614,7 +649,7 @@
     setCount('count-unassigned', ORDERS.filter((o) => o.account_status === 'confirmed' && !orderHasPic(o)).length);
     setCount('count-urgent', ORDERS.filter((o) => (o.priority === 'urgent' || o.priority === 'critical') && o.account_status !== 'rejected').length);
     setCount('count-overdue', ORDERS.filter((o) => {
-      const days = diffDays(o.requested_deadline);
+      const days = diffDays(effectiveDeadline(o));
       return days !== null && days < 0 && o.production_status !== 'completed' && o.account_status !== 'rejected';
     }).length);
     setCount('count-completed', ORDERS.filter((o) => o.production_status === 'completed' || o.production_status === 'delivered').length);
@@ -667,7 +702,7 @@
           o.project_name || '',
           TYPE_LABEL[o.request_type] || o.request_type || '',
           PRIORITY_LABEL[o.priority] || o.priority || '',
-          o.requested_deadline || '',
+          effectiveDeadline(o) || '',
           ACCOUNT_STATUS_LABEL[o.account_status] || o.account_status || '',
           PROD_STATUS_LABEL[o.production_status] || o.production_status || '',
           o.production_pic || '',
@@ -1042,6 +1077,148 @@
     }
   }
 
+  /* ---------- Deadline thương lượng với Client (P0 deadline flow) ----------
+     Account/Admin/Lead Media đề xuất agreed_deadline mới + lý do → Client nhận noti
+     deadline_proposed → Client Đồng ý (accepted) / Cần trao đổi lại (rejected) qua RPC.
+     requested_deadline KHÔNG BAO GIỜ bị ghi đè (audit). internal_deadline không lộ Client. */
+  const DL_PROPOSAL_LABEL = {
+    none: 'Chưa có đề xuất', proposed: 'Đang chờ Client phản hồi',
+    accepted: 'Client đã đồng ý', rejected: 'Client cần trao đổi lại'
+  };
+  function buildDeadlineNegotiation(o) {
+    const status = o.deadline_proposal_status || 'none';
+    const closed = o.account_status === 'rejected' || o.production_status === 'cancelled' || o.production_status === 'completed';
+    const isInternal = isInternalOrder(o);
+    if (isInternal) return ''; // order nội bộ không có client thật — không thương lượng deadline.
+    const statusChip = {
+      none: '', proposed: 'badge-warning', accepted: 'badge-success', rejected: 'badge-danger'
+    }[status];
+    const histArr = Array.isArray(o.deadline_history) ? o.deadline_history
+      : (typeof o.deadline_history === 'string' ? (function () { try { return JSON.parse(o.deadline_history) || []; } catch (e) { return []; } })() : []);
+    const histHtml = histArr.length ? `
+      <details class="text-xs" style="margin-top:8px">
+        <summary style="cursor:pointer;color:var(--text-muted)">Lịch sử deadline (${histArr.length})</summary>
+        <ul style="margin:6px 0 0 16px;color:var(--text-muted);display:flex;flex-direction:column;gap:3px">
+          ${histArr.slice().reverse().map((h) => `<li>${escapeHtml(fmtDateTime(h.at))} · <b>${escapeHtml({ proposed: 'Đề xuất', accepted: 'Client đồng ý', rejected: 'Client trao đổi lại' }[h.type] || h.type)}</b>${h.to ? ' → ' + escapeHtml(fmtDeadlineDate(h.to)) : (h.deadline ? ' → ' + escapeHtml(fmtDeadlineDate(h.deadline)) : '')}${h.reason ? ' · ' + escapeHtml(h.reason) : ''}${h.note ? ' · "' + escapeHtml(h.note) + '"' : ''} — ${escapeHtml(h.by || '')}</li>`).join('')}
+        </ul>
+      </details>` : '';
+    const lateWarn = internalPastEffective(o) ? `
+      <div class="text-xs" style="margin-top:10px;padding:9px 12px;background:rgba(186,17,15,.07);border:1px solid rgba(186,17,15,.28);border-radius:8px;color:#8c1210">
+        <b>⚠ Internal Deadline đang trễ hơn deadline đã thống nhất với Client.</b> Vui lòng điều chỉnh Internal Deadline hoặc thương lượng lại deadline với Client.
+      </div>` : '';
+    const rejectedNote = status === 'rejected' && o.deadline_response_note ? `
+      <div class="text-xs" style="margin-top:10px;padding:9px 12px;background:var(--surface-2);border-radius:8px">
+        <b>Phản hồi của Client${o.deadline_responded_at ? ' (' + fmtDateTime(o.deadline_responded_at) + ')' : ''}:</b> ${escapeHtml(o.deadline_response_note)}
+      </div>` : '';
+    const canPropose = ['admin', 'account'].includes(user.role) && !READONLY && !closed;
+    const form = canPropose ? `
+      <div class="edit-row" style="margin-top:12px">
+        <label>Deadline đề xuất mới</label>
+        <input class="input" id="dl-propose-input" type="datetime-local" value="${status === 'proposed' ? toLocalInput(o.agreed_deadline) : ''}" />
+      </div>
+      <div class="edit-row">
+        <label>Lý do điều chỉnh</label>
+        <textarea class="textarea" id="dl-propose-reason" placeholder="VD: khối lượng thiết kế lớn, cần thêm 2 ngày để đảm bảo chất lượng..." style="min-height:64px">${status === 'proposed' ? escapeHtml(o.deadline_proposal_reason || '') : ''}</textarea>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-primary btn-sm" id="dl-propose-send">${status === 'proposed' ? 'Cập nhật đề xuất → Client' : 'Gửi Client xác nhận deadline mới'}</button>
+      </div>
+      <p class="text-xs muted" style="margin:8px 0 0">Client sẽ nhận thông báo và bấm <b>Đồng ý</b> / <b>Cần trao đổi lại</b> trong Client Portal. Deadline gốc của Client được giữ nguyên để đối chiếu.</p>
+    ` : (closed ? '<p class="text-xs muted" style="margin-top:10px">Order đã đóng/hủy — không thương lượng deadline nữa.</p>' : '');
+    return `
+      <section class="drawer-block ow-deadline-nego">
+        <div class="drawer-block-head"><span class="block-letter">DL</span><h4>Deadline thương lượng với Client</h4></div>
+        <dl>
+          <dt>Deadline Client mong muốn</dt><dd>${o.requested_deadline ? escapeHtml(fmtDeadlineDate(o.requested_deadline)) : '<em class="muted">—</em>'}</dd>
+          <dt>Deadline đã thống nhất</dt><dd>${o.agreed_deadline ? '<b>' + escapeHtml(fmtDeadlineDate(o.agreed_deadline)) + '</b>' : '<em class="muted">—</em>'}</dd>
+          <dt>Trạng thái đề xuất</dt><dd>${statusChip ? `<span class="badge ${statusChip}">${DL_PROPOSAL_LABEL[status]}</span>` : DL_PROPOSAL_LABEL[status]}${status === 'proposed' && o.deadline_proposed_at ? ` <span class="text-xs muted">· gửi ${fmtDateTime(o.deadline_proposed_at)}</span>` : ''}</dd>
+          ${status !== 'none' && o.deadline_proposal_reason ? `<dt>Lý do điều chỉnh</dt><dd>${escapeHtml(o.deadline_proposal_reason)}</dd>` : ''}
+        </dl>
+        ${rejectedNote}
+        ${lateWarn}
+        ${form}
+        ${histHtml}
+      </section>`;
+  }
+
+  let dlProposeSending = false;
+  async function sendDeadlineProposal(o) {
+    if (dlProposeSending || !o) return;
+    if (o.account_status === 'rejected' || o.production_status === 'cancelled' || o.production_status === 'completed') {
+      window.MH.toast({ type: 'warning', title: 'Order đã đóng', message: 'Không thể đề xuất deadline cho order đã hoàn thành/hủy.' }); return;
+    }
+    const input = document.getElementById('dl-propose-input');
+    const reasonEl = document.getElementById('dl-propose-reason');
+    const val = input ? input.value : '';
+    const reason = reasonEl ? reasonEl.value.trim() : '';
+    if (!val) { window.MH.toast({ type: 'error', title: 'Thiếu deadline', message: 'Chọn deadline đề xuất mới trước khi gửi.' }); return; }
+    if (!reason) { window.MH.toast({ type: 'error', title: 'Thiếu lý do', message: 'Nhập lý do điều chỉnh — Client cần biết vì sao deadline thay đổi.' }); return; }
+    const proposed = new Date(val);
+    if (isNaN(proposed.getTime())) { window.MH.toast({ type: 'error', title: 'Deadline không hợp lệ', message: 'Kiểm tra lại giá trị deadline.' }); return; }
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    if (proposed.getTime() < todayStart.getTime()) {
+      window.MH.toast({ type: 'error', title: 'Deadline trong quá khứ', message: 'Deadline đề xuất phải từ hôm nay trở đi.' }); return;
+    }
+    const proposedIso = proposed.toISOString();
+    const nowIso = new Date().toISOString();
+    const by = user.name || user.email || 'Account';
+    const prevHist = Array.isArray(o.deadline_history) ? o.deadline_history
+      : (typeof o.deadline_history === 'string' ? (function () { try { return JSON.parse(o.deadline_history) || []; } catch (e) { return []; } })() : []);
+    const hist = prevHist.concat([{
+      type: 'proposed',
+      from: o.agreed_deadline || o.requested_deadline || null,
+      to: proposedIso,
+      reason: reason,
+      by: by,
+      at: nowIso
+    }]);
+    const patch = {
+      agreed_deadline: proposedIso,
+      deadline_proposal_status: 'proposed',
+      deadline_proposal_reason: reason,
+      deadline_proposed_by: by,
+      deadline_proposed_by_id: user.id || null,
+      deadline_proposed_at: nowIso,
+      deadline_responded_at: null,
+      deadline_response_by: null,
+      deadline_response_note: null,
+      deadline_history: hist,
+      last_updated: nowIso
+    };
+    dlProposeSending = true;
+    const btn = document.getElementById('dl-propose-send');
+    if (btn) { btn.disabled = true; btn.textContent = 'Đang gửi…'; }
+    try {
+      if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
+        // Bài học transferToWording: GHI DB TRƯỚC + verify rồi mới notify — tránh "noti ma".
+        const saved = await window.MH.store.orders.update(o.order_id, patch);
+        if (!saved || saved.deadline_proposal_status !== 'proposed') {
+          throw new Error('Update không land (RLS khớp 0 dòng hoặc thiếu migration) — đã chạy supabase/add-agreed-deadline-flow.sql chưa?');
+        }
+        Object.assign(o, saved);
+      } else {
+        Object.assign(o, patch, { last_updated: nowIso.slice(0, 16).replace('T', ' ') });
+      }
+      // Notify client (type deadline_proposed — cần migration mở CHECK; fail chỉ warn, không chặn).
+      notifyClient(o, {
+        type: 'deadline_proposed',
+        title: 'Đề xuất điều chỉnh deadline',
+        message: `${o.order_id} · ${o.project_name || ''} — Team đề xuất deadline mới: ${fmtDeadlineDate(proposedIso)}. Lý do: ${reason}. Vui lòng xác nhận trong Client Portal.`,
+        link: 'client-dashboard.html?order=' + encodeURIComponent(o.order_id)
+      });
+      window.MH.toast({ type: 'success', title: 'Đã gửi đề xuất deadline', message: 'Client sẽ nhận thông báo và phản hồi trong Portal.' });
+      render();
+      openDrawer(o);
+    } catch (err) {
+      console.error('[deadline-proposal] gửi lỗi:', err);
+      window.MH.toast({ type: 'error', title: 'Không gửi được đề xuất', message: String(err && err.message || err).slice(0, 200) });
+    } finally {
+      dlProposeSending = false;
+      const b = document.getElementById('dl-propose-send');
+      if (b) { b.disabled = false; }
+    }
+  }
+
   function openDrawer(o) {
     currentOrder = o;
     document.getElementById('d-order-id').textContent = o.order_id;
@@ -1093,8 +1270,8 @@
           <small>${v(o.department)}</small>
         </div>
         <div class="order-summary-tile">
-          <span>Deadline mong muốn</span>
-          <b>${v(o.requested_deadline)}</b>
+          <span>Deadline hiệu lực</span>
+          <b>${escapeHtml(deadlineLabel(o))}</b>
           <small>${PRIORITY_LABEL[o.priority] || o.priority}</small>
         </div>
         <div class="order-summary-tile">
@@ -1151,27 +1328,27 @@
         </div>
         <div class="edit-row">
           <label>Account PIC</label>
-          <select class="select" id="edit-account-pic">
+          <select class="select" id="edit-account-pic" data-pic-dd>
             ${picOptions(o.account_pic, ACCT_PIC_ROLES, FALLBACK_ACCT_PICS)}
           </select>
         </div>
         ${o.request_type === 'media' ? `
         <div class="edit-row">
           <label>PIC Quay</label>
-          <select class="select" id="edit-prod-pic-video" ${isOrderPushed(o) ? 'disabled' : ''}>
+          <select class="select" id="edit-prod-pic-video" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
             ${picOptions(o.production_pic_video, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
           </select>
         </div>
         <div class="edit-row">
           <label>PIC Chụp</label>
-          <select class="select" id="edit-prod-pic-photo" ${isOrderPushed(o) ? 'disabled' : ''}>
+          <select class="select" id="edit-prod-pic-photo" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
             ${picOptions(o.production_pic_photo, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
           </select>
         </div>
         ` : `
         <div class="edit-row">
           <label>Production PIC</label>
-          <select class="select" id="edit-prod-pic" ${isOrderPushed(o) ? 'disabled' : ''}>
+          <select class="select" id="edit-prod-pic" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
             ${picOptions(o.production_pic, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
           </select>
         </div>
@@ -1201,6 +1378,8 @@
           Tự đồng bộ theo task ở <a href="production-board.html?dl=in_production" class="link">Task Tracker</a> (Production cập nhật).
         </p>
       </section>
+
+      ${buildDeadlineNegotiation(o)}
 
       <section class="drawer-block ow-comments">
         <div class="drawer-block-head"><span class="block-letter">C</span><h4>Ghi chú / Comment nội bộ</h4></div>
@@ -1464,6 +1643,10 @@
       // 2 PIC cho media — cần cột production_pic_video/photo (chạy supabase/add-media-pics.sql)
       if (isMedia) { patch.production_pic_video = newProdPicVideo; patch.production_pic_photo = newProdPicPhoto; }
       persistOrder(currentOrder.order_id, patch);
+      // Cảnh báo (không block): internal_deadline trễ hơn deadline đã thống nhất với Client.
+      if (internalPastEffective(currentOrder)) {
+        window.MH.toast({ type: 'warning', title: 'Internal Deadline trễ hơn deadline Client', message: 'Internal Deadline đang trễ hơn deadline đã thống nhất với Client. Vui lòng điều chỉnh.' });
+      }
     }
 
     // Wire save button — chỉ lưu, không push.
@@ -1496,6 +1679,13 @@
     // Wire nút "Gửi comment (Lead Content)" (chỉ render khi IS_LEAD_CONTENT).
     const lcBtn = document.getElementById('lc-send-comment');
     if (lcBtn) lcBtn.addEventListener('click', () => sendLeadContentComment(o));
+
+    // Wire "Gửi Client xác nhận deadline mới" (Deadline thương lượng — admin/account/lead_media).
+    const dlBtn = document.getElementById('dl-propose-send');
+    if (dlBtn) dlBtn.addEventListener('click', () => sendDeadlineProposal(currentOrder));
+
+    // Custom dropdown PIC (tên + badge role). Trigger là div nên applyDrawerReadonly không ẩn nhầm.
+    if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(drawerBody);
 
     // Read-only monitor: khóa toàn bộ input + ẩn mọi nút mutation trong drawer (giữ link điều hướng <a>).
     if (READONLY) applyDrawerReadonly();
@@ -2384,6 +2574,8 @@
       const el = document.getElementById(cfg[0]);
       if (el) el.innerHTML = picOptions(el.value || cfg[1], cfg[2], cfg[3]);
     });
+    // Rebuild menu custom dropdown sau khi options đổi.
+    if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(document.getElementById('order-drawer'));
   });
 
   // Phase 1: nếu Supabase enabled, swap dataset bằng dữ liệu thật rồi re-render.
