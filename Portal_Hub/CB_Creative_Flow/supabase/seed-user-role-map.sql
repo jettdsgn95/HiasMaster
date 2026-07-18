@@ -18,6 +18,9 @@
 -- =====================================================================
 
 INSERT INTO public.user_role_map (email, role, name) VALUES
+  -- ===== SEED THẬT =====
+  -- name NULL → trigger tự lấy phần trước @ làm tên hiển thị ("toi.ho"); sửa sau ở User Management.
+  ('toi.ho@cbcentres.com',      'system_supervisor', NULL),
   -- ===== ĐIỀN THẬT — mỗi dòng 1 nhân sự =====
   ('thay-email@cbcentres.com',  'admin',             'Tên Admin'),
   ('thay-email2@cbcentres.com', 'account',           'Tên Account'),
@@ -25,8 +28,7 @@ INSERT INTO public.user_role_map (email, role, name) VALUES
   ('thay-email4@cbcentres.com', 'design',            'Tên Designer'),
   ('thay-email5@cbcentres.com', 'editor',            'Tên Editor'),
   ('thay-email6@cbcentres.com', 'lead_content',      'Tên Lead Content'),
-  ('thay-email7@cbcentres.com', 'content',           'Tên Content'),
-  ('thay-email8@cbcentres.com', 'system_supervisor', 'Tên Giám sát')
+  ('thay-email7@cbcentres.com', 'content',           'Tên Content')
 ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, name = EXCLUDED.name;
 
 -- =====================================================================
