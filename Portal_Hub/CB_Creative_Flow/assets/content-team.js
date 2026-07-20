@@ -773,7 +773,7 @@
     draft: 'Nháp', active: 'Sẵn sàng', in_progress: 'Đang chạy', pending_review: 'Có bản chờ duyệt',
     at_risk: 'Có task trễ', completed: 'Hoàn tất', archived: 'Lưu trữ'
   };
-  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Chủ động', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order' };
+  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Task nội bộ', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order' };
   const PRIO_VI = { low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp', critical: 'Rất gấp' };
   // Trạng thái production của Media Order nội bộ (đọc read-only để Content theo dõi — Phase 5).
   const PROD_STATUS = {
@@ -917,10 +917,10 @@
   function renderInitiatives() {
     const tb = document.getElementById('ctm-init-tbody'); if (!tb) return;
     const list = initiativeTasks();
-    document.getElementById('ctm-init-info').innerHTML = '<strong>' + list.length + '</strong> Initiative chủ động';
+    document.getElementById('ctm-init-info').innerHTML = '<strong>' + list.length + '</strong> task nội bộ team Content';
     const btn = document.getElementById('ctm-new-initiative'); if (btn) btn.style.display = isLead ? '' : 'none';
     if (!list.length) {
-      tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có Initiative nào.' + (isLead ? ' Bấm “Tạo Initiative”.' : '') + '</td></tr>';
+      tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có task nội bộ nào.' + (isLead ? ' Bấm “Tạo task nội bộ”.' : '') + '</td></tr>';
       return;
     }
     tb.innerHTML = list.map(function (t) {
@@ -969,7 +969,7 @@
     const kpis = [
       { v: T.length, label: 'Tổng Content Task', color: '#191970' },
       { v: T.filter(function (t) { return t.source === 'client_order'; }).length, label: 'Client Order Task', color: '#1D4ED8' },
-      { v: initiativeTasks().length, label: 'Content Initiative', color: '#6B21A8' },
+      { v: initiativeTasks().length, label: 'Task nội bộ Content', color: '#6B21A8' },
       { v: CONTENT_PLANS.length, label: 'Content Plan', color: '#0E7490' },
       { v: T.filter(dueSoon).length, label: 'Sắp tới hạn (≤3 ngày)', color: '#B07600' },
       { v: T.filter(ctIsOverdue).length, label: 'Trễ hạn', color: '#BA110F' },
@@ -1715,13 +1715,13 @@
         + fieldText('cim-media-deadline', 'Hạn Media', '', { type: 'datetime-local' })
         + fieldText('cim-media-notes', 'Ghi chú cho Media', '', { area: true, rows: 2, ph: 'Định hướng cho Media team' })
       + '</div>';
-    openModal('Tạo Content Initiative', body, saveInitiative);
+    openModal('Tạo task nội bộ Content Team', body, saveInitiative);
     const mc = document.getElementById('cim-media');
     if (mc) mc.addEventListener('change', function () { document.getElementById('cim-media-wrap').style.display = mc.checked ? '' : 'none'; });
   }
   async function saveInitiative() {
     const title = (document.getElementById('cim-title').value || '').trim();
-    if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề Initiative.'); return false; }
+    if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề task nội bộ.'); return false; }
     const pic = (document.getElementById('cim-pic').value || '').trim();
     const needMedia = document.getElementById('cim-media').checked;
     const payload = {
@@ -1743,9 +1743,9 @@
       if (md) payload.production_deadline = new Date(md).toISOString();
     }
     const created = await window.MH.store.contentTasks.create(payload);
-    pushTaskActivity(created.id, 'Lead tạo Content Initiative' + (pic ? ' → ' + pic : ''));
-    if (pic) notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán Content Initiative', message: title + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + created.id, related_entity_type: null, related_entity_id: created.id });
-    toast('success', 'Đã tạo Initiative', title);
+    pushTaskActivity(created.id, 'Lead tạo task nội bộ Content Team' + (pic ? ' → ' + pic : ''));
+    if (pic) notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán task nội bộ Content', message: title + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + created.id, related_entity_type: null, related_entity_id: created.id });
+    toast('success', 'Đã tạo task nội bộ', title);
     closeModal();
     loadContentData();
     return true;
