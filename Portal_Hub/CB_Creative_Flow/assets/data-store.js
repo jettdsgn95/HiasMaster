@@ -860,6 +860,16 @@
     return window.MH_MOCK_CONTENT_TASKS || [];
   }
   function writeContentTasks(list) { window.MH_MOCK_CONTENT_TASKS = list; writeJSON('mh-content-tasks', list.slice(0, 400)); }
+  // Mã task nội bộ Content — CHỈ dùng cho nhánh fallback localStorage.
+  // Khi Supabase bật, mã do trigger DB sinh (sequence atomic, không đua).
+  function nextContentTaskCode(list) {
+    var max = 0;
+    (list || []).forEach(function (t) {
+      var m = /^CT-\d{4}-(\d+)$/.exec((t && t.task_code) || '');
+      if (m) { var n = parseInt(m[1], 10); if (n > max) max = n; }
+    });
+    return 'CT-' + new Date().getFullYear() + '-' + String(max + 1).padStart(3, '0');
+  }
   const contentTasks = {
     async list(filters) {
       const s = await sb();
@@ -924,6 +934,9 @@
         internal_revision_count: 0, need_media_production: false, media_request_created: false
       }, payload);
       if (!row.id) row.id = genId('ctask');
+      // Mã task (CT-YYYY-NNN): Supabase bật thì trigger DB sinh (add-content-task-code.sql);
+      // nhánh localStorage này phải tự sinh, lấy max số hiện có +1 để không trùng.
+      if (!row.task_code) row.task_code = nextContentTaskCode(list);
       if (!row.created_at) row.created_at = nowIso();
       row.updated_at = nowIso();
       list.unshift(row);

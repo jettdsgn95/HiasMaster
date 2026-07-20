@@ -695,6 +695,13 @@
     if (isContent) return isMine(t.assigned_pic);
     return false; // account / lead_content / supervisor: read-only ở Wording
   }
+  // Mã task nội bộ Content (CT-YYYY-NNN) — trigger DB sinh (add-content-task-code.sql).
+  // Chưa migrate → mã tạm từ id để vẫn nhắc được nhau khi trao đổi.
+  function cwbCode(t) {
+    if (!t) return '—';
+    if (t.task_code) return t.task_code;
+    return 'CT-' + String(t.id || '').slice(-4).toUpperCase();
+  }
   function workspaceFields(t) {
     const types = (Array.isArray(t.output_types) && t.output_types.length) ? t.output_types : ['other'];
     const out = []; const seen = {};
@@ -766,7 +773,8 @@
     const q = TFILTERS.search.toLowerCase();
     let list = TASKS.filter(function (t) { return subMatch(t, taskSub); });
     if (TFILTERS.output) list = list.filter(function (t) { return arrayOf(t.output_types).indexOf(TFILTERS.output) >= 0; });
-    if (q) list = list.filter(function (t) { const p = planOf(t); return ((t.title || '') + ' ' + (p ? p.title + ' ' + (p.campaign_name || '') : '')).toLowerCase().indexOf(q) >= 0; });
+    // Tìm được cả theo MÃ task (CT-2026-001) — mục đích chính của việc thêm mã.
+    if (q) list = list.filter(function (t) { const p = planOf(t); return ((t.title || '') + ' ' + cwbCode(t) + ' ' + (p ? p.title + ' ' + (p.campaign_name || '') : '')).toLowerCase().indexOf(q) >= 0; });
     document.getElementById('cwbt-info').innerHTML = 'Hiển thị <strong>' + list.length + '</strong> / ' + TASKS.length + ' content task';
     // rebuild output filter options
     const fo = document.getElementById('cwbt-filter-output'); const cur = fo.value; const seen = {};
@@ -776,6 +784,7 @@
     tb.innerHTML = list.length ? list.map(function (t) {
       const p = planOf(t); const overdue = ctOverdue(t);
       return '<tr data-ctask="' + esc(t.id) + '">'
+        + '<td><span class="order-id">' + esc(cwbCode(t)) + '</span></td>'
         + '<td><b>' + esc(t.title || '—') + '</b></td>'
         + '<td><span class="text-xs">' + (p ? esc(p.title) : esc(SOURCE_LABEL[t.source] || t.source || '—')) + '</span></td>'
         + '<td>' + outputChips(t.output_types) + '</td>'
@@ -786,7 +795,7 @@
         + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(CT_STATUS[t.status] || t.status) + '</span></td>'
         + '<td><button class="btn btn-secondary btn-sm" data-ctask-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
-    }).join('') : '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text-muted)">' + (isContent ? 'Bạn chưa có content task nào. Bấm “Đề xuất task mới” để tự tạo, hoặc chờ Lead gán.' : 'Chưa có content task.') + '</td></tr>';
+    }).join('') : '<tr><td colspan="10" style="text-align:center;padding:44px;color:var(--text-muted)">' + (isContent ? 'Bạn chưa có content task nào. Bấm “Đề xuất task mới” để tự tạo, hoặc chờ Lead gán.' : 'Chưa có content task.') + '</td></tr>';
   }
 
   /* ---------- Content Task Drawer ---------- */
@@ -881,6 +890,7 @@
 
     // 1. Summary + 2. Brief + 3. Output requirements
     const summary = '<section class="drawer-block cwb-snapshot"><div class="drawer-block-head"><span class="block-letter">B</span><h4>Task Summary &amp; Brief</h4></div><dl>'
+      + '<dt>Mã task</dt><dd><span class="order-id">' + esc(cwbCode(t)) + '</span></dd>'
       + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[t.source] || t.source) + (t.order_id ? ' · Order ' + esc(t.order_id) : '') + (p ? ' · Plan: ' + esc(p.title) : '') + '</dd>'
       + '<dt>Output yêu cầu</dt><dd>' + outputChips(t.output_types) + '</dd>'
       + '<dt>Brief</dt><dd style="white-space:pre-wrap">' + v(t.brief) + '</dd>'
@@ -1002,7 +1012,7 @@
   }
   function openTaskDrawer(t) {
     currentTask = t;
-    document.getElementById('ctask-d-source').textContent = (SOURCE_LABEL[t.source] || 'TASK').toUpperCase();
+    document.getElementById('ctask-d-source').textContent = (SOURCE_LABEL[t.source] || 'TASK').toUpperCase() + ' · ' + cwbCode(t);
     document.getElementById('ctask-d-title').textContent = t.title || '—';
     const st = document.getElementById('ctask-d-status'); st.className = 'tb-status s--wording'; st.style.display = 'inline-flex'; st.style.alignItems = 'center'; st.style.gap = '4px'; st.innerHTML = '<span class="dot"></span>' + (CT_STATUS[t.status] || t.status);
     const pr = document.getElementById('ctask-d-priority'); pr.className = 'priority-pill p--' + (t.priority || 'normal'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_VI[t.priority] || t.priority || '—');
@@ -1125,20 +1135,37 @@
     await persistTask(currentTask, data, 'PIC gửi Lead Content duyệt');
     // Ads Order: gửi Lead duyệt → ads_status='submitted_to_lead' (client thấy "Đang kiểm tra nội dung").
     syncAdsOrderFromTask(currentTask, { ads_status: 'submitted_to_lead' }, ['submitted', 'lead_checking', 'assigned_to_content', 'writing_ads_content', 'lead_revision']);
-    notifyLeadTask(currentTask, '📨 Content task chờ Lead duyệt', (currentTask.title || 'Content task') + ' — ' + (user.name || 'Content') + ' đã gửi bản thảo.');
-    toast('success', 'Đã gửi Lead Content duyệt', currentTask.title + ' — chờ Lead review.');
+    const label = cwbCode(currentTask) + ' · ' + (currentTask.title || 'Content task');
+    const notified = await notifyLeadTask(currentTask, '📨 Content task chờ Lead duyệt',
+      label + ' — ' + (user.name || 'Content') + ' đã gửi bản thảo.');
+    if (notified) toast('success', 'Đã gửi Lead Content duyệt', label + ' — chờ Lead review.');
+    else toast('warning', 'Đã lưu, nhưng chưa báo được Lead', label + ' — task đã chuyển trạng thái chờ duyệt, nhưng thông báo tới Lead thất bại (kiểm tra add-notify-roles-rpc.sql). Báo Lead trực tiếp giúp.');
     reloadTaskAndReopen();
   }
+  // Báo Lead Content qua RPC `notify_roles` (SECURITY DEFINER) thay vì tự lookup
+  // users + insert notifications. Lý do: bản cũ chạy trong phiên `content` — nếu RLS
+  // chặn đọc users hoặc chặn insert thì query trả rỗng/lỗi mà KHÔNG throw ra UI
+  // (catch chỉ console.warn) → PIC thấy "đã gửi" còn Lead không nhận được gì.
+  // RPC làm cả 2 việc trong DB + trả về số noti đã tạo để mình verify được.
+  // ⚠ cần supabase/add-notify-roles-rpc.sql.
   async function notifyLeadTask(t, title, message) {
-    if (!t || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    if (!t || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return true;
     try {
-      const { data: leads } = await window.MH.supabase.from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
-      if (Array.isArray(leads) && leads.length) {
-        await window.MH.supabase.from('notifications').insert(leads.map(function (u) {
-          return { user_id: u.id, type: 'task_status_changed', title: title, message: message, link: 'content-team.html?task=' + (t.id || ''), related_entity_type: null, related_entity_id: t.id };
-        }));
-      }
-    } catch (e) { console.warn('[cwb] notifyLeadTask failed:', e); }
+      const { error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: ['lead_content'],
+        p_type: 'task_status_changed',
+        p_title: title,
+        p_message: message,
+        p_link: 'content-team.html?task=' + (t.id || ''),
+        p_entity_type: null,
+        p_entity_id: t.id || null
+      });
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn('[cwb] notifyLeadTask failed:', e);
+      return false;
+    }
   }
   async function notifyRoles(roles, type, title, message, link, orderId) {
     if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
@@ -1374,8 +1401,8 @@
       return;
     }
     pushTaskActivity(created.id, 'Content tự đề xuất task (PIC: ' + (user.name || user.role) + ')');
-    notifyLeadTask(created, '📝 Content tự đề xuất task mới', title + ' — ' + (user.name || 'Content') + ' tự đề xuất' + (needMedia ? ' · cần Media thiết kế' : '') + '. Gate: Lead duyệt nội dung trước khi sang Media.');
-    toast('success', 'Đã tạo task', title + ' — viết nội dung rồi gửi Lead Content duyệt.');
+    notifyLeadTask(created, '📝 Content tự đề xuất task mới', cwbCode(created) + ' · ' + title + ' — ' + (user.name || 'Content') + ' tự đề xuất' + (needMedia ? ' · cần Media thiết kế' : '') + '. Gate: Lead duyệt nội dung trước khi sang Media.');
+    toast('success', 'Đã tạo task ' + cwbCode(created), title + ' — viết nội dung rồi gửi Lead Content duyệt.');
     closeSelfModal();
     selfModalSaving = false; if (btn) { btn.disabled = false; btn.textContent = 'Tạo task'; }
     await loadTasks();

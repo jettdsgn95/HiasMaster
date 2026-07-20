@@ -298,7 +298,9 @@
       b.classList.toggle('is-active', v === view);
     });
     var cAds = document.getElementById('ctm-count-ads'); if (cAds) cAds.textContent = ADS_ORDERS.length;
-    document.getElementById('ctm-count-inbox').textContent = byStatus(['assigned']).length + byStatus(['submitted_to_lead']).length;
+    // Badge Inbox = order chờ phân công + order chờ duyệt + TASK NỘI BỘ chờ duyệt
+    // (trước đây thiếu vế cuối nên Lead thấy 0 dù có task đang chờ mình).
+    document.getElementById('ctm-count-inbox').textContent = byStatus(['assigned']).length + byStatus(['submitted_to_lead']).length + pendingContentTasks().length;
     document.getElementById('ctm-count-list').textContent = ORDERS.length;
     document.getElementById('ctm-count-mine').textContent = myOrders().length;
     var cPlans = document.getElementById('ctm-count-plans'); if (cPlans) cPlans.textContent = CONTENT_PLANS.length;
@@ -398,6 +400,29 @@
     document.getElementById('ctm-inbox-review').innerHTML = reviews.length ? reviews.map(function (o) {
       return inboxItemHtml(o, ' · PIC: ' + esc(o.brief_wording_pic || '—') + (o.wording_submitted_to_lead_at ? ' · Gửi: ' + fmtDT(o.wording_submitted_to_lead_at) : ''));
     }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có bản wording chờ duyệt.</p>';
+
+    // Task nội bộ chờ duyệt — nguồn KHÁC (bảng content_tasks, không phải orders).
+    // Trước đây chỉ nằm ở tab "Task nội bộ" nên Lead nhìn Inbox thấy trống → tưởng mất task.
+    const ctPending = pendingContentTasks();
+    const ctCountEl = document.getElementById('ctm-inbox-ct-count');
+    if (ctCountEl) ctCountEl.textContent = ctPending.length + ' task chờ duyệt';
+    const ctBox = document.getElementById('ctm-inbox-ct');
+    if (ctBox) {
+      ctBox.innerHTML = ctPending.length ? ctPending.map(function (t) {
+        const late = reviewLateCT(t);
+        return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '">'
+          + '<div><b>' + esc(ctCode(t)) + '</b> · ' + esc(t.title || '—') + '</div>'
+          + '<div class="text-xs muted">PIC: ' + esc(t.assigned_pic || '—')
+          + (t.lead_review_due ? ' · Hạn duyệt: ' + fmtDT(t.lead_review_due) : '')
+          + (late ? ' · ⚠ quá hạn duyệt' : '') + '</div>'
+          + '</button>';
+      }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có task nội bộ chờ duyệt.</p>';
+    }
+  }
+  // Content task PIC đã gửi Lead duyệt (mọi nguồn: tự đề xuất, task con Plan, Ads).
+  function pendingContentTasks() {
+    return CONTENT_TASKS.filter(function (t) { return t.status === 'submitted_to_lead'; })
+      .sort(function (a, b) { return String(a.lead_review_due || '').localeCompare(String(b.lead_review_due || '')); });
   }
 
   function renderBoard() {
@@ -802,6 +827,13 @@
     if (CT_DONE.indexOf(t.status) >= 0 || t.status === 'archived') return false;
     const d = parseDt(t.wording_deadline); return !!d && d.getTime() < Date.now();
   }
+  // Mã task nội bộ Content (CT-YYYY-NNN) — sinh bởi trigger DB add-content-task-code.sql.
+  // Chưa chạy migration / task cũ chưa backfill → hiện mã tạm từ id để vẫn nhắc được nhau.
+  function ctCode(t) {
+    if (!t) return '—';
+    if (t.task_code) return t.task_code;
+    return 'CT-' + String(t.id || '').slice(-4).toUpperCase();
+  }
   function initiativeTasks() { return CONTENT_TASKS.filter(function (t) { return t.source === 'content_initiated' && !t.content_plan_id; }); }
   function planChildTasks(planId) { return CONTENT_TASKS.filter(function (t) { return t.content_plan_id === planId; }); }
   function arrayOf(a) { return Array.isArray(a) ? a : (a ? [a] : []); }
@@ -835,7 +867,9 @@
         CONTENT_TASKS = (await window.MH.store.contentTasks.list()) || [];
       }
     } catch (e) { console.warn('[ctm] load content data failed:', e); }
-    renderTabs(); renderPlans(); renderInitiatives(); renderContentDashboard();
+    // renderInbox() BẮT BUỘC ở đây: panel "Task nội bộ — chờ Lead duyệt" đọc
+    // CONTENT_TASKS, mà data này load ở luồng riêng (không qua loadOrders/renderAll).
+    renderTabs(); renderInbox(); renderPlans(); renderInitiatives(); renderContentDashboard();
     if (currentPlan) { const p = CONTENT_PLANS.find(function (x) { return x.id === currentPlan.id; }); if (p) currentPlan = p; }
     if (currentTask) { const t = CONTENT_TASKS.find(function (x) { return x.id === currentTask.id; }); if (t) currentTask = t; }
   }
@@ -920,14 +954,15 @@
     document.getElementById('ctm-init-info').innerHTML = '<strong>' + list.length + '</strong> task nội bộ team Content';
     const btn = document.getElementById('ctm-new-initiative'); if (btn) btn.style.display = isLead ? '' : 'none';
     if (!list.length) {
-      tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có task nội bộ nào.' + (isLead ? ' Bấm “Tạo task nội bộ”.' : '') + '</td></tr>';
+      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có task nội bộ nào.' + (isLead ? ' Bấm “Tạo task nội bộ”.' : '') + '</td></tr>';
       return;
     }
     tb.innerHTML = list.map(function (t) {
       const overdue = ctIsOverdue(t);
-      // Task do PIC content tự tạo (created_by = assigned_pic) → nhãn phân biệt với Initiative Lead tạo.
+      // Task do PIC content tự tạo (created_by = assigned_pic) → nhãn phân biệt với task Lead tạo.
       const selfMade = t.created_by && t.assigned_pic && t.created_by === t.assigned_pic;
       return '<tr data-task="' + esc(t.id) + '">'
+        + '<td><span class="order-id">' + esc(ctCode(t)) + '</span></td>'
         + '<td><b>' + esc(t.title || '—') + '</b>' + (selfMade ? ' <span class="chip-mini">PIC tự đề xuất</span>' : '') + '</td>'
         + '<td>' + outputChips(t.output_types) + '</td>'
         + '<td><span class="text-xs">' + esc(t.assigned_pic || '—') + '</span></td>'
@@ -1228,6 +1263,7 @@
       + (plan ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">K</span><h4>Thuộc kế hoạch</h4></div><button class="ctm-inbox-item" data-plan-open="' + esc(plan.id) + '"><b>' + esc(plan.title || plan.id) + '</b><div class="text-xs muted">' + esc(SOURCE_LABEL[plan.source] || plan.source || '') + '</div></button></section>' : '')
       + assignHtml
       + '<section class="drawer-block cwb-snapshot"><div class="drawer-block-head"><span class="block-letter">B</span><h4>Thông tin task</h4></div><dl>'
+        + '<dt>Mã task</dt><dd><span class="order-id">' + esc(ctCode(t)) + '</span></dd>'
         + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[t.source] || t.source) + (t.order_id ? ' · Order ' + esc(t.order_id) : '') + '</dd>'
         + '<dt>Output types</dt><dd>' + outputChips(t.output_types) + '</dd>'
         + '<dt>Brief</dt><dd style="white-space:pre-wrap">' + v(t.brief) + '</dd>'
@@ -1271,7 +1307,8 @@
   }
   function openTaskDrawer(t) {
     currentTask = t;
-    document.getElementById('ctm-td-source').textContent = (SOURCE_LABEL[t.source] || 'TASK').toUpperCase();
+    // Eyebrow drawer = "TASK NỘI BỘ · CT-2026-001" để Lead nhắc đúng mã khi trao đổi.
+    document.getElementById('ctm-td-source').textContent = (SOURCE_LABEL[t.source] || 'TASK').toUpperCase() + ' · ' + ctCode(t);
     document.getElementById('ctm-td-title').textContent = t.title || '—';
     const st = document.getElementById('ctm-td-status'); st.className = 'tb-status s--wording'; st.innerHTML = '<span class="dot"></span>' + (CT_STATUS[t.status] || t.status);
     const pr = document.getElementById('ctm-td-priority'); pr.className = 'priority-pill p--' + (t.priority || 'normal'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_VI[t.priority] || t.priority || '—');
@@ -1349,15 +1386,57 @@
     const dlEl = document.getElementById('ctm-t-deadline');
     const prio = document.getElementById('ctm-t-priority').value;
     const media = document.getElementById('ctm-t-media').checked;
+    const oldPic = (currentTask.assigned_pic || '').trim();
+    const wasUnassigned = !oldPic;
+    const isReassign = !!pic && !!oldPic && pic !== oldPic;
+    // Đổi PIC khi task đang chạy = PIC cũ MẤT quyền sửa ngay (RLS khớp theo
+    // assigned_pic = users.name) — bản thảo họ đang viết dở sẽ không lưu được nữa.
+    // Bắt xác nhận thay vì khóa ô (vẫn cần đổi khi PIC nghỉ đột xuất).
+    if (isReassign && ['in_progress', 'submitted_to_lead', 'lead_revision'].indexOf(currentTask.status) >= 0) {
+      const ok = window.confirm('Chuyển task "' + (currentTask.title || currentTask.id) + '" từ ' + oldPic + ' sang ' + pic + '?\n\n'
+        + oldPic + ' sẽ MẤT quyền chỉnh sửa task này ngay lập tức (kể cả bản thảo đang viết dở).\n'
+        + 'Cả hai người sẽ nhận được thông báo.');
+      if (!ok) return;
+    }
     const patch = { assigned_pic: pic, priority: prio, need_media_production: media };
     if (dlEl && dlEl.value) patch.wording_deadline = new Date(dlEl.value).toISOString();
-    const wasUnassigned = !currentTask.assigned_pic;
     if (pic && ['new', 'assigned'].indexOf(currentTask.status) >= 0) patch.status = 'pic_assigned';
-    await window.MH.store.contentTasks.update(currentTask.id, patch);
-    pushTaskActivity(currentTask.id, (wasUnassigned ? 'Lead gán PIC: ' : 'Lead cập nhật phân công: ') + (pic || '(bỏ gán)') + (patch.wording_deadline ? ' · hạn ' + fmtDT(patch.wording_deadline) : ''));
-    if (pic && wasUnassigned) notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán Content Task', message: (currentTask.title || 'Content task') + (patch.wording_deadline ? ' · Hạn: ' + fmtDT(patch.wording_deadline) : '') + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+
+    // Ghi DB TRƯỚC + verify rồi mới notify (bài học noti ma transferToWording).
+    // Trước đây KHÔNG có try/catch: update throw là hàm chết im lặng giữa chừng —
+    // không toast, không đổi gì, người dùng tưởng nút hỏng.
+    let saved;
+    try { saved = await window.MH.store.contentTasks.update(currentTask.id, patch); }
+    catch (e) {
+      console.warn('[ctm] saveTaskAssign failed:', e);
+      toast('danger', 'Chưa lưu được phân công', 'DB từ chối ghi. Kiểm tra đã chạy add-content-initiatives.sql + quyền Lead Content (RLS) chưa.');
+      return;
+    }
+    // RLS khớp 0 dòng → maybeSingle() trả null mà KHÔNG throw → phải tự bắt.
+    if (window.MH && window.MH.supabaseEnabled && !saved) {
+      toast('danger', 'Chưa lưu được phân công', 'Không có dòng nào được cập nhật (RLS chặn hoặc task đã bị xóa). Chưa gửi thông báo cho ai.');
+      return;
+    }
+    if (saved) Object.assign(currentTask, saved); else Object.assign(currentTask, patch);
+
+    pushTaskActivity(currentTask.id,
+      wasUnassigned ? ('Lead gán PIC: ' + (pic || '(bỏ gán)'))
+        : (isReassign ? ('Lead chuyển PIC: ' + oldPic + ' → ' + pic)
+          : ('Lead cập nhật phân công: ' + (pic || '(bỏ gán)')))
+      + (patch.wording_deadline ? ' · hạn ' + fmtDT(patch.wording_deadline) : ''));
+
+    // Notify: TRƯỚC ĐÂY chỉ báo khi PIC đang trống (wasUnassigned) → đổi PIC
+    // thì KHÔNG ai biết (task nội bộ luôn có sẵn PIC = người tạo). Nay báo cả 2 chiều.
+    const label = ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task');
+    const dlTxt = patch.wording_deadline ? ' · Hạn: ' + fmtDT(patch.wording_deadline) : '';
+    if (pic && wasUnassigned) {
+      notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán Content Task', message: label + dlTxt + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    } else if (isReassign) {
+      notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được giao lại Content Task', message: label + dlTxt + ' — chuyển từ ' + oldPic + ' · Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+      notifyByName(oldPic, { type: 'task_status_changed', title: '↔️ Task đã chuyển cho người khác', message: label + ' — nay do ' + pic + ' phụ trách. Bạn không còn quyền chỉnh sửa task này.', link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    }
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
-    toast('success', 'Đã cập nhật', currentTask.title || currentTask.id);
+    toast('success', isReassign ? 'Đã chuyển PIC' : 'Đã cập nhật', label + (isReassign ? ' → ' + pic : ''));
     ctReload('task');
   }
   async function saveTaskNotes() {
@@ -1402,7 +1481,7 @@
     pushTaskActivity(currentTask.id, 'Lead trả chỉnh (vòng ' + cnt + ')' + (reason ? ': ' + reason : ''));
     // Ads: Lead trả chỉnh task ads → ads_status='lead_revision'.
     await syncAdsFromContentTask(currentTask, 'lead_revision', ['submitted_to_lead', 'writing_ads_content', 'assigned_to_content']);
-    if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✍️ Lead yêu cầu chỉnh content', message: (currentTask.title || 'Content task') + (reason ? ' · ' + reason : '') + ' — ' + note, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✍️ Lead yêu cầu chỉnh content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + (reason ? ' · ' + reason : '') + ' — ' + note, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
     toast('info', 'Đã trả Content chỉnh', currentTask.title || currentTask.id);
     ctReload('task');
@@ -1425,8 +1504,8 @@
     // Ads: Lead duyệt task ads → cần Media thì 'need_creative' (chờ Media Request), không thì 'lead_approved'.
     await syncAdsFromContentTask(currentTask, currentTask.need_media_production ? 'need_creative' : 'lead_approved',
       ['submitted_to_lead', 'lead_revision', 'writing_ads_content', 'assigned_to_content']);
-    if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✅ Lead đã duyệt content', message: (currentTask.title || 'Content task') + nextMsg, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
-    if (patch.status === 'submitted_to_account') notifyRoles(['admin', 'account'], { type: 'task_status_changed', title: '✅ Content task đã được Lead duyệt', message: (currentTask.title || 'Content task') + ' — sẵn sàng cho Account.', link: 'content-team.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✅ Lead đã duyệt content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + nextMsg, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    if (patch.status === 'submitted_to_account') notifyRoles(['admin', 'account'], { type: 'task_status_changed', title: '✅ Content task đã được Lead duyệt', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + ' — sẵn sàng cho Account.', link: 'content-team.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
     toast('success', 'Đã duyệt', (currentTask.title || currentTask.id) + nextMsg);
     ctReload('task');
@@ -2284,21 +2363,47 @@
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
     if (tab === 'ads-orders' && (isLead || isAccountAdmin || isSupervisor)) { view = 'ads-orders'; renderTabs(); }
+    // Deep-link từ notification: PHẢI chuyển đúng tab trước khi mở drawer.
+    // Trước đây chỉ mở drawer trên tab hiện tại (thường là Dashboard) → đóng drawer
+    // ra là màn hình trống, người dùng tưởng "không có task".
     const id = params.get('id');
     if (id) {
       const ad = ADS_ORDERS.find(function (x) { return x.order_id === id; });
       if (ad) { view = 'ads-orders'; renderTabs(); openAdsDrawer(ad); }
       else {
         const all = window.__CTM_ALL || [];
-        const o = ORDERS.find(function (x) { return x.order_id === id; }) || all.find(function (x) { return x.order_id === id; });
-        if (o) openDrawer(o);
+        const inEngaged = ORDERS.find(function (x) { return x.order_id === id; });
+        const o = inEngaged || all.find(function (x) { return x.order_id === id; });
+        if (o) {
+          // Order đã vào Content Team → về Inbox (chỗ Lead xử lý); chưa vào thì
+          // giữ tab hiện tại + nói rõ vì sao nó không nằm trong danh sách.
+          if (inEngaged) { view = 'inbox'; renderTabs(); }
+          else toast('warning', 'Order chưa ở Content Team', id + ' chưa được Account chuyển sang Content Wording (hoặc đã rời luồng) — mở ở chế độ xem.');
+          openDrawer(o);
+        } else {
+          toast('danger', 'Không mở được order', id + ' không có trong danh sách bạn xem được. Kiểm tra order đã được chuyển Content Wording chưa, hoặc quyền truy cập.');
+        }
       }
     }
     // Deep-link Plan / Content Task (Phase 2).
     const planId = params.get('plan');
-    if (planId) { const p = CONTENT_PLANS.find(function (x) { return x.id === planId; }); if (p) { view = 'plans'; renderTabs(); openPlanDrawer(p); } }
+    if (planId) {
+      const p = CONTENT_PLANS.find(function (x) { return x.id === planId; });
+      if (p) { view = 'plans'; renderTabs(); openPlanDrawer(p); }
+      else toast('danger', 'Không mở được kế hoạch', 'Content Plan không tồn tại hoặc bạn không có quyền xem.');
+    }
     const taskId = params.get('task');
-    if (taskId) { const t = CONTENT_TASKS.find(function (x) { return x.id === taskId; }); if (t) openTaskDrawer(t); }
+    if (taskId) {
+      const t = CONTENT_TASKS.find(function (x) { return x.id === taskId; });
+      if (t) {
+        // Task chờ duyệt → Inbox (hàng đợi việc của Lead); còn lại → tab Task nội bộ.
+        view = (t.status === 'submitted_to_lead') ? 'inbox' : 'initiatives';
+        renderTabs();
+        openTaskDrawer(t);
+      } else {
+        toast('danger', 'Không mở được task', 'Content task không tồn tại hoặc bạn không có quyền xem.');
+      }
+    }
   });
   // Đồng bộ nhẹ: poll 60s + reload khi quay lại tab (pattern calendar.js).
   setInterval(function () { if (!document.hidden) { loadOrders(); loadContentData(); } }, 60000);

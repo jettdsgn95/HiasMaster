@@ -186,9 +186,18 @@
           <div class="ctm-panel-body" id="ctm-inbox-new"></div>
         </div>
         <div class="table-card ctm-panel">
-          <div class="table-head"><h3>Chờ Lead duyệt</h3><span class="rinfo" id="ctm-inbox-review-count">0</span></div>
+          <div class="table-head"><h3>Chờ Lead duyệt <span class="text-xs muted">(từ Client Order)</span></h3><span class="rinfo" id="ctm-inbox-review-count">0</span></div>
           <div class="ctm-panel-body" id="ctm-inbox-review"></div>
         </div>
+      </div>
+      <!-- Task nội bộ (bảng content_tasks) — TÁCH khỏi 2 panel trên vì 2 panel đó
+           đọc `orders.brief_wording_status`, không bao giờ chứa content task. -->
+      <div class="table-card ctm-panel" style="margin-top:14px">
+        <div class="table-head">
+          <h3>Task nội bộ — chờ Lead duyệt</h3>
+          <span class="rinfo" id="ctm-inbox-ct-count">0</span>
+        </div>
+        <div class="ctm-panel-body" id="ctm-inbox-ct"></div>
       </div>
     </section>
 
@@ -266,7 +275,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Tiêu đề</th><th>Output</th><th>PIC Content</th><th>Hạn wording</th>
+                <th>Mã</th><th>Tiêu đề</th><th>Output</th><th>PIC Content</th><th>Hạn wording</th>
                 <th>Ưu tiên</th><th>Cần Media</th><th>Trạng thái</th><th></th>
               </tr>
             </thead>
