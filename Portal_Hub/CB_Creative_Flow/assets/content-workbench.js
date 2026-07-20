@@ -848,11 +848,13 @@
   }
   function buildTaskActions(t) {
     const btns = [];
+    let hasSubmit = false;
     if (canEditTask(t)) {
       if (CT_SUBMITTABLE.indexOf(t.status) >= 0 || t.status === 'pic_assigned')
         btns.push('<button class="btn btn-secondary btn-sm" id="wt-start">' + (t.status === 'lead_revision' ? 'Chỉnh theo Lead' : (t.status === 'pic_assigned' ? 'Bắt đầu viết' : 'Tiếp tục viết')) + '</button>');
       btns.push('<button class="btn btn-secondary btn-sm" id="wt-save">Lưu nháp</button>');
       btns.push('<button class="btn btn-primary btn-sm" id="wt-submit">Gửi Lead Content duyệt</button>');
+      hasSubmit = true;
     } else if (isContent && t.status === 'submitted_to_lead' && isMine(t.assigned_pic)) {
       btns.push('<span class="wf-wait-tag">Đã gửi Lead — chờ duyệt</span>');
     }
@@ -865,7 +867,9 @@
       // Bật/khóa theo Final (cập nhật async trong fillMediaTrack).
       btns.push('<button class="btn btn-primary btn-sm" id="wt-complete" disabled title="Chờ Media bàn giao Final">Hoàn tất task</button>');
     }
-    return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div></div>' : '';
+    // Hint lý do khi nút "Gửi Lead Content duyệt" bị khóa (text set trong refreshTaskSubmit).
+    const hint = hasSubmit ? '<p id="wt-submit-hint" class="text-xs" style="display:none;margin:6px 2px 0;color:var(--danger)"></p>' : '';
+    return btns.length ? '<div class="wf-actions"><div class="wf-actions-flow">' + btns.join('') + '</div>' + hint + '</div>' : '';
   }
   function buildTaskBody(t) {
     const editable = canEditTask(t);
@@ -1037,8 +1041,10 @@
     if (document.getElementById('wt-picchk-list')) data.pic_checklist = collectPicChk();
     return data;
   }
+  // Các cột được tính là "nội dung chính" khi gate gửi Lead (draft_title/cta/mandatory_info KHÔNG tính).
+  const CT_BODY_FIELDS = ['draft_body', 'caption', 'headline', 'script', 'voice_over', 'ads_primary_text', 'landing_copy', 'email_sms_zalo_copy'];
   function taskHasContent() {
-    return ['draft_body', 'caption', 'headline', 'script', 'voice_over', 'ads_primary_text', 'landing_copy', 'email_sms_zalo_copy'].some(function (k) {
+    return CT_BODY_FIELDS.some(function (k) {
       const el = document.getElementById('wt-ws-' + k); return el && el.value.trim();
     });
   }
@@ -1046,7 +1052,33 @@
     const clOk = CT_CHECKLIST.every(function (c) { const el = document.getElementById('wtcl-' + c.k); return el && el.checked; });
     return clOk && taskHasContent();
   }
-  function refreshTaskSubmit() { const b = document.getElementById('wt-submit'); if (b) b.disabled = !taskValidForSubmit(); }
+  // Lý do nút "Gửi Lead Content duyệt" đang khóa — để PIC biết còn thiếu gì.
+  function submitBlockers() {
+    const out = [];
+    const missing = CT_CHECKLIST.filter(function (c) { const el = document.getElementById('wtcl-' + c.k); return !(el && el.checked); });
+    if (missing.length) {
+      out.push('Quality Checklist ' + (CT_CHECKLIST.length - missing.length) + '/' + CT_CHECKLIST.length
+        + ' — thiếu: ' + missing.map(function (c) { return c.label; }).join(', '));
+    }
+    if (!taskHasContent()) {
+      const labels = CT_BODY_FIELDS.filter(function (k) { return document.getElementById('wt-ws-' + k); })
+        .map(function (k) { return (FIELD_META[k] || { label: k }).label; });
+      out.push('Chưa có nội dung — điền ít nhất 1 ô: ' + (labels.join(' / ') || 'Nội dung chính / Body')
+        + ' (Tiêu đề/CTA/Thông tin bắt buộc không tính)');
+    }
+    return out;
+  }
+  function refreshTaskSubmit() {
+    const b = document.getElementById('wt-submit'); if (!b) return;
+    const blockers = submitBlockers();
+    b.disabled = blockers.length > 0;
+    b.title = blockers.length ? blockers.join(' · ') : '';
+    const h = document.getElementById('wt-submit-hint');
+    if (h) {
+      if (blockers.length) { h.style.display = ''; h.textContent = 'Chưa gửi được: ' + blockers.join(' · '); }
+      else { h.style.display = 'none'; h.textContent = ''; }
+    }
+  }
   async function persistTask(t, patch, activity) {
     Object.assign(t, patch);
     try { await window.MH.store.contentTasks.update(t.id, patch); }
@@ -1081,7 +1113,8 @@
   async function submitTaskToLead() {
     if (!canEditTask(currentTask)) return;
     if (CT_SUBMITTABLE.indexOf(currentTask.status) < 0) { toast('warning', 'Chưa thể gửi', 'Task không ở trạng thái cho phép gửi.'); return; }
-    if (!taskValidForSubmit()) { toast('warning', 'Chưa đủ điều kiện', 'Tích đủ Quality Checklist + ít nhất 1 ô nội dung trước khi gửi.'); return; }
+    const blockers = submitBlockers();
+    if (blockers.length) { toast('warning', 'Chưa đủ điều kiện', blockers.join(' · ')); return; }
     const data = collectTaskForm();
     data.status = 'submitted_to_lead';
     data.lead_review_status = 'pending';
