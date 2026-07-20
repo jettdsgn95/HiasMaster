@@ -21,6 +21,7 @@ INSERT INTO public.user_role_map (email, role, name) VALUES
   -- ===== SEED THẬT =====
   -- name NULL → trigger tự lấy phần trước @ làm tên hiển thị ("toi.ho"); sửa sau ở User Management.
   ('toi.ho@cbcentres.com',      'system_supervisor', NULL),
+  ('duyen.phan@cbcentres.com',  'content',           NULL),
   -- ===== ĐIỀN THẬT — mỗi dòng 1 nhân sự =====
   ('thay-email@cbcentres.com',  'admin',             'Tên Admin'),
   ('thay-email2@cbcentres.com', 'account',           'Tên Account'),
