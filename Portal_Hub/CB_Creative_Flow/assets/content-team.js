@@ -161,6 +161,12 @@
 
   /* ---------- State ---------- */
   let ORDERS = [];
+  // Cờ nghi RLS chặn đọc orders: Lead Content (role thật) đọc về 0 đơn khi Supabase bật
+  // = dấu hiệu mạnh của thiếu policy "orders lead_content read" hoặc role DB sai
+  // (RLS lọc rows KHÔNG sinh error nên không catch được → phải suy từ heuristic).
+  // Chỉ dùng để đổi empty-state Inbox (inline, không toast — tránh phiền khi hệ thống
+  // mới tinh chưa có đơn nào).
+  let ordersReadBlocked = false;
   let CONTENT_USERS = []; // users role=content (gán PIC)
   let current = null;
   // Phase 2 — Content Plans + Tasks (data model mới, TÁCH BIỆT orders/brief_wording).
@@ -211,6 +217,10 @@
       return merged;
     });
     window.__CTM_ALL = list;
+    // Chỉ tính cho Lead Content THẬT (không phải admin — admin đọc orders qua is_staff,
+    // 0 đơn với admin là rỗng thật). Lead đọc orders CHỈ qua policy "orders lead_content read";
+    // thiếu policy / role DB sai → RLS trả [] im lặng → Inbox rỗng dù đã có đơn.
+    ordersReadBlocked = sbOn && user.role === 'lead_content' && list.length === 0;
     ORDERS = list.filter(function (o) { return ENGAGED.indexOf(o.brief_wording_status || 'none') >= 0; });
     ADS_ORDERS = list.filter(function (o) { return o.order_kind === 'ads_order'; });
     renderAll();
@@ -394,9 +404,13 @@
     const reviews = byStatus(['submitted_to_lead']);
     document.getElementById('ctm-inbox-new-count').textContent = news.length + ' yêu cầu';
     document.getElementById('ctm-inbox-review-count').textContent = reviews.length + ' bản chờ duyệt';
+    // Empty-state phân biệt "chưa có đơn" vs "RLS chặn đọc" (hết rỗng câm — xem loadOrders).
+    const newEmpty = ordersReadBlocked
+      ? '<div class="text-xs" style="margin:0;padding:12px 16px;color:var(--danger)"><b>Không đọc được đơn nào.</b> Nếu Account đã chuyển đơn sang Content Wording mà vẫn trống: kiểm tra đã chạy <code>add-content-team.sql</code> (policy "orders lead_content read") và role tài khoản trong DB = <code>lead_content</code>.</div>'
+      : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có yêu cầu mới.</p>';
     document.getElementById('ctm-inbox-new').innerHTML = news.length ? news.map(function (o) {
       return inboxItemHtml(o, o.wording_deadline ? ' · Hạn: ' + fmtDT(o.wording_deadline) : ' · Chưa đặt hạn');
-    }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có yêu cầu mới.</p>';
+    }).join('') : newEmpty;
     document.getElementById('ctm-inbox-review').innerHTML = reviews.length ? reviews.map(function (o) {
       return inboxItemHtml(o, ' · PIC: ' + esc(o.brief_wording_pic || '—') + (o.wording_submitted_to_lead_at ? ' · Gửi: ' + fmtDT(o.wording_submitted_to_lead_at) : ''));
     }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có bản wording chờ duyệt.</p>';
