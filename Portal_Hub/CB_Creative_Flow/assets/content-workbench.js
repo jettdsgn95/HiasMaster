@@ -138,7 +138,7 @@
     // Cache localStorage chỉ để PRESERVE bản nháp content (text/checklist/links/activity).
     // KHI Supabase bật → DB là NGUỒN THẬT cho lifecycle/status: KHÔNG để cache cũ đè
     // (Account/Client tiến order ở DB, không ghi vào cache content → tránh desync stage).
-    const DB_AUTH = ['brief_wording_status', 'brief_wording_round', 'brief_wording_pic', 'wording_last_updated_at',
+    const DB_AUTH = ['brief_wording_status', 'brief_wording_round', 'brief_wording_pic', 'brief_wording_pic_user_id', 'wording_last_updated_at',
       'wording_submitted_at', 'wording_submitted_by', 'wording_client_sent_at', 'wording_client_sent_by',
       'wording_approved_at', 'wording_client_feedback', 'wording_client_feedback_at',
       'wording_account_note', 'wording_lead_note', 'wording_lead_reviewed_at', 'wording_lead_reviewed_by',

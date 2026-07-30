@@ -109,6 +109,7 @@ BEGIN
       wording_reference_link   = CASE WHEN p_patch ? 'wording_reference_link'   THEN p_patch->>'wording_reference_link'   ELSE wording_reference_link END,
       wording_internal_link    = CASE WHEN p_patch ? 'wording_internal_link'    THEN p_patch->>'wording_internal_link'    ELSE wording_internal_link END,
       brief_wording_pic        = CASE WHEN p_patch ? 'brief_wording_pic'        THEN p_patch->>'brief_wording_pic'        ELSE brief_wording_pic END,
+      brief_wording_pic_user_id = CASE WHEN p_patch ? 'brief_wording_pic_user_id' THEN NULLIF(p_patch->>'brief_wording_pic_user_id','')::uuid ELSE brief_wording_pic_user_id END,
       wording_submitted_by     = CASE WHEN p_patch ? 'wording_submitted_by'     THEN p_patch->>'wording_submitted_by'     ELSE wording_submitted_by END,
       wording_submitted_at     = CASE WHEN p_patch ? 'wording_submitted_at'     THEN (p_patch->>'wording_submitted_at')::timestamptz ELSE wording_submitted_at END,
       wording_client_sent_by   = CASE WHEN p_patch ? 'wording_client_sent_by'   THEN p_patch->>'wording_client_sent_by'   ELSE wording_client_sent_by END,

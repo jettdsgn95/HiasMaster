@@ -183,7 +183,7 @@
     if (isAdmin) return WS_CONTENT_EDITABLE.indexOf(o.brief_wording_status || 'none') >= 0;
     if (user.role !== 'content') return false;
     if (WS_CONTENT_EDITABLE.indexOf(o.brief_wording_status || 'none') < 0) return false;
-    return isMine(o.brief_wording_pic); // chỉ PIC được gán mới chỉnh
+    return owIsMine(o); // chỉ PIC được gán mới chỉnh
   }
   function canAssign(o) {
     if (!o || !isLead) return false;
@@ -203,7 +203,7 @@
     const cache = loadCache();
     // DB là nguồn thật cho lifecycle khi Supabase bật; cache chỉ preserve nháp.
     // Khác content-workbench: chỉ override khi DB có giá trị (cột mới có thể CHƯA migrate).
-    const DB_AUTH = ['brief_wording_status', 'brief_wording_round', 'brief_wording_pic', 'wording_last_updated_at',
+    const DB_AUTH = ['brief_wording_status', 'brief_wording_round', 'brief_wording_pic', 'brief_wording_pic_user_id', 'wording_last_updated_at',
       'wording_submitted_at', 'wording_submitted_by', 'wording_client_sent_at', 'wording_client_sent_by',
       'wording_approved_at', 'wording_client_feedback', 'wording_client_feedback_at',
       'wording_account_note', 'wording_lead_note', 'wording_lead_reviewed_at', 'wording_lead_reviewed_by',
@@ -303,7 +303,7 @@
      RENDER — tabs / dashboard / inbox / board / list / mine
      =================================================================== */
   function byStatus(statuses) { return ORDERS.filter(function (o) { return statuses.indexOf(o.brief_wording_status || 'none') >= 0; }); }
-  function myOrders() { return ORDERS.filter(function (o) { return isMine(o.brief_wording_pic); }); }
+  function myOrders() { return ORDERS.filter(function (o) { return owIsMine(o); }); }
 
   function renderTabs() {
     // Role-gate tab: Inbox chỉ Lead/Admin; Mine chỉ Content/Admin.
@@ -356,8 +356,9 @@
     ORDERS.forEach(function (o) {
       const ws = o.brief_wording_status || 'none';
       if (['client_approved', 'completed'].indexOf(ws) >= 0) return;
-      if (!o.brief_wording_pic) return;
-      per[o.brief_wording_pic] = (per[o.brief_wording_pic] || 0) + 1;
+      var nm = owPicName(o);
+      if (!nm) return;
+      per[nm] = (per[nm] || 0) + 1;
     });
     // Content Task đang hoạt động (assigned_pic) — gộp để workload phản ánh đủ việc Content.
     CONTENT_TASKS.forEach(function (t) {
@@ -386,7 +387,7 @@
     document.getElementById('ctm-overdue-list').innerHTML = list.length ? list.map(function (o) {
       return '<button class="ctm-inbox-item" data-open="' + esc(o.order_id) + '">'
         + '<div><b>' + esc(o.order_id) + '</b> · ' + esc(o.project_name || '—') + '</div>'
-        + '<div class="text-xs"><span class="cwb-overdue">⚠ Hạn ' + esc(fmtDT(o.wording_deadline)) + '</span> · ' + esc(WSTATUS[o.brief_wording_status] || '') + ' · PIC: ' + esc(o.brief_wording_pic || 'chưa gán') + '</div>'
+        + '<div class="text-xs"><span class="cwb-overdue">⚠ Hạn ' + esc(fmtDT(o.wording_deadline)) + '</span> · ' + esc(WSTATUS[o.brief_wording_status] || '') + ' · PIC: ' + esc(owPicName(o) || 'chưa gán') + '</div>'
         + '</button>';
     }).join('') : ctmEmpty(ICON_CHECK, 'Không có order trễ hạn', 'Tất cả wording đang trong hạn.');
   }
@@ -423,7 +424,7 @@
       return inboxItemHtml(o, o.wording_deadline ? ' · Hạn: ' + fmtDT(o.wording_deadline) : ' · Chưa đặt hạn');
     }).join('') : newEmpty;
     document.getElementById('ctm-inbox-review').innerHTML = reviews.length ? reviews.map(function (o) {
-      return inboxItemHtml(o, ' · PIC: ' + esc(o.brief_wording_pic || '—') + (o.wording_submitted_to_lead_at ? ' · Gửi: ' + fmtDT(o.wording_submitted_to_lead_at) : ''));
+      return inboxItemHtml(o, ' · PIC: ' + esc(owPicName(o) || '—') + (o.wording_submitted_to_lead_at ? ' · Gửi: ' + fmtDT(o.wording_submitted_to_lead_at) : ''));
     }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có bản wording chờ duyệt.</p>';
 
     // Task nội bộ chờ duyệt — nguồn KHÁC (bảng content_tasks, không phải orders).
@@ -459,7 +460,7 @@
           + '<div class="kc-head"><span class="kc-id">' + esc(o.order_id) + '</span><span class="priority-pill kc-priority p--' + (o.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_LABEL[o.priority] || '—') + '</span></div>'
           + '<div class="kc-title">' + esc(o.project_name || '—') + '</div>'
           + '<div class="kc-meta">'
-          + (o.brief_wording_pic ? '<span class="kc-pic"><span class="pic-avatar avatar">' + esc(initials(o.brief_wording_pic)) + '</span>' + esc(o.brief_wording_pic) + '</span>' : '<span class="muted">Chưa gán PIC</span>')
+          + (owPicName(o) ? '<span class="kc-pic"><span class="pic-avatar avatar">' + esc(initials(owPicName(o))) + '</span>' + esc(owPicName(o)) + '</span>' : '<span class="muted">Chưa gán PIC</span>')
           + (o.wording_deadline ? '<span class="kc-deadline' + (overdue ? ' is-overdue' : '') + '">' + fmtDT(o.wording_deadline) + '</span>' : '')
           + '</div>'
           + '<div class="kc-flags"><span class="kc-flag">Vòng ' + (o.brief_wording_round || 0) + '</span>' + (o.wording_doc_link ? '<span class="kc-flag has-preview">Doc</span>' : '') + '</div>'
@@ -483,7 +484,7 @@
       + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + (overdue ? ' ⚠' : '') + '</span></td>'
       + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(WSTATUS[ws] || ws) + '</span></td>'
       + '<td><span class="text-xs">' + (o.brief_wording_round || 0) + '</span></td>'
-      + (withPic ? '<td><span class="text-xs">' + esc(o.brief_wording_pic || '—') + '</span></td>' : '')
+      + (withPic ? '<td><span class="text-xs">' + esc(owPicName(o) || '—') + '</span></td>' : '')
       + '<td><button class="btn btn-secondary btn-sm" data-open="' + esc(o.order_id) + '">Mở</button></td>'
       + '</tr>';
   }
@@ -492,7 +493,7 @@
     return list.filter(function (o) {
       if (FILTERS.status && (o.brief_wording_status || 'none') !== FILTERS.status) return false;
       if (FILTERS.type && o.request_type !== FILTERS.type) return false;
-      if (FILTERS.pic && (o.brief_wording_pic || '') !== FILTERS.pic) return false;
+      if (FILTERS.pic && (owPicName(o) || '') !== FILTERS.pic) return false;
       if (q && ((o.order_id || '') + ' ' + (o.project_name || '')).toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
@@ -506,7 +507,7 @@
     const fp = document.getElementById('ctm-filter-pic');
     const cur = fp.value; const seen = {};
     fp.innerHTML = '<option value="">Mọi PIC</option>';
-    ORDERS.forEach(function (o) { if (o.brief_wording_pic && !seen[o.brief_wording_pic]) { seen[o.brief_wording_pic] = 1; const op = document.createElement('option'); op.value = o.brief_wording_pic; op.textContent = o.brief_wording_pic; fp.appendChild(op); } });
+    ORDERS.forEach(function (o) { var nm = owPicName(o); if (nm && !seen[nm]) { seen[nm] = 1; const op = document.createElement('option'); op.value = nm; op.textContent = nm; fp.appendChild(op); } });
     fp.value = cur;
   }
   function renderMine() {
@@ -534,7 +535,7 @@
         btns.push('<button class="btn btn-secondary btn-sm" id="ct-start">' + (ws === 'pic_assigned' ? 'Bắt đầu xử lý' : 'Chỉnh theo yêu cầu') + '</button>');
       btns.push('<button class="btn btn-secondary btn-sm" id="ct-save">Lưu nháp</button>');
       btns.push('<button class="btn btn-primary btn-sm" id="ct-submit">Gửi Lead Content duyệt</button>');
-    } else if (user.role === 'content' && ws === 'submitted_to_lead' && isMine(o.brief_wording_pic)) {
+    } else if (user.role === 'content' && ws === 'submitted_to_lead' && owIsMine(o)) {
       btns.push('<span class="wf-wait-tag">Đã gửi Lead — chờ duyệt</span>');
     }
     if (canLeadReview(o)) {
@@ -552,7 +553,7 @@
 
   function buildAssignPanel(o) {
     if (!isLead) {
-      return o.brief_wording_pic
+      return owPicName(o)
         ? '' // PIC hiển thị ở head + summary, không cần panel riêng cho non-lead
         : '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Phân công</h4></div><p class="text-xs muted" style="margin:0">Chưa gán PIC Content — chờ Lead Content phân công.</p></section>';
     }
@@ -561,7 +562,7 @@
     const btnLabel = ws === 'assigned' ? 'Gán PIC & bắt đầu' : 'Cập nhật phân công';
     return '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công</h4></div>'
       + '<div class="ctm-assign-grid">'
-      + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ct-pic">' + picSelectOptions(o.brief_wording_pic || '') + '</select></div>'
+      + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ct-pic">' + picOptionsByIdCT(o.brief_wording_pic_user_id, o.brief_wording_pic) + '</select></div>'
       + '<div class="field"><label class="label">Hạn hoàn thành wording</label><input class="input" type="datetime-local" id="ct-deadline" value="' + toLocalInput(o.wording_deadline) + '" /></div>'
       + '</div>'
       + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" id="ct-assign">' + btnLabel + '</button></div>'
@@ -667,7 +668,7 @@
     const st = document.getElementById('ctm-d-status'); st.className = 'tb-status s--wording'; st.innerHTML = '<span class="dot"></span>' + (WSTATUS[ws] || ws);
     const pr = document.getElementById('ctm-d-priority'); pr.className = 'priority-pill p--' + (o.priority || 'normal'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_LABEL[o.priority] || o.priority || '—');
     document.getElementById('ctm-d-round').textContent = 'Vòng ' + (o.brief_wording_round || 0);
-    document.getElementById('ctm-d-pic').textContent = 'PIC: ' + (o.brief_wording_pic || 'chưa gán');
+    document.getElementById('ctm-d-pic').textContent = 'PIC: ' + (owPicName(o) || 'chưa gán');
     document.getElementById('ctm-drawer-actions').innerHTML = buildActions(o);
     document.getElementById('ctm-drawer-body').innerHTML = buildBody(o);
     wireDrawer();
@@ -702,15 +703,18 @@
     if (!isLead || !current || !canAssign(current)) return;
     const picEl = document.getElementById('ct-pic');
     const dlEl = document.getElementById('ct-deadline');
-    const pic = (picEl && picEl.value || '').trim();
-    if (!pic) { toast('warning', 'Thiếu PIC', 'Chọn PIC Content trong danh sách trước khi gán.'); if (picEl) picEl.focus(); return; }
+    const rawPic = (picEl && picEl.value || '').trim();         // value = id | "name:<tên>" (legacy) | ""
+    if (!rawPic) { toast('warning', 'Thiếu PIC', 'Chọn PIC Content trong danh sách trước khi gán.'); if (picEl) picEl.focus(); return; }
+    const pickW = window.MH.picPick(rawPic);
+    const picId = pickW.id;
+    const pic = pickW.name || '';
     const ws = current.brief_wording_status || 'none';
-    const patch = { brief_wording_pic: pic };
+    const patch = { brief_wording_pic_user_id: picId, brief_wording_pic: pic };
     if (dlEl && dlEl.value) patch.wording_deadline = new Date(dlEl.value).toISOString();
     if (ws === 'assigned') patch.brief_wording_status = 'pic_assigned';
     const isNew = ws === 'assigned';
     await persist(current, patch, (isNew ? 'Lead gán PIC: ' : 'Lead cập nhật phân công: ') + pic + (patch.wording_deadline ? ' · hạn ' + fmtDT(patch.wording_deadline) : ''));
-    notifyByName(pic, notifPayload(current, 'task_assigned', '📝 Bạn được gán Content Wording',
+    notifyUserId(picId, notifPayload(current, 'task_assigned', '📝 Bạn được gán Content Wording',
       current.order_id + ' · ' + (current.project_name || 'Untitled') + (patch.wording_deadline ? ' · Hạn: ' + fmtDT(patch.wording_deadline) : '') + ' — Lead: ' + (user.name || 'Lead Content'),
       'content-workbench.html?id='));
     toast('success', isNew ? 'Đã gán PIC' : 'Đã cập nhật phân công', current.order_id + ' → ' + pic);
@@ -728,7 +732,8 @@
       wording_lead_reviewed_at: nowIso,
       wording_lead_reviewed_by: user.name || user.role
     }, 'Lead trả Content chỉnh: ' + note);
-    if (current.brief_wording_pic) notifyByName(current.brief_wording_pic, notifPayload(current, 'task_status_changed', '✍️ Lead yêu cầu chỉnh wording', current.order_id + ' · ' + note, 'content-workbench.html?id='));
+    if (current.brief_wording_pic_user_id) notifyUserId(current.brief_wording_pic_user_id, notifPayload(current, 'task_status_changed', '✍️ Lead yêu cầu chỉnh wording', current.order_id + ' · ' + note, 'content-workbench.html?id='));
+    else if (current.brief_wording_pic) notifyByName(current.brief_wording_pic, notifPayload(current, 'task_status_changed', '✍️ Lead yêu cầu chỉnh wording', current.order_id + ' · ' + note, 'content-workbench.html?id='));
     toast('info', 'Đã trả Content chỉnh', current.order_id);
     reloadAndReopen();
   }
@@ -863,6 +868,15 @@
   // fallback snapshot tên cũ (data chưa backfill id). MH.picLabel ở app.js.
   function ctPicName(t) {
     return (t && window.MH && window.MH.picLabel) ? window.MH.picLabel(t.assigned_pic_user_id, t.assigned_pic) : (t && t.assigned_pic) || '';
+  }
+  // PIC wording (orders.brief_wording_pic) — Stage 2: keyed theo brief_wording_pic_user_id.
+  function owPicName(o) {
+    return (o && window.MH && window.MH.picLabel) ? window.MH.picLabel(o.brief_wording_pic_user_id, o.brief_wording_pic) : (o && o.brief_wording_pic) || '';
+  }
+  function owIsMine(o) {
+    if (!o) return false;
+    if (o.brief_wording_pic_user_id) return !!user.id && o.brief_wording_pic_user_id === user.id;
+    return isMine(o.brief_wording_pic);
   }
   function initiativeTasks() { return CONTENT_TASKS.filter(function (t) { return t.source === 'content_initiated' && !t.content_plan_id; }); }
   function planChildTasks(planId) { return CONTENT_TASKS.filter(function (t) { return t.content_plan_id === planId; }); }
@@ -1421,9 +1435,10 @@
   }
   async function saveTaskAssign() {
     if (!isLead || !currentTask) return;
-    // PIC content_tasks nay keyed theo user_id: select value = id, snapshot tên qua MH.userName.
-    const picId = (document.getElementById('ctm-t-pic').value || '').trim();
-    const pic = picId ? (window.MH.userName(picId) || '') : '';
+    // PIC content_tasks keyed theo user_id: select value = id (user thật) | "name:<tên>" (legacy) | "".
+    const pick = window.MH.picPick(document.getElementById('ctm-t-pic').value || '');
+    const picId = pick.id;
+    const pic = pick.name || '';
     const dlEl = document.getElementById('ctm-t-deadline');
     const prio = document.getElementById('ctm-t-priority').value;
     const media = document.getElementById('ctm-t-media').checked;
@@ -1797,8 +1812,9 @@
   async function saveChildTask(plan) {
     const title = (document.getElementById('cct-title').value || '').trim();
     if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề task.'); return false; }
-    const picId = (document.getElementById('cct-pic').value || '').trim();
-    const pic = picId ? (window.MH.userName(picId) || '') : '';
+    const pickC = window.MH.picPick(document.getElementById('cct-pic').value || '');
+    const picId = pickC.id;
+    const pic = pickC.name || '';
     const payload = {
       content_plan_id: plan.id, source: plan.source === 'client_order' ? 'client_order' : 'campaign_package',
       title: title, brief: document.getElementById('cct-brief').value.trim(),
@@ -1847,8 +1863,9 @@
   async function saveInitiative() {
     const title = (document.getElementById('cim-title').value || '').trim();
     if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề task nội bộ.'); return false; }
-    const picId = (document.getElementById('cim-pic').value || '').trim();
-    const pic = picId ? (window.MH.userName(picId) || '') : '';
+    const pickI = window.MH.picPick(document.getElementById('cim-pic').value || '');
+    const picId = pickI.id;
+    const pic = pickI.name || '';
     const needMedia = document.getElementById('cim-media').checked;
     const payload = {
       source: 'content_initiated', content_plan_id: null,

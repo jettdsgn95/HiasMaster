@@ -142,8 +142,15 @@
     try {
       const list = await window.MH.store.users.list();
       STAFF_USERS = (list || []).filter((u) => u && u.name && u.status !== 'inactive');
+      if (window.MH.setUserDir) window.MH.setUserDir(list || []); // resolve id→tên cho PIC (Stage 2)
     } catch (e) { console.warn('[database-orders] users load failed:', e); }
     return STAFF_USERS.length;
+  }
+  // PIC nay keyed theo user_id (rename-proof). Option value=id; hiển thị resolve id→tên hiện tại.
+  function picName(id, snapshot) { return (window.MH && window.MH.picLabel) ? window.MH.picLabel(id, snapshot) : (snapshot || ''); }
+  function picOptionsId(currentId, currentName, roles) {
+    const users = STAFF_USERS.filter((u) => roles.includes(u.role));
+    return window.MH.picOptionsById(users, { current: currentId || '', currentName: currentName || '', placeholder: '— Chưa gán —', roleTag: ROLE_TAG });
   }
   function picUserPool(roles, fallback, current) {
     const seen = {};
@@ -515,7 +522,9 @@
   function matchesFilters(o) {
     if (state.search) {
       const q = state.search.toLowerCase();
-      const hay = [o.order_id, o.requester_name, o.requester_email, o.department, o.project_name, o.project_purpose, o.content_brief, o.production_pic, o.account_pic]
+      const hay = [o.order_id, o.requester_name, o.requester_email, o.department, o.project_name, o.project_purpose, o.content_brief,
+        picName(o.production_pic_user_id, o.production_pic), picName(o.account_pic_user_id, o.account_pic),
+        picName(o.production_pic_video_user_id, o.production_pic_video), picName(o.production_pic_photo_user_id, o.production_pic_photo)]
         .filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
@@ -555,9 +564,9 @@
     // PIC cell: order media gán qua production_pic_video/photo (KHÔNG phải production_pic đơn).
     let picCell;
     if (o.request_type === 'media' && (o.production_pic_video || o.production_pic_photo)) {
-      picCell = `<div class="pic-cell-stack">${picChip(o.production_pic_video, 'Quay')}${picChip(o.production_pic_photo, 'Chụp')}</div>`;
-    } else if (o.production_pic) {
-      picCell = picChip(o.production_pic, '');
+      picCell = `<div class="pic-cell-stack">${picChip(picName(o.production_pic_video_user_id, o.production_pic_video), 'Quay')}${picChip(picName(o.production_pic_photo_user_id, o.production_pic_photo), 'Chụp')}</div>`;
+    } else if (o.production_pic || o.production_pic_user_id) {
+      picCell = picChip(picName(o.production_pic_user_id, o.production_pic), '');
     } else {
       picCell = `<span class="pic-unassigned">— Chưa gán —</span>`;
     }
@@ -705,7 +714,7 @@
           effectiveDeadline(o) || '',
           ACCOUNT_STATUS_LABEL[o.account_status] || o.account_status || '',
           PROD_STATUS_LABEL[o.production_status] || o.production_status || '',
-          o.production_pic || '',
+          picName(o.production_pic_user_id, o.production_pic) || '',
           (o.progress != null ? o.progress : '')
         ])
       ];
@@ -916,10 +925,10 @@
   function buildActivity(o) {
     const acts = [
       { time: o.created_at, label: `Order được tạo bởi <b>${o.requester_name}</b>` },
-      o.account_pic && { time: o.last_updated, label: `<b>${o.account_pic}</b> bắt đầu kiểm tra brief` },
-      o.account_status === 'needinfo' && { time: o.last_updated, label: `<b>${o.account_pic}</b> yêu cầu bổ sung brief` },
-      o.account_status === 'confirmed' && { time: o.last_updated, label: `<b>${o.account_pic}</b> xác nhận brief` },
-      o.production_pic && { time: o.last_updated, label: `Gán P.I.C: <b>${o.production_pic}</b>` },
+      o.account_pic && { time: o.last_updated, label: `<b>${escapeHtml(picName(o.account_pic_user_id, o.account_pic))}</b> bắt đầu kiểm tra brief` },
+      o.account_status === 'needinfo' && { time: o.last_updated, label: `<b>${escapeHtml(picName(o.account_pic_user_id, o.account_pic))}</b> yêu cầu bổ sung brief` },
+      o.account_status === 'confirmed' && { time: o.last_updated, label: `<b>${escapeHtml(picName(o.account_pic_user_id, o.account_pic))}</b> xác nhận brief` },
+      o.production_pic && { time: o.last_updated, label: `Gán P.I.C: <b>${escapeHtml(picName(o.production_pic_user_id, o.production_pic))}</b>` },
       ['inprogress', 'review', 'ready', 'delivered', 'completed'].includes(o.production_status) && { time: o.last_updated, label: `Status → ${PROD_STATUS_LABEL[o.production_status]}` }
     ].filter(Boolean);
     return `<ul class="activity-mini">${acts.slice(-5).reverse().map((a) => `<li><span>${a.label}</span><time>${fmtDateTime(a.time)}</time></li>`).join('')}</ul>`;
@@ -1276,12 +1285,12 @@
         </div>
         <div class="order-summary-tile">
           <span>Account PIC</span>
-          <b>${v(o.account_pic)}</b>
+          <b>${v(picName(o.account_pic_user_id, o.account_pic))}</b>
           <small>${ACCOUNT_STATUS_LABEL[o.account_status] || o.account_status}</small>
         </div>
         <div class="order-summary-tile">
           <span>Production PIC</span>
-          <b>${v(o.production_pic)}</b>
+          <b>${v(o.request_type === 'media' ? (picName(o.production_pic_video_user_id, o.production_pic_video) || picName(o.production_pic_photo_user_id, o.production_pic_photo)) : picName(o.production_pic_user_id, o.production_pic))}</b>
           <small>${PROD_STATUS_LABEL[o.production_status] || o.production_status}</small>
         </div>
       </section>
@@ -1329,27 +1338,27 @@
         <div class="edit-row">
           <label>Account PIC</label>
           <select class="select" id="edit-account-pic" data-pic-dd>
-            ${picOptions(o.account_pic, ACCT_PIC_ROLES, FALLBACK_ACCT_PICS)}
+            ${picOptionsId(o.account_pic_user_id, o.account_pic, ACCT_PIC_ROLES)}
           </select>
         </div>
         ${o.request_type === 'media' ? `
         <div class="edit-row">
           <label>PIC Quay</label>
           <select class="select" id="edit-prod-pic-video" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
-            ${picOptions(o.production_pic_video, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
+            ${picOptionsId(o.production_pic_video_user_id, o.production_pic_video, PROD_PIC_ROLES)}
           </select>
         </div>
         <div class="edit-row">
           <label>PIC Chụp</label>
           <select class="select" id="edit-prod-pic-photo" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
-            ${picOptions(o.production_pic_photo, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
+            ${picOptionsId(o.production_pic_photo_user_id, o.production_pic_photo, PROD_PIC_ROLES)}
           </select>
         </div>
         ` : `
         <div class="edit-row">
           <label>Production PIC</label>
           <select class="select" id="edit-prod-pic" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
-            ${picOptions(o.production_pic, PROD_PIC_ROLES, FALLBACK_PROD_PICS)}
+            ${picOptionsId(o.production_pic_user_id, o.production_pic, PROD_PIC_ROLES)}
           </select>
         </div>
         `}
@@ -1596,14 +1605,21 @@
     function applyCoordination() {
       const isMedia = currentOrder.request_type === 'media';
       const newStatus = document.getElementById('edit-account-status').value;
-      const newAcctPic = document.getElementById('edit-account-pic').value || null;
-      const elPic = document.getElementById('edit-prod-pic');
-      const elPicV = document.getElementById('edit-prod-pic-video');
-      const elPicP = document.getElementById('edit-prod-pic-photo');
-      // Nếu select bị disable (đã push) → giữ giá trị hiện tại của order, không đọc DOM.
-      const newProdPic = (elPic && !elPic.disabled) ? (elPic.value || null) : (currentOrder.production_pic || null);
-      const newProdPicVideo = isMedia ? ((elPicV && !elPicV.disabled) ? (elPicV.value || null) : (currentOrder.production_pic_video || null)) : (currentOrder.production_pic_video || null);
-      const newProdPicPhoto = isMedia ? ((elPicP && !elPicP.disabled) ? (elPicP.value || null) : (currentOrder.production_pic_photo || null)) : (currentOrder.production_pic_photo || null);
+      // PIC select value = user_id (Stage 2). Ghi CẢ id (khóa) LẪN tên snapshot (hiển thị legacy).
+      // Select disable (đã push) → giữ id+tên hiện tại của order, không đọc DOM.
+      const readPic = (el, curId, curName) => {
+        // value = id (user thật) | "name:<tên>" (legacy chưa backfill) | "" (bỏ gán). picPick giải mã
+        // → giữ tên legacy, KHÔNG xóa mất assignment khi Save nếu PIC chưa liên kết id.
+        if (el && !el.disabled) { return window.MH.picPick(el.value || ''); }
+        return { id: curId || null, name: curName || null };
+      };
+      const acctPic = readPic(document.getElementById('edit-account-pic'), currentOrder.account_pic_user_id, currentOrder.account_pic);
+      const prod = readPic(document.getElementById('edit-prod-pic'), currentOrder.production_pic_user_id, currentOrder.production_pic);
+      const prodV = isMedia ? readPic(document.getElementById('edit-prod-pic-video'), currentOrder.production_pic_video_user_id, currentOrder.production_pic_video)
+        : { id: currentOrder.production_pic_video_user_id || null, name: currentOrder.production_pic_video || null };
+      const prodP = isMedia ? readPic(document.getElementById('edit-prod-pic-photo'), currentOrder.production_pic_photo_user_id, currentOrder.production_pic_photo)
+        : { id: currentOrder.production_pic_photo_user_id || null, name: currentOrder.production_pic_photo || null };
+      const newAcctPic = acctPic.name, newProdPic = prod.name, newProdPicVideo = prodV.name, newProdPicPhoto = prodP.name;
       const newPriority = document.getElementById('edit-priority').value;
       const newDeadline = document.getElementById('edit-internal-deadline').value.replace('T', ' ');
       // Production Status giờ TASK-DRIVEN (select disabled) → KHÔNG đọc form, giữ giá trị order hiện tại.
@@ -1617,10 +1633,10 @@
 
       Object.assign(currentOrder, {
         account_status: newStatus,
-        account_pic: newAcctPic,
-        production_pic: newProdPic,
-        production_pic_video: newProdPicVideo,
-        production_pic_photo: newProdPicPhoto,
+        account_pic: newAcctPic, account_pic_user_id: acctPic.id,
+        production_pic: newProdPic, production_pic_user_id: prod.id,
+        production_pic_video: newProdPicVideo, production_pic_video_user_id: prodV.id,
+        production_pic_photo: newProdPicPhoto, production_pic_photo_user_id: prodP.id,
         priority: newPriority,
         internal_deadline: newDeadline || null,
         production_status: newProdStatus,
@@ -1631,8 +1647,8 @@
       // Phase 1: write-through Supabase
       const patch = {
         account_status: newStatus,
-        account_pic: newAcctPic,
-        production_pic: newProdPic,
+        account_pic: newAcctPic, account_pic_user_id: acctPic.id,
+        production_pic: newProdPic, production_pic_user_id: prod.id,
         priority: newPriority,
         internal_deadline: newDeadline ? new Date(newDeadline.replace(' ', 'T')).toISOString() : null,
         production_status: newProdStatus,
@@ -1641,7 +1657,10 @@
         last_updated: new Date().toISOString()
       };
       // 2 PIC cho media — cần cột production_pic_video/photo (chạy supabase/add-media-pics.sql)
-      if (isMedia) { patch.production_pic_video = newProdPicVideo; patch.production_pic_photo = newProdPicPhoto; }
+      if (isMedia) {
+        patch.production_pic_video = newProdPicVideo; patch.production_pic_video_user_id = prodV.id;
+        patch.production_pic_photo = newProdPicPhoto; patch.production_pic_photo_user_id = prodP.id;
+      }
       persistOrder(currentOrder.order_id, patch);
       // Cảnh báo (không block): internal_deadline trễ hơn deadline đã thống nhất với Client.
       if (internalPastEffective(currentOrder)) {
@@ -2566,13 +2585,13 @@
     }
     // Drawer đang mở (options build trước khi users về) → refresh options tại chỗ.
     if (!currentOrder) return;
-    [['edit-account-pic', currentOrder.account_pic, ACCT_PIC_ROLES, FALLBACK_ACCT_PICS],
-     ['edit-prod-pic', currentOrder.production_pic, PROD_PIC_ROLES, FALLBACK_PROD_PICS],
-     ['edit-prod-pic-video', currentOrder.production_pic_video, PROD_PIC_ROLES, FALLBACK_PROD_PICS],
-     ['edit-prod-pic-photo', currentOrder.production_pic_photo, PROD_PIC_ROLES, FALLBACK_PROD_PICS]
+    [['edit-account-pic', currentOrder.account_pic_user_id, currentOrder.account_pic, ACCT_PIC_ROLES],
+     ['edit-prod-pic', currentOrder.production_pic_user_id, currentOrder.production_pic, PROD_PIC_ROLES],
+     ['edit-prod-pic-video', currentOrder.production_pic_video_user_id, currentOrder.production_pic_video, PROD_PIC_ROLES],
+     ['edit-prod-pic-photo', currentOrder.production_pic_photo_user_id, currentOrder.production_pic_photo, PROD_PIC_ROLES]
     ].forEach(function (cfg) {
       const el = document.getElementById(cfg[0]);
-      if (el) el.innerHTML = picOptions(el.value || cfg[1], cfg[2], cfg[3]);
+      if (el) el.innerHTML = picOptionsId(el.value || cfg[1], cfg[2], cfg[3]);
     });
     // Rebuild menu custom dropdown sau khi options đổi.
     if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(document.getElementById('order-drawer'));

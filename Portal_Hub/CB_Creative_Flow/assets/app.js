@@ -267,6 +267,7 @@
   window.MH.picOptionsById = function (users, opts) {
     opts = opts || {};
     const cur = opts.current || '';
+    const curName = opts.currentName || '';
     const roleTag = opts.roleTag || {};
     const esc = picDdEsc;
     let html = '<option value="">' + esc(opts.placeholder || '— Chọn PIC —') + '</option>';
@@ -280,10 +281,22 @@
         + (u.id === cur ? ' selected' : '') + '>' + esc(nm + (tag ? ' · ' + tag : '')) + '</option>';
     });
     if (cur && !seen[cur]) {
-      const nm = window.MH.userName(cur) || opts.currentName || cur;
+      // PIC đang gán (id) nhưng không còn trong pool (role đổi/nghỉ) → giữ option để không mất.
+      const nm = window.MH.userName(cur) || curName || cur;
       html += '<option value="' + esc(cur) + '" data-name="' + esc(nm) + '" selected>' + esc(nm) + '</option>';
+    } else if (!cur && curName) {
+      // LEGACY: PIC lưu bằng TÊN chưa backfill id (orphan). Giữ option value="name:<tên>" để
+      // Save KHÔNG xóa mất assignment; decode qua MH.picPick. Reassign sang user thật sẽ set id.
+      html += '<option value="name:' + esc(curName) + '" data-name="' + esc(curName) + '" selected>' + esc(curName) + ' · (chưa liên kết)</option>';
     }
     return html;
+  };
+  // Giải mã value của PIC select → { id, name }. value = id (user thật) | "name:<tên>" (legacy) | "" (bỏ gán).
+  window.MH.picPick = function (value) {
+    value = value || '';
+    if (!value) return { id: null, name: null };
+    if (value.indexOf('name:') === 0) return { id: null, name: value.slice(5) };
+    return { id: value, name: window.MH.userName(value) || null };
   };
 
   /* ---------- Copy helpers ---------- */
