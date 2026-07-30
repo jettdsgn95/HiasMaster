@@ -84,15 +84,14 @@
   ];
   const TYPE_LABEL = { design: 'Thiết kế', media: 'Quay / Chụp', video: 'Video', motion: 'Motion', slide: 'Slide', digital: 'Digital', other: 'Khác', photo: 'Chụp', shoot: 'Quay' };
   const PRIO_LABEL = { normal: 'Bình thường', urgent: 'Gấp', critical: 'Rất gấp' };
+  // Quality Checklist wording — đạt tối thiểu CHECKLIST_MIN/tổng mới gửi duyệt được.
   const CHECKLIST = [
-    { k: 'goal', label: 'Đã hiểu đúng mục tiêu truyền thông' },
-    { k: 'info', label: 'Đã kiểm tra đủ thông tin bắt buộc' },
+    { k: 'goal', label: 'Xác nhận đúng Nội dung khuyến mãi/yêu cầu/mục tiêu' },
     { k: 'message', label: 'Đã chuẩn hóa thông điệp chính' },
     { k: 'cta', label: 'Đã đề xuất CTA phù hợp' },
-    { k: 'clarity', label: 'Đã loại bỏ nội dung mơ hồ / thiếu rõ ràng' },
-    { k: 'prodnote', label: 'Đã ghi chú rõ điểm cần Production lưu ý' },
-    { k: 'tone', label: 'Đã kiểm tra tone phù hợp brand CB' }
+    { k: 'prodnote', label: 'Đã chuẩn hóa brief thiết kế, ghi chú rõ cho Media Production' }
   ];
+  const CHECKLIST_MIN = 3;
   const WFIELDS = [
     { k: 'wording_brief', label: 'Brief đã wording', req: true, rows: 5 },
     { k: 'wording_objective', label: 'Mục tiêu sau khi chuẩn hóa', rows: 2 },
@@ -301,7 +300,7 @@
         + '<dt>Hạn wording</dt><dd>' + (o.wording_deadline ? '<span class="' + (isWordingOverdue(o) ? 'cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + '</span>' + (isWordingOverdue(o) ? ' · ⚠ trễ' : '') : '<em class="muted">— (Account chưa đặt)</em>') + '</dd>'
       + '</dl></section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">W</span><h4>Wording Workspace</h4></div>' + lockNote + wf + '</section>'
-      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Checklist trách nhiệm Content</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>' + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Bắt buộc tích đủ + điền các trường (*) trước khi "Gửi Account duyệt".</p>' : '') + '</section>'
+      + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Quality Checklist</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>' + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Đạt tối thiểu ' + CHECKLIST_MIN + '/' + CHECKLIST.length + ' checklist + điền các trường (*) trước khi "Gửi Account duyệt".</p>' : '') + '</section>'
       + acctPanel
       + clientPanel
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">F</span><h4>Files / Links</h4></div>' + lk + '</section>'
@@ -340,7 +339,8 @@
   }
   function isValidForSubmit() {
     const reqOk = WFIELDS.filter(function (f) { return f.req; }).every(function (f) { const el = document.getElementById('w-' + f.k); return el && el.value.trim(); });
-    const clOk = CHECKLIST.every(function (c) { const el = document.getElementById('cl-' + c.k); return el && el.checked; });
+    const clDone = CHECKLIST.filter(function (c) { const el = document.getElementById('cl-' + c.k); return el && el.checked; }).length;
+    const clOk = clDone >= Math.min(CHECKLIST_MIN, CHECKLIST.length);
     return reqOk && clOk;
   }
   function refreshSubmitState() { const b = document.getElementById('w-submit'); if (b) b.disabled = !isValidForSubmit(); }
@@ -403,7 +403,7 @@
     if (!contentEditable(current)) return;
     const target = HAS_LEAD ? 'submitted_to_lead' : 'submitted_to_account';
     if (current.brief_wording_status === target) { toast('info', 'Đã gửi', current.order_id + ' — bản wording đã gửi, đang chờ duyệt.'); return; }
-    if (!isValidForSubmit()) { toast('warning', 'Chưa đủ điều kiện', 'Hoàn tất các trường bắt buộc (*) + toàn bộ checklist trước khi gửi.'); return; }
+    if (!isValidForSubmit()) { toast('warning', 'Chưa đủ điều kiện', 'Hoàn tất các trường bắt buộc (*) + đạt tối thiểu ' + CHECKLIST_MIN + '/' + CHECKLIST.length + ' Quality Checklist trước khi gửi.'); return; }
     const data = collectForm();
     const nowIso = new Date().toISOString();
     if (HAS_LEAD) {
