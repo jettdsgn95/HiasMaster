@@ -48,7 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_ctasks_assigned_uid     ON public.content_tasks(a
 -- ---------------------------------------------------------------------
 DO $$
 DECLARE
-  m record;
+  m text[];   -- mỗi slice (SLICE 1 trên mảng 2 chiều) là 1 mảng text[] [table,name,id]
   pairs text[][] := ARRAY[
     ['orders','account_pic','account_pic_user_id'],
     ['orders','production_pic','production_pic_user_id'],
