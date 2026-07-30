@@ -844,7 +844,8 @@
     email_sms_zalo_copy: 'Email/Zalo/SMS', cta: 'CTA', mandatory_info: 'Thông tin bắt buộc', visual_direction: 'Định hướng hình ảnh'
   };
   const WS_ORDER = ['draft_title', 'draft_body', 'headline', 'subheadline', 'caption', 'script', 'voice_over', 'ads_primary_text', 'ads_headline', 'landing_copy', 'email_sms_zalo_copy', 'cta', 'mandatory_info', 'visual_direction'];
-  const CTCHK = [['goal', 'Đúng mục tiêu nội dung'], ['audience', 'Đúng đối tượng'], ['tone', 'Đúng tone CB'], ['message', 'Thông điệp rõ ràng'], ['cta', 'CTA rõ'], ['info', 'Thông tin bắt buộc đủ'], ['spelling', 'Không lỗi chính tả'], ['format', 'Format phù hợp kênh sử dụng'], ['assumptions', 'Đã ghi assumptions nếu thiếu thông tin']];
+  // Quality Checklist content_task (đồng bộ CT_CHECKLIST ở content-workbench — 4 mục, key khớp).
+  const CTCHK = [['goal', 'Xác nhận đúng Nội dung khuyến mãi/yêu cầu/mục tiêu'], ['message', 'Đúng thông điệp chính'], ['cta', 'Đã có CTA phù hợp'], ['prodnote', 'Đã chuẩn hóa brief thiết kế, ghi chú rõ cho Media Production']];
   const HANDOFF_LABEL = { final_headline: 'Final headline', final_body_or_script: 'Final body/script', handoff_mandatory_info: 'Thông tin bắt buộc', handoff_visual_direction: 'Định hướng hình ảnh', format_size: 'Format/Size', channel: 'Kênh đăng' };
   const REVISION_REASONS = ['Sai mục tiêu nội dung', 'Sai đối tượng', 'Sai tone CB', 'Hook chưa đủ mạnh', 'Thông điệp chưa rõ', 'CTA chưa rõ', 'Thiếu thông tin bắt buộc', 'Copy quá dài', 'Copy quá ngắn', 'Sai format kênh', 'Lỗi chính tả/ngữ pháp', 'Cần bổ sung visual note', 'Cần bổ sung handoff cho Media', 'Khác'];
   // Trạng thái task được coi là "đã xong" để tính progress roll-up.

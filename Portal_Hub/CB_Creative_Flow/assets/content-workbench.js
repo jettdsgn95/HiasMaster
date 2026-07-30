@@ -596,17 +596,14 @@
     mandatory_info: { label: 'Thông tin bắt buộc', rows: 2 },
     visual_direction: { label: 'Định hướng hình ảnh', rows: 2 }
   };
+  // Quality Checklist content_task — đạt tối thiểu CT_CHECKLIST_MIN/tổng mới gửi Lead duyệt.
   const CT_CHECKLIST = [
-    { k: 'goal', label: 'Đúng mục tiêu nội dung' },
-    { k: 'audience', label: 'Đúng đối tượng' },
-    { k: 'tone', label: 'Đúng tone CB' },
-    { k: 'message', label: 'Thông điệp rõ ràng' },
-    { k: 'cta', label: 'CTA rõ' },
-    { k: 'info', label: 'Thông tin bắt buộc đủ' },
-    { k: 'spelling', label: 'Không lỗi chính tả' },
-    { k: 'format', label: 'Format phù hợp kênh sử dụng' },
-    { k: 'assumptions', label: 'Đã ghi assumptions nếu thiếu thông tin' }
+    { k: 'goal', label: 'Xác nhận đúng Nội dung khuyến mãi/yêu cầu/mục tiêu' },
+    { k: 'message', label: 'Đúng thông điệp chính' },
+    { k: 'cta', label: 'Đã có CTA phù hợp' },
+    { k: 'prodnote', label: 'Đã chuẩn hóa brief thiết kế, ghi chú rõ cho Media Production' }
   ];
+  const CT_CHECKLIST_MIN = 3;
   const HANDOFF_FIELDS = [
     { k: 'final_headline', label: 'Final headline', rows: 1 },
     { k: 'final_body_or_script', label: 'Final body / script', rows: 4 },
@@ -977,7 +974,7 @@
       return '<label class="checkbox"><input type="checkbox" class="cwbt-check" id="wtcl-' + c.k + '" ' + (cl[c.k] ? 'checked' : '') + ' ' + (editable ? '' : 'disabled') + ' /><div><span class="checkbox-text">' + c.label + '</span></div></label>';
     }).join('');
     const checklist = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Quality Checklist</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>'
-      + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Tích đủ checklist + ít nhất 1 ô nội dung trước khi "Gửi Lead Content duyệt".</p>' : '') + '</section>';
+      + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Đạt tối thiểu ' + CT_CHECKLIST_MIN + '/' + CT_CHECKLIST.length + ' checklist + ít nhất 1 ô nội dung trước khi "Gửi Lead Content duyệt".</p>' : '') + '</section>';
 
     // 7b. Checklist của PIC (Q3 — PIC tự thêm/xóa mục, không block gửi duyệt)
     const pcItems = picChkList(t); const pcTotal = pcItems.length; const pcDone = pcItems.filter(function (x) { return x.done; }).length;
@@ -1065,16 +1062,18 @@
     });
   }
   function taskValidForSubmit() {
-    const clOk = CT_CHECKLIST.every(function (c) { const el = document.getElementById('wtcl-' + c.k); return el && el.checked; });
+    const clDone = CT_CHECKLIST.filter(function (c) { const el = document.getElementById('wtcl-' + c.k); return el && el.checked; }).length;
+    const clOk = clDone >= Math.min(CT_CHECKLIST_MIN, CT_CHECKLIST.length);
     return clOk && taskHasContent();
   }
   // Lý do nút "Gửi Lead Content duyệt" đang khóa — để PIC biết còn thiếu gì.
   function submitBlockers() {
     const out = [];
     const missing = CT_CHECKLIST.filter(function (c) { const el = document.getElementById('wtcl-' + c.k); return !(el && el.checked); });
-    if (missing.length) {
-      out.push('Quality Checklist ' + (CT_CHECKLIST.length - missing.length) + '/' + CT_CHECKLIST.length
-        + ' — thiếu: ' + missing.map(function (c) { return c.label; }).join(', '));
+    const clDone = CT_CHECKLIST.length - missing.length;
+    if (clDone < Math.min(CT_CHECKLIST_MIN, CT_CHECKLIST.length)) {
+      out.push('Quality Checklist ' + clDone + '/' + CT_CHECKLIST.length + ' — cần tối thiểu ' + CT_CHECKLIST_MIN
+        + '; còn thiếu: ' + missing.map(function (c) { return c.label; }).join(', '));
     }
     if (!taskHasContent()) {
       const labels = CT_BODY_FIELDS.filter(function (k) { return document.getElementById('wt-ws-' + k); })
