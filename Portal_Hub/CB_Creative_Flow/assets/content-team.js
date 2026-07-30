@@ -1934,6 +1934,9 @@
     return d && typeof d === 'object' ? d : {};
   }
   function adsPicOf(o) { return o.brief_wording_pic || (adsDetail(o).assigned_pic) || ''; }
+  // Hiển thị PIC Ads: resolve brief_wording_pic_user_id → tên hiện tại (rename-proof),
+  // fallback snapshot brief_wording_pic, rồi assigned_pic gợi ý từ form client.
+  function adsPicName(o) { return owPicName(o) || (o && adsDetail(o).assigned_pic) || ''; }
   function adsTasksOf(o) { return CONTENT_TASKS.filter(function (t) { return t.source === 'ads_order' && t.order_id === o.order_id; }); }
   function fmtBudget(d) {
     if (d.budget_type === 'daily') return d.daily_budget ? Number(d.daily_budget).toLocaleString('vi-VN') + ' đ/ngày' : '—';
@@ -1995,7 +1998,7 @@
             + '<td><b>' + esc(o.project_name || '—') + '</b></td>'
             + '<td class="text-xs">' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + '</td>'
             + '<td class="text-xs">' + esc(fmtBudget(d)) + '</td>'
-            + '<td class="text-xs">' + esc(adsPicOf(o) || '—') + '</td>'
+            + '<td class="text-xs">' + esc(adsPicName(o) || '—') + '</td>'
             + '<td><span class="tb-status ' + (ADS_STATUS_CLS[st] || '') + '">' + esc(ADS_STATUS[st] || st) + '</span></td>'
             + '<td>' + (needCr ? '<span class="badge-need-creative">Need Creative</span>' : '<span class="text-xs muted">—</span>') + '</td>'
             + '<td><button class="btn btn-ghost btn-sm" data-ads-open="' + esc(o.order_id) + '">Mở</button></td>'
@@ -2042,7 +2045,7 @@
         ? items.slice(0, 6).map(function (o) {
             const st = o.ads_status || 'submitted';
             return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b><span class="badge-campaign">Ads</span></div>'
-              + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_STATUS[st] || st) + ' · PIC: ' + esc(adsPicOf(o) || 'chưa gán') + '</div></button>';
+              + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_STATUS[st] || st) + ' · PIC: ' + esc(adsPicName(o) || 'chưa gán') + '</div></button>';
           }).join('')
         : '<p class="text-xs muted" style="margin:0">Không có Ads Order nào cần chú ý.</p>';
     }
@@ -2092,7 +2095,7 @@
     let assign = '';
     if (isLead && ADS_TERMINAL.indexOf(st) < 0) {
       assign = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công PIC</h4></div>'
-        + '<div class="ctm-assign-grid"><div class="field"><label class="label">PIC Content</label><select class="select" id="ads-pic">' + picSelectOptions(adsPicOf(o)) + '</select></div></div>'
+        + '<div class="ctm-assign-grid"><div class="field"><label class="label">PIC Content</label><select class="select" id="ads-pic">' + picOptionsByIdCT(o.brief_wording_pic_user_id, adsPicOf(o)) + '</select></div></div>'
         + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" id="ads-assign">Gán PIC Content</button></div></section>';
     }
 
@@ -2155,7 +2158,7 @@
     const stEl = document.getElementById('ctm-ad-status'); stEl.textContent = ADS_STATUS[st] || st; stEl.className = 'tb-status ' + (ADS_STATUS_CLS[st] || '');
     const d = adsDetail(o);
     const pr = document.getElementById('ctm-ad-priority'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_LABEL[d.priority] || d.priority || 'Bình thường');
-    document.getElementById('ctm-ad-pic').textContent = 'PIC: ' + (adsPicOf(o) || 'chưa gán');
+    document.getElementById('ctm-ad-pic').textContent = 'PIC: ' + (adsPicName(o) || 'chưa gán');
     document.getElementById('ctm-ads-actions').innerHTML = buildAdsActions(o);
     document.getElementById('ctm-ads-body').innerHTML = buildAdsBody(o);
     // Wire actions
@@ -2220,7 +2223,8 @@
       if (note === null) return;
       await persistAds(o, { ads_status: 'lead_revision', wording_lead_note: note }, 'Lead trả chỉnh nội dung Ads');
       // PIC role content bị guard đá khỏi content-team → link về Content Wording (nơi PIC làm task ads).
-      notifyByName(adsPicOf(o), { type: 'task_status_changed', title: 'Ads — Lead trả chỉnh', message: o.order_id + ': ' + (note || ''), link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
+      if (o.brief_wording_pic_user_id) notifyUserId(o.brief_wording_pic_user_id, { type: 'task_status_changed', title: 'Ads — Lead trả chỉnh', message: o.order_id + ': ' + (note || ''), link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
+      else notifyByName(adsPicName(o), { type: 'task_status_changed', title: 'Ads — Lead trả chỉnh', message: o.order_id + ': ' + (note || ''), link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
     } else if (newStatus === 'cancelled') {
       if (!confirm('Hủy Ads Order ' + o.order_id + '?')) return;
       await persistAds(o, { ads_status: 'cancelled' }, 'Hủy Ads Order');
@@ -2234,13 +2238,16 @@
   }
 
   async function assignAdsPic(o) {
-    const pic = (document.getElementById('ads-pic').value || '').trim();
-    if (!pic) { toast('warning', 'Thiếu PIC', 'Nhập tên PIC Content.'); return; }
-    const patch = { brief_wording_pic: pic };
+    const rawPic = (document.getElementById('ads-pic').value || '').trim();  // id | "name:<tên>" | ""
+    if (!rawPic) { toast('warning', 'Thiếu PIC', 'Chọn PIC Content trong danh sách.'); return; }
+    const pickA = window.MH.picPick(rawPic);
+    const pic = pickA.name || '';
+    const patch = { brief_wording_pic_user_id: pickA.id, brief_wording_pic: pic };
     if (ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0) patch.ads_status = 'assigned_to_content';
     await persistAds(o, patch, 'Gán PIC Content: ' + pic);
     // PIC role content không vào được content-team → link Content Wording (task ads sẽ được tách về đó).
-    notifyByName(pic, { type: 'task_assigned', title: 'Bạn được gán Ads Order', message: o.order_id + ' · ' + (o.project_name || '') + ' — Lead sẽ tách Content Task cho bạn.', link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
+    if (pickA.id) notifyUserId(pickA.id, { type: 'task_assigned', title: 'Bạn được gán Ads Order', message: o.order_id + ' · ' + (o.project_name || '') + ' — Lead sẽ tách Content Task cho bạn.', link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
+    else notifyByName(pic, { type: 'task_assigned', title: 'Bạn được gán Ads Order', message: o.order_id + ' · ' + (o.project_name || '') + ' — Lead sẽ tách Content Task cho bạn.', link: 'content-workbench.html', related_entity_type: 'orders', related_entity_id: o.order_id });
     toast('success', 'Đã gán PIC', pic);
     await reloadAndReopenAds();
   }
@@ -2258,14 +2265,17 @@
     const chips = ADS_TASK_TYPES.map(function (t) { return '<label class="ctm-chk-chip"><input type="checkbox" name="ads-tt" value="' + t.k + '" /> ' + t.label + '</label>'; }).join('');
     const body = '<p class="text-xs muted" style="margin:0 0 8px">Chọn hạng mục nội dung cần tách. Mỗi hạng mục tạo 1 Content Task cho PIC xử lý ở Content Wording.</p>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Hạng mục</label><div class="ctm-chk-group">' + chips + '</div></div>'
-      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="ads-tt-pic">' + picSelectOptions(adsPicOf(o)) + '</select></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="ads-tt-pic">' + picOptionsByIdCT(o.brief_wording_pic_user_id, adsPicOf(o)) + '</select></div>'
       + fieldText('ads-tt-deadline', 'Hạn wording', '', { type: 'datetime-local' });
     openModal('Tách Content Tasks — ' + (o.project_name || o.order_id), body, function () { return createAdsContentTasks(o); });
   }
   async function createAdsContentTasks(o) {
     const picked = [].slice.call(document.querySelectorAll('input[name="ads-tt"]:checked')).map(function (i) { return i.value; });
     if (!picked.length) { toast('warning', 'Chưa chọn', 'Chọn ít nhất 1 hạng mục.'); return false; }
-    const pic = (document.getElementById('ads-tt-pic').value || '').trim();
+    // value = id | "name:<tên>" | ""; ghi assigned_pic_user_id để content SỬA được task ads
+    // (Stage 1 đổi RLS content_tasks sang assigned_pic_user_id = auth.uid()).
+    const pickT = window.MH.picPick(document.getElementById('ads-tt-pic').value || '');
+    const pic = pickT.name || '';
     const dlRaw = document.getElementById('ads-tt-deadline').value;
     const d = adsDetail(o);
     let created = 0;
@@ -2275,18 +2285,25 @@
         source: 'ads_order', order_id: o.order_id, content_plan_id: null,
         title: '[Ads] ' + def.label + ' — ' + (o.project_name || o.order_id),
         brief: [d.product_program_name, d.offer_message, d.mandatory_message].filter(Boolean).join(' · '),
-        output_types: def.outputs, assigned_pic: pic, priority: d.priority || 'normal',
+        output_types: def.outputs, assigned_pic_user_id: pickT.id, assigned_pic: pic, priority: d.priority || 'normal',
         visual_direction: d.desired_angle || '', mandatory_info: d.mandatory_message || '', cta: d.desired_cta || '',
         need_media_production: !!d.need_media_production,
-        status: pic ? 'pic_assigned' : 'new', created_by: user.name || user.role
+        status: pickT.id || pic ? 'pic_assigned' : 'new', created_by_user_id: user.id || null, created_by: user.name || user.role
       };
       if (dlRaw) payload.wording_deadline = new Date(dlRaw).toISOString();
-      try { const c = await window.MH.store.contentTasks.create(payload); created++; if (pic) notifyByName(pic, { type: 'task_assigned', title: 'Content Task (Ads) mới', message: payload.title, link: 'content-workbench.html?task=' + c.id, related_entity_type: null, related_entity_id: c.id }); }
+      try {
+        const c = await window.MH.store.contentTasks.create(payload); created++;
+        if (pickT.id) notifyUserId(pickT.id, { type: 'task_assigned', title: 'Content Task (Ads) mới', message: payload.title, link: 'content-workbench.html?task=' + c.id, related_entity_type: null, related_entity_id: c.id });
+        else if (pic) notifyByName(pic, { type: 'task_assigned', title: 'Content Task (Ads) mới', message: payload.title, link: 'content-workbench.html?task=' + c.id, related_entity_type: null, related_entity_id: c.id });
+      }
       catch (e) { console.warn('[ctm-ads] create content task failed:', e); }
     }
     if (!created) { toast('warning', 'Chưa tạo được', 'Kiểm tra add-content-initiatives.sql + add-ads-orders.sql (source ads_order).'); return false; }
     const patch = { ads_status: 'writing_ads_content' };
-    if (ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0 || o.ads_status === 'assigned_to_content') { patch.brief_wording_pic = pic || adsPicOf(o); }
+    if (ADS_NEW.indexOf(o.ads_status || 'submitted') >= 0 || o.ads_status === 'assigned_to_content') {
+      patch.brief_wording_pic = pic || adsPicOf(o);
+      if (pickT.id) patch.brief_wording_pic_user_id = pickT.id; // đồng bộ id PIC lên ads order
+    }
     await persistAds(o, patch, 'Tách ' + created + ' Content Task' + (pic ? ' → ' + pic : ''));
     toast('success', 'Đã tách task', created + ' Content Task đã tạo.');
     closeModal();
