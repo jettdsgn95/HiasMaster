@@ -195,6 +195,7 @@
     try {
       const list = await window.MH.store.users.list();
       STAFF_USERS = (list || []).filter((u) => u && u.name && u.status !== 'inactive');
+      if (window.MH.setUserDir) window.MH.setUserDir(list || []); // resolve id→tên cho PIC (Stage 3)
       // @mention autocomplete dùng chung danh sách: bổ sung user thật (trừ client) vào TEAM_MEMBERS.
       STAFF_USERS.forEach((u) => {
         if (u.role !== 'client' && !TEAM_MEMBERS.some((m) => m.name === u.name)) TEAM_MEMBERS.push({ name: u.name, role: u.role });
@@ -211,13 +212,11 @@
     if (current && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' }); // giữ giá trị đang gán
     return pool.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
   }
-  function prodPicOptions(current) {
-    current = current || '';
-    // data-role → badge role ở custom dropdown (app.js enhancePicSelects); text "Tên · Tag" = fallback native.
-    return '<option value="">— Chưa gán —</option>' + prodPicPool(current).map((u) => {
-      const tag = ROLE_TAG[u.role] || u.role;
-      return `<option value="${escapeHtml(u.name)}" data-role="${escapeHtml(tag)}" ${u.name === current ? 'selected' : ''}>${escapeHtml(u.name)}${tag ? ' · ' + tag : ''}</option>`;
-    }).join('');
+  // PIC task (assigned_to) keyed theo user_id (Stage 3). value=id; hiển thị resolve id→tên hiện tại.
+  function taskPicName(t) { return (t && window.MH && window.MH.picLabel) ? window.MH.picLabel(t.assigned_to_user_id, t.assigned_to) : (t && t.assigned_to) || ''; }
+  function prodPicOptions(currentId, currentName) {
+    const users = STAFF_USERS.filter((u) => PROD_PIC_ROLES.includes(u.role));
+    return window.MH.picOptionsById(users, { current: currentId || '', currentName: currentName || '', placeholder: '— Chưa gán —', roleTag: ROLE_TAG });
   }
 
   function teamMembersForUser(currentUserName) {
@@ -377,7 +376,15 @@
      ("Duy Trần", "Hậu Nguyễn"). Khớp khi bằng nhau HOẶC full name chứa tên PIC theo
      word-boundary (tránh false-positive kiểu "Duyên"). Fix: `.split(' ').pop()` cũ lấy
      CHỮ CUỐI ("Trần") nên PIC "Duy" không bao giờ khớp. */
-  function isMyTask(assignedTo) {
+  // Stage 3: ownership theo user_id (rename-proof). Task chưa backfill id → fallback tên mờ.
+  function isMyTask(t) {
+    if (t && typeof t === 'object') {
+      if (t.assigned_to_user_id) return !!user.id && t.assigned_to_user_id === user.id;
+      return isMyTaskName(t.assigned_to);
+    }
+    return isMyTaskName(t); // caller cũ truyền chuỗi tên
+  }
+  function isMyTaskName(assignedTo) {
     if (!assignedTo) return false;
     const a = String(assignedTo).trim().toLowerCase();
     const u = String(user.name || '').trim().toLowerCase();
@@ -389,7 +396,7 @@
   /* ---------- Scoping by role ---------- */
   function visibleTasks() {
     if (user.role === 'design' || user.role === 'editor') {
-      return TASKS.filter((t) => isMyTask(t.assigned_to));
+      return TASKS.filter((t) => isMyTask(t));
     }
     return TASKS;
   }
@@ -398,16 +405,16 @@
     return arr.filter((t) => {
       if (state.search) {
         const q = state.search.toLowerCase();
-        const hay = [t.task_id, t.order_id, t.project_name, t.task_type, t.content, t.assigned_to].join(' ').toLowerCase();
+        const hay = [t.task_id, t.order_id, t.project_name, t.task_type, t.content, taskPicName(t)].join(' ').toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (state.status && t.status !== state.status) return false;
       if (state.priority && t.priority !== state.priority) return false;
       if (state.type && t.task_type !== state.type) return false;
-      if (state.pic && t.assigned_to !== state.pic) return false;
+      if (state.pic && taskPicName(t) !== state.pic) return false;
       if (state.quick) {
         switch (state.quick) {
-          case 'my': if (!isMyTask(t.assigned_to)) return false; break;
+          case 'my': if (!isMyTask(t)) return false; break;
           case 'soon': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 2 && t.status !== 'completed')) return false; break; }
           case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
           case 'review': if (t.status !== 'review') return false; break;
@@ -418,7 +425,7 @@
           case 'pending': if (t.status !== 'pending') return false; break;
           case 'revision': if (t.status !== 'revision') return false; break;
           case 'blocked': if (t.status !== 'paused') return false; break;
-          case 'unassigned': if (t.assigned_to) return false; break;
+          case 'unassigned': if (t.assigned_to || t.assigned_to_user_id) return false; break;
           case 'linked': if (!(t.order_id && !t.is_standalone)) return false; break;
           case 'standalone': if (!(t.is_standalone || !t.order_id)) return false; break;
           case 'due_today': { const d = diffDays(t.internal_deadline); if (!(d === 0 && t.status !== 'completed' && t.status !== 'delivered')) return false; break; }
@@ -437,8 +444,8 @@
           case 'due_today': { const d = diffDays(t.internal_deadline); if (!(d === 0 && t.status !== 'completed')) return false; break; }
           case 'due_week': { const d = diffDays(t.internal_deadline); if (!(d !== null && d >= 0 && d <= 7 && t.status !== 'completed')) return false; break; }
           case 'overdue': { const d = diffDays(t.internal_deadline); if (!(d !== null && d < 0 && t.status !== 'completed')) return false; break; }
-          case 'unassigned': if (t.assigned_to) return false; break;
-          case 'mine': if (!isMyTask(t.assigned_to)) return false; break;
+          case 'unassigned': if (t.assigned_to || t.assigned_to_user_id) return false; break;
+          case 'mine': if (!isMyTask(t)) return false; break;
           case 'standalone': if (!(t.is_standalone || !t.order_id)) return false; break;
         }
       }
@@ -449,7 +456,7 @@
   /* ---------- Render: summary ---------- */
   function renderSummary() {
     const scope = visibleTasks();
-    const my = scope.filter((t) => isMyTask(t.assigned_to) && t.status !== 'completed');
+    const my = scope.filter((t) => isMyTask(t) && t.status !== 'completed');
     const overdue = scope.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d < 0 && t.status !== 'completed'; });
     const soon = scope.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && t.status !== 'completed'; });
     const review = scope.filter((t) => t.status === 'review');
@@ -485,8 +492,9 @@
       const overdueRow = (days !== null && days < 0 && t.status !== 'completed') ? 'is-overdue' : '';
       const dl = parseDate(t.internal_deadline);
       const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}` : '—';
-      const picAlt = t.assigned_to && ['Hậu','Linh Chi','Vinh'].indexOf(t.assigned_to) % 2 === 0 ? 'has-red' : '';
-      const picInit = t.assigned_to ? t.assigned_to.substring(0, 2).toUpperCase() : '';
+      const pn = taskPicName(t);
+      const picAlt = pn && ['Hậu','Linh Chi','Vinh'].indexOf(pn) % 2 === 0 ? 'has-red' : '';
+      const picInit = pn ? pn.substring(0, 2).toUpperCase() : '';
       const links = [];
       if (t.preview_link) links.push('<span class="kc-flag has-preview">P</span>');
       if (t.final_link)   links.push('<span class="kc-flag has-final">F</span>');
@@ -500,7 +508,7 @@
           <td><span class="text-xs">${TYPE_LABEL[t.task_type] || t.task_type}</span></td>
           <td><span class="text-xs muted" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:200px">${escapeHtml(contentShort)}</span></td>
           <td><span class="priority-pill p--${t.priority}"><span class="dot"></span>${PRIORITY_LABEL[t.priority]}</span></td>
-          <td><div class="pic-cell ${picAlt}"><span class="pic-avatar">${picInit}</span><span class="pic-name">${escapeHtml(t.assigned_to || '—')}</span></div></td>
+          <td><div class="pic-cell ${picAlt}"><span class="pic-avatar">${picInit}</span><span class="pic-name">${escapeHtml(pn || '—')}</span></div></td>
           <td><span class="tb-status s--${t.status}"><span class="dot"></span>${STATUS_LABEL[t.status]}</span></td>
           <td><div class="progress-mini"><div class="bar"><i style="width:${t.progress}%"></i></div><b>${t.progress}%</b></div></td>
           <td><div class="deadline-cell ${dlCls}"><span class="date">${dl_fmt}</span><span class="relative">${fmtRelative(t.internal_deadline)}</span></div></td>
@@ -532,8 +540,9 @@
         const overdue = days !== null && days < 0 && t.status !== 'completed' ? 'is-overdue' : '';
         const dl = parseDate(t.internal_deadline);
         const dl_fmt = dl ? `${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}` : '—';
-        const picAlt = t.assigned_to && ['Hậu','Linh Chi','Vinh'].indexOf(t.assigned_to) % 2 === 0 ? 'has-red' : '';
-        const picInit = t.assigned_to ? t.assigned_to.substring(0, 2).toUpperCase() : '?';
+        const pn = taskPicName(t);
+        const picAlt = pn && ['Hậu','Linh Chi','Vinh'].indexOf(pn) % 2 === 0 ? 'has-red' : '';
+        const picInit = pn ? pn.substring(0, 2).toUpperCase() : '?';
         const flags = [];
         if (t.preview_link) flags.push('<span class="kc-flag has-preview">P</span>');
         if (t.final_link)   flags.push('<span class="kc-flag has-final">F</span>');
@@ -547,7 +556,7 @@
             <div class="kc-title">${escapeHtml(t.project_name)}</div>
             <div class="kc-flags">${flags.join('')}</div>
             <div class="kc-meta">
-              <span class="kc-pic"><span class="pic-avatar ${picAlt ? '' : ''}" style="${picAlt ? 'background:var(--grad-red)' : ''}">${picInit}</span> ${escapeHtml(t.assigned_to || '—')}</span>
+              <span class="kc-pic"><span class="pic-avatar ${picAlt ? '' : ''}" style="${picAlt ? 'background:var(--grad-red)' : ''}">${picInit}</span> ${escapeHtml(pn || '—')}</span>
               <span class="kc-deadline ${dlCls}">${dl_fmt} · ${fmtRelative(t.internal_deadline)}</span>
             </div>
             <div class="kc-progress"><i style="width:${t.progress}%"></i></div>
@@ -561,7 +570,7 @@
   /* ---------- Render: my tasks ---------- */
   function renderMyTasks() {
     const scope = visibleTasks();
-    const userTasks = scope.filter((t) => isMyTask(t.assigned_to));
+    const userTasks = scope.filter((t) => isMyTask(t));
     const groups = {
       new: userTasks.filter((t) => ['pending', 'received'].includes(t.status)),
       // 'ready' (đã duyệt nội bộ, đang ở pha Preview/bàn giao) + 'feedback_wait' (đã gửi Preview, chờ client)
@@ -744,7 +753,7 @@
           })));
         }
       } else if (newStatus === 'revision' || newStatus === 'feedback_fix') {
-        const picId = await window.MH.store.notifications.findUserIdByName(task.assigned_to);
+        const picId = task.assigned_to_user_id || await window.MH.store.notifications.findUserIdByName(task.assigned_to);
         if (picId) {
           await window.MH.store.notifications.create(Object.assign({}, base, {
             user_id: picId,
@@ -755,7 +764,7 @@
         }
       } else if (newStatus === 'ready') {
         // #7: Account/Admin duyệt nội bộ (review → ready) — báo PIC "đã được duyệt".
-        const picId = await window.MH.store.notifications.findUserIdByName(task.assigned_to);
+        const picId = task.assigned_to_user_id || await window.MH.store.notifications.findUserIdByName(task.assigned_to);
         if (picId) {
           await window.MH.store.notifications.create(Object.assign({}, base, {
             user_id: picId,
@@ -854,10 +863,11 @@
     } catch (e) { console.warn('[task] notify content requester failed:', e); }
   }
   /* #4/#5: báo PIC khi được GÁN task (tạo mới có PIC hoặc đổi PIC). type task_assigned (base-safe). */
-  async function notifyTaskAssign(task, picName) {
-    if (!picName || !window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
+  async function notifyTaskAssign(task, picName, picUserId) {
+    if ((!picName && !picUserId) || !window.MH || !window.MH.store || !window.MH.supabaseEnabled) return;
     try {
-      const uid = await window.MH.store.notifications.findUserIdByName(picName);
+      // Ưu tiên user_id (rename-proof); fallback lookup theo tên (task chưa backfill id).
+      const uid = picUserId || (picName ? await window.MH.store.notifications.findUserIdByName(picName) : null);
       if (uid) await window.MH.store.notifications.create({
         user_id: uid,
         type: 'task_assigned',
@@ -1136,7 +1146,7 @@
         </button>
       `).join('')}</div>`;
 
-    const canEditLinks = user.role !== 'client' && (isMyTask(t.assigned_to) || ['admin', 'account'].includes(user.role));
+    const canEditLinks = user.role !== 'client' && (isMyTask(t) || ['admin', 'account'].includes(user.role));
 
     const linkInput = (id, value, placeholder) => canEditLinks
       ? `<input class="input" id="${id}" type="url" value="${escapeHtml(value || '')}" placeholder="${placeholder}" />`
@@ -1145,7 +1155,7 @@
 
     drawerBody.innerHTML = `
       <div class="task-summary-grid">
-        <div class="task-summary-tile"><label>P.I.C</label><b>${v(t.assigned_to)}</b></div>
+        <div class="task-summary-tile"><label>P.I.C</label><b>${v(taskPicName(t))}</b></div>
         <div class="task-summary-tile"><label>Internal Deadline</label><b class="deadline-cell ${dlCls}" style="background:none; padding:0">${dl_fmt}</b></div>
         <div class="task-summary-tile"><label>Loại task</label><b>${TYPE_LABEL[t.task_type] || t.task_type}</b></div>
         <div class="task-summary-tile"><label>Checklist</label><b>${checklist.done}/${checklist.total}</b></div>
@@ -1225,7 +1235,7 @@
         <div class="edit-row mt-4">
           <label>P.I.C</label>
           <select class="select" id="edit-pic" data-pic-dd>
-            ${prodPicOptions(t.assigned_to)}
+            ${prodPicOptions(t.assigned_to_user_id, t.assigned_to)}
           </select>
         </div>
         <div class="edit-row">
@@ -1349,15 +1359,18 @@
           window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Bạn không có quyền chỉnh sửa thông tin công việc. Vui lòng liên hệ Account/Admin.' });
           return;
         }
-        currentTask.assigned_to = document.getElementById('edit-pic').value;
+        // PIC keyed theo user_id: value = id | "name:<tên>" (legacy) | "". picPick giữ tên legacy.
+        const pickE = window.MH.picPick(document.getElementById('edit-pic').value || '');
+        currentTask.assigned_to_user_id = pickE.id;
+        currentTask.assigned_to = pickE.name;
         currentTask.internal_deadline = document.getElementById('edit-deadline').value.replace('T', ' ');
         currentTask.priority = document.getElementById('edit-priority').value;
         currentTask.last_update = fmtDT();
         currentTask.comments = currentTask.comments || [];
-        const metaComment = { author: user.name, text: `Đã cập nhật: PIC=${currentTask.assigned_to} · deadline=${currentTask.internal_deadline} · priority=${PRIORITY_LABEL[currentTask.priority]}`, time: currentTask.last_update, type: 'internal' };
+        const metaComment = { author: user.name, text: `Đã cập nhật: PIC=${currentTask.assigned_to || '—'} · deadline=${currentTask.internal_deadline} · priority=${PRIORITY_LABEL[currentTask.priority]}`, time: currentTask.last_update, type: 'internal' };
         currentTask.comments.push(metaComment);
         persistTask(currentTask.task_id, {
-          assigned_to: currentTask.assigned_to,
+          assigned_to: currentTask.assigned_to, assigned_to_user_id: pickE.id,
           internal_deadline: currentTask.internal_deadline ? new Date(currentTask.internal_deadline.replace(' ', 'T')).toISOString() : null,
           priority: currentTask.priority,
           last_update: new Date().toISOString()
@@ -1672,7 +1685,7 @@
     // Drawer đang mở (options build trước khi users về) → refresh select P.I.C tại chỗ.
     const editPic = document.getElementById('edit-pic');
     if (editPic && currentTask) {
-      editPic.innerHTML = prodPicOptions(editPic.value || currentTask.assigned_to);
+      editPic.innerHTML = prodPicOptions(editPic.value || currentTask.assigned_to_user_id, currentTask.assigned_to);
       if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(drawer);
     }
   });
@@ -1775,9 +1788,9 @@
     if (tmLocation) tmLocation.value = p.shoot_location || '';
     applyLocationUI();
     tmPriority.value = p.priority || 'normal';
-    // Rebuild options mỗi lần mở: users thật (kèm nhãn role) + giữ được PIC cũ nếu không còn trong pool.
-    tmPic.innerHTML = prodPicOptions(p.assigned_to || '');
-    tmPic.value = p.assigned_to || '';
+    // Rebuild options mỗi lần mở: users thật (value=id) + giữ PIC cũ (id hoặc legacy "name:").
+    tmPic.innerHTML = prodPicOptions(p.assigned_to_user_id, p.assigned_to);
+    tmPic.value = p.assigned_to_user_id || (p.assigned_to ? 'name:' + p.assigned_to : '');
     // Custom dropdown P.I.C (tên + badge role) — rebuild menu theo options mới.
     if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(modal);
     if (p.internal_deadline) {
@@ -1819,7 +1832,9 @@
     if (createBtn && !canCreateTask) createBtn.style.display = 'none';
     if (createBtn) createBtn.addEventListener('click', () => {
       if (!canCreateTask) return; // guard: Design/Editor/Client không tạo task
-      openTaskModal({ assigned_to: user.name && prodPicPool('').some((u) => u.name === user.name) ? user.name : '' });
+      // Mặc định gán cho chính mình nếu mình thuộc pool Production — theo user_id.
+      const meInPool = user.id && STAFF_USERS.some((u) => u.id === user.id && PROD_PIC_ROLES.includes(u.role));
+      openTaskModal(meInPool ? { assigned_to_user_id: user.id, assigned_to: user.name } : {});
     });
   })();
   document.getElementById('task-modal-close').addEventListener('click', closeTaskModal);
@@ -1848,13 +1863,15 @@
     if (editingTaskId) {
       const t = TASKS.find((x) => x.task_id === editingTaskId);
       if (!t) { closeTaskModal(); return; }
-      const prevPic = t.assigned_to; // #4: lưu PIC cũ để phát hiện reassign
+      const prevPicId = t.assigned_to_user_id; const prevPic = t.assigned_to; // #4: phát hiện reassign (theo id)
+      const pickM = window.MH.picPick(tmPic.value || '');
       t.project_name = project;
       t.content = tmContent.value.trim();
       t.task_type = tmType.value;
       t.shoot_location = (t.task_type === 'photo' || t.task_type === 'shoot') ? (tmLocation ? tmLocation.value.trim() : '') : '';
       t.priority = tmPriority.value;
-      t.assigned_to = tmPic.value || null;
+      t.assigned_to_user_id = pickM.id;
+      t.assigned_to = pickM.name;
       t.internal_deadline = deadlineRaw || null;
       t.status = status;
       t.progress = STATUS_PROGRESS[status] ?? t.progress;
@@ -1874,7 +1891,7 @@
         content: t.content,
         task_type: t.task_type,
         priority: t.priority,
-        assigned_to: t.assigned_to,
+        assigned_to: t.assigned_to, assigned_to_user_id: t.assigned_to_user_id,
         internal_deadline: t.internal_deadline ? new Date(t.internal_deadline.replace(' ', 'T')).toISOString() : null,
         status: t.status,
         progress: t.progress,
@@ -1886,7 +1903,8 @@
       if (t.task_type === 'photo' || t.task_type === 'shoot') editPatch.shoot_location = t.shoot_location || null;
       persistTask(t.task_id, editPatch);
       persistTaskComment(t.task_id, editComment);
-      if (t.assigned_to && t.assigned_to !== prevPic) notifyTaskAssign(t, t.assigned_to); // #4: đổi PIC → báo PIC mới
+      // Đổi PIC (theo id, fallback tên) → báo PIC mới.
+      if ((pickM.id && pickM.id !== prevPicId) || (!pickM.id && t.assigned_to && t.assigned_to !== prevPic)) notifyTaskAssign(t, t.assigned_to, pickM.id);
       window.MH.toast({ type: 'success', title: 'Đã lưu task', message: t.task_id });
       closeTaskModal();
       render();
@@ -1896,6 +1914,7 @@
 
     const newTaskType = tmType.value;
     const newShootLoc = (newTaskType === 'photo' || newTaskType === 'shoot') ? (tmLocation ? tmLocation.value.trim() : '') : '';
+    const pickN = window.MH.picPick(tmPic.value || '');
     const newTask = {
       task_id: nextTaskId(),
       order_id: orderId,
@@ -1905,7 +1924,8 @@
       content: tmContent.value.trim(),
       shoot_location: newShootLoc,
       priority: tmPriority.value,
-      assigned_to: tmPic.value || null,
+      assigned_to_user_id: pickN.id,
+      assigned_to: pickN.name,
       status: status,
       progress: STATUS_PROGRESS[status] ?? 20,
       internal_deadline: deadlineRaw || null,
@@ -1925,7 +1945,7 @@
       task_type: newTask.task_type,
       content: newTask.content,
       priority: newTask.priority,
-      assigned_to: newTask.assigned_to,
+      assigned_to: newTask.assigned_to, assigned_to_user_id: newTask.assigned_to_user_id,
       status: newTask.status,
       progress: newTask.progress,
       internal_deadline: newTask.internal_deadline ? new Date(newTask.internal_deadline.replace(' ', 'T')).toISOString() : null,
@@ -1941,7 +1961,7 @@
     if (newTask.comments && newTask.comments.length) {
       persistTaskComment(newTask.task_id, newTask.comments[0]);
     }
-    if (newTask.assigned_to) notifyTaskAssign(newTask, newTask.assigned_to); // #5: báo PIC được gán
+    if (newTask.assigned_to_user_id || newTask.assigned_to) notifyTaskAssign(newTask, newTask.assigned_to, newTask.assigned_to_user_id); // #5: báo PIC được gán
     window.MH.toast({ type: 'success', title: '✓ Đã tạo task', message: `${newTask.task_id} · ${newTask.project_name}` });
     closeTaskModal();
     render();
