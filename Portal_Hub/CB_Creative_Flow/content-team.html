@@ -103,20 +103,29 @@
       </div>
     </div>
 
-    <!-- View tabs (role-gated bằng JS) -->
+    <!-- View tabs (role-based bằng JS — renderTabs allow-list theo role) -->
     <div class="saved-views ctm-tabs" id="ctm-tabs">
-      <button class="saved-view-chip" data-ctm-view="dashboard">Dashboard</button>
-      <button class="saved-view-chip" data-ctm-view="inbox">Content Inbox <span class="count" id="ctm-count-inbox">0</span></button>
-      <button class="saved-view-chip" data-ctm-view="ads-orders">Ads Orders <span class="count" id="ctm-count-ads">0</span></button>
+      <!-- Lead Content / Admin workspace -->
+      <button class="saved-view-chip" data-ctm-view="dashboard">Tổng quan</button>
+      <button class="saved-view-chip" data-ctm-view="inbox">Cần xử lý <span class="count" id="ctm-count-inbox">0</span></button>
+      <button class="saved-view-chip" data-ctm-view="review">Review Queue <span class="count" id="ctm-count-review">0</span></button>
       <button class="saved-view-chip" data-ctm-view="plans">Content Plans <span class="count" id="ctm-count-plans">0</span></button>
+      <button class="saved-view-chip" data-ctm-view="workload">Team Workload</button>
+      <button class="saved-view-chip" data-ctm-view="list">Tất cả <span class="count" id="ctm-count-list">0</span></button>
+      <!-- Account follow-up (role-gate account) -->
+      <button class="saved-view-chip" data-ctm-view="account-followup">Content Follow-up <span class="count" id="ctm-count-account">0</span></button>
+      <!-- Ẩn khỏi nav chính — giữ cho deep-link/Action Center (renderTabs không hiện) -->
+      <button class="saved-view-chip" data-ctm-view="ads-orders">Ads Orders <span class="count" id="ctm-count-ads">0</span></button>
       <button class="saved-view-chip" data-ctm-view="initiatives">Task nội bộ <span class="count" id="ctm-count-initiatives">0</span></button>
       <button class="saved-view-chip" data-ctm-view="board">Content Board</button>
-      <button class="saved-view-chip" data-ctm-view="list">Danh sách <span class="count" id="ctm-count-list">0</span></button>
       <button class="saved-view-chip" data-ctm-view="mine">Việc của tôi <span class="count" id="ctm-count-mine">0</span></button>
     </div>
 
-    <!-- ═ VIEW: DASHBOARD ═ -->
+    <!-- ═ VIEW: DASHBOARD (Tổng quan) ═ -->
     <section id="ctm-view-dashboard" hidden>
+      <!-- Action Center — việc cần xử lý ngay (card click → filter + chuyển view) -->
+      <h3 class="ctm-section-title" style="margin:2px 0 10px">Action Center <span class="text-xs muted">— việc cần xử lý</span></h3>
+      <div class="ctm-action-center" id="ctm-action-center"></div>
       <div class="cwb-stats" id="ctm-stats"></div>
 
       <!-- Phase 6 — Content Tasks & Plans KPI -->
@@ -175,6 +184,52 @@
       <div class="ctm-card">
         <div class="ctm-card-head"><h3>Hoạt động gần đây</h3></div>
         <div class="ctm-card-body"><ul class="activity-mini" id="ctm-recent-activity"></ul></div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: REVIEW QUEUE (Lead — gộp mọi việc chờ duyệt) ═ -->
+    <section id="ctm-view-review" hidden>
+      <div class="table-card">
+        <div class="table-head"><h3>Review Queue</h3><span class="rinfo" id="ctm-review-info">—</span></div>
+        <p class="text-xs muted" style="margin:0 0 10px;padding:0 4px">Mọi việc chờ Lead Content duyệt / trả chỉnh — wording từ Client Order, Content Task, Ads content task.</p>
+        <div class="ctm-panel-body" id="ctm-review-list"></div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: TEAM WORKLOAD (Lead) ═ -->
+    <section id="ctm-view-workload" hidden>
+      <div class="table-card">
+        <div class="table-head"><h3>Team Workload — theo PIC Content</h3><span class="rinfo" id="ctm-workload-info">—</span></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>PIC Content</th><th>Đang mở</th><th>Trễ hạn</th><th>Chờ duyệt</th><th>Cần chỉnh</th><th>Tải tương đối</th></tr></thead>
+            <tbody id="ctm-workload-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: ACCOUNT FOLLOW-UP (role account) ═ -->
+    <section id="ctm-view-account-followup" hidden>
+      <div class="ctm-inbox-grid">
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Chờ Account xử lý</h3><span class="rinfo" id="ctm-acc-pending-count">0</span></div>
+          <div class="ctm-panel-body" id="ctm-acc-pending"></div>
+        </div>
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Đã gửi Client</h3><span class="rinfo" id="ctm-acc-sent-count">0</span></div>
+          <div class="ctm-panel-body" id="ctm-acc-sent"></div>
+        </div>
+      </div>
+      <div class="ctm-inbox-grid" style="margin-top:14px">
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Client feedback</h3><span class="rinfo" id="ctm-acc-feedback-count">0</span></div>
+          <div class="ctm-panel-body" id="ctm-acc-feedback"></div>
+        </div>
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Hoàn tất</h3><span class="rinfo" id="ctm-acc-done-count">0</span></div>
+          <div class="ctm-panel-body" id="ctm-acc-done"></div>
+        </div>
       </div>
     </section>
 

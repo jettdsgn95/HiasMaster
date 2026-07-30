@@ -6427,6 +6427,33 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .ctm-wl-track > i { display: block; height: 100%; border-radius: 999px; background: var(--grad-navy); }
 .ctm-wl-val { font-size: var(--text-sm); min-width: 18px; text-align: right; font-weight: 600; }
 
+/* ── Role-based workspace (Option B): Action Center + chips ── */
+.ctm-action-center { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+.ctm-ac-card { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; padding: 14px 16px; border: 1px solid var(--border); border-left: 4px solid var(--ac, var(--brand-600)); border-radius: 14px; background: var(--surface); cursor: pointer; transition: transform .12s, box-shadow .12s, border-color .12s; }
+.ctm-ac-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+.ctm-ac-n { font-size: 26px; font-weight: 800; line-height: 1; color: var(--ac, var(--brand-600)); }
+.ctm-ac-l { font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+@media (max-width: 980px) { .ctm-action-center { grid-template-columns: repeat(2, 1fr); } }
+
+/* Source chip */
+.src-chip { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1.7; border: 1px solid transparent; }
+.src-chip.src-client { background: rgba(29,78,216,.12); color: #1D4ED8; }
+.src-chip.src-ads    { background: rgba(14,116,144,.14); color: #0E7490; }
+.src-chip.src-self   { background: rgba(107,33,168,.12); color: #6B21A8; }
+.src-chip.src-plan   { background: rgba(176,118,0,.14); color: #8a5b00; }
+.src-chip.src-other  { background: var(--surface-2); color: var(--text-muted); }
+
+/* SLA deadline chip */
+.sla-chip { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1.7; }
+.sla-chip.sla-red    { background: rgba(186,17,15,.14); color: #BA110F; }
+.sla-chip.sla-orange { background: rgba(217,119,6,.16); color: #b45309; }
+.sla-chip.sla-yellow { background: rgba(202,138,4,.16); color: #a16207; }
+.sla-chip.sla-green  { background: rgba(10,122,82,.14); color: #0A7A52; }
+.sla-chip.sla-none   { background: var(--surface-2); color: var(--text-subtle); }
+
+/* Next Action chip */
+.na-chip { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1.7; background: rgba(25,25,112,.08); color: var(--brand-700, #191970); }
+
 /* Empty state — có chủ đích, không giống lỗi load */
 .ctm-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; padding: 22px 12px; }
 .ctm-empty svg { width: 26px; height: 26px; color: var(--text-subtle); opacity: .75; margin-bottom: 3px; }

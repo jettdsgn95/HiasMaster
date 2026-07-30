@@ -169,7 +169,8 @@
   let CONTENT_TASKS = [];
   let currentPlan = null;
   let currentTask = null;
-  let view = isLead && !isAdmin ? 'inbox' : (user.role === 'content' ? 'mine' : 'dashboard');
+  // Role-based landing: account → Follow-up; lead/admin/supervisor → Tổng quan.
+  let view = (isAccount && !isAdmin) ? 'account-followup' : 'dashboard';
   const FILTERS = { search: '', status: '', type: '', pic: '' };
 
   /* ---------- Quyền theo trạng thái ---------- */
@@ -300,27 +301,35 @@
   function byStatus(statuses) { return ORDERS.filter(function (o) { return statuses.indexOf(o.brief_wording_status || 'none') >= 0; }); }
   function myOrders() { return ORDERS.filter(function (o) { return owIsMine(o); }); }
 
+  // Role-based workspace (Option B): mỗi role chỉ thấy khu vực của mình.
+  // ads-orders/initiatives/board/mine GIỮ view+render+deep-link nhưng ẩn khỏi tab bar
+  // (vào qua Cần xử lý / Tất cả / Action Center / deep-link).
+  const LEAD_VIEWS = ['dashboard', 'inbox', 'review', 'plans', 'workload', 'list'];
+  const ACCOUNT_VIEWS = ['account-followup'];
+  const ALL_VIEWS = ['dashboard', 'inbox', 'review', 'plans', 'workload', 'list', 'account-followup', 'ads-orders', 'initiatives', 'board', 'mine'];
+  function allowedViews() {
+    if (isAccount && !isAdmin) return ACCOUNT_VIEWS;         // account: chỉ follow-up
+    return LEAD_VIEWS;                                        // lead_content / admin / supervisor (monitor)
+  }
   function renderTabs() {
-    // Role-gate tab: Inbox chỉ Lead/Admin; Mine chỉ Content/Admin.
+    const allow = allowedViews();
+    // View hiện tại không thuộc allow → về view đầu tiên hợp lệ (tránh màn trống).
+    if (allow.indexOf(view) < 0) view = allow[0];
     document.querySelectorAll('#ctm-tabs [data-ctm-view]').forEach(function (b) {
       const v = b.getAttribute('data-ctm-view');
-      if (v === 'inbox' && !isLead) { b.style.display = 'none'; return; }
-      if (v === 'mine' && !(isContent || user.role === 'content')) { b.style.display = 'none'; return; }
-      // Plans + Initiatives: Lead Content / Admin điều phối (Account read-only được xem nếu cần).
-      if ((v === 'plans' || v === 'initiatives') && !(isLead || isAccountAdmin || isSupervisor)) { b.style.display = 'none'; return; }
-      // Ads Orders: Lead Content / Admin điều phối; Account/Supervisor xem read-only.
-      if (v === 'ads-orders' && !(isLead || isAccountAdmin || isSupervisor)) { b.style.display = 'none'; return; }
+      b.style.display = (allow.indexOf(v) >= 0) ? '' : 'none';
       b.classList.toggle('is-active', v === view);
     });
     var cAds = document.getElementById('ctm-count-ads'); if (cAds) cAds.textContent = ADS_ORDERS.length;
-    // Badge Inbox = order chờ phân công + order chờ duyệt + TASK NỘI BỘ chờ duyệt
-    // (trước đây thiếu vế cuối nên Lead thấy 0 dù có task đang chờ mình).
+    // Badge Cần xử lý = order chờ phân công + order chờ duyệt + TASK NỘI BỘ chờ duyệt.
     document.getElementById('ctm-count-inbox').textContent = byStatus(['assigned']).length + byStatus(['submitted_to_lead']).length + pendingContentTasks().length;
+    var cReview = document.getElementById('ctm-count-review'); if (cReview) cReview.textContent = reviewQueueItems().length;
     document.getElementById('ctm-count-list').textContent = ORDERS.length;
-    document.getElementById('ctm-count-mine').textContent = myOrders().length;
+    var cMine = document.getElementById('ctm-count-mine'); if (cMine) cMine.textContent = myOrders().length;
     var cPlans = document.getElementById('ctm-count-plans'); if (cPlans) cPlans.textContent = CONTENT_PLANS.length;
     var cInit = document.getElementById('ctm-count-initiatives'); if (cInit) cInit.textContent = initiativeTasks().length;
-    ['dashboard', 'inbox', 'ads-orders', 'plans', 'initiatives', 'board', 'list', 'mine'].forEach(function (v) {
+    var cAcc = document.getElementById('ctm-count-account'); if (cAcc) cAcc.textContent = byStatus(['submitted_to_account']).length;
+    ALL_VIEWS.forEach(function (v) {
       const el = document.getElementById('ctm-view-' + v);
       if (el) el.hidden = v !== view;
     });
@@ -446,6 +455,138 @@
       .sort(function (a, b) { return String(a.lead_review_due || '').localeCompare(String(b.lead_review_due || '')); });
   }
 
+  /* ========================================================================
+     ROLE-BASED WORKSPACE (Option B) — chip helpers + Action Center +
+     Review Queue + Team Workload + Account Follow-up.
+     Chỉ tổng hợp read-only từ ORDERS/CONTENT_TASKS/ADS_ORDERS sẵn có; KHÔNG
+     đụng flow ghi (gán PIC/duyệt/gửi Client...).
+     ======================================================================== */
+  // Nguồn → chip (Client Order / Ads Order / Task nội bộ / Kế hoạch).
+  function sourceChip(source) {
+    const label = SOURCE_LABEL[source] || source || '—';
+    const cls = ({ client_order: 'src-client', ads_order: 'src-ads', content_initiated: 'src-self', campaign_package: 'src-plan', strategy_board: 'src-plan' })[source] || 'src-other';
+    return '<span class="src-chip ' + cls + '">' + esc(label) + '</span>';
+  }
+  // Deadline → chip màu SLA (đỏ trễ / cam <24h / vàng <48h / xanh trong hạn).
+  function slaChip(deadline, done) {
+    if (done) return '';
+    if (!deadline) return '<span class="sla-chip sla-none">Chưa đặt hạn</span>';
+    const d = parseDt(deadline); if (!d) return '';
+    const diffH = (d.getTime() - Date.now()) / 3600000;
+    let cls, txt;
+    if (diffH < 0) { cls = 'sla-red'; txt = '⚠ Trễ · ' + fmtDT(deadline); }
+    else if (diffH < 24) { cls = 'sla-orange'; txt = '<24h · ' + fmtDT(deadline); }
+    else if (diffH < 48) { cls = 'sla-yellow'; txt = '<48h · ' + fmtDT(deadline); }
+    else { cls = 'sla-green'; txt = fmtDT(deadline); }
+    return '<span class="sla-chip ' + cls + '">' + esc(txt) + '</span>';
+  }
+  // Bước tiếp theo → chip (đọc 1 dòng biết cần làm gì).
+  const NEXT_ORDER = {
+    assigned: 'Gán PIC', pic_assigned: 'Content đang viết', in_progress: 'Content đang viết',
+    submitted_to_lead: 'Lead cần duyệt', lead_revision: 'Content chỉnh', submitted_to_account: 'Chờ Account',
+    account_revision: 'Content chỉnh', sent_to_client: 'Chờ Client', client_feedback: 'Content chỉnh',
+    client_approved: 'Hoàn tất', completed: 'Hoàn tất'
+  };
+  function nextActionChip(status, kind, item) {
+    let txt;
+    if (kind === 'task') {
+      if (status === 'submitted_to_lead') txt = 'Lead cần duyệt';
+      else if (status === 'lead_approved' && item && item.need_media_production && !item.media_request_created) txt = 'Cần tạo Media Request';
+      else if (['pic_assigned', 'in_progress', 'new', 'assigned'].indexOf(status) >= 0) txt = 'Content đang viết';
+      else if (status === 'lead_revision') txt = 'Content chỉnh';
+      else if (CT_DONE.indexOf(status) >= 0) txt = 'Hoàn tất';
+      else txt = CT_STATUS[status] || status;
+    } else {
+      txt = NEXT_ORDER[status] || WSTATUS[status] || status;
+    }
+    return '<span class="na-chip">→ ' + esc(txt) + '</span>';
+  }
+  const ADS_ATTN = ['submitted', 'lead_checking', 'submitted_to_lead', 'need_creative'];
+  function adsAttentionCount() { return ADS_ORDERS.filter(function (o) { return ADS_ATTN.indexOf(o.ads_status || 'submitted') >= 0; }).length; }
+
+  // Review Queue = mọi việc chờ Lead duyệt: wording order + content_task (mọi nguồn).
+  function reviewQueueItems() {
+    const orders = byStatus(['submitted_to_lead']).map(function (o) {
+      return { kind: 'order', id: o.order_id, code: o.order_id, source: 'client_order', project: o.project_name, pic: owPicName(o), deadline: o.wording_deadline, status: o.brief_wording_status, rounds: o.brief_wording_round || 0, ref: o };
+    });
+    const tasks = pendingContentTasks().map(function (t) {
+      return { kind: 'task', id: t.id, code: ctCode(t), source: t.source, project: t.title, pic: ctPicName(t), deadline: t.lead_review_due || t.wording_deadline, status: t.status, rounds: t.internal_revision_count || 0, ref: t, need_media_production: t.need_media_production, media_request_created: t.media_request_created };
+    });
+    return orders.concat(tasks);
+  }
+  function renderReviewQueue() {
+    const box = document.getElementById('ctm-review-list'); if (!box) return;
+    const items = reviewQueueItems();
+    const info = document.getElementById('ctm-review-info'); if (info) info.innerHTML = '<strong>' + items.length + '</strong> việc chờ duyệt';
+    box.innerHTML = items.length ? items.map(function (it) {
+      const openAttr = it.kind === 'order' ? ('data-open="' + esc(it.id) + '"') : ('data-task-open="' + esc(it.id) + '"');
+      return '<button class="ctm-inbox-item" ' + openAttr + '>'
+        + '<div class="ctm-ii-top"><b>' + esc(it.code) + '</b> ' + sourceChip(it.source) + (it.rounds ? ' <span class="chip-mini">' + it.rounds + ' vòng</span>' : '') + '</div>'
+        + '<div class="ctm-ii-title">' + esc(it.project || '—') + '</div>'
+        + '<div class="text-xs muted">PIC: ' + esc(it.pic || '—') + ' · ' + nextActionChip(it.status, it.kind, it) + ' ' + slaChip(it.deadline, false) + '</div>'
+        + '</button>';
+    }).join('') : ctmEmpty(ICON_CHECK, 'Không có việc chờ duyệt', 'Review Queue trống — mọi wording/task đã được xử lý.');
+  }
+  function renderWorkloadTab() {
+    const tb = document.getElementById('ctm-workload-tbody'); if (!tb) return;
+    const per = {};
+    function ensure(nm) { return per[nm] || (per[nm] = { open: 0, overdue: 0, review: 0, revision: 0 }); }
+    ORDERS.forEach(function (o) {
+      const ws = o.brief_wording_status || 'none'; if (['client_approved', 'completed'].indexOf(ws) >= 0) return;
+      const nm = owPicName(o); if (!nm) return; const p = ensure(nm); p.open++;
+      if (isWordingOverdue(o)) p.overdue++;
+      if (ws === 'submitted_to_lead') p.review++;
+      if (['lead_revision', 'account_revision', 'client_feedback'].indexOf(ws) >= 0) p.revision++;
+    });
+    CONTENT_TASKS.forEach(function (t) {
+      if (CT_DONE.indexOf(t.status) >= 0 || t.status === 'archived') return;
+      const nm = ctPicName(t); if (!nm) return; const p = ensure(nm); p.open++;
+      if (ctIsOverdue(t)) p.overdue++;
+      if (t.status === 'submitted_to_lead') p.review++;
+      if (t.status === 'lead_revision') p.revision++;
+    });
+    const rows = Object.keys(per).map(function (k) { return [k, per[k]]; }).sort(function (a, b) { return b[1].open - a[1].open; });
+    const info = document.getElementById('ctm-workload-info'); if (info) info.innerHTML = '<strong>' + rows.length + '</strong> PIC';
+    const denom = rows.length ? Math.max(rows[0][1].open, 4) : 4;
+    tb.innerHTML = rows.length ? rows.map(function (e) {
+      const p = e[1]; const w = Math.max(Math.round(p.open / denom * 100), 6);
+      return '<tr><td><span class="ctm-wl-name"><span class="pic-avatar avatar">' + esc(initials(e[0])) + '</span>' + esc(e[0]) + '</span></td>'
+        + '<td><b>' + p.open + '</b></td>'
+        + '<td>' + (p.overdue ? '<span class="cwb-overdue">' + p.overdue + '</span>' : '0') + '</td>'
+        + '<td>' + p.review + '</td><td>' + p.revision + '</td>'
+        + '<td><span class="ctm-wl-track" style="display:inline-block;min-width:120px;vertical-align:middle"><i style="width:' + w + '%"></i></span></td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Chưa có PIC nào đang có việc.</td></tr>';
+  }
+  function renderActionCenter() {
+    const el = document.getElementById('ctm-action-center'); if (!el) return;
+    const cards = [
+      { label: 'Chờ gán PIC', n: byStatus(['assigned']).length, color: '#191970', go: 'inbox' },
+      { label: 'Chờ Lead duyệt', n: reviewQueueItems().length, color: '#6B21A8', go: 'review' },
+      { label: 'Trễ hạn wording', n: ORDERS.filter(isWordingOverdue).length, color: '#BA110F', go: 'inbox' },
+      { label: 'Ads cần xử lý', n: adsAttentionCount(), color: '#0E7490', go: 'ads-orders' },
+      { label: 'Task nội bộ chờ duyệt', n: pendingContentTasks().length, color: '#B07600', go: 'review' }
+    ];
+    el.innerHTML = cards.map(function (c) {
+      return '<button class="ctm-ac-card" data-ac-go="' + c.go + '" style="--ac:' + c.color + '"><span class="ctm-ac-n">' + c.n + '</span><span class="ctm-ac-l">' + esc(c.label) + '</span></button>';
+    }).join('');
+  }
+  function renderAccountFollowup() {
+    const groups = [
+      ['ctm-acc-pending', 'ctm-acc-pending-count', ['submitted_to_account']],
+      ['ctm-acc-sent', 'ctm-acc-sent-count', ['sent_to_client']],
+      ['ctm-acc-feedback', 'ctm-acc-feedback-count', ['client_feedback']],
+      ['ctm-acc-done', 'ctm-acc-done-count', ['client_approved', 'completed']]
+    ];
+    groups.forEach(function (g) {
+      const box = document.getElementById(g[0]); if (!box) return;
+      const list = byStatus(g[2]);
+      const cnt = document.getElementById(g[1]); if (cnt) cnt.textContent = list.length;
+      box.innerHTML = list.length
+        ? list.map(function (o) { return inboxItemHtml(o, ' · PIC: ' + esc(owPicName(o) || '—') + ' ' + slaChip(o.wording_deadline, ['client_approved', 'completed'].indexOf(o.brief_wording_status) >= 0)); }).join('')
+        : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có mục nào.</p>';
+    });
+  }
+
   function renderBoard() {
     document.getElementById('ctm-board').innerHTML = KANBAN_COLS.map(function (col) {
       const items = byStatus(col.statuses);
@@ -517,6 +658,8 @@
     renderInbox(); renderBoard(); renderList(); renderMine();
     renderPlans(); renderInitiatives(); renderContentDashboard();
     renderAdsOrders();
+    // Role-based workspace views (Option B).
+    renderActionCenter(); renderReviewQueue(); renderWorkloadTab(); renderAccountFollowup();
   }
 
   /* ===================================================================
@@ -911,6 +1054,7 @@
     // renderInbox() BẮT BUỘC ở đây: panel "Task nội bộ — chờ Lead duyệt" đọc
     // CONTENT_TASKS, mà data này load ở luồng riêng (không qua loadOrders/renderAll).
     renderTabs(); renderInbox(); renderPlans(); renderInitiatives(); renderContentDashboard();
+    renderActionCenter(); renderReviewQueue(); renderWorkloadTab(); renderAccountFollowup();
     if (currentPlan) { const p = CONTENT_PLANS.find(function (x) { return x.id === currentPlan.id; }); if (p) currentPlan = p; }
     if (currentTask) { const t = CONTENT_TASKS.find(function (x) { return x.id === currentTask.id; }); if (t) currentTask = t; }
   }
@@ -2382,6 +2526,9 @@
       // "Xem tất cả" trên card dashboard → chuyển tab (data-ctm-view ngoài #ctm-tabs).
       const act = e.target.closest('.ctm-card-action[data-ctm-view]');
       if (act) { view = act.getAttribute('data-ctm-view'); renderTabs(); if (window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      // Action Center card → chuyển sang view tương ứng.
+      const ac = e.target.closest('[data-ac-go]');
+      if (ac) { view = ac.getAttribute('data-ac-go'); renderTabs(); if (window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
       const pb = e.target.closest('[data-plan-open]');
       if (pb) { const p = CONTENT_PLANS.find(function (x) { return x.id === pb.getAttribute('data-plan-open'); }); if (p) { if (currentTask && !document.getElementById('ctm-plan-drawer').contains(pb)) closeTaskDrawer(); openPlanDrawer(p); } return; }
       const tb = e.target.closest('[data-task-open]');
