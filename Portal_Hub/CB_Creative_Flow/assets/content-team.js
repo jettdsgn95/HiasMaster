@@ -229,7 +229,11 @@
     if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
       try {
         await window.MH.supabaseReady;
-        CONTENT_USERS = (await window.MH.store.users.list({ role: 'content', status: 'active' })) || [];
+        // TẤT CẢ users (lead_content/content đọc được qua policy "users content team read")
+        // → nạp directory resolve id→tên hiện tại (PIC keyed theo user_id).
+        const all = (await window.MH.store.users.list()) || [];
+        if (window.MH.setUserDir) window.MH.setUserDir(all);
+        CONTENT_USERS = all.filter(function (u) { return u.role === 'content' && u.status !== 'inactive'; });
       } catch (e) { console.warn('[ctm] load content users failed:', e); }
     }
   }
@@ -251,6 +255,12 @@
       const uid = await window.MH.store.notifications.findUserIdByName(name);
       if (uid) await window.MH.store.notifications.create(Object.assign({ user_id: uid }, payload));
     } catch (e) { console.warn('[ctm] notify by name failed:', e); }
+  }
+  // Notify trực tiếp theo user_id (PIC content_tasks keyed theo id — khỏi lookup tên).
+  async function notifyUserId(uid, payload) {
+    if (!uid || !window.MH || !window.MH.supabaseEnabled || !window.MH.store) return;
+    try { await window.MH.store.notifications.create(Object.assign({ user_id: uid }, payload)); }
+    catch (e) { console.warn('[ctm] notify by id failed:', e); }
   }
   // link mặc định → Workspace (lead); notify cho PIC content thì truyền link Wording.
   function notifPayload(o, type, title, message, link) {
@@ -351,9 +361,10 @@
     });
     // Content Task đang hoạt động (assigned_pic) — gộp để workload phản ánh đủ việc Content.
     CONTENT_TASKS.forEach(function (t) {
-      if (!t.assigned_pic) return;
+      const nm = ctPicName(t);
+      if (!nm) return;
       if (CT_DONE.indexOf(t.status) >= 0 || t.status === 'archived') return;
-      per[t.assigned_pic] = (per[t.assigned_pic] || 0) + 1;
+      per[nm] = (per[nm] || 0) + 1;
     });
     const entries = Object.keys(per).map(function (k) { return [k, per[k]]; }).sort(function (a, b) { return b[1] - a[1]; });
     if (!entries.length) {
@@ -426,7 +437,7 @@
         const late = reviewLateCT(t);
         return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '">'
           + '<div><b>' + esc(ctCode(t)) + '</b> · ' + esc(t.title || '—') + '</div>'
-          + '<div class="text-xs muted">PIC: ' + esc(t.assigned_pic || '—')
+          + '<div class="text-xs muted">PIC: ' + esc(ctPicName(t) || '—')
           + (t.lead_review_due ? ' · Hạn duyệt: ' + fmtDT(t.lead_review_due) : '')
           + (late ? ' · ⚠ quá hạn duyệt' : '') + '</div>'
           + '</button>';
@@ -848,6 +859,11 @@
     if (t.task_code) return t.task_code;
     return 'CT-' + String(t.id || '').slice(-4).toUpperCase();
   }
+  // Tên PIC content_task để HIỂN THỊ: resolve user_id → tên hiện tại (rename-proof),
+  // fallback snapshot tên cũ (data chưa backfill id). MH.picLabel ở app.js.
+  function ctPicName(t) {
+    return (t && window.MH && window.MH.picLabel) ? window.MH.picLabel(t.assigned_pic_user_id, t.assigned_pic) : (t && t.assigned_pic) || '';
+  }
   function initiativeTasks() { return CONTENT_TASKS.filter(function (t) { return t.source === 'content_initiated' && !t.content_plan_id; }); }
   function planChildTasks(planId) { return CONTENT_TASKS.filter(function (t) { return t.content_plan_id === planId; }); }
   function arrayOf(a) { return Array.isArray(a) ? a : (a ? [a] : []); }
@@ -893,20 +909,28 @@
     else if (reopen === 'task' && currentTask) openTaskDrawer(currentTask);
   }
 
-  /* ---------- PIC Content options (đồng bộ, dropdown thật — như PIC Media) ----------
-     Nguồn gộp: users role=content (Supabase) + PIC đã dùng trong task/order + fallback seed.
-     Fallback đảm bảo LUÔN có option kể cả demo/Supabase off/chưa seed (giống Media hardcode). */
-  const FALLBACK_CONTENT_PICS = ['Thu Hà', 'Minh Anh', 'Bảo Trân'];
+  /* ---------- PIC Content options ----------
+     ⚠ PIC content_tasks nay KEYED THEO user_id (rename-proof) — dùng picOptionsByIdCT
+     (option value=id, hiển thị tên hiện tại). Các select ghi cột ORDERS (ct-pic wording,
+     ads-pic/ads-tt-pic) TẠM giữ value=TÊN qua picSelectOptions (Stage 2 sẽ chuyển id +
+     sửa RPC update_brief_wording). Cả hai đều nguồn từ CONTENT_USERS thật — ĐÃ BỎ seed
+     cứng + BỎ append tên lịch sử trong task/order (nguồn sinh trùng tên cũ/mới). */
+  const ROLE_TAG_CT = { content: 'Content', lead_content: 'Lead', admin: 'Admin', account: 'Account' };
+  // Content_tasks: option keyed theo user_id.
+  function picOptionsByIdCT(currentId, currentName) {
+    return window.MH.picOptionsById(CONTENT_USERS, {
+      current: currentId || '', currentName: currentName || '',
+      placeholder: '— Chọn PIC Content —', roleTag: ROLE_TAG_CT
+    });
+  }
+  // Orders/ads (name-based tạm thời): nguồn users thật + giữ current, KHÔNG seed, KHÔNG
+  // gộp tên lịch sử → hết ghost/dedupe. sort vi.
   function contentPicNames(current) {
     const names = {};
     CONTENT_USERS.forEach(function (u) { if (u.name) names[u.name] = 1; });
-    CONTENT_TASKS.forEach(function (t) { if (t.assigned_pic) names[t.assigned_pic] = 1; });
-    ORDERS.forEach(function (o) { if (o.brief_wording_pic) names[o.brief_wording_pic] = 1; });
-    FALLBACK_CONTENT_PICS.forEach(function (n) { names[n] = 1; });
-    if (current) names[current] = 1; // luôn giữ giá trị hiện tại để select hiển thị đúng
+    if (current) names[current] = 1; // giữ giá trị hiện tại để select hiển thị đúng
     return Object.keys(names).sort(function (a, b) { return a.localeCompare(b, 'vi'); });
   }
-  // Dropdown thật: <option> list kèm selected + option rỗng "— Chọn PIC —".
   function picSelectOptions(current) {
     current = current || '';
     return '<option value="">— Chọn PIC Content —</option>'
@@ -974,12 +998,13 @@
     tb.innerHTML = list.map(function (t) {
       const overdue = ctIsOverdue(t);
       // Task do PIC content tự tạo (created_by = assigned_pic) → nhãn phân biệt với task Lead tạo.
-      const selfMade = t.created_by && t.assigned_pic && t.created_by === t.assigned_pic;
+      const selfMade = (t.created_by_user_id && t.assigned_pic_user_id && t.created_by_user_id === t.assigned_pic_user_id)
+        || (!t.assigned_pic_user_id && t.created_by && t.assigned_pic && t.created_by === t.assigned_pic);
       return '<tr data-task="' + esc(t.id) + '">'
         + '<td><span class="order-id">' + esc(ctCode(t)) + '</span></td>'
         + '<td><b>' + esc(t.title || '—') + '</b>' + (selfMade ? ' <span class="chip-mini">PIC tự đề xuất</span>' : '') + '</td>'
         + '<td>' + outputChips(t.output_types) + '</td>'
-        + '<td><span class="text-xs">' + esc(t.assigned_pic || '—') + '</span></td>'
+        + '<td><span class="text-xs">' + esc(ctPicName(t) || '—') + '</span></td>'
         + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
         + '<td><span class="priority-pill p--' + (t.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_VI[t.priority] || t.priority || '—') + '</span></td>'
         + '<td><span class="text-xs">' + (t.need_media_production ? '<span class="chip-mini">Cần Media</span>' : '—') + '</span></td>'
@@ -1060,7 +1085,7 @@
     const elH = document.getElementById('ctm-ct-highrev');
     const high = T.filter(function (t) { return (t.internal_revision_count || 0) >= 2; }).sort(function (a, b) { return (b.internal_revision_count || 0) - (a.internal_revision_count || 0); }).slice(0, 6);
     if (elH) elH.innerHTML = high.length ? high.map(function (t) {
-      return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '"><div class="ctm-ii-top"><b>' + esc(t.title || t.id) + '</b><span class="kc-flag" style="background:var(--warning);color:#fff;border:0">' + (t.internal_revision_count || 0) + ' vòng</span></div><div class="text-xs muted">PIC: ' + esc(t.assigned_pic || '—') + ' · ' + esc(CT_STATUS[t.status] || t.status) + '</div></button>';
+      return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '"><div class="ctm-ii-top"><b>' + esc(t.title || t.id) + '</b><span class="kc-flag" style="background:var(--warning);color:#fff;border:0">' + (t.internal_revision_count || 0) + ' vòng</span></div><div class="text-xs muted">PIC: ' + esc(ctPicName(t) || '—') + ' · ' + esc(CT_STATUS[t.status] || t.status) + '</div></button>';
     }).join('') : ctmEmpty(ICON_CHECK, 'Không có task vòng sửa cao', 'Các task đang trong giới hạn vòng sửa lành mạnh.');
   }
 
@@ -1081,7 +1106,7 @@
       const overdue = ctIsOverdue(t);
       return '<tr data-task="' + esc(t.id) + '">'
         + '<td><b>' + esc(t.title || '—') + '</b><div class="text-xs muted">' + outputChips(t.output_types) + '</div></td>'
-        + '<td><span class="text-xs">' + esc(t.assigned_pic || '<em>chưa gán</em>') + '</span></td>'
+        + '<td><span class="text-xs">' + (ctPicName(t) ? esc(ctPicName(t)) : '<em>chưa gán</em>') + '</span></td>'
         + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
         + '<td>' + ctStatusBadge(t.status) + (reviewLateCT(t) ? ' <span class="chip-mini" style="background:var(--danger);color:#fff;border:0">quá hạn duyệt</span>' : '') + '</td>'
         + '<td><button class="btn btn-secondary btn-sm" data-task-open="' + esc(t.id) + '">Mở</button></td>'
@@ -1195,7 +1220,7 @@
       const planDl = plan && plan.plan_deadline ? ' data-plan-deadline="' + esc(plan.plan_deadline) + '"' : '';
       assignHtml = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead — Phân công &amp; follow</h4></div>'
         + '<div class="ctm-assign-grid">'
-        + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ctm-t-pic">' + picSelectOptions(t.assigned_pic || '') + '</select></div>'
+        + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ctm-t-pic">' + picOptionsByIdCT(t.assigned_pic_user_id, t.assigned_pic) + '</select></div>'
         + '<div class="field"><label class="label">Hạn wording</label><input class="input" type="datetime-local" id="ctm-t-deadline"' + planDl + ' value="' + toLocalInput(t.wording_deadline) + '" /></div>'
         + '</div>'
         + '<div class="ctm-assign-grid">'
@@ -1281,7 +1306,7 @@
         + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[t.source] || t.source) + (t.order_id ? ' · Order ' + esc(t.order_id) : '') + '</dd>'
         + '<dt>Output types</dt><dd>' + outputChips(t.output_types) + '</dd>'
         + '<dt>Brief</dt><dd style="white-space:pre-wrap">' + v(t.brief) + '</dd>'
-        + '<dt>PIC Content</dt><dd>' + v(t.assigned_pic) + '</dd>'
+        + '<dt>PIC Content</dt><dd>' + v(ctPicName(t)) + '</dd>'
         + '<dt>Hạn wording</dt><dd>' + (t.wording_deadline ? '<span class="' + (overdue ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.wording_deadline)) + '</span>' + (overdue ? ' · ⚠ trễ' : '') : '<em class="muted">—</em>') + '</dd>'
         + '<dt>Vòng sửa nội bộ</dt><dd>' + (t.internal_revision_count || 0) + '</dd>'
         + ((t.lead_review_due || t.status === 'submitted_to_lead') ? '<dt>Hạn Lead duyệt</dt><dd>' + (t.lead_review_due ? '<span class="' + (reviewLate ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.lead_review_due)) + '</span>' + (reviewLate ? ' · ⚠ quá hạn duyệt' : '') : '<em class="muted">—</em>') + '</dd>' : '')
@@ -1326,7 +1351,7 @@
     document.getElementById('ctm-td-title').textContent = t.title || '—';
     const st = document.getElementById('ctm-td-status'); st.className = 'tb-status s--wording'; st.innerHTML = '<span class="dot"></span>' + (CT_STATUS[t.status] || t.status);
     const pr = document.getElementById('ctm-td-priority'); pr.className = 'priority-pill p--' + (t.priority || 'normal'); pr.innerHTML = '<span class="dot"></span>' + (PRIO_VI[t.priority] || t.priority || '—');
-    document.getElementById('ctm-td-pic').textContent = 'PIC: ' + (t.assigned_pic || 'chưa gán');
+    document.getElementById('ctm-td-pic').textContent = 'PIC: ' + (ctPicName(t) || 'chưa gán');
     document.getElementById('ctm-task-actions').innerHTML = buildTaskActions(t);
     document.getElementById('ctm-task-body').innerHTML = buildTaskBody(t);
     wireTaskDrawer();
@@ -1396,15 +1421,18 @@
   }
   async function saveTaskAssign() {
     if (!isLead || !currentTask) return;
-    const pic = (document.getElementById('ctm-t-pic').value || '').trim();
+    // PIC content_tasks nay keyed theo user_id: select value = id, snapshot tên qua MH.userName.
+    const picId = (document.getElementById('ctm-t-pic').value || '').trim();
+    const pic = picId ? (window.MH.userName(picId) || '') : '';
     const dlEl = document.getElementById('ctm-t-deadline');
     const prio = document.getElementById('ctm-t-priority').value;
     const media = document.getElementById('ctm-t-media').checked;
-    const oldPic = (currentTask.assigned_pic || '').trim();
-    const wasUnassigned = !oldPic;
-    const isReassign = !!pic && !!oldPic && pic !== oldPic;
-    // Đổi PIC khi task đang chạy = PIC cũ MẤT quyền sửa ngay (RLS khớp theo
-    // assigned_pic = users.name) — bản thảo họ đang viết dở sẽ không lưu được nữa.
+    const oldPicId = currentTask.assigned_pic_user_id || '';
+    const oldPic = ctPicName(currentTask);
+    const wasUnassigned = !oldPicId && !currentTask.assigned_pic;
+    const isReassign = !!picId && !!oldPicId && picId !== oldPicId;
+    // Đổi PIC khi task đang chạy = PIC cũ MẤT quyền sửa ngay (RLS khớp assigned_pic_user_id
+    // = auth.uid()) — bản thảo họ đang viết dở sẽ không lưu được nữa.
     // Bắt xác nhận thay vì khóa ô (vẫn cần đổi khi PIC nghỉ đột xuất).
     if (isReassign && ['in_progress', 'submitted_to_lead', 'lead_revision'].indexOf(currentTask.status) >= 0) {
       const ok = window.confirm('Chuyển task "' + (currentTask.title || currentTask.id) + '" từ ' + oldPic + ' sang ' + pic + '?\n\n'
@@ -1412,9 +1440,10 @@
         + 'Cả hai người sẽ nhận được thông báo.');
       if (!ok) return;
     }
-    const patch = { assigned_pic: pic, priority: prio, need_media_production: media };
+    // Ghi CẢ id (khóa thật) LẪN tên snapshot (hiển thị legacy).
+    const patch = { assigned_pic_user_id: picId || null, assigned_pic: pic, priority: prio, need_media_production: media };
     if (dlEl && dlEl.value) patch.wording_deadline = new Date(dlEl.value).toISOString();
-    if (pic && ['new', 'assigned'].indexOf(currentTask.status) >= 0) patch.status = 'pic_assigned';
+    if (picId && ['new', 'assigned'].indexOf(currentTask.status) >= 0) patch.status = 'pic_assigned';
 
     // Ghi DB TRƯỚC + verify rồi mới notify (bài học noti ma transferToWording).
     // Trước đây KHÔNG có try/catch: update throw là hàm chết im lặng giữa chừng —
@@ -1443,11 +1472,11 @@
     // thì KHÔNG ai biết (task nội bộ luôn có sẵn PIC = người tạo). Nay báo cả 2 chiều.
     const label = ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task');
     const dlTxt = patch.wording_deadline ? ' · Hạn: ' + fmtDT(patch.wording_deadline) : '';
-    if (pic && wasUnassigned) {
-      notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán Content Task', message: label + dlTxt + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    if (picId && wasUnassigned) {
+      notifyUserId(picId, { type: 'task_assigned', title: '📝 Bạn được gán Content Task', message: label + dlTxt + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     } else if (isReassign) {
-      notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được giao lại Content Task', message: label + dlTxt + ' — chuyển từ ' + oldPic + ' · Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
-      notifyByName(oldPic, { type: 'task_status_changed', title: '↔️ Task đã chuyển cho người khác', message: label + ' — nay do ' + pic + ' phụ trách. Bạn không còn quyền chỉnh sửa task này.', link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+      notifyUserId(picId, { type: 'task_assigned', title: '📝 Bạn được giao lại Content Task', message: label + dlTxt + ' — chuyển từ ' + oldPic + ' · Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+      if (oldPicId) notifyUserId(oldPicId, { type: 'task_status_changed', title: '↔️ Task đã chuyển cho người khác', message: label + ' — nay do ' + pic + ' phụ trách. Bạn không còn quyền chỉnh sửa task này.', link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     }
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
     toast('success', isReassign ? 'Đã chuyển PIC' : 'Đã cập nhật', label + (isReassign ? ' → ' + pic : ''));
@@ -1495,7 +1524,8 @@
     pushTaskActivity(currentTask.id, 'Lead trả chỉnh (vòng ' + cnt + ')' + (reason ? ': ' + reason : ''));
     // Ads: Lead trả chỉnh task ads → ads_status='lead_revision'.
     await syncAdsFromContentTask(currentTask, 'lead_revision', ['submitted_to_lead', 'writing_ads_content', 'assigned_to_content']);
-    if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✍️ Lead yêu cầu chỉnh content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + (reason ? ' · ' + reason : '') + ' — ' + note, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    if (currentTask.assigned_pic_user_id) notifyUserId(currentTask.assigned_pic_user_id, { type: 'task_status_changed', title: '✍️ Lead yêu cầu chỉnh content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + (reason ? ' · ' + reason : '') + ' — ' + note, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    else if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✍️ Lead yêu cầu chỉnh content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + (reason ? ' · ' + reason : '') + ' — ' + note, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
     toast('info', 'Đã trả Content chỉnh', currentTask.title || currentTask.id);
     ctReload('task');
@@ -1505,7 +1535,7 @@
     const noteEl = document.getElementById('ctm-rev-note');
     const note = ((noteEl && noteEl.value) || '').trim();
     const nowIso = new Date().toISOString();
-    const patch = { lead_review_status: 'approved', lead_approved_at: nowIso, lead_approved_by: user.name || user.role };
+    const patch = { lead_review_status: 'approved', lead_approved_at: nowIso, lead_approved_by_user_id: user.id || null, lead_approved_by: user.name || user.role };
     if (note) patch.lead_review_note = note;
     // Định tuyến sau Lead duyệt (spec §6): cần Media → lead_approved (chờ Phase 5);
     // client_order → submitted_to_account; còn lại (initiative/plan không Media) → completed.
@@ -1518,7 +1548,8 @@
     // Ads: Lead duyệt task ads → cần Media thì 'need_creative' (chờ Media Request), không thì 'lead_approved'.
     await syncAdsFromContentTask(currentTask, currentTask.need_media_production ? 'need_creative' : 'lead_approved',
       ['submitted_to_lead', 'lead_revision', 'writing_ads_content', 'assigned_to_content']);
-    if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✅ Lead đã duyệt content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + nextMsg, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    if (currentTask.assigned_pic_user_id) notifyUserId(currentTask.assigned_pic_user_id, { type: 'task_status_changed', title: '✅ Lead đã duyệt content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + nextMsg, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
+    else if (currentTask.assigned_pic) notifyByName(currentTask.assigned_pic, { type: 'task_status_changed', title: '✅ Lead đã duyệt content', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + nextMsg, link: 'content-workbench.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (patch.status === 'submitted_to_account') notifyRoles(['admin', 'account'], { type: 'task_status_changed', title: '✅ Content task đã được Lead duyệt', message: ctCode(currentTask) + ' · ' + (currentTask.title || 'Content task') + ' — sẵn sàng cho Account.', link: 'content-team.html?task=' + currentTask.id, related_entity_type: null, related_entity_id: currentTask.id });
     if (currentTask.content_plan_id) await syncPlanStatus(currentTask.content_plan_id);
     toast('success', 'Đã duyệt', (currentTask.title || currentTask.id) + nextMsg);
@@ -1750,7 +1781,7 @@
       + fieldText('cct-title', 'Tiêu đề task', '', { req: true, ph: 'VD: Bài social khai trương' })
       + fieldText('cct-brief', 'Brief', '', { area: true, rows: 3, ph: 'Mô tả nội dung cần viết...' })
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Output types</label><div class="ctm-chk-group" id="cct-outputs">' + outputCheckboxes([]) + '</div></div>'
-      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="cct-pic">' + picSelectOptions('') + '</select></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="cct-pic">' + picOptionsByIdCT('') + '</select></div>'
       + fieldText('cct-deadline', 'Hạn wording', '', { type: 'datetime-local' })
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Ưu tiên</label><select class="select" id="cct-priority">' + ['low', 'normal', 'high', 'urgent'].map(function (k) { return '<option value="' + k + '"' + (k === 'normal' ? ' selected' : '') + '>' + ({ low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp' }[k]) + '</option>'; }).join('') + '</select></div>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label class="checkbox"><input type="checkbox" id="cct-media" /><div><span class="checkbox-text">Cần Media sản xuất (tạo Internal Media Request sau khi duyệt)</span></div></label></div>'
@@ -1766,20 +1797,21 @@
   async function saveChildTask(plan) {
     const title = (document.getElementById('cct-title').value || '').trim();
     if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề task.'); return false; }
-    const pic = (document.getElementById('cct-pic').value || '').trim();
+    const picId = (document.getElementById('cct-pic').value || '').trim();
+    const pic = picId ? (window.MH.userName(picId) || '') : '';
     const payload = {
       content_plan_id: plan.id, source: plan.source === 'client_order' ? 'client_order' : 'campaign_package',
       title: title, brief: document.getElementById('cct-brief').value.trim(),
-      output_types: collectOutputs('#cct-outputs'), assigned_pic: pic,
+      output_types: collectOutputs('#cct-outputs'), assigned_pic_user_id: picId || null, assigned_pic: pic,
       priority: document.getElementById('cct-priority').value,
       need_media_production: document.getElementById('cct-media').checked,
-      status: pic ? 'pic_assigned' : 'new', created_by: user.name || user.role
+      status: picId ? 'pic_assigned' : 'new', created_by_user_id: user.id || null, created_by: user.name || user.role
     };
     const dl = document.getElementById('cct-deadline').value;
     if (dl) payload.wording_deadline = new Date(dl).toISOString();
     const created = await window.MH.store.contentTasks.create(payload);
     pushPlanActivity(plan.id, 'Lead thêm task con: ' + title + (pic ? ' → ' + pic : ''));
-    if (pic) notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán Content Task', message: title + (payload.wording_deadline ? ' · Hạn: ' + fmtDT(payload.wording_deadline) : '') + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + created.id, related_entity_type: null, related_entity_id: created.id });
+    if (picId) notifyUserId(picId, { type: 'task_assigned', title: '📝 Bạn được gán Content Task', message: title + (payload.wording_deadline ? ' · Hạn: ' + fmtDT(payload.wording_deadline) : '') + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + created.id, related_entity_type: null, related_entity_id: created.id });
     await syncPlanStatus(plan.id);
     toast('success', 'Đã thêm task con', title);
     closeModal();
@@ -1799,7 +1831,7 @@
       + fieldText('cim-keymsg', 'Key message', '', { ph: 'Thông điệp chính' })
       + fieldText('cim-cta', 'CTA', '', { ph: 'Kêu gọi hành động' })
       + fieldText('cim-assets', 'Asset links (phân cách bằng dấu phẩy)', '', { ph: 'https://..., https://...' })
-      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="cim-pic">' + picSelectOptions('') + '</select></div>'
+      + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="cim-pic">' + picOptionsByIdCT('') + '</select></div>'
       + fieldText('cim-deadline', 'Hạn wording', '', { type: 'datetime-local' })
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Ưu tiên</label><select class="select" id="cim-priority">' + ['low', 'normal', 'high', 'urgent'].map(function (k) { return '<option value="' + k + '"' + (k === 'normal' ? ' selected' : '') + '>' + ({ low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp' }[k]) + '</option>'; }).join('') + '</select></div>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label class="checkbox"><input type="checkbox" id="cim-media" /><div><span class="checkbox-text">Cần Media sản xuất</span></div></label></div>'
@@ -1815,17 +1847,18 @@
   async function saveInitiative() {
     const title = (document.getElementById('cim-title').value || '').trim();
     if (!title) { toast('warning', 'Thiếu tiêu đề', 'Nhập tiêu đề task nội bộ.'); return false; }
-    const pic = (document.getElementById('cim-pic').value || '').trim();
+    const picId = (document.getElementById('cim-pic').value || '').trim();
+    const pic = picId ? (window.MH.userName(picId) || '') : '';
     const needMedia = document.getElementById('cim-media').checked;
     const payload = {
       source: 'content_initiated', content_plan_id: null,
       title: title, brief: document.getElementById('cim-objective').value.trim(),
       output_types: collectOutputs('#cim-outputs'),
-      assigned_pic: pic, priority: document.getElementById('cim-priority').value,
+      assigned_pic_user_id: picId || null, assigned_pic: pic, priority: document.getElementById('cim-priority').value,
       visual_direction: document.getElementById('cim-keymsg').value.trim(),
       asset_links: document.getElementById('cim-assets').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
       need_media_production: needMedia,
-      status: pic ? 'pic_assigned' : 'new', created_by: user.name || user.role
+      status: picId ? 'pic_assigned' : 'new', created_by_user_id: user.id || null, created_by: user.name || user.role
     };
     const dl = document.getElementById('cim-deadline').value;
     if (dl) payload.wording_deadline = new Date(dl).toISOString();
@@ -1837,7 +1870,7 @@
     }
     const created = await window.MH.store.contentTasks.create(payload);
     pushTaskActivity(created.id, 'Lead tạo task nội bộ Content Team' + (pic ? ' → ' + pic : ''));
-    if (pic) notifyByName(pic, { type: 'task_assigned', title: '📝 Bạn được gán task nội bộ Content', message: title + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + created.id, related_entity_type: null, related_entity_id: created.id });
+    if (picId) notifyUserId(picId, { type: 'task_assigned', title: '📝 Bạn được gán task nội bộ Content', message: title + ' — Lead: ' + (user.name || 'Lead Content'), link: 'content-workbench.html?task=' + created.id, related_entity_type: null, related_entity_id: created.id });
     toast('success', 'Đã tạo task nội bộ', title);
     closeModal();
     loadContentData();
@@ -2049,7 +2082,7 @@
     // Content Tasks tách từ Ads Order
     const tasks = adsTasksOf(o);
     const taskRows = tasks.length ? tasks.map(function (t) {
-      return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '"><div class="ctm-ii-top"><b>' + esc(t.title || t.id) + '</b><span class="text-xs">' + esc(CT_STATUS[t.status] || t.status) + '</span></div><div class="text-xs muted">PIC: ' + esc(t.assigned_pic || 'chưa gán') + '</div></button>';
+      return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '"><div class="ctm-ii-top"><b>' + esc(t.title || t.id) + '</b><span class="text-xs">' + esc(CT_STATUS[t.status] || t.status) + '</span></div><div class="text-xs muted">PIC: ' + esc(ctPicName(t) || 'chưa gán') + '</div></button>';
     }).join('') : '<p class="text-xs muted" style="margin:0">Chưa tách Content Task nào.</p>';
     const taskBtn = (isLead && ADS_TERMINAL.indexOf(st) < 0) ? '<button class="btn btn-secondary btn-sm" id="ads-split-tasks" style="margin-top:8px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tách Content Tasks</button>' : '';
 

@@ -675,8 +675,14 @@
   }
   function passedLeadApproval(t) { return ['lead_approved', 'media_order_created', 'completed'].indexOf(t.status) >= 0; }
   function orderFinalDelivered(o) { return !!(o && (o.final_delivery_link || o.production_status === 'delivered' || o.production_status === 'completed')); }
-  function canSendMediaTask(t) { return ((isContent && isMine(t.assigned_pic)) || isAdmin) && t.status === 'lead_approved' && t.need_media_production && !t.media_request_created; }
+  function canSendMediaTask(t) { return ((isContent && isMineTask(t)) || isAdmin) && t.status === 'lead_approved' && t.need_media_production && !t.media_request_created; }
 
+  // Ownership content_task nay theo user_id (rename-proof); task chưa backfill id → fallback tên mờ.
+  function isMineTask(t) {
+    if (!t) return false;
+    if (t.assigned_pic_user_id) return !!user.id && t.assigned_pic_user_id === user.id;
+    return isMine(t.assigned_pic);
+  }
   function isMine(name) {
     if (!name || !user.name) return false;
     const a = String(name).trim().toLowerCase(), b = String(user.name).trim().toLowerCase();
@@ -692,7 +698,7 @@
   function canEditTask(t) {
     if (!t || CT_EDITABLE_STATUS.indexOf(t.status) < 0) return false;
     if (isAdmin) return true;
-    if (isContent) return isMine(t.assigned_pic);
+    if (isContent) return isMineTask(t);
     return false; // account / lead_content / supervisor: read-only ở Wording
   }
   // Mã task nội bộ Content (CT-YYYY-NNN) — trigger DB sinh (add-content-task-code.sql).
@@ -724,7 +730,7 @@
       if (window.MH && window.MH.store && window.MH.store.contentTasks) {
         const all = (await window.MH.store.contentTasks.list()) || [];
         // PIC content chỉ thấy task được gán cho mình; admin/lead/account/supervisor xem tất cả (follow).
-        TASKS = isContent ? all.filter(function (t) { return isMine(t.assigned_pic); }) : all;
+        TASKS = isContent ? all.filter(function (t) { return isMineTask(t); }) : all;
         CONTENT_PLANS = (await window.MH.store.contentPlans.list()) || [];
       }
     } catch (e) { console.warn('[cwb] load tasks failed:', e); }
@@ -864,11 +870,11 @@
       btns.push('<button class="btn btn-secondary btn-sm" id="wt-save">Lưu nháp</button>');
       btns.push('<button class="btn btn-primary btn-sm" id="wt-submit">Gửi Lead Content duyệt</button>');
       hasSubmit = true;
-    } else if (isContent && t.status === 'submitted_to_lead' && isMine(t.assigned_pic)) {
+    } else if (isContent && t.status === 'submitted_to_lead' && isMineTask(t)) {
       btns.push('<span class="wf-wait-tag">Đã gửi Lead — chờ duyệt</span>');
     }
     // Phase 5 — PIC gửi Media + hoàn tất task (sau khi Lead duyệt nội dung).
-    const canPost = (isContent && isMine(t.assigned_pic)) || isAdmin;
+    const canPost = (isContent && isMineTask(t)) || isAdmin;
     if (canPost && t.status === 'lead_approved' && t.need_media_production && !t.media_request_created) {
       btns.push('<button class="btn btn-primary btn-sm" id="wt-make-media">Gửi sang Media</button>');
     }
@@ -1378,10 +1384,13 @@
       source: 'content_initiated', content_plan_id: null,
       title: title, brief: gv('cst-brief'),
       output_types: outputs.length ? outputs : ['social_post'],
+      // PIC = chính mình: ghi user_id (khóa RLS content insert own_initiative) + snapshot tên.
+      assigned_pic_user_id: user.id || null,
       assigned_pic: user.name || user.role,
       priority: gv('cst-priority') || 'normal',
       need_media_production: needMedia,
       status: 'in_progress', // tạo xong viết luôn — không chờ gate "chấp thuận"
+      created_by_user_id: user.id || null,
       created_by: user.name || user.role
     };
     const dl = gv('cst-deadline'); if (dl) payload.wording_deadline = new Date(dl).toISOString();

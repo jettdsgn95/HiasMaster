@@ -171,12 +171,18 @@
     return `<span class="pic-dd-name${mutedName ? ' muted' : ''}">${picDdEsc(name)}</span>`
       + (role ? `<span class="pic-role-badge">${picDdEsc(role)}</span>` : '');
   }
+  // Nhãn hiển thị của 1 option: ưu tiên data-name (khi value=id — PIC keyed theo
+  // user_id), fallback value (khi value=tên — select cũ chưa refactor), rồi textContent.
+  function picDdLabel(op) {
+    if (!op) return '';
+    return op.getAttribute('data-name') || op.value || op.textContent;
+  }
   function picDdSync(sel) {
     const wrap = sel.closest('.pic-dd');
     if (!wrap) return;
     const op = sel.options[sel.selectedIndex];
     const role = op ? (op.getAttribute('data-role') || '') : '';
-    const label = sel.value || (op ? op.textContent : '— Chưa gán —');
+    const label = sel.value ? picDdLabel(op) : (op ? op.textContent : '— Chưa gán —');
     wrap.querySelector('.pic-dd-trigger').innerHTML = picDdRow(label, role, !sel.value) + PIC_DD_CARET;
     wrap.querySelectorAll('.pic-dd-item').forEach((it) => {
       it.classList.toggle('is-selected', (it.getAttribute('data-value') || '') === sel.value);
@@ -188,7 +194,7 @@
       const val = op.value;
       const role = op.getAttribute('data-role') || '';
       return `<div class="pic-dd-item${val ? '' : ' is-empty'}" role="option" data-value="${picDdEsc(val)}">`
-        + picDdRow(val || op.textContent, role, !val) + '</div>';
+        + picDdRow(val ? picDdLabel(op) : op.textContent, role, !val) + '</div>';
     }).join('');
   }
   function enhancePicSelects(root) {
@@ -243,6 +249,42 @@
     });
   });
   window.MH.enhancePicSelects = enhancePicSelects;
+
+  /* ---------- User directory: resolve user_id → tên HIỆN TẠI ----------
+     PIC được lưu theo user_id (nguồn sự thật); cột tên chỉ là snapshot. Mọi chỗ
+     hiển thị resolve id → tên hiện tại qua đây ⇒ Admin đổi tên phản ánh tức thì,
+     hết trùng tên cũ/mới. Các trang tự nạp danh sách users rồi gọi MH.setUserDir. */
+  const USER_DIR = {}; // id -> { name, role }
+  window.MH.setUserDir = function (list) {
+    (list || []).forEach((u) => { if (u && u.id) USER_DIR[u.id] = { name: u.name || '', role: u.role || '' }; });
+  };
+  window.MH.userName = function (id) { return id && USER_DIR[id] ? USER_DIR[id].name : ''; };
+  window.MH.userRole = function (id) { return id && USER_DIR[id] ? USER_DIR[id].role : ''; };
+  // Nhãn PIC để hiển thị: ưu tiên tên hiện tại theo id, fallback snapshot tên cũ.
+  window.MH.picLabel = function (id, snapshotName) { return window.MH.userName(id) || snapshotName || ''; };
+  // Option list keyed theo user_id: value=id, data-name=tên (cho custom dropdown),
+  // data-role=nhãn role (badge). Giữ current id kể cả khi không còn trong pool.
+  window.MH.picOptionsById = function (users, opts) {
+    opts = opts || {};
+    const cur = opts.current || '';
+    const roleTag = opts.roleTag || {};
+    const esc = picDdEsc;
+    let html = '<option value="">' + esc(opts.placeholder || '— Chọn PIC —') + '</option>';
+    const seen = {};
+    (users || []).forEach((u) => {
+      if (!u || !u.id || seen[u.id]) return;
+      seen[u.id] = 1;
+      const tag = roleTag[u.role] || u.role || '';
+      const nm = u.name || '';
+      html += '<option value="' + esc(u.id) + '" data-name="' + esc(nm) + '" data-role="' + esc(tag) + '"'
+        + (u.id === cur ? ' selected' : '') + '>' + esc(nm + (tag ? ' · ' + tag : '')) + '</option>';
+    });
+    if (cur && !seen[cur]) {
+      const nm = window.MH.userName(cur) || opts.currentName || cur;
+      html += '<option value="' + esc(cur) + '" data-name="' + esc(nm) + '" selected>' + esc(nm) + '</option>';
+    }
+    return html;
+  };
 
   /* ---------- Copy helpers ---------- */
   document.addEventListener('click', async (e) => {
