@@ -92,14 +92,10 @@
     { k: 'prodnote', label: 'Đã chuẩn hóa brief thiết kế, ghi chú rõ cho Media Production' }
   ];
   const CHECKLIST_MIN = 3;
+  // Wording Workspace rút gọn: chỉ 2 trường (Brief đã wording + Ghi chú cho Production).
   const WFIELDS = [
-    { k: 'wording_brief', label: 'Brief đã wording', req: true, rows: 5 },
-    { k: 'wording_objective', label: 'Mục tiêu sau khi chuẩn hóa', rows: 2 },
-    { k: 'wording_core_message', label: 'Thông điệp chính', req: true, rows: 2 },
-    { k: 'wording_required_info', label: 'Thông tin bắt buộc cần thể hiện', rows: 3 },
-    { k: 'wording_tone_style', label: 'Tone & style nội dung', rows: 2 },
-    { k: 'wording_cta', label: 'CTA đề xuất', rows: 1 },
-    { k: 'wording_production_note', label: 'Ghi chú cho Production team', rows: 2 }
+    { k: 'wording_brief', label: 'Brief đã wording', req: true, rows: 6 },
+    { k: 'wording_production_note', label: 'Ghi chú cho Production team', rows: 3 }
   ];
   const LINKS = [
     { k: 'wording_client_source_link', label: 'Client source link' },
@@ -944,14 +940,9 @@
         + '</section>';
     }
 
-    // 4. Missing Info / Assumptions
-    const missing = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">!</span><h4>Missing Info / Assumptions</h4></div>'
-      + '<p class="text-xs muted" style="margin:0 0 8px">Brief thiếu vẫn xử lý tiếp — ghi lại để Lead nắm (KHÔNG block gửi duyệt).</p>'
-      + '<div class="field"><label class="label">Thông tin còn thiếu</label><textarea class="textarea cwbt-field" id="wt-missing_info_notes" rows="2" ' + ro + ' placeholder="...">' + esc(t.missing_info_notes || '') + '</textarea></div>'
-      + '<div class="field"><label class="label">Giả định khi triển khai</label><textarea class="textarea cwbt-field" id="wt-assumptions" rows="2" ' + ro + ' placeholder="...">' + esc(t.assumptions || '') + '</textarea></div>'
-      + '<div class="field"><label class="label">Câu hỏi cần xác nhận</label><textarea class="textarea cwbt-field" id="wt-questions_for_account_client" rows="2" ' + ro + ' placeholder="...">' + esc(t.questions_for_account_client || '') + '</textarea></div>'
-      + '<div class="field"><label class="label">Rủi ro nội dung</label><textarea class="textarea cwbt-field" id="wt-risk_notes" rows="2" ' + ro + ' placeholder="...">' + esc(t.risk_notes || '') + '</textarea></div>'
-      + '</section>';
+    // 4. Missing Info / Assumptions — ĐÃ GỠ theo yêu cầu (không cần thiết).
+    //    collectTaskForm giữ guard if(el) nên không đọc field đã gỡ; cột DB không đụng.
+    const missing = '';
 
     // 5. Writing Workspace (multi-output)
     const wfFields = workspaceFields(t).map(function (k) {

@@ -127,14 +127,10 @@
     { k: 'prodnote', label: 'Đã chuẩn hóa brief thiết kế, ghi chú rõ cho Media Production' }
   ];
   const CHECKLIST_MIN = 3;
+  // Wording Workspace rút gọn: chỉ 2 trường (Brief đã wording + Ghi chú cho Production).
   const WFIELDS = [
-    { k: 'wording_brief', label: 'Brief đã wording', req: true, rows: 5 },
-    { k: 'wording_objective', label: 'Mục tiêu sau khi chuẩn hóa', rows: 2 },
-    { k: 'wording_core_message', label: 'Thông điệp chính', req: true, rows: 2 },
-    { k: 'wording_required_info', label: 'Thông tin bắt buộc cần thể hiện', rows: 3 },
-    { k: 'wording_tone_style', label: 'Tone & style nội dung', rows: 2 },
-    { k: 'wording_cta', label: 'CTA đề xuất', rows: 1 },
-    { k: 'wording_production_note', label: 'Ghi chú cho Production team', rows: 2 }
+    { k: 'wording_brief', label: 'Brief đã wording', req: true, rows: 6 },
+    { k: 'wording_production_note', label: 'Ghi chú cho Production team', rows: 3 }
   ];
   const LINKS = [
     { k: 'wording_client_source_link', label: 'Client source link' },
@@ -1248,19 +1244,8 @@
         + '</section>';
     }
 
-    const missing = (isLead) ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">!</span><h4>Missing Info / Assumptions / Risk</h4></div>'
-      + '<p class="text-xs muted" style="margin:0 0 8px">Cảnh báo nghiệp vụ — KHÔNG trả brief về Account, chỉ ghi chú để Content nắm.</p>'
-      + '<div class="field"><label class="label">Thiếu thông tin (missing info)</label><textarea class="textarea" id="ctm-t-missing" rows="2" placeholder="Thông tin còn thiếu...">' + esc(t.missing_info_notes || '') + '</textarea></div>'
-      + '<div class="field"><label class="label">Giả định (assumptions)</label><textarea class="textarea" id="ctm-t-assume" rows="2" placeholder="Giả định khi làm...">' + esc(t.assumptions || '') + '</textarea></div>'
-      + '<div class="field"><label class="label">Câu hỏi cho Account/Client</label><textarea class="textarea" id="ctm-t-questions" rows="2" placeholder="Câu hỏi cần làm rõ...">' + esc(t.questions_for_account_client || '') + '</textarea></div>'
-      + '<div class="field"><label class="label">Rủi ro (risk notes)</label><textarea class="textarea" id="ctm-t-risk" rows="2" placeholder="Điểm rủi ro...">' + esc(t.risk_notes || '') + '</textarea></div>'
-      + '<div class="row" style="justify-content:flex-end"><button class="btn btn-secondary btn-sm" id="ctm-t-save-notes">Lưu ghi chú</button></div>'
-      + '</section>'
-      : ((t.missing_info_notes || t.assumptions || t.risk_notes) ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">!</span><h4>Ghi chú nghiệp vụ</h4></div>'
-        + (t.missing_info_notes ? '<p class="text-xs"><b>Thiếu info:</b> ' + esc(t.missing_info_notes) + '</p>' : '')
-        + (t.assumptions ? '<p class="text-xs"><b>Giả định:</b> ' + esc(t.assumptions) + '</p>' : '')
-        + (t.risk_notes ? '<p class="text-xs"><b>Rủi ro:</b> ' + esc(t.risk_notes) + '</p>' : '')
-        + '</section>' : '');
+    // Missing Info / Assumptions / Risk — ĐÃ GỠ theo yêu cầu (không cần thiết).
+    const missing = '';
 
     // Phase 4 — Lead Review blocks: bản thảo Content + checklist + handoff + revision history + review panel.
     const WSF = WS_ORDER.filter(function (k) { return t[k]; });
