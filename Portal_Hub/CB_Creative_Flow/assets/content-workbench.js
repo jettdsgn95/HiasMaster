@@ -31,7 +31,18 @@
   // content chỉnh được khi wording ở pha Content (kể cả pic_assigned/lead_revision),
   // và nút gửi đi qua LEAD ("Gửi Lead Content duyệt" → submitted_to_lead) — không còn gửi thẳng Account.
   const WS_CONTENT_EDITABLE = ['none', 'assigned', 'pic_assigned', 'in_progress', 'lead_revision', 'account_revision', 'client_feedback'];
-  function contentEditable(o) { return canEditWording && WS_CONTENT_EDITABLE.indexOf((o && o.brief_wording_status) || 'none') >= 0; }
+  // Order wording thuộc content HIỆN TẠI? (khóa theo brief_wording_pic_user_id, fallback tên).
+  // Dùng để lọc list + gate edit — cùng nguồn sự thật với RLS "orders content read assigned wording".
+  function owIsMine(o) {
+    if (!o) return false;
+    if (o.brief_wording_pic_user_id) return !!user.id && o.brief_wording_pic_user_id === user.id;
+    return isMine(o.brief_wording_pic);
+  }
+  function contentEditable(o) {
+    return canEditWording
+      && WS_CONTENT_EDITABLE.indexOf((o && o.brief_wording_status) || 'none') >= 0
+      && (!isContent || owIsMine(o)); // content chỉ sửa order wording của mình
+  }
 
   (function () {
     const n = document.getElementById('hpc-name'); if (n) n.textContent = user.name || 'User';
@@ -149,7 +160,11 @@
       return merged;
     });
     window.__CWB_ALL = list; // giữ full list cho auto-open theo ?id
-    ORDERS = list.filter(function (o) { return ENGAGED.indexOf(o.brief_wording_status || 'none') >= 0; });
+    // content CHỈ thấy order wording của mình (RLS đã siết, đây là lớp UI thứ 2 phòng thủ +
+    // loại order nội bộ/media khỏi list wording). admin/account/lead giữ nguyên (thấy hết).
+    ORDERS = list.filter(function (o) {
+      return ENGAGED.indexOf(o.brief_wording_status || 'none') >= 0 && (!isContent || owIsMine(o));
+    });
     if (!deptFilled) { fillDeptOptions(); deptFilled = true; }
     renderStats(); renderTable();
   }
@@ -1456,11 +1471,18 @@
     if (id) {
       const all = window.__CWB_ALL || [];
       const o = ORDERS.find(function (x) { return x.order_id === id; }) || all.find(function (x) { return x.order_id === id; });
-      if (o) { cwbView = 'orders'; renderCwbTabs(); openDrawer(o); }
+      // content: chỉ mở order wording CỦA MÌNH. Không phải/không đọc được (RLS) → toast, KHÔNG render.
+      if (o && (!isContent || owIsMine(o))) { cwbView = 'orders'; renderCwbTabs(); openDrawer(o); }
+      else if (isContent) toast('warning', 'Không có quyền xem', 'Order này không được gán cho bạn hoặc không còn thuộc bạn.');
     }
     // Deep-link Content Task (?task=) — chuyển sang view tasks + mở drawer.
     const taskId = params.get('task');
-    if (taskId) { const t = TASKS.find(function (x) { return x.id === taskId; }); if (t) { cwbView = 'tasks'; renderCwbTabs(); openTaskDrawer(t); } }
+    if (taskId) {
+      const t = TASKS.find(function (x) { return x.id === taskId; });
+      // TASKS role content đã lọc isMineTask; task của người khác không có trong TASKS.
+      if (t) { cwbView = 'tasks'; renderCwbTabs(); openTaskDrawer(t); }
+      else if (isContent) toast('warning', 'Không có quyền xem', 'Task này không được gán cho bạn hoặc không còn thuộc bạn.');
+    }
     renderCwbTabs();
   });
   // Đồng bộ nhẹ: poll 60s + reload khi quay lại tab.

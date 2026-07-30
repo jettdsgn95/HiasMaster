@@ -1,70 +1,119 @@
--- add-content-team.sql — Content Team Workspace (lead_content + content).
--- Idempotent. Chạy trong Supabase SQL Editor SAU:
---   add-brief-wording-fields.sql + add-brief-wording-workspace-fields.sql
---   + add-brief-wording-confirmation.sql + add-content-role.sql
---   (+ add-wording-deadline.sql nếu đã chạy — file này có ADD IF NOT EXISTS dự phòng).
+-- =====================================================================
+-- fix-content-role-visibility.sql — SIẾT quyền ĐỌC/GHI của role `content`
+--                                    (2026-07-30)
 --
--- Nội dung:
---   B1. Role mới `lead_content` (users_role_check).
---   B2. Status wording mới: pic_assigned / submitted_to_lead / lead_revision
---       (Lead Content đứng giữa Content và Account).
---   B3. Cột Lead review: wording_lead_note / wording_lead_reviewed_at /
---       wording_lead_reviewed_by / wording_submitted_to_lead_at (+ wording_deadline dự phòng).
---   B4. RLS: lead_content CHỈ SELECT orders + SELECT users (lookup notify).
---   B5. RPC update_brief_wording v2: thêm role lead_content, status mới, field Lead,
---       và wording_deadline (Lead đặt hạn khi gán PIC).
+-- Vấn đề: role `content` đang SELECT được TOÀN BỘ orders (wording) /
+-- content_tasks / content_plans (policy "... content read" chỉ check role,
+-- không check assigned) → data exposure, không chỉ lỗi UI.
+--
+-- Mục tiêu: content CHỈ đọc/sửa việc CỦA MÌNH:
+--   · orders: order wording được gán cho mình (brief_wording_pic_user_id /
+--     tên), CỘNG order nội bộ (internal media request) + Ads Order do chính
+--     content này liên kết qua content_task của mình — CẦN để theo dõi
+--     Production (fillMediaTrack) + sync ads_status (syncAdsOrderFromTask).
+--     KHÔNG lộ client order / order của content khác.
+--   · content_tasks: task được gán cho mình HOẶC do mình tạo.
+--   · content_plans: plan có ÍT NHẤT 1 task con liên quan đến mình.
+--   · update_brief_wording: content chỉ ghi order được gán (guard trong RPC).
+--
+-- KHÔNG đụng admin / lead_content / account (giữ nguyên quyền). KHÔNG thêm
+-- content vào is_staff(). KHÔNG cấp UPDATE orders trực tiếp cho content
+-- (vẫn qua RPC update_brief_wording). Content update content_tasks vẫn qua
+-- policy id-based (add-pic-user-id.sql).
+--
+-- Idempotent (DROP IF EXISTS trước CREATE). Chạy SAU: rls.sql +
+-- add-content-role.sql + add-content-team.sql + add-content-initiatives.sql +
+-- add-content-to-media-order.sql + add-ads-orders.sql + add-pic-user-id.sql.
+-- =====================================================================
 
--- =====================================================================
--- B1. Role 'lead_content'
--- =====================================================================
--- Superset TẤT CẢ role (tránh regress khi DB đã có lead_media/system_supervisor — re-run an toàn).
-ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
-ALTER TABLE public.users ADD CONSTRAINT users_role_check
-  CHECK (role IN ('admin','account','design','editor','client','content','lead_content','lead_media','system_supervisor'));
+-- ---------------------------------------------------------------------
+-- 1. orders — content chỉ đọc order LIÊN QUAN mình (thay policy đọc-tất-cả).
+--    Gỡ CẢ tên policy cũ ("orders content read") LẪN tên mới (idempotent).
+-- ---------------------------------------------------------------------
+DROP POLICY IF EXISTS "orders content read" ON public.orders;
+DROP POLICY IF EXISTS "orders content read assigned wording" ON public.orders;
 
--- =====================================================================
--- B2. brief_wording_status: thêm 3 status Lead Content
---     none → assigned (Inbox Lead) → pic_assigned → in_progress
---     → submitted_to_lead → (lead_revision ↺) → submitted_to_account
---     → (account_revision ↺) → sent_to_client → (client_feedback ↺)
---     → client_approved → completed
--- =====================================================================
-ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_brief_wording_status_check;
-ALTER TABLE public.orders ADD CONSTRAINT orders_brief_wording_status_check
-  CHECK (brief_wording_status IN (
-    'none','assigned','pic_assigned','in_progress',
-    'submitted_to_lead','lead_revision',
-    'submitted_to_account','account_revision',
-    'sent_to_client','client_feedback','client_approved','completed'));
+CREATE POLICY "orders content read assigned wording" ON public.orders
+FOR SELECT USING (
+  public.current_user_role() = 'content'
+  AND (
+    -- (a) Order wording được gán cho content này.
+    brief_wording_pic_user_id = auth.uid()
+    OR brief_wording_pic = (SELECT name FROM public.users WHERE id = auth.uid())
+    -- (b) Order NỘI BỘ (internal media request) tạo từ content_task của content này
+    --     → để theo dõi Production trong content-workbench (fillMediaTrack).
+    OR (orders.source_content_task_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM public.content_tasks t
+          WHERE t.id = orders.source_content_task_id
+            AND (t.assigned_pic_user_id = auth.uid()
+                 OR t.created_by_user_id = auth.uid()
+                 OR t.assigned_pic = (SELECT name FROM public.users WHERE id = auth.uid()))))
+    -- (c) Ads Order là nguồn của content_task ads được giao content này
+    --     → để sync ads_status (syncAdsOrderFromTask). CHỈ ads_order, KHÔNG client order.
+    OR (orders.order_kind = 'ads_order' AND EXISTS (
+          SELECT 1 FROM public.content_tasks t
+          WHERE t.order_id = orders.order_id AND t.source = 'ads_order'
+            AND (t.assigned_pic_user_id = auth.uid()
+                 OR t.created_by_user_id = auth.uid()
+                 OR t.assigned_pic = (SELECT name FROM public.users WHERE id = auth.uid()))))
+  )
+);
 
--- =====================================================================
--- B3. Cột Lead review + dự phòng wording_deadline
--- =====================================================================
-ALTER TABLE public.orders
-  ADD COLUMN IF NOT EXISTS wording_lead_note            text,
-  ADD COLUMN IF NOT EXISTS wording_lead_reviewed_at     timestamptz,
-  ADD COLUMN IF NOT EXISTS wording_lead_reviewed_by     text,
-  ADD COLUMN IF NOT EXISTS wording_submitted_to_lead_at timestamptz,
-  ADD COLUMN IF NOT EXISTS wording_deadline             timestamptz;
+-- ---------------------------------------------------------------------
+-- 2. content_tasks — content chỉ đọc task được gán/mình tạo.
+-- ---------------------------------------------------------------------
+DROP POLICY IF EXISTS "content_tasks content read" ON public.content_tasks;
+DROP POLICY IF EXISTS "content_tasks content read assigned" ON public.content_tasks;
 
-COMMENT ON COLUMN public.orders.wording_lead_note IS 'Ghi chú review của Lead Content (trả Content chỉnh / duyệt). KHÔNG map sang client.';
+CREATE POLICY "content_tasks content read assigned" ON public.content_tasks
+FOR SELECT USING (
+  public.current_user_role() = 'content'
+  AND (
+    assigned_pic_user_id = auth.uid()
+    OR created_by_user_id = auth.uid()
+    OR assigned_pic = (SELECT name FROM public.users WHERE id = auth.uid())
+  )
+);
 
--- =====================================================================
--- B4. RLS cho lead_content (chỉ đọc orders; users đọc để lookup notify).
---     KHÔNG thêm lead_content vào is_staff() — không thấy tasks/Task Tracker.
--- =====================================================================
-DROP POLICY IF EXISTS "orders lead_content read" ON public.orders;
-CREATE POLICY "orders lead_content read" ON public.orders
-  FOR SELECT USING (public.current_user_role() = 'lead_content');
+-- ---------------------------------------------------------------------
+-- 3. content_tasks UPDATE — giữ khóa theo user_id (đã có từ add-pic-user-id.sql;
+--    re-assert cho idempotent + đảm bảo không phải bản name cũ).
+-- ---------------------------------------------------------------------
+DROP POLICY IF EXISTS "content_tasks content update_assigned" ON public.content_tasks;
+CREATE POLICY "content_tasks content update_assigned" ON public.content_tasks
+FOR UPDATE USING (
+  public.current_user_role() = 'content'
+  AND assigned_pic_user_id = auth.uid()
+) WITH CHECK (
+  public.current_user_role() = 'content'
+  AND assigned_pic_user_id = auth.uid()
+);
 
-DROP POLICY IF EXISTS "users content team read" ON public.users;
-CREATE POLICY "users content team read" ON public.users
-  FOR SELECT USING (public.current_user_role() IN ('content','lead_content'));
+-- content INSERT own_initiative (add-content-self-initiative.sql) đã khóa
+-- assigned_pic_user_id = auth.uid() — KHÔNG đụng ở đây.
 
--- =====================================================================
--- B5. RPC update_brief_wording v2 — đường ghi orders DUY NHẤT cho
---     content / lead_content / client (whitelist cột, validate status).
--- =====================================================================
+-- ---------------------------------------------------------------------
+-- 4. content_plans — content chỉ đọc plan có task con liên quan mình.
+-- ---------------------------------------------------------------------
+DROP POLICY IF EXISTS "content_plans content read" ON public.content_plans;
+DROP POLICY IF EXISTS "content_plans content read assigned" ON public.content_plans;
+
+CREATE POLICY "content_plans content read assigned" ON public.content_plans
+FOR SELECT USING (
+  public.current_user_role() = 'content'
+  AND EXISTS (
+    SELECT 1 FROM public.content_tasks t
+    WHERE t.content_plan_id = content_plans.id
+      AND (t.assigned_pic_user_id = auth.uid()
+           OR t.created_by_user_id = auth.uid()
+           OR t.assigned_pic = (SELECT name FROM public.users WHERE id = auth.uid()))
+  )
+);
+
+-- ---------------------------------------------------------------------
+-- 5. RPC update_brief_wording — thêm guard cho role content (chỉ order được gán).
+--    CREATE OR REPLACE full body (đồng bộ với add-content-team.sql B5).
+-- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.update_brief_wording(p_order_id text, p_patch jsonb)
 RETURNS public.orders
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -80,8 +129,7 @@ BEGIN
 
   -- ---------- Nhánh INTERNAL: admin / account / lead_content / content ----------
   IF r IN ('admin','account','content','lead_content') THEN
-    -- content CHỈ được update wording order ĐƯỢC GÁN cho mình (khóa theo user_id, fallback tên).
-    -- admin/account/lead_content không bị guard này.
+    -- content CHỈ được update wording order ĐƯỢC GÁN cho mình (khóa user_id, fallback tên).
     IF r = 'content' THEN
       IF NOT (
         o.brief_wording_pic_user_id = auth.uid()
@@ -161,6 +209,13 @@ END $$;
 
 GRANT EXECUTE ON FUNCTION public.update_brief_wording(text, jsonb) TO authenticated;
 
--- Verify (tùy chọn):
--- SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint WHERE conname IN ('users_role_check','orders_brief_wording_status_check');
--- SELECT policyname FROM pg_policies WHERE tablename IN ('orders','users') ORDER BY policyname;
+-- ---------------------------------------------------------------------
+-- 6. Verify (chạy riêng để kiểm):
+-- ---------------------------------------------------------------------
+-- SELECT tablename, policyname, cmd FROM pg_policies
+--   WHERE tablename IN ('orders','content_tasks','content_plans')
+--     AND policyname ILIKE '%content%' ORDER BY tablename, policyname;
+-- Test impersonation THẬT qua app: login content_a chỉ thấy order/task/plan
+-- của mình; deep-link sang item của content_b bị chặn; update order của B → RPC ném exception.
+
+SELECT 'fix-content-role-visibility.sql OK' AS result;

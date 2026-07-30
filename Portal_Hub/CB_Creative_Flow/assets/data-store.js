@@ -880,6 +880,8 @@
         if (filters && filters.order_id)        q = q.eq('order_id', filters.order_id);
         if (filters && filters.status)          q = q.eq('status', filters.status);
         if (filters && filters.assigned_pic)    q = q.eq('assigned_pic', filters.assigned_pic);
+        if (filters && filters.assigned_pic_user_id) q = q.eq('assigned_pic_user_id', filters.assigned_pic_user_id);
+        if (filters && filters.created_by_user_id)   q = q.eq('created_by_user_id', filters.created_by_user_id);
         const { data, error } = await q;
         if (error) console.warn('[store.contentTasks.list]', error);
         return data || [];
