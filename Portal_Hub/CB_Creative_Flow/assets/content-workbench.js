@@ -462,21 +462,18 @@
     } catch (e) { console.warn('[cwb] notify leads failed:', e); }
   }
   // Notify nhiều role active (fire-and-forget). type base-CHECK-safe để chạy không phụ thuộc migration.
+  // Cùng lý do: RPC thay cho lookup users trực tiếp (2026-07-31). Trả số noti / -1 nếu lỗi.
   async function notifyRolesWb(o, roles, type, title, message, link) {
-    if (!o || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    if (!o || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return 0;
     try {
-      const { data: us } = await window.MH.supabase
-        .from('users').select('id').in('role', roles).eq('status', 'active');
-      if (Array.isArray(us) && us.length) {
-        await window.MH.supabase.from('notifications').insert(us.map(function (u) {
-          return {
-            user_id: u.id, type: type, title: title, message: message,
-            link: link || ('content-workbench.html?id=' + (o.order_id || '')),
-            related_entity_type: 'orders', related_entity_id: o.order_id
-          };
-        }));
-      }
-    } catch (e) { console.warn('[cwb] notifyRoles failed:', e); }
+      const { data, error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: roles, p_type: type, p_title: title, p_message: message || null,
+        p_link: link || ('content-workbench.html?id=' + (o.order_id || '')),
+        p_entity_type: 'orders', p_entity_id: o.order_id || null
+      });
+      if (error) { console.warn('[cwb] notify_roles error (chạy add-notify-roles-rpc.sql?):', error); return -1; }
+      return typeof data === 'number' ? data : 0;
+    } catch (e) { console.warn('[cwb] notifyRolesWb failed:', e); return -1; }
   }
   // Notify PIC Content theo tên (brief_wording_pic) → lookup uuid qua store helper.
   async function notifyPicWb(o, name, title, message) {
@@ -1228,16 +1225,19 @@
       return false;
     }
   }
+  // Xem ghi chú ở content-team.js: chuyển sang RPC `notify_roles` (2026-07-31) vì bản
+  // lookup users trực tiếp phụ thuộc RLS người gửi + nuốt lỗi → noti không tới mà im lặng.
+  // Trả về số noti đã gửi, -1 nếu lỗi.
   async function notifyRoles(roles, type, title, message, link, orderId) {
-    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return 0;
     try {
-      const { data: us } = await window.MH.supabase.from('users').select('id').in('role', roles).eq('status', 'active');
-      if (Array.isArray(us) && us.length) {
-        await window.MH.supabase.from('notifications').insert(us.map(function (u) {
-          return { user_id: u.id, type: type, title: title, message: message, link: link, related_entity_type: 'orders', related_entity_id: orderId || null };
-        }));
-      }
-    } catch (e) { console.warn('[cwb] notifyRoles failed:', e); }
+      const { data, error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: roles, p_type: type, p_title: title, p_message: message || null,
+        p_link: link || null, p_entity_type: 'orders', p_entity_id: orderId || null
+      });
+      if (error) { console.warn('[cwb] notify_roles error (chạy add-notify-roles-rpc.sql?):', error); return -1; }
+      return typeof data === 'number' ? data : 0;
+    } catch (e) { console.warn('[cwb] notifyRoles failed:', e); return -1; }
   }
   /* ---------- Phase 5 — PIC tạo Internal Media Request inline ---------- */
   async function createMediaRequestInline(t) {
@@ -1314,9 +1314,12 @@
     // Ads: cập nhật Ads Order gốc (status + link media order) để Lead drawer/Client status theo kịp.
     if (adsTask) syncAdsOrderFromTask(t, { ads_status: 'media_request_created', ads_media_order_id: orderId },
       ['submitted', 'lead_checking', 'assigned_to_content', 'writing_ads_content', 'submitted_to_lead', 'lead_revision', 'lead_approved', 'need_creative']);
-    notifyRoles(['admin', 'account', 'lead_media'], 'order_new', adsTask ? '🎬 Internal Media Request (Ads)' : '🎬 Internal Media Request từ Content',
+    // await + kiểm số noti: PIC phải biết ngay nếu Media KHÔNG nhận được request
+    // (trước 2026-07-31 gọi fire-and-forget + nuốt lỗi → Media không hay biết).
+    const sentMedia = await notifyRoles(['admin', 'account', 'lead_media'], 'order_new', adsTask ? '🎬 Internal Media Request (Ads)' : '🎬 Internal Media Request từ Content',
       orderId + ' · ' + (vals.final_headline || t.title || '') + ' — cần Media sản xuất (push Production).',
       'database-orders.html?id=' + orderId, orderId);
+    if (sentMedia <= 0) toast('warning', 'Order đã tạo nhưng CHƯA báo được Media', orderId + ' — báo Lead Media/Account trực tiếp giúp.');
     notifyLeadTask(t, '🎬 PIC đã gửi Media Request', (t.title || 'Content task') + ' → ' + orderId + ' (order nội bộ' + (adsTask ? ' · phục vụ Ads ' + t.order_id : '') + ').');
     toast('success', 'Đã gửi sang Media', orderId + ' — order nội bộ, không lộ Client Portal.');
     reloadTaskAndReopen();

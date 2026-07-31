@@ -235,15 +235,28 @@
   }
 
   /* ---------- Notifications (fire-and-forget, pattern notifyContentWording) ---------- */
+  /* Gửi noti theo ROLE — qua RPC `notify_roles` (SECURITY DEFINER, add-notify-roles-rpc.sql).
+     ⚠ 2026-07-31: trước đây hàm này tự `.from('users').select().in('role',…)` rồi insert.
+     Cách đó phụ thuộc RLS bảng `users` của người GỬI và **nuốt lỗi trong catch** → noti
+     không tới mà không ai biết (đã tái hiện: 2 Internal Media Request ngày 24/07 KHÔNG
+     sinh được dòng noti nào cho admin/account/lead_media). RPC lookup + insert hộ trong DB,
+     trả về SỐ DÒNG đã tạo nên gọi được là biết ngay có tới hay không.
+     Trả về: số noti đã gửi, hoặc -1 nếu lỗi (để chỗ gọi cảnh báo người dùng). */
   async function notifyRoles(roles, payload) {
-    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return 0;
     try {
-      const { data: us } = await window.MH.supabase
-        .from('users').select('id').in('role', roles).eq('status', 'active');
-      if (Array.isArray(us) && us.length) {
-        await window.MH.supabase.from('notifications').insert(us.map(function (u) { return Object.assign({ user_id: u.id }, payload); }));
-      }
-    } catch (e) { console.warn('[ctm] notify roles failed:', e); }
+      const { data, error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: roles,
+        p_type: payload.type,
+        p_title: payload.title,
+        p_message: payload.message || null,
+        p_link: payload.link || null,
+        p_entity_type: payload.related_entity_type || null,
+        p_entity_id: payload.related_entity_id || null
+      });
+      if (error) { console.warn('[ctm] notify_roles error (chạy add-notify-roles-rpc.sql?):', error); return -1; }
+      return typeof data === 'number' ? data : 0;
+    } catch (e) { console.warn('[ctm] notify roles failed:', e); return -1; }
   }
   async function notifyByName(name, payload) {
     if (!window.MH || !window.MH.supabaseEnabled || !window.MH.store) return;
@@ -1894,7 +1907,10 @@
       deliverable_type: vals.deliverable_type
     });
     pushTaskActivity(t.id, 'Lead tạo Internal Media Request → ' + orderId);
-    notifyRoles(['admin', 'account', 'lead_media'], { type: 'order_new', title: '🎬 Internal Media Request từ Content', message: orderId + ' · ' + (vals.final_headline || t.title || '') + ' — cần Media sản xuất (push Production).', link: 'database-orders.html?id=' + orderId, related_entity_type: 'orders', related_entity_id: orderId });
+    // Báo Media: await + kiểm số noti đã gửi. Trước 2026-07-31 gọi fire-and-forget nên
+    // Media KHÔNG nhận được request mà Content vẫn thấy toast success (im lặng, sai lệch).
+    const sentN = await notifyRoles(['admin', 'account', 'lead_media'], { type: 'order_new', title: '🎬 Internal Media Request từ Content', message: orderId + ' · ' + (vals.final_headline || t.title || '') + ' — cần Media sản xuất (push Production).', link: 'database-orders.html?id=' + orderId, related_entity_type: 'orders', related_entity_id: orderId });
+    if (sentN <= 0) toast('warning', 'Order đã tạo nhưng CHƯA báo được Media', orderId + ' — vào Client Orders báo Lead Media/Account trực tiếp. (Kiểm tra RPC notify_roles + user role lead_media/account đang active.)');
     if (t.content_plan_id) await syncPlanStatus(t.content_plan_id);
     toast('success', 'Đã tạo Media Request', orderId + ' — order nội bộ, không lộ Client Portal.');
     closeModal();
@@ -2591,7 +2607,8 @@
     try { await window.MH.store.orders.create(payload); }
     catch (e) { console.warn('[ctm-ads] create ads-media order failed:', e); toast('warning', 'Chưa tạo được', 'Kiểm tra add-ads-orders.sql + RLS lead_content insert ads-media.'); return false; }
     await persistAds(o, { ads_status: 'media_request_created', ads_media_order_id: orderId }, 'Tạo Internal Media Request → ' + orderId);
-    notifyRoles(['admin', 'account', 'lead_media'], { type: 'order_new', title: 'Internal Media Request (Ads)', message: orderId + ' · ' + (o.project_name || '') + ' — creative cho Ads (push Production).', link: 'database-orders.html?id=' + orderId, related_entity_type: 'orders', related_entity_id: orderId });
+    const sentAds = await notifyRoles(['admin', 'account', 'lead_media'], { type: 'order_new', title: 'Internal Media Request (Ads)', message: orderId + ' · ' + (o.project_name || '') + ' — creative cho Ads (push Production).', link: 'database-orders.html?id=' + orderId, related_entity_type: 'orders', related_entity_id: orderId });
+    if (sentAds <= 0) toast('warning', 'Order đã tạo nhưng CHƯA báo được Media', orderId + ' — báo Lead Media/Account trực tiếp.');
     toast('success', 'Đã tạo Media Request', orderId + ' — nội bộ, không lộ Client.');
     closeModal();
     await reloadAndReopenAds();
