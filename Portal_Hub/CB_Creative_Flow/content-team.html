@@ -116,7 +116,7 @@
       <button class="saved-view-chip" data-ctm-view="account-followup">Content Follow-up <span class="count" id="ctm-count-account">0</span></button>
       <!-- Ẩn khỏi nav chính — giữ cho deep-link/Action Center (renderTabs không hiện) -->
       <button class="saved-view-chip" data-ctm-view="ads-orders">Ads Orders <span class="count" id="ctm-count-ads">0</span></button>
-      <button class="saved-view-chip" data-ctm-view="initiatives">Task nội bộ <span class="count" id="ctm-count-initiatives">0</span></button>
+      <button class="saved-view-chip" data-ctm-view="initiatives">Task nội bộ Content <span class="count" id="ctm-count-initiatives">0</span></button>
       <button class="saved-view-chip" data-ctm-view="board">Content Board</button>
       <button class="saved-view-chip" data-ctm-view="mine">Việc của tôi <span class="count" id="ctm-count-mine">0</span></button>
     </div>
@@ -127,6 +127,24 @@
       <h3 class="ctm-section-title" style="margin:2px 0 10px">Action Center <span class="text-xs muted">— việc cần xử lý</span></h3>
       <div class="ctm-action-center" id="ctm-action-center"></div>
       <div class="cwb-stats" id="ctm-stats"></div>
+
+      <!-- Brief §5.1.1: action trước, KPI sau — rủi ro deadline + workload lên ngay
+           sau Action Center; khối KPI kỹ thuật xuống dưới. -->
+      <div class="ctm-cards-2">
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Trễ hạn wording</h3><span class="ctm-card-meta" id="ctm-overdue-count">0</span></div>
+          <div class="ctm-card-body" id="ctm-overdue-list"></div>
+        </div>
+        <div class="ctm-card">
+          <div class="ctm-card-head">
+            <h3>Workload theo PIC Content</h3>
+            <button type="button" class="ctm-card-action" data-ctm-view="workload">Xem tất cả
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="ctm-card-body" id="ctm-workload"></div>
+        </div>
+      </div>
 
       <!-- Phase 6 — Content Tasks & Plans KPI -->
       <h3 class="ctm-section-title" style="margin:6px 0 10px">Content Tasks &amp; Plans <span class="text-xs muted">(Deep Workflow)</span></h3>
@@ -169,16 +187,6 @@
         <div class="ctm-card">
           <div class="ctm-card-head"><h3>Ads cần chú ý</h3><span class="ctm-card-meta" id="ctm-ads-attn-count">0</span></div>
           <div class="ctm-card-body" id="ctm-ads-attn"></div>
-        </div>
-      </div>
-      <div class="ctm-cards-2">
-        <div class="ctm-card">
-          <div class="ctm-card-head"><h3>Workload theo PIC Content</h3></div>
-          <div class="ctm-card-body" id="ctm-workload"></div>
-        </div>
-        <div class="ctm-card">
-          <div class="ctm-card-head"><h3>Trễ hạn wording</h3><span class="ctm-card-meta" id="ctm-overdue-count">0</span></div>
-          <div class="ctm-card-body" id="ctm-overdue-list"></div>
         </div>
       </div>
       <div class="ctm-card">
@@ -249,10 +257,19 @@
            đọc `orders.brief_wording_status`, không bao giờ chứa content task. -->
       <div class="table-card ctm-panel" style="margin-top:14px">
         <div class="table-head">
-          <h3>Task nội bộ — chờ Lead duyệt</h3>
+          <h3>Task nội bộ Content — chờ Lead duyệt</h3>
           <span class="rinfo" id="ctm-inbox-ct-count">0</span>
         </div>
         <div class="ctm-panel-body" id="ctm-inbox-ct"></div>
+      </div>
+      <!-- Ads Order cần xử lý (brief §5.1.3) — tab "Ads Orders" đã ẩn khỏi nav,
+           Lead vào Ads từ đây hoặc từ Action Center. -->
+      <div class="table-card ctm-panel" style="margin-top:14px">
+        <div class="table-head">
+          <h3>Ads Order — cần xử lý</h3>
+          <span class="rinfo" id="ctm-inbox-ads-count">0</span>
+        </div>
+        <div class="ctm-panel-body" id="ctm-inbox-ads"></div>
       </div>
     </section>
 
@@ -348,7 +365,8 @@
     <!-- ═ VIEW: LIST ═ -->
     <section id="ctm-view-list" hidden>
       <div class="cwb-filters">
-        <div class="s-wrap"><input class="input" type="search" id="ctm-search" placeholder="Tìm Order ID / Project..." /></div>
+        <div class="s-wrap"><input class="input" type="search" id="ctm-search" placeholder="Tìm mã / project / campaign..." /></div>
+        <select class="select" id="ctm-filter-source"><option value="">Mọi nguồn</option></select>
         <select class="select" id="ctm-filter-status"><option value="">Mọi trạng thái</option></select>
         <select class="select" id="ctm-filter-type"><option value="">Mọi loại</option></select>
         <select class="select" id="ctm-filter-pic"><option value="">Mọi PIC</option></select>
@@ -359,8 +377,8 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Order ID</th><th>Project / Campaign</th><th>Loại</th><th>Ưu tiên</th>
-                <th>Hạn wording</th><th>Trạng thái</th><th>Vòng</th><th>PIC Content</th><th></th>
+                <th>Mã</th><th>Nguồn</th><th>Project / Task</th><th>Ưu tiên</th>
+                <th>Deadline</th><th>Trạng thái</th><th>Bước tiếp theo</th><th>Vòng</th><th>PIC Content</th><th></th>
               </tr>
             </thead>
             <tbody id="ctm-list-tbody"></tbody>

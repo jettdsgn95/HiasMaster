@@ -197,6 +197,80 @@
     return m ? m[1] : null;
   }
   function isWordingApproved(o) { const w = wordingStatusOf(o); return w === 'client_approved' || w === 'completed'; }
+
+  /* ---------- MEDIA CAPTURE ROUTING (2026-07-31) ----------
+     Media Order (Quay/Chụp/Video) KHÔNG đi cổng Content Wording — owner là Lead
+     Media, cổng thay thế là LOGISTICS (ngày/giờ · địa điểm · người đón team ·
+     dịch vụ · output · PIC). Media CÓ SCRIPT thì gate bổ sung là Content Script
+     Subtask được duyệt, KHÔNG phải wording của order.
+     Helper dùng chung ở app.js (window.MH.routing) — fallback nội bộ phòng
+     trường hợp app.js chưa load kịp (thứ tự script luôn app.js trước, nhưng
+     giữ fallback để file này không phụ thuộc cứng). */
+  const ROUTING = (window.MH && window.MH.routing) || {
+    isAdsOrder: (o) => !!o && (o.order_kind === 'ads_order' || o.request_type === 'ads'),
+    isMediaOrder: (o) => !!o && ['media', 'shoot', 'photo', 'video'].includes(o.request_type) && !(o.order_kind === 'ads_order' || o.request_type === 'ads'),
+    mediaNeedsContentScript: (o) => !!o && (o.media_script_required === true || o.needs_script === true),
+    requiresContentWording: (o) => !!o && ['design', 'digital', 'slide'].includes(o.request_type)
+  };
+  const isMediaOrder = (o) => ROUTING.isMediaOrder(o);
+  const mediaNeedsScript = (o) => ROUTING.mediaNeedsContentScript(o);
+  // Cổng wording CHỈ áp cho luồng Design/Digital/Slide. Media (kể cả có script)
+  // không bao giờ bị khoá Confirm Brief bởi wording.
+  function wordingGateApplies(o) { return !!o && !isMediaOrder(o) && !ROUTING.isAdsOrder(o) && ROUTING.requiresContentWording(o); }
+  const MEDIA_LOGISTICS_LABEL = { pending: 'Chưa kiểm tra', checking: 'Đang kiểm tra', need_info: 'Thiếu thông tin', confirmed: 'Đã chốt logistics' };
+  const MEDIA_SCHEDULE_LABEL = { pending: 'Chưa chốt lịch', confirmed: 'Đã chốt lịch', rescheduled: 'Đã dời lịch', cancelled: 'Đã huỷ lịch' };
+  const MEDIA_SCRIPT_LABEL = {
+    not_required: 'Không cần script', required: 'Cần script — chưa tạo subtask', subtask_created: 'Đã tạo subtask Content',
+    in_progress: 'Content đang viết', submitted_to_lead: 'Chờ Lead Content duyệt', lead_revision: 'Lead trả chỉnh',
+    lead_approved: 'Lead Content đã duyệt', script_approved: 'Script đã chốt', cancelled: 'Đã huỷ script'
+  };
+  function mediaLogisticsOf(o) { return (o && o.media_logistics_status) || 'pending'; }
+  function mediaScriptStatusOf(o) { return (o && o.media_script_status) || (mediaNeedsScript(o) ? 'required' : 'not_required'); }
+  function isMediaScriptApproved(o) { return mediaScriptStatusOf(o) === 'script_approved'; }
+  // Điều kiện logistics đủ để Push (brief §11.1): thiếu mục nào trả về mục đó.
+  function mediaLogisticsMissing(o) {
+    const miss = [];
+    if (mediaLogisticsOf(o) !== 'confirmed') miss.push('chốt logistics');
+    if (!o.shoot_date) miss.push('ngày quay/chụp');
+    if (!o.shoot_time) miss.push('giờ quay/chụp');
+    if (!o.shoot_location) miss.push('địa điểm');
+    if (!o.onsite_contact) miss.push('người liên hệ onsite');
+    if (!o.onsite_phone) miss.push('SĐT onsite');
+    if (mediaNeedsScript(o) && !isMediaScriptApproved(o)) miss.push('script được duyệt');
+    return miss;
+  }
+  // Block tóm tắt Media trong Order drawer (thay chỗ của Content Wording).
+  // CHỈ đọc + deep-link sang Media Operations — mọi hành động vận hành Media
+  // (chốt logistics/lịch, tạo script subtask, gán PIC dựng) nằm ở workspace của
+  // Lead Media để không nhân đôi logic ở 2 nơi.
+  function buildMediaOpsSummary(o) {
+    const lg = mediaLogisticsOf(o);
+    const sch = o.media_schedule_status || 'pending';
+    const scr = mediaScriptStatusOf(o);
+    const needScript = mediaNeedsScript(o);
+    const miss = mediaLogisticsMissing(o);
+    const v = (x) => x ? escapeHtml(x) : '<em class="muted">—</em>'; // local: `v` của buildDrawer là biến trong hàm đó
+    const chip = (txt, cls) => `<span class="badge ${cls}">${escapeHtml(txt)}</span>`;
+    const lgCls = lg === 'confirmed' ? 'badge-success' : (lg === 'need_info' ? 'badge-danger' : 'badge-warning');
+    const schCls = sch === 'confirmed' ? 'badge-success' : (sch === 'cancelled' ? 'badge-danger' : 'badge-warning');
+    const scrCls = scr === 'script_approved' ? 'badge-success' : (scr === 'lead_revision' ? 'badge-danger' : 'badge-warning');
+    return `
+      <section class="drawer-block ow-media-ops">
+        <div class="drawer-block-head"><span class="block-letter">M</span><h4>Media — Logistics &amp; Lịch quay/chụp</h4></div>
+        <p class="text-xs muted" style="margin:0 0 10px">Order Quay/Chụp/Video <b>không đi qua Content Wording</b>. Owner là <b>Lead Media</b> — chốt logistics, lịch và PIC trong Media Operations.</p>
+        <dl>
+          <dt>Logistics</dt><dd>${chip(MEDIA_LOGISTICS_LABEL[lg] || lg, lgCls)}</dd>
+          <dt>Lịch quay/chụp</dt><dd>${chip(MEDIA_SCHEDULE_LABEL[sch] || sch, schCls)}${o.shoot_date ? ` <span class="text-xs muted">· ${escapeHtml(fmtDeadlineDate(o.shoot_date))}${o.shoot_time ? ' · ' + escapeHtml(o.shoot_time) : ''}</span>` : ''}</dd>
+          <dt>Địa điểm</dt><dd>${v(o.shoot_location)}</dd>
+          <dt>Liên hệ onsite</dt><dd>${o.onsite_contact ? escapeHtml(o.onsite_contact) + (o.onsite_phone ? ' · ' + escapeHtml(o.onsite_phone) : '') : '<em class="muted">—</em>'}</dd>
+          <dt>Cần script/content</dt><dd>${needScript ? chip(MEDIA_SCRIPT_LABEL[scr] || scr, scrCls) : '<em class="muted">Không cần</em>'}</dd>
+        </dl>
+        ${miss.length ? `<p class="text-xs" style="margin:8px 0 0;color:var(--danger)">Chưa đủ điều kiện Push: ${escapeHtml(miss.join(' · '))}</p>` : '<p class="text-xs" style="margin:8px 0 0;color:var(--success,#0A7A52)">Đã đủ điều kiện Push Production.</p>'}
+        <div class="row" style="margin-top:10px">
+          <a class="btn btn-secondary btn-sm" href="media-operations.html?id=${escapeHtml(o.order_id)}">Mở trong Media Operations →</a>
+        </div>
+      </section>`;
+  }
   // Trễ hạn wording: có wording_deadline, chưa duyệt/hoàn tất, chưa hủy, và đã quá hạn.
   function isWordingOverdue(o) {
     if (!o || !o.wording_deadline) return false;
@@ -818,6 +892,30 @@
   }
 
   function buildPushCheck(o) {
+    // Media: checklist logistics thay cho checklist wording (brief §11).
+    if (isMediaOrder(o)) {
+      const mchecks = [
+        { ok: mediaLogisticsOf(o) === 'confirmed', label: 'Lead Media đã chốt logistics' },
+        { ok: !!o.shoot_date && !!o.shoot_time, label: 'Có ngày + giờ quay/chụp' },
+        { ok: !!o.shoot_location, label: 'Có địa điểm' },
+        { ok: !!o.onsite_contact && !!o.onsite_phone, label: 'Có người liên hệ onsite + SĐT' },
+        { ok: !!o.production_pic_video || !!o.production_pic_photo || !!o.production_pic_editor || !!o.production_pic, label: 'Đã gán ít nhất 1 PIC Media' },
+        { ok: !!o.internal_deadline, label: 'Đã set Internal Deadline' },
+        { ok: o.production_status !== 'cancelled' && o.account_status !== 'rejected', label: 'Order chưa bị hủy' }
+      ];
+      if (mediaNeedsScript(o)) mchecks.splice(1, 0, { ok: isMediaScriptApproved(o), label: 'Content Script Subtask đã được duyệt' });
+      const mOk = mchecks.every((c) => c.ok);
+      return `<div class="push-check ${mOk ? '' : 'is-fail'}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${
+          mOk ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+        }</svg>
+        <div>
+          <b>${mOk ? 'Đủ điều kiện chuyển sang Production Board' : 'Thiếu điều kiện chuyển Production Board'}</b>
+          <ul>${mchecks.map((c) => `<li class="${c.ok ? 'ok' : ''}">${escapeHtml(c.label)}</li>`).join('')}</ul>
+          <p class="text-xs muted" style="margin:6px 0 0">Media không cần Content Wording / Client duyệt wording.</p>
+        </div>
+      </div>`;
+    }
     const checks = [
       { ok: isWordingApproved(o), label: 'Content Wording đã được Client xác nhận' },
       { ok: o.account_status === 'confirmed', label: 'Brief đã được xác nhận' },
@@ -1074,6 +1172,16 @@
         return { title: 'Push sang Task Tracker', detail: 'Brief đã đủ điều kiện, có thể tạo task sản xuất.' };
       }
       default: { // brief
+        // Media: owner là Lead Media, cổng là logistics — không nhắc Content Wording.
+        if (isMediaOrder(o)) {
+          const miss = mediaLogisticsMissing(o);
+          if (mediaNeedsScript(o) && !isMediaScriptApproved(o)) {
+            return { title: 'Chờ script Content', detail: `Order cần kịch bản (${MEDIA_SCRIPT_LABEL[mediaScriptStatusOf(o)] || ''}). Lead Media theo dõi Content Script Subtask trong Media Operations; script duyệt xong mới push Production.` };
+          }
+          if (miss.length) return { title: 'Lead Media chốt logistics', detail: `Còn thiếu: ${miss.join(' · ')}. Mở Media Operations để chốt lịch/địa điểm/liên hệ onsite.` };
+          if (o.account_status !== 'confirmed') return { title: 'Xác nhận brief', detail: 'Logistics đã đủ — xác nhận brief rồi gán PIC Media và push Production.' };
+          return { title: 'Gán PIC & Push Production', detail: 'Logistics đã chốt. Gán PIC Quay/Chụp/Dựng và push sang Task Tracker.' };
+        }
         if (o.account_status === 'wording') {
           return isWordingApproved(o)
             ? { title: 'Xác nhận brief', detail: 'Content Wording đã được Client xác nhận — có thể Confirm Brief.' }
@@ -1325,7 +1433,7 @@
         ${buildBriefChecklist(o)}
       </section>
 
-      ${buildWordingWorkflow(o)}
+      ${isMediaOrder(o) ? buildMediaOpsSummary(o) : buildWordingWorkflow(o)}
 
       <section class="drawer-block ow-internal">
         <div class="drawer-block-head"><span class="block-letter">C</span><h4>Điều phối nội bộ</h4></div>
@@ -1834,9 +1942,11 @@
     const pushStage  = !isCancelled && isConfirmed && !isPushed && !hasPreview && !hasFinal;
 
     [btnCheck, btnNeed, btnWording, btnConfirm, btnPush, btnCancel].forEach((b) => { if (b) b.disabled = false; });
+    // Media Order KHÔNG đi Content Wording (2026-07-31) → ẩn hẳn nút chuyển wording.
+    const wordingFlow = !isMediaOrder(o);
     show(btnCheck,   briefStage);
     show(btnNeed,    briefStage);
-    show(btnWording, briefStage);
+    show(btnWording, briefStage && wordingFlow);
     show(btnConfirm, briefStage);
     show(btnPush,    pushStage);
 
@@ -1853,7 +1963,8 @@
       // Đã chuyển Content Wording rồi (status khác 'none') → khóa nút "Chuyển Content Wording".
       if (btnWording && ws !== 'none') btnWording.disabled = true;
       // Rule 1 — Confirm Brief bị khóa tới khi Content Wording được Client xác nhận.
-      if (btnConfirm && !approved) btnConfirm.disabled = true;
+      // CHỈ áp cho luồng cần wording; Media confirm brief bình thường (cổng logistics ở bước Push).
+      if (btnConfirm && wordingGateApplies(o) && !approved) btnConfirm.disabled = true;
     }
 
     // Hủy đơn = "Hành động khác", tách riêng; ẩn khi đã hủy / hoàn thành / đã đánh giá.
@@ -2114,7 +2225,9 @@
   function updateStatus(o, newStatus, msg) {
     if (!o) return;
     // Phase 2 Rule 1 — hard gate: không cho Confirm Brief khi Content Wording chưa được Client xác nhận.
-    if (newStatus === 'confirmed' && !isWordingApproved(o)) {
+    // 2026-07-31: gate CHỈ áp cho luồng cần wording (design/digital/slide). Media
+    // (quay/chụp/video) có cổng riêng là logistics — kiểm ở bước Push, không chặn Confirm.
+    if (newStatus === 'confirmed' && wordingGateApplies(o) && !isWordingApproved(o)) {
       window.MH.toast({ type: 'warning', title: 'Chưa thể Confirm Brief', message: 'Order cần hoàn tất Content Wording và được Client xác nhận trước khi Confirm Brief.' });
       return;
     }
@@ -2296,9 +2409,13 @@
   async function pushToProduction(o) {
     if (!o) return;
     const isMedia = o.request_type === 'media';
-    const hasPic = isMedia ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic;
+    const mediaRoute = isMediaOrder(o); // media/shoot/photo/video (không phải ads)
+    const hasPic = mediaRoute
+      ? (!!o.production_pic_video || !!o.production_pic_photo || !!o.production_pic_editor || !!o.production_pic)
+      : (isMedia ? (!!o.production_pic_video || !!o.production_pic_photo) : !!o.production_pic);
     const checks = {
-      wording: isWordingApproved(o),
+      // Media: cổng là LOGISTICS (+ script approved nếu có script), KHÔNG phải wording.
+      wording: mediaRoute ? true : (wordingGateApplies(o) ? isWordingApproved(o) : true),
       brief: o.account_status === 'confirmed',
       pic: hasPic,
       deadline: !!o.internal_deadline,
@@ -2307,8 +2424,9 @@
     };
     const missing = [];
     if (!checks.wording) missing.push('Content Wording được Client xác nhận');
+    if (mediaRoute) mediaLogisticsMissing(o).forEach((m) => missing.push(m));
     if (!checks.brief) missing.push('xác nhận brief');
-    if (!checks.pic) missing.push(isMedia ? 'gán PIC Quay hoặc Chụp' : 'gán P.I.C');
+    if (!checks.pic) missing.push(mediaRoute ? 'gán ít nhất 1 PIC Media' : 'gán P.I.C');
     if (!checks.deadline) missing.push('Internal Deadline');
     if (!checks.notCancelled) missing.push('order chưa bị hủy');
     if (!checks.deliverable) missing.push('hạng mục');
@@ -2347,6 +2465,8 @@
       plan = [];
       if (o.production_pic_video) plan.push({ pic: o.production_pic_video, taskType: 'shoot', label: 'Quay', items: deliverables.filter(isQuayItem) });
       if (o.production_pic_photo) plan.push({ pic: o.production_pic_photo, taskType: 'photo', label: 'Chụp', items: deliverables.filter((d) => !isQuayItem(d)) });
+      // PIC dựng/hậu kỳ (add-media-operations.sql) → task Edit riêng, sau buổi quay.
+      if (o.production_pic_editor) plan.push({ pic: o.production_pic_editor, taskType: 'edit', label: 'Dựng / Hậu kỳ', items: [] });
     } else {
       plan = [{ pic: o.production_pic, taskType: o.request_type || 'design', label: '', items: deliverables }];
     }

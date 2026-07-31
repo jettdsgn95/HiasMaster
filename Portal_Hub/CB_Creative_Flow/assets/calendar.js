@@ -24,7 +24,11 @@
   try { USER = JSON.parse(localStorage.getItem('mh-user') || 'null'); } catch (e) { USER = null; }
   if (!USER || !USER.role) return; // auth guard inline đã redirect; phòng hờ
   const ROLE = USER.role;
-  const IS_FULL = ROLE === 'admin' || ROLE === 'account' || ROLE === 'system_supervisor'; // supervisor = full read-only view
+  // lead_media = quyền vận hành ngang Account (add-media-lead-production.sql) + là owner
+  // Media Order → phải thấy full lịch (deadline order, bàn giao) và click order mở được
+  // Client Orders. Thiếu ở đây trước 2026-07-31 khiến Lead Media không có event "Bàn giao",
+  // navTarget cho order trả '' (click không mở được gì) và scope note rỗng.
+  const IS_FULL = ROLE === 'admin' || ROLE === 'account' || ROLE === 'system_supervisor' || ROLE === 'lead_media'; // supervisor = full read-only view
   const IS_PRODUCTION = ROLE === 'design' || ROLE === 'editor';
   const IS_CONTENT = ROLE === 'content' || ROLE === 'lead_content'; // team Content (gồm Lead)
 
@@ -36,7 +40,9 @@
   const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']; // Monday-first (giống ref)
   const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
   const TYPE_LABEL = { media: 'Quay / Chụp ảnh', shoot: 'Quay', photo: 'Chụp ảnh', design: 'Design / POSM', digital: 'Digital', video: 'Video', motion: 'Motion', slide: 'Slide', ads: 'Ads / Post', other: 'Khác' };
-  const EVENT_LABEL = { 'task-deadline': 'Deadline Task', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording', 'ct-deadline': 'Hạn Content Task', 'cplan-deadline': 'Hạn Content Plan', 'ads-launch': 'Lịch lên Ads' };
+  // Nhãn ghi RÕ team: 'task-deadline' = tasks (Media/Production) · 'ct-deadline' = content_tasks
+  // (Content). 2 bảng khác nhau, trước đây bên Media không gắn nhãn nên dễ đọc nhầm là task Content.
+  const EVENT_LABEL = { 'task-deadline': 'Deadline Task Media', 'order-deadline': 'Deadline Order', shoot: 'Lịch quay/chụp', delivery: 'Bàn giao', 'wording-deadline': 'Hạn Content Wording', 'ct-deadline': 'Hạn Content Task', 'cplan-deadline': 'Hạn Content Plan', 'ads-launch': 'Lịch lên Ads' };
 
   /* ---------- State ---------- */
   let cursor = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); // tháng đang xem (Month/Week)
@@ -535,7 +541,9 @@
   /* ---------- Scope note ---------- */
   function setScopeNote() {
     if (!elScopeNote) return;
-    if (IS_FULL) elScopeNote.textContent = 'Bạn đang xem TOÀN BỘ lịch của team (Admin/Account).';
+    if (IS_FULL) elScopeNote.textContent = ROLE === 'lead_media'
+      ? 'Bạn đang xem TOÀN BỘ lịch của team (Lead Media) — lịch quay/chụp, deadline, bàn giao.'
+      : 'Bạn đang xem TOÀN BỘ lịch của team (Admin/Account).';
     else if (IS_PRODUCTION) elScopeNote.textContent = 'Chỉ hiển thị task bạn đang phụ trách (P.I.C).';
     else if (IS_CONTENT) elScopeNote.textContent = 'Chỉ hiển thị Hạn Content Wording (do Account đặt).';
     else elScopeNote.textContent = '';

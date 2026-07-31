@@ -156,6 +156,52 @@
   window.MH = window.MH || {};
   window.MH.toast = toast;
 
+  /* ---------- ROUTING HELPERS (Media Capture Routing, 2026-07-31) ----------
+     NGUỒN SỰ THẬT DUY NHẤT cho câu hỏi "order này đi luồng nào".
+     Đặt ở app.js vì database-orders.js + media-operations.js + production-board.js
+     đều cần cùng một câu trả lời — copy 3 bản là nguồn sinh lệch luồng.
+
+     Nguyên tắc nghiệp vụ:
+     - Ads: KHÔNG đụng, luôn giữ luồng Content Team sẵn có.
+     - Media (quay/chụp/video): owner = Lead Media, KHÔNG bắt qua Content Wording;
+       chỉ Media CÓ KỊCH BẢN mới sinh Content Script Subtask (không kéo cả Parent
+       Media Order vào flow Design/Wording).
+     - Design / Digital / Slide: giữ nguyên cổng Content Wording như cũ. */
+  const MEDIA_TYPES = ['media', 'shoot', 'photo', 'video'];
+  const WORDING_TYPES = ['design', 'digital', 'slide'];
+  const SCRIPTED_MEDIA_TYPES = ['tvc', 'testimonial', 'interview', 'scripted_video', 'voice_over', 'course_intro', 'recruitment_video', 'video_series'];
+  function isAdsOrder(order) {
+    if (!order) return false;
+    return order.order_kind === 'ads_order' || order.request_type === 'ads';
+  }
+  function isMediaOrder(order) {
+    if (!order) return false;
+    return MEDIA_TYPES.indexOf(order.request_type) >= 0 && !isAdsOrder(order);
+  }
+  function mediaNeedsContentScript(order) {
+    if (!order) return false;
+    if (order.media_script_required === true || order.media_script_required === 'true') return true;
+    if (order.needs_script === true || order.needs_script === 'true') return true;
+    return SCRIPTED_MEDIA_TYPES.indexOf(order.media_content_type) >= 0;
+  }
+  function requiresContentWording(order) {
+    if (!order) return false;
+    if (isAdsOrder(order)) return false;
+    if (isMediaOrder(order)) return mediaNeedsContentScript(order);
+    return WORDING_TYPES.indexOf(order.request_type) >= 0;
+  }
+  window.MH.routing = {
+    MEDIA_TYPES: MEDIA_TYPES,
+    WORDING_TYPES: WORDING_TYPES,
+    SCRIPTED_MEDIA_TYPES: SCRIPTED_MEDIA_TYPES,
+    isAdsOrder: isAdsOrder,
+    isMediaOrder: isMediaOrder,
+    mediaNeedsContentScript: mediaNeedsContentScript,
+    requiresContentWording: requiresContentWording,
+    // Media thường = media order KHÔNG cần script → bypass hoàn toàn Content Wording.
+    isPlainMediaOrder: function (order) { return isMediaOrder(order) && !mediaNeedsContentScript(order); }
+  };
+
   /* ---------- PIC dropdown (custom select: tên + badge role) ----------
      Native <option> không style được badge role → wrap mọi <select data-pic-dd>
      bằng dropdown tùy biến (trigger + menu). Select gốc GIỮ NGUYÊN trong DOM (ẩn):
@@ -762,14 +808,18 @@
      CSS data-show-roles lo ẩn/hiện theo role (mọi role nội bộ đều thấy, lọc event ở calendar.js). */
   function injectCalendarNav() {
     var u = getUser();
-    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor', 'system_supervisor'];
+    // ⚠ 2026-07-31: THIẾU 'lead_media' ở đây khiến Lead Media không có nav Calendar
+    // (hàm return sớm, không chèn li nào). Trang calendar.html KHÔNG chặn lead_media —
+    // chỉ là không có đường đi từ sidebar. Sửa cùng lúc với data-show-roles bên dưới:
+    // thiếu 1 trong 2 chỗ thì nav vẫn không hiện.
+    var internal = ['admin', 'account', 'content', 'lead_content', 'design', 'editor', 'system_supervisor', 'lead_media'];
     if (!u || !u.role || internal.indexOf(u.role) < 0) return; // client / public → bỏ qua
     var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
     if (!groups.length) return;
     var opsUl = groups[0]; // nhóm "Vận hành"
     if (opsUl.querySelector('a[href="calendar.html"]')) return; // đã có → không lặp
     var li = document.createElement('li');
-    li.setAttribute('data-show-roles', 'admin,account,design,editor,content,lead_content,system_supervisor');
+    li.setAttribute('data-show-roles', 'admin,account,design,editor,content,lead_content,system_supervisor,lead_media');
     li.innerHTML = '<a href="calendar.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span>Calendar</span></a>';
     if ((location.pathname.split('/').pop() || '') === 'calendar.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
     // Chèn sau "Internal Task Tracker" (production-board) cho gần nhóm task; không có thì append.
@@ -819,6 +869,30 @@
     } else {
       var groups = sidebar.querySelectorAll('.dash-nav');
       if (groups.length) groups[groups.length - 1].appendChild(li);
+    }
+  }
+  /* Media Operations (Điều phối Media, 2026-07-31): chèn nav vào nhóm "Vận hành".
+     Owner = lead_media + admin; account/system_supervisor vào được nhưng chỉ support/
+     read-only (guard trong media-operations.js). Cùng pattern injectCalendarNav —
+     inject 1 chỗ thay vì sửa sidebar 20 file HTML. */
+  function injectMediaOpsNav() {
+    var u = getUser();
+    var allowed = ['admin', 'lead_media', 'account', 'system_supervisor'];
+    if (!u || !u.role || allowed.indexOf(u.role) < 0) return;
+    var groups = document.querySelectorAll('.dash-sidebar .dash-nav');
+    if (!groups.length) return;
+    var opsUl = groups[0]; // nhóm "Vận hành"
+    if (opsUl.querySelector('a[href="media-operations.html"]')) return; // idempotent
+    var li = document.createElement('li');
+    li.setAttribute('data-show-roles', 'admin,lead_media,account,system_supervisor');
+    li.innerHTML = '<a href="media-operations.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span>Media Operations</span></a>';
+    if ((location.pathname.split('/').pop() || '') === 'media-operations.html') { var a = li.querySelector('a'); if (a) a.classList.add('is-active'); }
+    // Chèn ngay TRƯỚC Internal Task Tracker (Media Ops là bước trước production).
+    var anchor = opsUl.querySelector('a[href="production-board.html"]');
+    if (anchor && anchor.parentElement && anchor.parentElement.parentElement === opsUl) {
+      opsUl.insertBefore(li, anchor.parentElement);
+    } else {
+      opsUl.appendChild(li);
     }
   }
   /* Lead Content xem Client Orders (read-only, 2026-07-06): reveal mục nav
@@ -885,9 +959,9 @@
     if (lu && lu.role) apply(lu);
   }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); injectMediaOpsNav(); revealClientOrdersForLeadContent(); }, 0); });
   } else {
-    setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); revealClientOrdersForLeadContent(); }, 0);
+    setTimeout(function () { syncChipFromUser(); syncPublicLoginPill(); injectContentTeamGroup(); injectCalendarNav(); injectPlanningNav(); injectBrandCheckNav(); injectMediaOpsNav(); revealClientOrdersForLeadContent(); }, 0);
   }
 
   /* ---------- Smooth section nav (for help / request side-nav) ---------- */

@@ -194,15 +194,16 @@
     const tb = document.getElementById('cwb-tbody');
     tb.innerHTML = list.length ? list.map(function (o) {
       const ws = o.brief_wording_status || 'none';
+      const wDone = ['client_approved', 'completed'].indexOf(ws) >= 0;
       return '<tr data-id="' + esc(o.order_id) + '">'
-        + '<td><span class="order-id">' + esc(o.order_id) + '</span></td>'
+        + '<td><span class="order-id">' + esc(o.order_id) + '</span><div style="margin-top:3px">' + sourceChip('client_order') + '</div></td>'
         + '<td><b>' + esc(o.project_name || '—') + '</b></td>'
         + '<td><span class="text-xs">' + esc(o.department || '—') + '</span></td>'
         + '<td><span class="text-xs">' + esc(TYPE_LABEL[o.request_type] || o.request_type || '—') + '</span></td>'
         + '<td><span class="priority-pill p--' + (o.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_LABEL[o.priority] || o.priority || '—') + '</span></td>'
         + '<td><span class="text-xs">' + esc(o.requested_deadline || '—') + '</span></td>'
-        + '<td><span class="text-xs' + (isWordingOverdue(o) ? ' cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + (isWordingOverdue(o) ? ' ⚠' : '') + '</span></td>'
-        + '<td><span class="tb-status ' + wsCls(ws) + '" style="display:inline-flex;align-items:center;gap:4px">' + wsMark(ws) + esc(WSTATUS[ws] || ws) + '</span></td>'
+        + '<td>' + (o.wording_deadline ? slaChip(o.wording_deadline, wDone) : '<span class="text-xs muted">—</span>') + '</td>'
+        + '<td><span class="tb-status ' + wsCls(ws) + '" style="display:inline-flex;align-items:center;gap:4px">' + wsMark(ws) + esc(WSTATUS[ws] || ws) + '</span> ' + nextActionChip(ws, 'order', o) + '</td>'
         + '<td><span class="text-xs">' + (o.brief_wording_round || 0) + '</span></td>'
         + '<td><span class="text-xs">' + esc(o.brief_wording_pic || '—') + '</span></td>'
         + '<td><button class="btn btn-secondary btn-sm" data-open="' + esc(o.order_id) + '">Mở Wording Drawer</button></td>'
@@ -575,7 +576,56 @@
     client_feedback: 'Client phản hồi', client_approved: 'Client duyệt', media_order_created: 'Đã tạo Media Request',
     completed: 'Hoàn tất', archived: 'Lưu trữ'
   };
-  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Task nội bộ', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order' };
+  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Task nội bộ', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order', media_order: 'Script Media' };
+
+  /* ---------- Stage C — chip helpers (bản copy của content-team.js) ----------
+     CỐ Ý copy chứ không import: 2 file này vốn giữ bản riêng của SOURCE_LABEL /
+     CT_STATUS (zero-build, không có module system). Sửa nhãn thì sửa CẢ 2 file.
+     CSS (.src-chip / .sla-chip / .na-chip) đã global trong styles.css. */
+  function sourceChip(source) {
+    const label = SOURCE_LABEL[source] || source || '—';
+    const cls = ({ client_order: 'src-client', ads_order: 'src-ads', content_initiated: 'src-self', campaign_package: 'src-plan', strategy_board: 'src-plan', media_order: 'src-media' })[source] || 'src-other';
+    return '<span class="src-chip ' + cls + '">' + esc(label) + '</span>';
+  }
+  // Deadline → chip màu SLA (đỏ trễ / cam <24h / vàng <48h / xanh trong hạn).
+  function slaChip(deadline, done) {
+    if (done) return '';
+    if (!deadline) return '<span class="sla-chip sla-none">Chưa đặt hạn</span>';
+    const s = String(deadline);
+    const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z');
+    if (isNaN(d.getTime())) return '';
+    const diffH = (d.getTime() - Date.now()) / 3600000;
+    let cls, txt;
+    if (diffH < 0) { cls = 'sla-red'; txt = '⚠ Trễ · ' + fmtDT(deadline); }
+    else if (diffH < 24) { cls = 'sla-orange'; txt = '<24h · ' + fmtDT(deadline); }
+    else if (diffH < 48) { cls = 'sla-yellow'; txt = '<48h · ' + fmtDT(deadline); }
+    else { cls = 'sla-green'; txt = fmtDT(deadline); }
+    return '<span class="sla-chip ' + cls + '">' + esc(txt) + '</span>';
+  }
+  // "Bước tiếp theo" theo góc nhìn PIC Content (khác content-team: ở đây người đọc
+  // là chính PIC nên câu chữ là việc CỦA BẠN, không phải việc của Lead).
+  const NEXT_PIC_ORDER = {
+    assigned: 'Chờ Lead gán PIC', pic_assigned: 'Bạn bắt đầu viết', in_progress: 'Bạn đang viết',
+    submitted_to_lead: 'Chờ Lead duyệt', lead_revision: 'Bạn chỉnh theo Lead',
+    submitted_to_account: 'Chờ Account', account_revision: 'Bạn chỉnh theo Account',
+    sent_to_client: 'Chờ Client', client_feedback: 'Bạn chỉnh theo Client',
+    client_approved: 'Hoàn tất', completed: 'Hoàn tất'
+  };
+  function nextActionChip(status, kind, item) {
+    let txt;
+    if (kind === 'task') {
+      if (status === 'submitted_to_lead') txt = 'Chờ Lead duyệt';
+      else if (status === 'lead_revision') txt = 'Bạn chỉnh theo Lead';
+      else if (status === 'lead_approved' && item && item.need_media_production && !item.media_request_created) txt = 'Gửi sang Media';
+      else if (['pic_assigned', 'new', 'assigned'].indexOf(status) >= 0) txt = 'Bạn bắt đầu viết';
+      else if (status === 'in_progress') txt = 'Bạn đang viết';
+      else if (CT_DONE.indexOf(status) >= 0) txt = 'Hoàn tất';
+      else txt = CT_STATUS[status] || status;
+    } else {
+      txt = NEXT_PIC_ORDER[status] || WSTATUS[status] || status;
+    }
+    return '<span class="na-chip">→ ' + esc(txt) + '</span>';
+  }
   const PRIO_VI = { low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp', critical: 'Rất gấp' };
   // Mỗi output_type → các field workspace (map vào cột content_tasks).
   const OUTPUT_FIELDS = {
@@ -800,13 +850,13 @@
       return '<tr data-ctask="' + esc(t.id) + '">'
         + '<td><span class="order-id">' + esc(cwbCode(t)) + '</span></td>'
         + '<td><b>' + esc(t.title || '—') + '</b></td>'
-        + '<td><span class="text-xs">' + (p ? esc(p.title) : esc(SOURCE_LABEL[t.source] || t.source || '—')) + '</span></td>'
+        + '<td>' + sourceChip(t.source) + (p ? '<div class="text-xs muted" style="margin-top:3px">' + esc(p.title) + '</div>' : '') + '</td>'
         + '<td>' + outputChips(t.output_types) + '</td>'
-        + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
+        + '<td>' + (t.wording_deadline ? slaChip(t.wording_deadline, CT_DONE.indexOf(t.status) >= 0) : '<span class="text-xs muted">—</span>') + '</td>'
         + '<td><span class="priority-pill p--' + (t.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_VI[t.priority] || t.priority || '—') + '</span></td>'
         + '<td><span class="text-xs">' + (t.internal_revision_count || 0) + '</span></td>'
         + '<td><span class="text-xs">' + (t.need_media_production ? '<span class="chip-mini">Cần</span>' : '—') + '</span></td>'
-        + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(CT_STATUS[t.status] || t.status) + '</span></td>'
+        + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(CT_STATUS[t.status] || t.status) + '</span> ' + nextActionChip(t.status, 'task', t) + '</td>'
         + '<td><button class="btn btn-secondary btn-sm" data-ctask-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
     }).join('') : '<tr><td colspan="10" style="text-align:center;padding:44px;color:var(--text-muted)">' + (isContent ? 'Bạn chưa có content task nào. Bấm “Đề xuất task mới” để tự tạo, hoặc chờ Lead gán.' : 'Chưa có content task.') + '</td></tr>';

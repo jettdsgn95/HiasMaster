@@ -98,14 +98,14 @@
   <main class="dash-main">
     <div class="dash-page-head">
       <div>
-        <h1><span class="serif-italic">Content</span> Wording</h1>
-        <p>Chuẩn hóa brief trước khi chuyển Production. <span class="text-xs muted">Content Wording là bước bắt buộc giữa "Kiểm tra brief" và "Confirm Brief".</span></p>
+        <h1><span class="serif-italic">Content</span> Workbench</h1>
+        <p>Việc được gán cho bạn — viết, lưu nháp, gửi Lead duyệt. <span class="text-xs muted">Gồm 2 nguồn: Task nội bộ/Plan/Ads/Script Media và Wording đơn từ Client Order.</span></p>
       </div>
     </div>
 
     <div class="saved-views ctm-tabs" id="cwb-tabs">
-      <button class="saved-view-chip" data-cwb-view="tasks">Content Tasks của tôi <span class="count" id="cwb-count-tasks">0</span></button>
-      <button class="saved-view-chip" data-cwb-view="orders">Wording đơn (Client Order) <span class="count" id="cwb-count-orders">0</span></button>
+      <button class="saved-view-chip" data-cwb-view="tasks">Việc của tôi <span class="count" id="cwb-count-tasks">0</span></button>
+      <button class="saved-view-chip" data-cwb-view="orders">Wording đơn Client Order <span class="count" id="cwb-count-orders">0</span></button>
     </div>
 
     <section id="cwb-view-orders" hidden>
@@ -127,8 +127,8 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Order ID</th><th>Project / Campaign</th><th>Chi nhánh</th><th>Loại</th>
-              <th>Ưu tiên</th><th>Deadline khách</th><th>Hạn wording</th><th>Wording Status</th><th>Round</th><th>PIC Content</th><th></th>
+              <th>Order ID / Nguồn</th><th>Project / Campaign</th><th>Chi nhánh</th><th>Loại</th>
+              <th>Ưu tiên</th><th>Deadline khách</th><th>Hạn wording</th><th>Trạng thái &amp; bước tiếp theo</th><th>Round</th><th>PIC Content</th><th></th>
             </tr>
           </thead>
           <tbody id="cwb-tbody"></tbody>
@@ -161,7 +161,7 @@
         <div class="table-wrap">
           <table class="data-table">
             <thead>
-              <tr><th>Mã</th><th>Task</th><th>Plan / Nguồn</th><th>Output</th><th>Hạn wording</th><th>Ưu tiên</th><th>Vòng</th><th>Media</th><th>Trạng thái</th><th></th></tr>
+              <tr><th>Mã</th><th>Task</th><th>Nguồn / Plan</th><th>Output</th><th>Hạn wording</th><th>Ưu tiên</th><th>Vòng</th><th>Media</th><th>Trạng thái &amp; bước tiếp theo</th><th></th></tr>
             </thead>
             <tbody id="cwbt-tbody"></tbody>
           </table>

@@ -171,7 +171,7 @@
   let currentTask = null;
   // Role-based landing: account → Follow-up; lead/admin/supervisor → Tổng quan.
   let view = (isAccount && !isAdmin) ? 'account-followup' : 'dashboard';
-  const FILTERS = { search: '', status: '', type: '', pic: '' };
+  const FILTERS = { search: '', source: '', status: '', type: '', pic: '' };
 
   /* ---------- Quyền theo trạng thái ---------- */
   function canWork(o) {
@@ -324,7 +324,7 @@
     // Badge Cần xử lý = order chờ phân công + order chờ duyệt + TASK NỘI BỘ chờ duyệt.
     document.getElementById('ctm-count-inbox').textContent = byStatus(['assigned']).length + byStatus(['submitted_to_lead']).length + pendingContentTasks().length;
     var cReview = document.getElementById('ctm-count-review'); if (cReview) cReview.textContent = reviewQueueItems().length;
-    document.getElementById('ctm-count-list').textContent = ORDERS.length;
+    document.getElementById('ctm-count-list').textContent = allItems().length;
     var cMine = document.getElementById('ctm-count-mine'); if (cMine) cMine.textContent = myOrders().length;
     var cPlans = document.getElementById('ctm-count-plans'); if (cPlans) cPlans.textContent = CONTENT_PLANS.length;
     var cInit = document.getElementById('ctm-count-initiatives'); if (cInit) cInit.textContent = initiativeTasks().length;
@@ -391,7 +391,8 @@
     document.getElementById('ctm-overdue-list').innerHTML = list.length ? list.map(function (o) {
       return '<button class="ctm-inbox-item" data-open="' + esc(o.order_id) + '">'
         + '<div><b>' + esc(o.order_id) + '</b> · ' + esc(o.project_name || '—') + '</div>'
-        + '<div class="text-xs"><span class="cwb-overdue">⚠ Hạn ' + esc(fmtDT(o.wording_deadline)) + '</span> · ' + esc(WSTATUS[o.brief_wording_status] || '') + ' · PIC: ' + esc(owPicName(o) || 'chưa gán') + '</div>'
+        + '<div class="text-xs muted">' + esc(WSTATUS[o.brief_wording_status] || '') + ' · PIC: ' + esc(owPicName(o) || 'chưa gán')
+        + '<br>' + nextActionChip(o.brief_wording_status, 'order', o) + ' ' + slaChip(o.wording_deadline, false) + '</div>'
         + '</button>';
     }).join('') : ctmEmpty(ICON_CHECK, 'Không có order trễ hạn', 'Tất cả wording đang trong hạn.');
   }
@@ -423,13 +424,14 @@
     // Empty-state phân biệt "chưa có đơn" vs "RLS chặn đọc" (hết rỗng câm — xem loadOrders).
     const newEmpty = ordersReadBlocked
       ? '<div class="text-xs" style="margin:0;padding:12px 16px;color:var(--danger)"><b>Không đọc được đơn nào.</b> Nếu Account đã chuyển đơn sang Content Wording mà vẫn trống: kiểm tra đã chạy <code>add-content-team.sql</code> (policy "orders lead_content read") và role tài khoản trong DB = <code>lead_content</code>.</div>'
-      : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có yêu cầu mới.</p>';
+      : ctmEmpty(ICON_LAYERS, 'Không có yêu cầu mới', 'Đơn Account chuyển sang Content Wording sẽ vào đây để Lead gán PIC.');
     document.getElementById('ctm-inbox-new').innerHTML = news.length ? news.map(function (o) {
-      return inboxItemHtml(o, o.wording_deadline ? ' · Hạn: ' + fmtDT(o.wording_deadline) : ' · Chưa đặt hạn');
+      return inboxItemHtml(o, '<br>' + nextActionChip(o.brief_wording_status, 'order', o) + ' ' + slaChip(o.wording_deadline, false));
     }).join('') : newEmpty;
     document.getElementById('ctm-inbox-review').innerHTML = reviews.length ? reviews.map(function (o) {
-      return inboxItemHtml(o, ' · PIC: ' + esc(owPicName(o) || '—') + (o.wording_submitted_to_lead_at ? ' · Gửi: ' + fmtDT(o.wording_submitted_to_lead_at) : ''));
-    }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có bản wording chờ duyệt.</p>';
+      return inboxItemHtml(o, ' · PIC: ' + esc(owPicName(o) || '—') + (o.wording_submitted_to_lead_at ? ' · Gửi: ' + fmtDT(o.wording_submitted_to_lead_at) : '')
+        + '<br>' + nextActionChip(o.brief_wording_status, 'order', o) + ' ' + slaChip(o.wording_deadline, false));
+    }).join('') : ctmEmpty(ICON_CHECK, 'Không có bản wording chờ duyệt', 'Wording do Content gửi lên sẽ xuất hiện tại đây.');
 
     // Task nội bộ chờ duyệt — nguồn KHÁC (bảng content_tasks, không phải orders).
     // Trước đây chỉ nằm ở tab "Task nội bộ" nên Lead nhìn Inbox thấy trống → tưởng mất task.
@@ -441,12 +443,30 @@
       ctBox.innerHTML = ctPending.length ? ctPending.map(function (t) {
         const late = reviewLateCT(t);
         return '<button class="ctm-inbox-item" data-task-open="' + esc(t.id) + '">'
-          + '<div><b>' + esc(ctCode(t)) + '</b> · ' + esc(t.title || '—') + '</div>'
-          + '<div class="text-xs muted">PIC: ' + esc(ctPicName(t) || '—')
-          + (t.lead_review_due ? ' · Hạn duyệt: ' + fmtDT(t.lead_review_due) : '')
-          + (late ? ' · ⚠ quá hạn duyệt' : '') + '</div>'
+          + '<div class="ctm-ii-top"><b>' + esc(ctCode(t)) + '</b> ' + sourceChip(t.source) + '</div>'
+          + '<div class="ctm-ii-title">' + esc(t.title || '—') + '</div>'
+          + '<div class="text-xs muted">PIC: ' + esc(ctPicName(t) || '—') + (late ? ' · ⚠ quá hạn duyệt' : '')
+          + '<br>' + nextActionChip(t.status, 'task', t) + ' ' + slaChip(t.lead_review_due, false) + '</div>'
           + '</button>';
-      }).join('') : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có task nội bộ chờ duyệt.</p>';
+      }).join('') : ctmEmpty(ICON_CHECK, 'Không có task nội bộ chờ duyệt', 'Task Content gửi Lead duyệt sẽ vào đây (nguồn: bảng content_tasks).');
+    }
+
+    // Ads Order cần xử lý — tab "Ads Orders" đã ẩn khỏi nav (Stage A) nên Lead vào
+    // Ads từ panel này / Action Center. Nguồn KHÁC 3 panel trên (ADS_ORDERS).
+    const adsBox = document.getElementById('ctm-inbox-ads');
+    if (adsBox) {
+      const adsList = ADS_ORDERS.filter(function (o) { return ADS_ATTN.indexOf(o.ads_status || 'submitted') >= 0; });
+      const adsCount = document.getElementById('ctm-inbox-ads-count');
+      if (adsCount) adsCount.textContent = adsList.length + ' đơn cần xử lý';
+      adsBox.innerHTML = adsList.length ? adsList.map(function (o) {
+        const d = adsDetail(o);
+        return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '">'
+          + '<div class="ctm-ii-top"><b>' + esc(o.order_id) + '</b> ' + sourceChip('ads_order') + '</div>'
+          + '<div class="ctm-ii-title">' + esc(o.project_name || '—') + '</div>'
+          + '<div class="text-xs muted">' + esc(ADS_STATUS[o.ads_status || 'submitted'] || o.ads_status || '—') + ' · PIC: ' + esc(adsPicName(o) || '—')
+          + '<br>' + slaChip(d.desired_launch_date || o.requested_deadline, false) + '</div>'
+          + '</button>';
+      }).join('') : ctmEmpty(ICON_CHECK, 'Không có Ads Order cần xử lý', 'Đơn Ads mới từ Client hoặc đang chờ creative sẽ hiện ở đây.');
     }
   }
   // Content task PIC đã gửi Lead duyệt (mọi nguồn: tự đề xuất, task con Plan, Ads).
@@ -464,7 +484,7 @@
   // Nguồn → chip (Client Order / Ads Order / Task nội bộ / Kế hoạch).
   function sourceChip(source) {
     const label = SOURCE_LABEL[source] || source || '—';
-    const cls = ({ client_order: 'src-client', ads_order: 'src-ads', content_initiated: 'src-self', campaign_package: 'src-plan', strategy_board: 'src-plan' })[source] || 'src-other';
+    const cls = ({ client_order: 'src-client', ads_order: 'src-ads', content_initiated: 'src-self', campaign_package: 'src-plan', strategy_board: 'src-plan', media_order: 'src-media' })[source] || 'src-other';
     return '<span class="src-chip ' + cls + '">' + esc(label) + '</span>';
   }
   // Deadline → chip màu SLA (đỏ trễ / cam <24h / vàng <48h / xanh trong hạn).
@@ -563,8 +583,9 @@
       { label: 'Chờ gán PIC', n: byStatus(['assigned']).length, color: '#191970', go: 'inbox' },
       { label: 'Chờ Lead duyệt', n: reviewQueueItems().length, color: '#6B21A8', go: 'review' },
       { label: 'Trễ hạn wording', n: ORDERS.filter(isWordingOverdue).length, color: '#BA110F', go: 'inbox' },
-      { label: 'Ads cần xử lý', n: adsAttentionCount(), color: '#0E7490', go: 'ads-orders' },
-      { label: 'Task nội bộ chờ duyệt', n: pendingContentTasks().length, color: '#B07600', go: 'review' }
+      // Ads → "Cần xử lý" (inbox có panel Ads riêng) thay vì tab ads-orders đã ẩn khỏi nav.
+      { label: 'Ads cần xử lý', n: adsAttentionCount(), color: '#0E7490', go: 'inbox' },
+      { label: 'Task nội bộ Content chờ duyệt', n: pendingContentTasks().length, color: '#B07600', go: 'review' }
     ];
     el.innerHTML = cards.map(function (c) {
       return '<button class="ctm-ac-card" data-ac-go="' + c.go + '" style="--ac:' + c.color + '"><span class="ctm-ac-n">' + c.n + '</span><span class="ctm-ac-l">' + esc(c.label) + '</span></button>';
@@ -582,8 +603,12 @@
       const list = byStatus(g[2]);
       const cnt = document.getElementById(g[1]); if (cnt) cnt.textContent = list.length;
       box.innerHTML = list.length
-        ? list.map(function (o) { return inboxItemHtml(o, ' · PIC: ' + esc(owPicName(o) || '—') + ' ' + slaChip(o.wording_deadline, ['client_approved', 'completed'].indexOf(o.brief_wording_status) >= 0)); }).join('')
-        : '<p class="text-xs muted" style="margin:0;padding:12px 16px">Không có mục nào.</p>';
+        ? list.map(function (o) {
+            const done = ['client_approved', 'completed'].indexOf(o.brief_wording_status) >= 0;
+            return inboxItemHtml(o, ' · PIC: ' + esc(owPicName(o) || '—')
+              + '<br>' + nextActionChip(o.brief_wording_status, 'order', o) + ' ' + slaChip(o.wording_deadline, done));
+          }).join('')
+        : ctmEmpty(ICON_LAYERS, 'Không có mục nào', 'Wording ở bước này sẽ hiển thị tại đây.');
     });
   }
 
@@ -597,7 +622,7 @@
           + '<div class="kc-title">' + esc(o.project_name || '—') + '</div>'
           + '<div class="kc-meta">'
           + (owPicName(o) ? '<span class="kc-pic"><span class="pic-avatar avatar">' + esc(initials(owPicName(o))) + '</span>' + esc(owPicName(o)) + '</span>' : '<span class="muted">Chưa gán PIC</span>')
-          + (o.wording_deadline ? '<span class="kc-deadline' + (overdue ? ' is-overdue' : '') + '">' + fmtDT(o.wording_deadline) + '</span>' : '')
+          + (o.wording_deadline ? slaChip(o.wording_deadline, ['client_approved', 'completed'].indexOf(o.brief_wording_status) >= 0) : '')
           + '</div>'
           + '<div class="kc-flags"><span class="kc-flag">Vòng ' + (o.brief_wording_round || 0) + '</span>' + (o.wording_doc_link ? '<span class="kc-flag has-preview">Doc</span>' : '') + '</div>'
           + '</div>';
@@ -611,46 +636,105 @@
 
   function rowHtml(o, withPic) {
     const ws = o.brief_wording_status || 'none';
-    const overdue = isWordingOverdue(o);
+    const done = ['client_approved', 'completed'].indexOf(ws) >= 0;
     return '<tr data-id="' + esc(o.order_id) + '">'
       + '<td><span class="order-id">' + esc(o.order_id) + '</span></td>'
       + '<td><b>' + esc(o.project_name || '—') + '</b></td>'
       + '<td><span class="text-xs">' + esc(TYPE_LABEL[o.request_type] || o.request_type || '—') + '</span></td>'
       + '<td><span class="priority-pill p--' + (o.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_LABEL[o.priority] || '—') + '</span></td>'
-      + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + (overdue ? ' ⚠' : '') + '</span></td>'
-      + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(WSTATUS[ws] || ws) + '</span></td>'
+      + '<td>' + (slaChip(o.wording_deadline, done) || '<span class="text-xs muted">' + esc(fmtDT(o.wording_deadline)) + '</span>') + '</td>'
+      + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(WSTATUS[ws] || ws) + '</span> ' + nextActionChip(ws, 'order', o) + '</td>'
       + '<td><span class="text-xs">' + (o.brief_wording_round || 0) + '</span></td>'
       + (withPic ? '<td><span class="text-xs">' + esc(owPicName(o) || '—') + '</span></td>' : '')
       + '<td><button class="btn btn-secondary btn-sm" data-open="' + esc(o.order_id) + '">Mở</button></td>'
       + '</tr>';
   }
+  /* ---------- Tab "Tất cả" = DANH SÁCH HỢP NHẤT (brief §5.1.7 + §6.1) ----------
+     Stage A ẩn tab ads-orders/initiatives khỏi nav ⇒ nếu "Tất cả" chỉ liệt kê
+     `orders` thì Lead KHÔNG còn đường duyệt Ads Order / Task nội bộ từ nav.
+     Gộp 3 nguồn về 1 hàng chuẩn hoá + filter Nguồn. Mỗi row giữ nguyên attr mở
+     drawer sẵn có (data-open / data-task-open / data-ads-open) — không đụng flow ghi. */
+  function allItems() {
+    const rows = ORDERS.map(function (o) {
+      return {
+        kind: 'order', open: 'data-open', id: o.order_id, code: o.order_id, source: 'client_order',
+        title: o.project_name, type: o.request_type, priority: o.priority,
+        deadline: o.wording_deadline, status: o.brief_wording_status || 'none',
+        statusLabel: WSTATUS[o.brief_wording_status || 'none'] || o.brief_wording_status || '—',
+        rounds: o.brief_wording_round || 0, pic: owPicName(o),
+        done: ['client_approved', 'completed'].indexOf(o.brief_wording_status) >= 0, ref: o
+      };
+    });
+    CONTENT_TASKS.forEach(function (t) {
+      rows.push({
+        kind: 'task', open: 'data-task-open', id: t.id, code: ctCode(t), source: t.source,
+        title: t.title, type: '', priority: t.priority,
+        deadline: t.wording_deadline, status: t.status,
+        statusLabel: CT_STATUS[t.status] || t.status || '—',
+        rounds: t.internal_revision_count || 0, pic: ctPicName(t),
+        done: CT_DONE.indexOf(t.status) >= 0 || t.status === 'archived',
+        need_media_production: t.need_media_production, media_request_created: t.media_request_created, ref: t
+      });
+    });
+    ADS_ORDERS.forEach(function (o) {
+      const d = adsDetail(o); const st = o.ads_status || 'submitted';
+      rows.push({
+        kind: 'ads', open: 'data-ads-open', id: o.order_id, code: o.order_id, source: 'ads_order',
+        title: o.project_name, type: o.request_type, priority: o.priority,
+        deadline: d.desired_launch_date || o.requested_deadline, status: st,
+        statusLabel: ADS_STATUS[st] || st, rounds: 0, pic: adsPicName(o),
+        done: ['completed', 'report_updated', 'archived', 'cancelled'].indexOf(st) >= 0, ref: o
+      });
+    });
+    return rows;
+  }
   function applyFilters(list) {
     const q = FILTERS.search.toLowerCase();
-    return list.filter(function (o) {
-      if (FILTERS.status && (o.brief_wording_status || 'none') !== FILTERS.status) return false;
-      if (FILTERS.type && o.request_type !== FILTERS.type) return false;
-      if (FILTERS.pic && (owPicName(o) || '') !== FILTERS.pic) return false;
-      if (q && ((o.order_id || '') + ' ' + (o.project_name || '')).toLowerCase().indexOf(q) < 0) return false;
+    return list.filter(function (r) {
+      if (FILTERS.source && r.source !== FILTERS.source) return false;
+      if (FILTERS.status && r.status !== FILTERS.status) return false;
+      // "Loại" là khái niệm của order/ads (request_type) — task nội bộ không có
+      // nên bị loại khi filter loại đang bật (đúng ý nghĩa lọc).
+      if (FILTERS.type && r.type !== FILTERS.type) return false;
+      if (FILTERS.pic && (r.pic || '') !== FILTERS.pic) return false;
+      if (q && ((r.code || '') + ' ' + (r.title || '')).toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
   }
+  function unifiedRowHtml(r) {
+    // Attr mở drawer nằm ở nút "Mở" (delegation sẵn có); attr trên <tr> chỉ để tra cứu.
+    return '<tr data-id="' + esc(r.id) + '" data-kind="' + r.kind + '">'
+      + '<td><span class="order-id">' + esc(r.code) + '</span></td>'
+      + '<td>' + sourceChip(r.source) + '</td>'
+      + '<td><b>' + esc(r.title || '—') + '</b></td>'
+      // Content task dùng thang PRIO_VI (có low/high) — fallback để không ra '—'.
+      + '<td><span class="priority-pill p--' + (PRIO_LABEL[r.priority] ? r.priority : 'normal') + '"><span class="dot"></span>' + esc(PRIO_LABEL[r.priority] || PRIO_VI[r.priority] || '—') + '</span></td>'
+      + '<td>' + (slaChip(r.deadline, r.done) || '<span class="text-xs muted">—</span>') + '</td>'
+      + '<td><span class="tb-status s--wording"><span class="dot"></span>' + esc(r.statusLabel) + '</span></td>'
+      + '<td>' + (r.kind === 'ads' ? '<span class="text-xs muted">—</span>' : nextActionChip(r.status, r.kind, r)) + '</td>'
+      + '<td><span class="text-xs">' + r.rounds + '</span></td>'
+      + '<td><span class="text-xs">' + esc(r.pic || '—') + '</span></td>'
+      + '<td><button class="btn btn-secondary btn-sm" ' + r.open + '="' + esc(r.id) + '">Mở</button></td>'
+      + '</tr>';
+  }
   function renderList() {
-    const list = applyFilters(ORDERS);
-    document.getElementById('ctm-list-info').innerHTML = 'Hiển thị <strong>' + list.length + '</strong> / ' + ORDERS.length + ' order trong Content Team';
-    document.getElementById('ctm-list-tbody').innerHTML = list.length ? list.map(function (o) { return rowHtml(o, true); }).join('')
-      : '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text-muted)">Chưa có order nào trong Content Team.</td></tr>';
-    // PIC filter options (refresh nhẹ, giữ selection)
+    const all = allItems();
+    const list = applyFilters(all);
+    document.getElementById('ctm-list-info').innerHTML = 'Hiển thị <strong>' + list.length + '</strong> / ' + all.length + ' mục (Client Order · Ads Order · Content Task)';
+    document.getElementById('ctm-list-tbody').innerHTML = list.length ? list.map(unifiedRowHtml).join('')
+      : '<tr><td colspan="10" style="text-align:center;padding:44px;color:var(--text-muted)">Không có mục nào khớp bộ lọc.</td></tr>';
+    // PIC filter options (refresh nhẹ, giữ selection) — gộp PIC của cả 3 nguồn.
     const fp = document.getElementById('ctm-filter-pic');
     const cur = fp.value; const seen = {};
     fp.innerHTML = '<option value="">Mọi PIC</option>';
-    ORDERS.forEach(function (o) { var nm = owPicName(o); if (nm && !seen[nm]) { seen[nm] = 1; const op = document.createElement('option'); op.value = nm; op.textContent = nm; fp.appendChild(op); } });
+    all.forEach(function (r) { if (r.pic && !seen[r.pic]) { seen[r.pic] = 1; const op = document.createElement('option'); op.value = r.pic; op.textContent = r.pic; fp.appendChild(op); } });
     fp.value = cur;
   }
   function renderMine() {
     const list = myOrders();
     document.getElementById('ctm-mine-info').innerHTML = '<strong>' + list.length + '</strong> task wording được gán cho bạn';
     document.getElementById('ctm-mine-tbody').innerHTML = list.length ? list.map(function (o) { return rowHtml(o, false); }).join('')
-      : '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Bạn chưa được gán content task nào.</td></tr>';
+      : '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">Bạn chưa được gán wording đơn nào. Task nội bộ Content nằm ở Content Workbench.</td></tr>';
   }
 
   function renderAll() {
@@ -967,7 +1051,7 @@
     draft: 'Nháp', active: 'Sẵn sàng', in_progress: 'Đang chạy', pending_review: 'Có bản chờ duyệt',
     at_risk: 'Có task trễ', completed: 'Hoàn tất', archived: 'Lưu trữ'
   };
-  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Task nội bộ', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order' };
+  const SOURCE_LABEL = { client_order: 'Client Order', content_initiated: 'Task nội bộ', strategy_board: 'Strategy Board', campaign_package: 'Kế hoạch đã ký', ads_order: 'Ads Order', media_order: 'Script Media' };
   const PRIO_VI = { low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Gấp', critical: 'Rất gấp' };
   // Trạng thái production của Media Order nội bộ (đọc read-only để Content theo dõi — Phase 5).
   const PROD_STATUS = {
@@ -1053,7 +1137,10 @@
     } catch (e) { console.warn('[ctm] load content data failed:', e); }
     // renderInbox() BẮT BUỘC ở đây: panel "Task nội bộ — chờ Lead duyệt" đọc
     // CONTENT_TASKS, mà data này load ở luồng riêng (không qua loadOrders/renderAll).
-    renderTabs(); renderInbox(); renderPlans(); renderInitiatives(); renderContentDashboard();
+    // renderList() cũng BẮT BUỘC ở đây từ Stage D: tab "Tất cả" nay gộp CONTENT_TASKS
+    // + ADS_ORDERS, mà CONTENT_TASKS về ở luồng này → thiếu sẽ hiện "0 / 0" trong khi
+    // badge tab (renderTabs → allItems) đếm đủ (lệch số, tưởng mất task).
+    renderTabs(); renderInbox(); renderList(); renderPlans(); renderInitiatives(); renderContentDashboard();
     renderActionCenter(); renderReviewQueue(); renderWorkloadTab(); renderAccountFollowup();
     if (currentPlan) { const p = CONTENT_PLANS.find(function (x) { return x.id === currentPlan.id; }); if (p) currentPlan = p; }
     if (currentTask) { const t = CONTENT_TASKS.find(function (x) { return x.id === currentTask.id; }); if (t) currentTask = t; }
@@ -1125,9 +1212,9 @@
       const dl = p.plan_deadline ? fmtDT(p.plan_deadline) : '—';
       return '<tr data-plan="' + esc(p.id) + '">'
         + '<td><b>' + esc(p.title || '—') + '</b>' + (p.campaign_name ? '<div class="text-xs muted">' + esc(p.campaign_name) + '</div>' : '') + '</td>'
-        + '<td><span class="text-xs">' + esc(SOURCE_LABEL[p.source] || p.source || '—') + '</span></td>'
+        + '<td>' + sourceChip(p.source) + '</td>'
         + '<td><span class="text-xs">' + esc(p.owner_lead || '—') + '</span></td>'
-        + '<td><span class="text-xs">' + esc(dl) + '</span></td>'
+        + '<td>' + (p.plan_deadline ? slaChip(p.plan_deadline, r.status === 'completed') : '<span class="text-xs muted">' + esc(dl) + '</span>') + '</td>'
         + '<td><span class="ctm-progress"><i style="width:' + r.progress + '%"></i></span><span class="text-xs">' + r.progress + '%</span></td>'
         + '<td><span class="text-xs">' + r.total + '</span></td>'
         + '<td><span class="text-xs' + (r.overdue ? ' cwb-overdue' : '') + '">' + r.overdue + '</span></td>'
@@ -1151,19 +1238,18 @@
       return;
     }
     tb.innerHTML = list.map(function (t) {
-      const overdue = ctIsOverdue(t);
       // Task do PIC content tự tạo (created_by = assigned_pic) → nhãn phân biệt với task Lead tạo.
       const selfMade = (t.created_by_user_id && t.assigned_pic_user_id && t.created_by_user_id === t.assigned_pic_user_id)
         || (!t.assigned_pic_user_id && t.created_by && t.assigned_pic && t.created_by === t.assigned_pic);
       return '<tr data-task="' + esc(t.id) + '">'
-        + '<td><span class="order-id">' + esc(ctCode(t)) + '</span></td>'
+        + '<td><span class="order-id">' + esc(ctCode(t)) + '</span><div style="margin-top:4px">' + sourceChip(t.source) + '</div></td>'
         + '<td><b>' + esc(t.title || '—') + '</b>' + (selfMade ? ' <span class="chip-mini">PIC tự đề xuất</span>' : '') + '</td>'
         + '<td>' + outputChips(t.output_types) + '</td>'
         + '<td><span class="text-xs">' + esc(ctPicName(t) || '—') + '</span></td>'
-        + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
+        + '<td>' + (t.wording_deadline ? slaChip(t.wording_deadline, CT_DONE.indexOf(t.status) >= 0) : '<span class="text-xs muted">—</span>') + '</td>'
         + '<td><span class="priority-pill p--' + (t.priority || 'normal') + '"><span class="dot"></span>' + esc(PRIO_VI[t.priority] || t.priority || '—') + '</span></td>'
         + '<td><span class="text-xs">' + (t.need_media_production ? '<span class="chip-mini">Cần Media</span>' : '—') + '</span></td>'
-        + '<td>' + ctStatusBadge(t.status) + (reviewLateCT(t) ? ' <span class="chip-mini" style="background:var(--danger);color:#fff;border:0">quá hạn duyệt</span>' : '') + '</td>'
+        + '<td>' + ctStatusBadge(t.status) + (reviewLateCT(t) ? ' <span class="chip-mini" style="background:var(--danger);color:#fff;border:0">quá hạn duyệt</span>' : '') + ' ' + nextActionChip(t.status, 'task', t) + '</td>'
         + '<td><button class="btn btn-secondary btn-sm" data-task-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
     }).join('');
@@ -1258,11 +1344,10 @@
         : (p.attachment_name ? esc(p.attachment_name) + ' <span class="text-xs muted">(chưa có link)</span>' : '<em class="muted">— chưa đính kèm</em>'));
 
     const childRows = ts.length ? ts.map(function (t) {
-      const overdue = ctIsOverdue(t);
       return '<tr data-task="' + esc(t.id) + '">'
         + '<td><b>' + esc(t.title || '—') + '</b><div class="text-xs muted">' + outputChips(t.output_types) + '</div></td>'
         + '<td><span class="text-xs">' + (ctPicName(t) ? esc(ctPicName(t)) : '<em>chưa gán</em>') + '</span></td>'
-        + '<td><span class="text-xs' + (overdue ? ' cwb-overdue' : '') + '">' + (t.wording_deadline ? fmtDT(t.wording_deadline) + (overdue ? ' ⚠' : '') : '—') + '</span></td>'
+        + '<td>' + (t.wording_deadline ? slaChip(t.wording_deadline, CT_DONE.indexOf(t.status) >= 0) : '<span class="text-xs muted">—</span>') + '</td>'
         + '<td>' + ctStatusBadge(t.status) + (reviewLateCT(t) ? ' <span class="chip-mini" style="background:var(--danger);color:#fff;border:0">quá hạn duyệt</span>' : '') + '</td>'
         + '<td><button class="btn btn-secondary btn-sm" data-task-open="' + esc(t.id) + '">Mở</button></td>'
         + '</tr>';
@@ -1686,6 +1771,9 @@
     // client_order → submitted_to_account; còn lại (initiative/plan không Media) → completed.
     let nextMsg;
     if (currentTask.need_media_production) { patch.status = 'lead_approved'; nextMsg = ' — chờ tạo Internal Media Request (Phase 5).'; }
+    // Script subtask từ Media Order (2026-07-31): duyệt xong TRẢ VỀ Lead Media —
+    // KHÔNG chuyển Account (order gốc là Media, không đi luồng wording/Account).
+    else if (currentTask.source === 'media_order') { patch.status = 'lead_approved'; nextMsg = ' — trả Lead Media để chốt Script Approved.'; }
     else if (currentTask.source === 'client_order') { patch.status = 'submitted_to_account'; nextMsg = ' — chuyển Account.'; }
     else { patch.status = 'completed'; nextMsg = ' — hoàn tất nội bộ.'; }
     await window.MH.store.contentTasks.update(currentTask.id, patch);
@@ -2111,10 +2199,11 @@
     if (cInbox) cInbox.innerHTML = news.length
       ? news.map(function (o) {
           const d = adsDetail(o);
-          return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b><span class="badge-campaign">Ads</span><span class="badge-from-client">From Client</span></div>'
-            + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + ' · ' + esc(o.department || d.branch_department || '—') + '</div></button>';
+          return '<button class="ctm-inbox-item" data-ads-open="' + esc(o.order_id) + '"><div class="ctm-ii-top"><b>' + esc(o.project_name || o.order_id) + '</b>' + sourceChip('ads_order') + '<span class="badge-from-client">From Client</span></div>'
+            + '<div class="text-xs muted">' + esc(o.order_id) + ' · ' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + ' · ' + esc(o.department || d.branch_department || '—')
+            + '<br>' + slaChip(d.desired_launch_date || o.requested_deadline, false) + '</div></button>';
         }).join('')
-      : '<p class="text-xs muted" style="margin:0">Chưa có yêu cầu Ads mới.</p>';
+      : ctmEmpty(ICON_CHECK, 'Chưa có yêu cầu Ads mới', 'Đơn Ads client gửi lên sẽ vào đây để Lead tiếp nhận.');
 
     const tb = document.getElementById('ctm-ads-tbody');
     const info = document.getElementById('ctm-ads-info'); if (info) info.textContent = list.length + ' Ads Order';
@@ -2129,7 +2218,8 @@
             + '<td class="text-xs">' + esc(ADS_OBJECTIVE[d.objective] || d.objective || '—') + '</td>'
             + '<td class="text-xs">' + esc(fmtBudget(d)) + '</td>'
             + '<td class="text-xs">' + esc(adsPicName(o) || '—') + '</td>'
-            + '<td><span class="tb-status ' + (ADS_STATUS_CLS[st] || '') + '">' + esc(ADS_STATUS[st] || st) + '</span></td>'
+            + '<td><span class="tb-status ' + (ADS_STATUS_CLS[st] || '') + '">' + esc(ADS_STATUS[st] || st) + '</span>'
+            + (d.desired_launch_date ? '<div style="margin-top:4px">' + slaChip(d.desired_launch_date, ['completed', 'report_updated', 'archived', 'cancelled'].indexOf(st) >= 0) + '</div>' : '') + '</td>'
             + '<td>' + (needCr ? '<span class="badge-need-creative">Need Creative</span>' : '<span class="text-xs muted">—</span>') + '</td>'
             + '<td><button class="btn btn-ghost btn-sm" data-ads-open="' + esc(o.order_id) + '">Mở</button></td>'
             + '</tr>';
@@ -2538,10 +2628,19 @@
 
   /* ---------- Init ---------- */
   (function fillFilterOptions() {
+    // Tab "Tất cả" gộp 3 nguồn ⇒ filter trạng thái phải phủ cả wording order lẫn
+    // content task (key trùng nhau thì gộp 1 option, nhãn ưu tiên wording).
     const fs = document.getElementById('ctm-filter-status');
-    ENGAGED.forEach(function (k) { const op = document.createElement('option'); op.value = k; op.textContent = WSTATUS[k]; fs.appendChild(op); });
+    const seenSt = {};
+    ENGAGED.forEach(function (k) { seenSt[k] = WSTATUS[k]; });
+    Object.keys(CT_STATUS).forEach(function (k) { if (!seenSt[k]) seenSt[k] = CT_STATUS[k]; });
+    Object.keys(seenSt).forEach(function (k) { const op = document.createElement('option'); op.value = k; op.textContent = seenSt[k]; fs.appendChild(op); });
     const ft = document.getElementById('ctm-filter-type');
     ['design', 'media', 'video', 'motion', 'slide', 'digital', 'ads', 'other'].forEach(function (k) { const op = document.createElement('option'); op.value = k; op.textContent = TYPE_LABEL[k] || k; ft.appendChild(op); });
+    const fsrc = document.getElementById('ctm-filter-source');
+    if (fsrc) ['client_order', 'ads_order', 'content_initiated', 'campaign_package', 'strategy_board'].forEach(function (k) {
+      const op = document.createElement('option'); op.value = k; op.textContent = SOURCE_LABEL[k] || k; fsrc.appendChild(op);
+    });
   })();
 
   document.getElementById('ctm-tabs').addEventListener('click', function (e) {
@@ -2550,7 +2649,7 @@
     renderTabs();
   });
   document.getElementById('ctm-search').addEventListener('input', function (e) { FILTERS.search = e.target.value; renderList(); });
-  ['status', 'type', 'pic'].forEach(function (k) {
+  ['source', 'status', 'type', 'pic'].forEach(function (k) {
     document.getElementById('ctm-filter-' + k).addEventListener('change', function (e) { FILTERS[k] = e.target.value; renderList(); });
   });
   document.getElementById('ctm-drawer-close').addEventListener('click', closeDrawer);

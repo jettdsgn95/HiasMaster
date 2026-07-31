@@ -748,7 +748,7 @@
           await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
             user_id: u.id,
             type: 'task_status_changed',
-            title: 'Task chờ duyệt nội bộ',
+            title: 'Task Media chờ duyệt',
             message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã gửi duyệt. Vui lòng kiểm tra.`
           })));
         }
@@ -871,7 +871,7 @@
       if (uid) await window.MH.store.notifications.create({
         user_id: uid,
         type: 'task_assigned',
-        title: 'Bạn được giao task',
+        title: 'Bạn được giao task Media',
         message: `${task.task_id} · ${task.project_name || ''} — bạn là P.I.C. Mở chi tiết để bắt đầu.`,
         link: 'production-board.html?id=' + task.task_id,
         related_entity_type: 'tasks',

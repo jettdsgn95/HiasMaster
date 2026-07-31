@@ -63,7 +63,12 @@
       // Deadline thương lượng Client↔Account (add-agreed-deadline-flow.sql)
       'agreed_deadline', 'deadline_proposal_status', 'deadline_proposal_reason',
       'deadline_proposed_by', 'deadline_proposed_by_id', 'deadline_proposed_at',
-      'deadline_responded_at', 'deadline_response_by', 'deadline_response_note', 'deadline_history'];
+      'deadline_responded_at', 'deadline_response_by', 'deadline_response_note', 'deadline_history',
+      // Media Capture Routing + Lead Media workspace (add-media-operations.sql)
+      'media_logistics_status', 'media_schedule_status', 'media_script_required', 'media_script_status',
+      'media_review_status', 'media_content_type', 'media_script_task_id', 'media_service',
+      'onsite_contact', 'onsite_phone', 'media_logistics_note',
+      'production_pic_editor', 'production_pic_editor_user_id', 'script_link'];
     return optional.find((col) => Object.prototype.hasOwnProperty.call(payload, col) && msg.indexOf("'" + col + "'") >= 0) || null;
   }
   function stripMissingOptionalColumn(payload, error, label) {

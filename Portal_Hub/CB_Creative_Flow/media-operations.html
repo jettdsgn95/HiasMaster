@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Media Operations — CB Media Hub</title>
+<meta name="description" content="Media Operations (Điều phối Media) — workspace của Lead Media: logistics, lịch quay/chụp, gán PIC, script subtask, review & delivery cho Media Order." />
+<meta name="theme-color" content="#191970" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;600&display=swap" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container container--wide">
+    <div class="row" style="gap:var(--space-3)">
+      <button class="icon-btn sidebar-toggle" id="sb-toggle" aria-label="Mở menu" aria-controls="dash-sb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/logo.png" alt="" width="36" height="36" /></span><span class="brand-name">CB Media Hub<span class="brand-sub">Creative Service Portal</span></span></a>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle-switch" data-theme-toggle aria-label="Chuyển chế độ sáng/tối">
+        <span class="theme-toggle-thumb">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+      </button>
+      <button class="icon-btn" aria-label="Thông báo" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <div class="header-profile-chip" id="header-profile-chip" tabindex="0">
+        <span class="avatar" id="hpc-avatar">LM</span>
+        <div class="header-pc-info">
+          <span class="header-pc-name" id="hpc-name">Lead Media</span>
+          <span class="role-badge r--lead_media header-pc-role" id="hpc-role-badge">Lead Media</span>
+        </div>
+        <svg class="header-pc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="header-profile-menu" id="header-profile-menu">
+          <a href="#" class="hpm-item" id="hpm-profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Hồ sơ cá nhân
+          </a>
+          <a href="settings.html" class="hpm-item" data-show-roles="admin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg>
+            Cài đặt
+          </a>
+          <div class="hpm-divider"></div>
+          <button type="button" class="hpm-item hpm-danger" id="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop"></div>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar" id="dash-sb">
+    <h6>Vận hành</h6>
+    <ul class="dash-nav">
+      <li><a href="dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span><span>Master Dashboard</span></a></li>
+      <li data-show-roles="admin,account"><a href="order-dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span><span>Orders Dashboard</span></a></li>
+      <li><a href="task-dashboard.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Task Dashboard</span></a></li>
+      <li data-show-roles="admin,account"><a href="request.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span><span>Order Form</span></a></li>
+      <li data-show-roles="admin,account"><a href="database-orders.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span>Client Orders</span></a></li>
+      <li data-show-roles="admin,lead_media,account,system_supervisor"><a href="media-operations.html" class="is-active"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span>Media Operations</span></a></li>
+      <li><a href="production-board.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Internal Task Tracker</span></a></li>
+      <li data-show-roles="admin,account"><a href="reports.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span>Reports</span></a></li>
+    </ul>
+
+    <h6>Hệ thống</h6>
+    <ul class="dash-nav">
+      <li><a href="ai-tools.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10A4 4 0 0 1 12 2z"/><path d="M10 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span><span>AI Tools</span></a></li>
+      <li><a href="chatbot.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Chatbot</span></a></li>
+      <li data-show-roles="admin"><a href="user-management.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>User Management</span></a></li>
+      <li data-show-roles="admin"><a href="settings.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/></svg></span><span>Settings</span></a></li>
+    </ul>
+
+    <div class="dash-sidebar-foot">
+      <div class="sidebar-version-block">
+        <div class="svb-name">CB Creative Flow</div>
+        <div class="svb-ver">v1.0</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-page-head">
+      <div>
+        <h1><span class="serif-italic">Media</span> Operations <span class="text-xs muted" id="mo-readonly-badge" hidden style="font-weight:500;font-size:0.45em;vertical-align:middle;margin-left:8px">— Chế độ chỉ xem</span></h1>
+        <p>Điều phối Media — Lead Media làm owner từ <b>logistics</b> → lịch quay/chụp → gán PIC → production → duyệt nội bộ → bàn giao. <span class="text-xs muted">Quay / Chụp / Video KHÔNG đi qua Content Wording; chỉ order có kịch bản mới sinh Content Script Subtask.</span></p>
+      </div>
+    </div>
+
+    <div class="saved-views ctm-tabs" id="mo-tabs">
+      <button class="saved-view-chip is-active" data-mo-view="overview">Tổng quan Media</button>
+      <button class="saved-view-chip" data-mo-view="queue">Media Orders chờ xử lý <span class="count" id="mo-count-queue">0</span></button>
+      <button class="saved-view-chip" data-mo-view="schedule">Lịch quay/chụp <span class="count" id="mo-count-schedule">0</span></button>
+      <button class="saved-view-chip" data-mo-view="tasks">Production Tasks <span class="count" id="mo-count-tasks">0</span></button>
+      <button class="saved-view-chip" data-mo-view="review">Review / Delivery <span class="count" id="mo-count-review">0</span></button>
+      <button class="saved-view-chip" data-mo-view="all">Tất cả <span class="count" id="mo-count-all">0</span></button>
+    </div>
+
+    <!-- ═ VIEW: TỔNG QUAN ═ -->
+    <section id="mo-view-overview" hidden>
+      <h3 class="ctm-section-title" style="margin:2px 0 10px">Cần xử lý ngay <span class="text-xs muted">— bấm card để mở danh sách đã lọc</span></h3>
+      <div class="ctm-action-center mo-action-center" id="mo-action-center"></div>
+
+      <div class="ctm-cards-2">
+        <div class="ctm-card">
+          <div class="ctm-card-head">
+            <h3>Lịch quay/chụp 7 ngày tới</h3>
+            <button type="button" class="ctm-card-action" data-mo-view="schedule">Xem tất cả
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="ctm-card-body" id="mo-upcoming"></div>
+        </div>
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Trễ hạn / rủi ro</h3><span class="ctm-card-meta" id="mo-risk-count">0</span></div>
+          <div class="ctm-card-body" id="mo-risk"></div>
+        </div>
+      </div>
+
+      <div class="ctm-cards-2">
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Workload PIC Media</h3></div>
+          <div class="ctm-card-body" id="mo-workload"></div>
+        </div>
+        <div class="ctm-card">
+          <div class="ctm-card-head"><h3>Script Content đang chạy</h3><span class="ctm-card-meta" id="mo-script-count">0</span></div>
+          <div class="ctm-card-body" id="mo-script-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: MEDIA ORDERS CHỜ XỬ LÝ ═ -->
+    <section id="mo-view-queue" hidden>
+      <div class="table-card">
+        <div class="table-head"><h3>Media Orders chờ xử lý</h3><span class="rinfo" id="mo-queue-info">—</span></div>
+        <p class="text-xs muted" style="margin:0 0 10px;padding:0 4px">Đơn Quay/Chụp/Video chưa push Production — chốt logistics, lịch, PIC tại đây.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th><th>Project / Sự kiện</th><th>Chi nhánh</th><th>Dịch vụ</th>
+                <th>Lịch quay/chụp</th><th>Địa điểm</th><th>PIC</th><th>Script</th><th>Logistics</th><th>Bước tiếp theo</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="mo-queue-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: LỊCH QUAY/CHỤP ═ -->
+    <section id="mo-view-schedule" hidden>
+      <div class="cwb-filters">
+        <select class="select" id="mo-sch-range">
+          <option value="today">Hôm nay</option>
+          <option value="week" selected>Tuần này</option>
+          <option value="month">Tháng này</option>
+          <option value="all">Tất cả</option>
+        </select>
+        <select class="select" id="mo-sch-pic"><option value="">Mọi PIC</option></select>
+        <select class="select" id="mo-sch-branch"><option value="">Mọi chi nhánh</option></select>
+        <select class="select" id="mo-sch-service">
+          <option value="">Mọi dịch vụ</option>
+          <option value="Quay">Quay</option>
+          <option value="Chụp">Chụp</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><h3>Lịch quay/chụp</h3><span class="rinfo" id="mo-sch-info">—</span></div>
+        <div class="ctm-panel-body" id="mo-schedule-list"></div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: PRODUCTION TASKS ═ -->
+    <section id="mo-view-tasks" hidden>
+      <div class="table-card">
+        <div class="table-head"><h3>Production Tasks — Media</h3><span class="rinfo" id="mo-tasks-info">—</span></div>
+        <p class="text-xs muted" style="margin:0 0 10px;padding:0 4px">Lọc sẵn task Media (quay / chụp / video / dựng) từ Internal Task Tracker.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Task ID</th><th>Project</th><th>Loại</th><th>PIC</th><th>Lịch quay/chụp</th><th>Deadline</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody id="mo-tasks-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: REVIEW / DELIVERY ═ -->
+    <section id="mo-view-review" hidden>
+      <div class="ctm-inbox-grid">
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Chờ Lead Media duyệt nội bộ</h3><span class="rinfo" id="mo-rev-internal-count">0</span></div>
+          <div class="ctm-panel-body" id="mo-rev-internal"></div>
+        </div>
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Cần chỉnh sửa nội bộ</h3><span class="rinfo" id="mo-rev-revision-count">0</span></div>
+          <div class="ctm-panel-body" id="mo-rev-revision"></div>
+        </div>
+      </div>
+      <div class="ctm-inbox-grid" style="margin-top:14px">
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Sẵn sàng bàn giao</h3><span class="rinfo" id="mo-rev-ready-count">0</span></div>
+          <div class="ctm-panel-body" id="mo-rev-ready"></div>
+        </div>
+        <div class="table-card ctm-panel">
+          <div class="table-head"><h3>Đã bàn giao / hoàn thành</h3><span class="rinfo" id="mo-rev-done-count">0</span></div>
+          <div class="ctm-panel-body" id="mo-rev-done"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═ VIEW: TẤT CẢ ═ -->
+    <section id="mo-view-all" hidden>
+      <div class="cwb-filters">
+        <div class="s-wrap"><input class="input" type="search" id="mo-search" placeholder="Tìm Order ID / project / địa điểm..." /></div>
+        <select class="select" id="mo-filter-service">
+          <option value="">Mọi dịch vụ</option>
+          <option value="Quay">Quay</option>
+          <option value="Chụp">Chụp</option>
+        </select>
+        <select class="select" id="mo-filter-logistics"><option value="">Mọi trạng thái logistics</option></select>
+        <select class="select" id="mo-filter-script">
+          <option value="">Script: tất cả</option>
+          <option value="yes">Cần script</option>
+          <option value="no">Không cần script</option>
+        </select>
+        <select class="select" id="mo-filter-branch"><option value="">Mọi chi nhánh</option></select>
+        <select class="select" id="mo-filter-overdue">
+          <option value="">Mọi deadline</option>
+          <option value="overdue">Chỉ trễ hạn</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><span class="rinfo" id="mo-all-info">—</span></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th><th>Project</th><th>Chi nhánh</th><th>Dịch vụ</th><th>Lịch</th>
+                <th>Deadline</th><th>PIC</th><th>Script</th><th>Sản xuất</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="mo-all-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ═ MEDIA ORDER DRAWER ═ -->
+<div class="drawer-backdrop" id="mo-drawer-backdrop"></div>
+<aside class="drawer content-wording-drawer mo-drawer" id="mo-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="order-id-large"><span id="mo-d-order-id">MEDIA-0000</span></div>
+      <h2 id="mo-d-project">—</h2>
+      <div class="head-status">
+        <span class="tb-status" id="mo-d-status">—</span>
+        <span class="priority-pill" id="mo-d-priority"><span class="dot"></span>—</span>
+        <span class="text-xs muted" id="mo-d-service">—</span>
+        <span class="text-xs muted" id="mo-d-pic">PIC: —</span>
+      </div>
+    </div>
+    <button class="icon-btn" id="mo-drawer-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-actions" id="mo-drawer-actions"></div>
+  <div class="drawer-body" id="mo-drawer-body"></div>
+</aside>
+
+<!-- ═ MODAL: tạo Content Script Subtask ═ -->
+<div class="drawer-backdrop" id="mo-modal-backdrop"></div>
+<div class="task-modal mo-modal" id="mo-modal" aria-hidden="true" role="dialog" aria-labelledby="mo-modal-title">
+  <div class="task-modal-head">
+    <h3 id="mo-modal-title">Tạo Content Script Subtask</h3>
+    <button class="icon-btn" id="mo-modal-close" aria-label="Đóng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <form class="task-modal-body" id="mo-modal-body" autocomplete="off"></form>
+  <div class="task-modal-foot">
+    <button class="btn btn-secondary btn-sm" id="mo-modal-cancel" type="button">Hủy</button>
+    <button class="btn btn-primary btn-sm" id="mo-modal-save" type="button">Lưu</button>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/data-store.js"></script>
+<script src="assets/notif-icons.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/media-operations.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>
