@@ -290,6 +290,12 @@
     overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
     document.getElementById('mh-lr-cancel').addEventListener('click', () => overlay.remove());
   }
+
+  // ⚠ 2026-07-31: dòng khai báo `function show(state) {` từng bị xoá nhầm (commit 0fe5cc2
+  // sửa header public) → 3 dòng dưới thành code mồ côi ⇒ SyntaxError ⇒ TOÀN BỘ script inline
+  // của trang không chạy: ?code= không tự điền, nút "Tra cứu" không gắn handler, bấm không
+  // ra gì và KHÔNG báo lỗi. Đừng gộp/xoá dòng này.
+  function show(state) {
     empty.classList.toggle('hidden', state !== 'empty');
     notFound.classList.toggle('hidden', state !== 'notfound');
     result.classList.toggle('hidden', state !== 'result');

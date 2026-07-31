@@ -83,6 +83,13 @@ assert bảng case → in `PASS/FAIL` + `fails=N`. Rẻ và bắt được lỗi
 (mảng rỗng) nên **không seed data vào trang đó qua localStorage được** khi Supabase
 off → verify logic của nó bằng truth-table (2.3), không cố drive DOM.
 
+**2.4b ⚠ Harness 2.1 KHÔNG bắt được lỗi trong `<script>` inline của `.html`** — nó chỉ
+fetch file `.js`. Đã trả giá: `tracking.html` mất dòng `function show(state) {` →
+SyntaxError → **toàn bộ script inline của trang chết im lặng suốt 20 ngày trên
+production** (bấm nút không ra gì, không báo lỗi). ⇒ Sửa trang có script inline thì
+**bắt buộc** smoke-load headless (2.2) + assert `window.__ERRS` rỗng + assert một
+handler/hàm thực sự chạy (vd `?code=` có tự điền input không), đừng chỉ nhìn giao diện.
+
 **2.5 Dọn dẹp**: xoá mọi file `_*-test.html` / `_smoke-*.html` sau khi verify.
 Thư mục chỉ được còn đúng **5 file `_*.html` gốc** (`_gsap-demo`, `_index-gsap-demo`,
 `_notif-preview`, `_preview-revision`, `_review-preview`).
