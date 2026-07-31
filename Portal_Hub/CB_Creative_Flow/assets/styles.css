@@ -6448,6 +6448,86 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .src-chip.src-media  { background: rgb(13 148 136 / 0.16); color: #0f766e; }
 .src-chip.src-other  { background: var(--surface-2); color: var(--text-muted); }
 
+/* ══ LONG TEXT trong DRAWER (2026-07-31) ══════════════════════════════
+   Field dài (brief/script/feedback/note) render thẳng làm drawer cao bất thường
+   và đẩy nút action xuống sâu. Chuẩn: preview 3 dòng → Xem thêm → modal.
+   RÀNG BUỘC: line-height ≥ 1.5 · font ≥ 13px (KHÔNG thu nhỏ chữ để né lỗi) ·
+   pre-wrap giữ xuống dòng · overflow-wrap:anywhere chống URL/chuỗi dài phá layout ·
+   max-width ~72ch cho dễ đọc. */
+.drawer-longtext {
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.drawer-longtext__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px;
+}
+.drawer-longtext__title { font-size: 13px; font-weight: 700; color: var(--text); }
+.drawer-longtext__meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.drawer-longtext__body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 72ch;
+}
+.drawer-longtext__body.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: var(--lt-lines, 3);
+  line-clamp: var(--lt-lines, 3);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.drawer-longtext__empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+.drawer-longtext__actions { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.drawer-longtext__btn {
+  border: 0; background: transparent; color: var(--brand-600, #191970);
+  font-size: 13px; font-weight: 700; padding: 0; cursor: pointer;
+}
+.drawer-longtext__btn:hover { text-decoration: underline; }
+.drawer-longtext__btn:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 2px; border-radius: 4px; }
+
+/* Link dài → 2 nút, KHÔNG in raw URL */
+.drawer-link-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.drawer-link-label { font-size: 12px; color: var(--text-muted); }
+
+/* Modal đọc full (text > 800 ký tự) */
+.longtext-modal[hidden] { display: none !important; }
+.longtext-modal { position: fixed; inset: 0; z-index: 1200; }
+.longtext-modal__backdrop { position: absolute; inset: 0; background: rgb(15 23 42 / 0.45); backdrop-filter: blur(2px); }
+.longtext-modal__panel {
+  position: relative;
+  width: min(880px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  margin: 32px auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.2);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.longtext-modal__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px; border-bottom: 1px solid var(--divider);
+}
+.longtext-modal__head h3 { margin: 0; font-size: 1rem; }
+.longtext-modal__head-actions { display: flex; align-items: center; gap: 8px; }
+.longtext-modal__body {
+  padding: 18px; overflow: auto;
+  font-size: 15px; line-height: 1.65;
+  white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+  max-width: 80ch;
+}
+@media (max-width: 640px) {
+  .longtext-modal__panel { margin: 12px auto; max-height: calc(100vh - 24px); }
+  .drawer-longtext { padding: 10px 12px; }
+}
+
 /* ── Media Operations (Điều phối Media, 2026-07-31) ── */
 .mo-action-center { grid-template-columns: repeat(5, 1fr); }
 @media (max-width: 1200px) { .mo-action-center { grid-template-columns: repeat(3, 1fr); } }

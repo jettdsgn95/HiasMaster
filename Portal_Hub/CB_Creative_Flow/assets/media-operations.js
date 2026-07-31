@@ -700,6 +700,15 @@
     return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes());
   }
   function vOr(x) { return x ? esc(x) : '<em class="muted">—</em>'; }
+  // Long text / link dùng helper chung ở app.js (chuẩn preview 3 dòng → Xem thêm → modal).
+  function longText(title, text, opts) {
+    return (window.MH && window.MH.longText) ? window.MH.longText(title, text, opts)
+      : '<div class="drawer-longtext"><div class="drawer-longtext__body">' + esc(text || '—') + '</div></div>';
+  }
+  function linkBlock(label, url, emptyText) {
+    return (window.MH && window.MH.linkActions) ? window.MH.linkActions(label, url, { emptyText: emptyText })
+      : (url ? '<a class="link" target="_blank" rel="noopener" href="' + esc(url) + '">Mở link</a>' : '<em class="muted">—</em>');
+  }
 
   function buildScriptBlock(o) {
     if (!needsScript(o)) {
@@ -730,8 +739,9 @@
           <dt>Mã subtask</dt><dd>${task ? esc(task.task_code || task.id.slice(0, 8)) : '<em class="muted">chưa tạo</em>'}</dd>
           <dt>PIC Content</dt><dd>${task ? vOr(picName(task.assigned_pic_user_id, task.assigned_pic)) : '<em class="muted">—</em>'}</dd>
           <dt>Hạn script</dt><dd>${task && task.wording_deadline ? esc(fmtDT(task.wording_deadline)) : '<em class="muted">—</em>'}</dd>
-          <dt>Link bản thảo</dt><dd>${task && (task.script_link || task.draft_link) ? `<a class="link" target="_blank" rel="noopener" href="${esc(task.script_link || task.draft_link)}">Mở bản thảo</a>` : '<em class="muted">—</em>'}</dd>
+          <dt>Link bản thảo</dt><dd>${linkBlock('', task && (task.script_link || task.draft_link), 'Chưa có bản thảo.')}</dd>
         </dl>
+        ${task ? longText('Nội dung script (bản Content đang viết)', task.script || task.draft_body || task.brief, { emptyText: 'Content chưa nhập nội dung.' }) : ''}
         <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">
           ${canCreate ? '<button class="btn btn-primary btn-sm" id="mo-create-script">Tạo Content Script Subtask</button>' : ''}
           ${task ? `<a class="btn btn-secondary btn-sm" href="content-team.html?task=${esc(task.id)}">Theo dõi subtask →</a>` : ''}
@@ -755,10 +765,10 @@
           <dt>Chi nhánh / Bộ phận</dt><dd>${vOr(o.department)}</dd>
           <dt>Loại yêu cầu</dt><dd>${vOr(o.request_type)}</dd>
           <dt>Mục đích</dt><dd>${vOr(o.project_purpose)}</dd>
-          <dt>Nội dung brief</dt><dd style="white-space:pre-wrap">${vOr(o.content_brief)}</dd>
           <dt>Deadline khách</dt><dd>${o.agreed_deadline || o.requested_deadline ? esc(fmtDate(o.agreed_deadline || o.requested_deadline)) : '<em class="muted">—</em>'}</dd>
-          <dt>File brief</dt><dd>${o.file_brief_url ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.file_brief_url)}">Mở file</a>` : '<em class="muted">—</em>'}</dd>
+          <dt>File brief</dt><dd>${linkBlock('', o.file_brief_url, 'Chưa có file brief.')}</dd>
         </dl>
+        ${longText('Nội dung brief', o.content_brief)}
       </section>
 
       <section class="drawer-block">
@@ -789,8 +799,8 @@
         <div class="drawer-block-head"><span class="block-letter">E</span><h4>Output bàn giao</h4></div>
         <dl>
           <dt>Hạng mục</dt><dd>${deliverables.length ? deliverables.map((d) => `<span class="chip-mini">${esc(d)}</span>`).join('') : '<em class="muted">—</em>'}</dd>
-          <dt>Ghi chú logistics</dt><dd style="white-space:pre-wrap">${vOr(o.media_logistics_note)}</dd>
         </dl>
+        ${longText('Ghi chú logistics', o.media_logistics_note, { emptyText: 'Chưa có ghi chú.' })}
       </section>
 
       ${buildScriptBlock(o)}
@@ -817,19 +827,21 @@
       <section class="drawer-block">
         <div class="drawer-block-head"><span class="block-letter">H</span><h4>Source / Preview / Final</h4></div>
         ${tasks.length ? tasks.map((t) => `
-          <div class="text-xs" style="padding:8px 0;border-top:1px solid var(--divider)">
-            <b>${esc(t.task_id)}</b> · ${esc(TASK_TYPE_LABEL[t.task_type] || t.task_type)}<br>
-            Source: ${t.link_drive ? `<a class="link" target="_blank" rel="noopener" href="${esc(t.link_drive)}">link</a>` : '—'} ·
-            Preview: ${t.preview_link ? `<a class="link" target="_blank" rel="noopener" href="${esc(t.preview_link)}">link</a>` : '—'} ·
-            Final: ${t.final_link ? `<a class="link" target="_blank" rel="noopener" href="${esc(t.final_link)}">link</a>` : '—'}
+          <div style="padding:10px 0;border-top:1px solid var(--divider)">
+            <div class="text-xs" style="margin-bottom:6px"><b>${esc(t.task_id)}</b> · ${esc(TASK_TYPE_LABEL[t.task_type] || t.task_type)}</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${linkBlock('Source', t.link_drive, 'Source: chưa có')}
+              ${linkBlock('Preview', t.preview_link, 'Preview: chưa có')}
+              ${linkBlock('Final', t.final_link, 'Final: chưa có')}
+            </div>
           </div>`).join('') : '<p class="text-xs muted" style="margin:0">Chưa có task nào — link sẽ xuất hiện sau khi PIC upload trong Task Tracker.</p>'}
       </section>
 
       <section class="drawer-block">
         <div class="drawer-block-head"><span class="block-letter">I</span><h4>Bàn giao cho requester / client</h4></div>
         <dl>
-          <dt>Preview đã gửi</dt><dd>${o.preview_link ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.preview_link)}">link</a>` : '<em class="muted">—</em>'}</dd>
-          <dt>Final đã gửi</dt><dd>${o.final_delivery_link ? `<a class="link" target="_blank" rel="noopener" href="${esc(o.final_delivery_link)}">link</a>` : '<em class="muted">—</em>'}</dd>
+          <dt>Preview đã gửi</dt><dd>${linkBlock('', o.preview_link, 'Chưa gửi Preview.')}</dd>
+          <dt>Final đã gửi</dt><dd>${linkBlock('', o.final_delivery_link, 'Chưa gửi Final.')}</dd>
         </dl>
         <p class="text-xs muted" style="margin:8px 0 0">Gửi Preview/Final cho client vẫn thực hiện ở <b>Client Orders</b> (Account/Admin) để giữ 1 nguồn liên lạc với client.</p>
         <div class="row" style="margin-top:8px"><a class="btn btn-secondary btn-sm" href="database-orders.html?id=${esc(o.order_id)}">Mở Client Orders →</a></div>

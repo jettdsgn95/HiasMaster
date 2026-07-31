@@ -166,6 +166,15 @@
     return `Còn ${days}d`;
   }
   function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  // Long text / link dài trong drawer — helper chung ở app.js (preview 3 dòng → Xem thêm → modal).
+  function longText(title, text, opts) {
+    return (window.MH && window.MH.longText) ? window.MH.longText(title, text, opts)
+      : '<div class="drawer-longtext"><div class="drawer-longtext__body">' + escapeHtml(text || '—') + '</div></div>';
+  }
+  function linkBlock(label, url, emptyText) {
+    return (window.MH && window.MH.linkActions) ? window.MH.linkActions(label, url, { emptyText: emptyText })
+      : (url ? '<a class="link" target="_blank" rel="noopener" href="' + escapeHtml(url) + '">Mở link</a>' : '<em class="muted">—</em>');
+  }
 
   /* ---------- Team members for @mention autocomplete ---------- */
   const TEAM_MEMBERS = [
@@ -1179,10 +1188,10 @@
         <dl>
           <dt>Task ID</dt><dd><span class="mono">${escapeHtml(t.task_id)}</span></dd>
           <dt>Linked Order</dt><dd>${t.order_id ? `<span class="mono">${escapeHtml(t.order_id)}</span>` : '<em class="muted">Standalone</em>'}</dd>
-          <dt>Content</dt><dd>${v(t.content)}</dd>
           <dt>Type</dt><dd>${TYPE_LABEL[t.task_type]}</dd>
           ${(t.task_type === 'photo' || t.task_type === 'shoot') ? `<dt>Địa điểm</dt><dd>${v(t.shoot_location)}</dd>` : ''}
         </dl>
+        ${longText('Nội dung / Brief task', t.content, { emptyText: 'Chưa có nội dung brief.' })}
       </section>
 
       <section class="drawer-block tw-check-card">
@@ -1195,19 +1204,19 @@
 
         <div class="link-row ${t.link_drive ? 'has-link' : ''}">
           <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
-          <div class="l-info"><b>Source / Working Drive</b>${canEditLinks ? '' : `<span>${t.link_drive ? `<a href="${escapeHtml(t.link_drive)}" target="_blank" class="link">${escapeHtml(t.link_drive)}</a>` : 'Chưa có'}</span>`}</div>
+          <div class="l-info"><b>Source / Working Drive</b>${canEditLinks ? '' : `<span>${linkBlock('', t.link_drive, 'Chưa có')}</span>`}</div>
           ${canEditLinks ? linkInput('link-drive-in', t.link_drive, 'https://drive.google.com/...') : ''}
         </div>
 
         <div class="link-row ${t.preview_link ? 'has-link' : ''}">
           <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-          <div class="l-info"><b>Preview Link</b>${canEditLinks ? '' : `<span>${t.preview_link ? `<a href="${escapeHtml(t.preview_link)}" target="_blank" class="link">${escapeHtml(t.preview_link)}</a>` : 'Chưa có'}</span>`}</div>
+          <div class="l-info"><b>Preview Link</b>${canEditLinks ? '' : `<span>${linkBlock('', t.preview_link, 'Chưa có')}</span>`}</div>
           ${canEditLinks ? linkInput('preview-in', t.preview_link, 'https://drive.google.com/preview...') : ''}
         </div>
 
         <div class="link-row ${t.final_link ? 'has-link' : ''}">
           <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-          <div class="l-info"><b>Final Link</b>${canEditLinks ? '' : `<span>${t.final_link ? `<a href="${escapeHtml(t.final_link)}" target="_blank" class="link">${escapeHtml(t.final_link)}</a>` : 'Chưa có'}</span>`}</div>
+          <div class="l-info"><b>Final Link</b>${canEditLinks ? '' : `<span>${linkBlock('', t.final_link, 'Chưa có')}</span>`}</div>
           ${canEditLinks ? linkInput('final-in', t.final_link, 'https://drive.google.com/final...') : ''}
         </div>
 

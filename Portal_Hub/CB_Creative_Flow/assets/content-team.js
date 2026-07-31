@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    content-team.js — Content Team Workspace (Lead Content + Content)
    - Team TÁCH BIỆT khỏi Production/Task Tracker: queue/board/drawer/review riêng.
    - Roles: admin (full) · account (read + theo dõi, action ở Client Orders)
@@ -58,6 +58,15 @@
   /* ---------- Helpers ---------- */
   function toast(t, ti, m) { if (window.MH && window.MH.toast) window.MH.toast({ type: t, title: ti, message: m }); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
+  // Long text / link dài trong drawer — helper chung ở app.js (preview 3 dòng → Xem thêm → modal).
+  function longText(title, text, opts) {
+    return (window.MH && window.MH.longText) ? window.MH.longText(title, text, opts)
+      : '<div class="drawer-longtext"><div class="drawer-longtext__body">' + esc(text || '—') + '</div></div>';
+  }
+  function linkBlock(label, url, emptyText) {
+    return (window.MH && window.MH.linkActions) ? window.MH.linkActions(label, url, { emptyText: emptyText })
+      : (url ? '<a class="link" target="_blank" rel="noopener" href="' + esc(url) + '">Mở link</a>' : '<em class="muted">—</em>');
+  }
   function fmtDT(s) { if (!s) return '—'; s = String(s); const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z'); if (isNaN(d.getTime())) return s; const p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function toLocalInput(s) { if (!s) return ''; const d = new Date(/[Z+]/.test(String(s).slice(10)) ? s : String(s).replace(' ', 'T') + 'Z'); if (isNaN(d.getTime())) return ''; const p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function initials(name) { return String(name || '?').trim().split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); }
@@ -862,7 +871,7 @@
     if (ws === 'submitted_to_account') acctInner = '<div class="dw-callout dw--brand"><p>Lead đã duyệt — chờ Account kiểm tra &amp; gửi Client (thao tác ở Client Orders drawer).</p></div>';
     else if (ws === 'account_revision' && o.wording_account_note) acctInner = '<div class="dw-callout dw--warning"><p><b>Account yêu cầu chỉnh:</b> ' + esc(o.wording_account_note) + '</p></div>';
     else if (ws === 'sent_to_client') acctInner = '<div class="dw-callout dw--brand"><p>Account đã gửi Client' + (o.wording_client_sent_at ? ' · ' + fmtDT(o.wording_client_sent_at) : '') + ' — chờ Client xác nhận.</p></div>';
-    else if (ws === 'client_feedback') acctInner = '<div class="dw-callout dw--warning"><p><b>Client yêu cầu chỉnh</b>' + (o.wording_client_feedback_at ? ' · ' + fmtDT(o.wording_client_feedback_at) : '') + '</p>' + (o.wording_client_feedback ? '<p style="white-space:pre-wrap">' + esc(o.wording_client_feedback) + '</p>' : '') + '</div>';
+    else if (ws === 'client_feedback') acctInner = '<div class="dw-callout dw--warning"><p><b>Client yêu cầu chỉnh</b>' + (o.wording_client_feedback_at ? ' · ' + fmtDT(o.wording_client_feedback_at) : '') + '</p>' + (o.wording_client_feedback ? longText('Nội dung Client yêu cầu chỉnh', o.wording_client_feedback, { lines: 3 }) : '') + '</div>';
     else if (ws === 'client_approved' || ws === 'completed') acctInner = '<div class="dw-callout dw--success"><p><b>Client đã xác nhận brief wording.</b>' + (o.wording_approved_at ? ' <span class="dw-meta">· ' + fmtDT(o.wording_approved_at) + '</span>' : '') + '</p></div>';
     else acctInner = '<p class="text-xs muted" style="margin:0">Chưa tới bước Account / Client.</p>';
 
@@ -880,13 +889,12 @@
         + '<dt>Đối tượng</dt><dd>' + arr(o.target_audience) + '</dd>'
         + '<dt>Kênh sử dụng</dt><dd>' + arr(o.usage_channels) + '</dd>'
         + '<dt>Loại yêu cầu</dt><dd>' + v(TYPE_LABEL[o.request_type] || o.request_type) + '</dd>'
-        + '<dt>Nội dung gốc</dt><dd style="white-space:pre-wrap">' + v(o.content_brief) + '</dd>'
-        + '<dt>Định hướng</dt><dd>' + v(o.creative_direction) + '</dd>'
-        + '<dt>File brief</dt><dd>' + link(o.file_brief_url) + '</dd>'
-        + '<dt>Source link</dt><dd>' + link(o.source_link) + '</dd>'
+        + '</dl>' + longText('Nội dung gốc (brief từ Client)', o.content_brief) + '<dl class="drawer-dl-cont">'
+        + '<dt>File brief</dt><dd>' + linkBlock('', o.file_brief_url, 'Chưa có file brief.') + '</dd>'
+        + '<dt>Source link</dt><dd>' + linkBlock('', o.source_link, 'Chưa có source link.') + '</dd>'
         + '<dt>Client deadline</dt><dd>' + v(o.requested_deadline) + '</dd>'
         + '<dt>Hạn wording</dt><dd>' + (o.wording_deadline ? '<span class="' + (overdue ? 'cwb-overdue' : '') + '">' + esc(fmtDT(o.wording_deadline)) + '</span>' + (overdue ? ' · ⚠ trễ' : '') : '<em class="muted">— (Lead chưa đặt)</em>') + '</dd>'
-      + '</dl></section>'
+      + '</dl>' + longText('Định hướng sáng tạo', o.creative_direction, { emptyText: 'Chưa có định hướng.' }) + '</section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">W</span><h4>Content Wording Workspace</h4></div>' + lockNote + wf + '</section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">C</span><h4>Quality Checklist</h4></div><div style="display:flex;flex-direction:column;gap:8px">' + clHtml + '</div>' + (editable ? '<p class="text-xs muted" style="margin:10px 0 0">Đạt tối thiểu ' + CHECKLIST_MIN + '/' + CHECKLIST.length + ' checklist + điền các trường (*) trước khi "Gửi Lead Content duyệt".</p>' : '') + '</section>'
       + buildLeadPanel(o)
@@ -1492,7 +1500,7 @@
     // Phase 4 — Lead Review blocks: bản thảo Content + checklist + handoff + revision history + review panel.
     const WSF = WS_ORDER.filter(function (k) { return t[k]; });
     const draftBlock = WSF.length ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">D</span><h4>Bản thảo Content</h4></div>'
-      + WSF.map(function (k) { return '<div class="ctm-draft-field"><div class="ctm-draft-label">' + esc(WS_LABEL[k] || k) + '</div><div class="ctm-draft-val" style="white-space:pre-wrap">' + esc(t[k]) + '</div></div>'; }).join('') + '</section>'
+      + WSF.map(function (k) { return longText(WS_LABEL[k] || k, t[k]); }).join('') + '</section>'
       : (isLead ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">D</span><h4>Bản thảo Content</h4></div><p class="text-xs muted" style="margin:0">PIC chưa nhập nội dung.</p></section>' : '');
     const cl = (t.quality_checklist && typeof t.quality_checklist === 'object') ? t.quality_checklist : parseChecklist(t.quality_checklist);
     const clDone = CTCHK.filter(function (c) { return cl[c[0]]; }).length;
@@ -1500,7 +1508,7 @@
       + CTCHK.map(function (c) { return '<li class="' + (cl[c[0]] ? 'is-on' : '') + '">' + (cl[c[0]] ? '✓ ' : '○ ') + esc(c[1]) + '</li>'; }).join('') + '</ul></section>';
     const hoFilled = Object.keys(HANDOFF_LABEL).filter(function (k) { return t[k]; });
     const handoffBlock = t.need_media_production ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">H</span><h4>Production Handoff Draft</h4></div>'
-      + (hoFilled.length ? '<dl>' + hoFilled.map(function (k) { return '<dt>' + esc(HANDOFF_LABEL[k]) + '</dt><dd style="white-space:pre-wrap">' + esc(t[k]) + '</dd>'; }).join('') + '</dl>' : '<p class="text-xs muted" style="margin:0">Chưa có handoff — bổ sung trước khi tạo Media Request (Phase 5).</p>') + '</section>' : '';
+      + (hoFilled.length ? hoFilled.map(function (k) { return longText(HANDOFF_LABEL[k], t[k]); }).join('') : '<p class="text-xs muted" style="margin:0">Chưa có handoff — bổ sung trước khi tạo Media Request (Phase 5).</p>') + '</section>' : '';
     const rev = Array.isArray(t.revision_history) ? t.revision_history : [];
     const revBlock = '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">V</span><h4>Revision History (' + (t.internal_revision_count || 0) + ' vòng)</h4></div>'
       + (rev.length ? '<ul class="activity-mini">' + rev.slice().reverse().map(function (r) { return '<li><span><b>Vòng ' + esc(r.round || '') + ':</b> ' + esc(r.reason || '') + (r.note ? ' — ' + esc(r.note) : '') + ' · <b>' + esc(r.by || '') + '</b></span><time>' + fmtDT(r.at) + '</time></li>'; }).join('') + '</ul>' : '<p class="text-xs muted" style="margin:0">Chưa có vòng sửa nội bộ.</p>') + '</section>';
@@ -1547,7 +1555,7 @@
         + '<dt>Mã task</dt><dd><span class="order-id">' + esc(ctCode(t)) + '</span></dd>'
         + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[t.source] || t.source) + (t.order_id ? ' · Order ' + esc(t.order_id) : '') + '</dd>'
         + '<dt>Output types</dt><dd>' + outputChips(t.output_types) + '</dd>'
-        + '<dt>Brief</dt><dd style="white-space:pre-wrap">' + v(t.brief) + '</dd>'
+        + '</dl>' + longText('Brief của task', t.brief) + '<dl class="drawer-dl-cont">'
         + '<dt>PIC Content</dt><dd>' + v(ctPicName(t)) + '</dd>'
         + '<dt>Hạn wording</dt><dd>' + (t.wording_deadline ? '<span class="' + (overdue ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.wording_deadline)) + '</span>' + (overdue ? ' · ⚠ trễ' : '') : '<em class="muted">—</em>') + '</dd>'
         + '<dt>Vòng sửa nội bộ</dt><dd>' + (t.internal_revision_count || 0) + '</dd>'

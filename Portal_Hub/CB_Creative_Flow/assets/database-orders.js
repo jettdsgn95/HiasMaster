@@ -410,7 +410,7 @@
         </div>
         <dl class="rev-panel-dl">
           <dt>Feedback status</dt><dd>${fbStatus}</dd>
-          <dt>Feedback gần nhất</dt><dd>${o.latest_feedback_note ? escapeHtml(o.latest_feedback_note) : '<em class="muted">Chưa có feedback</em>'}</dd>
+          <dt>Feedback gần nhất</dt><dd>${o.latest_feedback_note ? '<span class="text-xs muted">xem bên dưới</span>' : '<em class="muted">Chưa có feedback</em>'}</dd>
           <dt>Lúc</dt><dd>${o.last_feedback_at ? fmtDateTime(o.last_feedback_at) : '<em class="muted">—</em>'}</dd>
           <dt>Bởi</dt><dd>${o.last_feedback_by ? escapeHtml(o.last_feedback_by) : '<em class="muted">—</em>'}</dd>
         </dl>
@@ -418,6 +418,7 @@
           <div style="margin-top:10px;padding:11px 13px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-left:3px solid var(--info,#0ea5e9);border-radius:8px;font-size:12.5px;line-height:1.55">
             <b>Feedback Vòng 3 — Final Check.</b> Đây là vòng chỉnh sửa cuối cùng của Order hiện tại. Account/Admin cần gửi feedback này cho PIC xử lý. Sau khi Production hoàn tất, PIC cập nhật Final Link và gửi duyệt nội bộ. Account/Admin kiểm tra và gửi Final cho Client.
           </div>` : ''}
+        ${longText('Feedback gần nhất từ Client', o.latest_feedback_note, { emptyText: 'Chưa có feedback.', lines: 3 })}
         ${(o.latest_feedback_note && canAct && o.feedback_status === 'feedback_received') ? `
           <div class="rev-panel-actions">
             <button type="button" class="btn btn-sm ${atLimit ? 'btn-primary' : 'btn-secondary'}" id="btn-send-feedback-pic">${atLimit ? 'Gửi feedback vòng 3 cho PIC' : 'Gửi feedback này cho PIC'}</button>
@@ -554,6 +555,15 @@
     return '';
   }
   function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  // Long text / link dài trong drawer — helper chung ở app.js (preview 3 dòng → Xem thêm → modal).
+  function longText(title, text, opts) {
+    return (window.MH && window.MH.longText) ? window.MH.longText(title, text, opts)
+      : '<div class="drawer-longtext"><div class="drawer-longtext__body">' + escapeHtml(text || '—') + '</div></div>';
+  }
+  function linkBlock(label, url, emptyText) {
+    return (window.MH && window.MH.linkActions) ? window.MH.linkActions(label, url, { emptyText: emptyText })
+      : (url ? '<a class="link" target="_blank" rel="noopener" href="' + escapeHtml(url) + '">Mở link</a>' : '<em class="muted">—</em>');
+  }
 
   /* ---------- State ---------- */
   const state = {
@@ -999,10 +1009,10 @@
           <dt>Vòng wording</dt><dd>${round || '<em class="muted">—</em>'}</dd>
           <dt>Gửi Account lúc</dt><dd>${o.wording_submitted_at ? fmtDateTime(o.wording_submitted_at) : '<em class="muted">—</em>'}</dd>
           <dt>Xác nhận Client</dt><dd>${escapeHtml(clientConfText)}</dd>
-          ${o.wording_brief ? `<dt>Brief đã wording</dt><dd style="white-space:pre-wrap">${escapeHtml(String(o.wording_brief).slice(0, 400))}${String(o.wording_brief).length > 400 ? '…' : ''}</dd>` : ''}
-          ${o.wording_account_note ? `<dt>Ghi chú Account</dt><dd>${escapeHtml(o.wording_account_note)}</dd>` : ''}
-          ${o.wording_client_feedback ? `<dt>Client yêu cầu chỉnh</dt><dd style="white-space:pre-wrap">${escapeHtml(o.wording_client_feedback)}</dd>` : ''}
-        </dl>` : ''}
+        </dl>
+        ${o.wording_brief ? longText('Brief đã wording', o.wording_brief) : ''}
+        ${o.wording_account_note ? longText('Ghi chú Account', o.wording_account_note) : ''}
+        ${o.wording_client_feedback ? longText('Client yêu cầu chỉnh', o.wording_client_feedback) : ''}` : ''}
         <div class="row" style="justify-content:flex-end; gap:8px; margin-top:12px">
           ${showSendBtn ? `<button type="button" class="btn btn-primary btn-sm" id="act-send-wording-client" ${canSendClient ? '' : 'disabled'}>
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -1424,12 +1434,12 @@
           <dt>Hạng mục</dt><dd>${safeJoin(o.deliverable_type)}</dd>
           <dt>Kích thước</dt><dd>${v(o.size_ratio)}</dd>
           ${['media', 'photo', 'shoot'].includes(o.request_type) ? `<dt>Địa điểm</dt><dd>${v(o.shoot_location)}</dd>` : ''}
-          <dt>Nội dung</dt><dd>${v(o.content_brief)}</dd>
-          <dt>Định hướng</dt><dd>${v(o.creative_direction)}</dd>
           <dt>Wording</dt><dd>${o.wording_required ? 'Cần wording' : 'Dùng đúng nội dung'}</dd>
-          <dt>File brief</dt><dd>${o.file_brief_url ? link(o.file_brief_url) : '<em class="muted">—</em>'}</dd>
-          <dt>Source link</dt><dd>${link(o.source_link)}</dd>
+          <dt>File brief</dt><dd>${linkBlock('', o.file_brief_url, 'Chưa có file brief.')}</dd>
+          <dt>Source link</dt><dd>${linkBlock('', o.source_link, 'Chưa có source link.')}</dd>
         </dl>
+        ${longText('Nội dung brief', o.content_brief)}
+        ${longText('Định hướng sáng tạo', o.creative_direction, { emptyText: 'Chưa có định hướng.' })}
         ${buildBriefChecklist(o)}
       </section>
 
@@ -1518,7 +1528,7 @@
         <div class="drawer-block-head"><span class="block-letter">C2</span><h4>Comment Lead Content</h4></div>
         <p class="ow-comment-help">Kênh comment nội bộ của Lead Content (chỉ hiển thị nội bộ — Client Portal không thấy).</p>
         ${o.lead_content_notes
-          ? `<div class="lc-notes-view" id="lc-notes-view">${escapeHtml(o.lead_content_notes)}</div>`
+          ? longText('Thread comment', o.lead_content_notes, { lines: 3, emptyText: 'Chưa có comment nào.' })
           : `<div class="lc-notes-view lc-notes-empty" id="lc-notes-view">Chưa có comment nào.</div>`}
         ${IS_LEAD_CONTENT ? `
         <textarea class="textarea" id="lc-comment-input" placeholder="Comment nội bộ cho Account/Admin (ghi danh Lead Content)…" style="min-height:80px; margin-top: var(--space-3)"></textarea>
@@ -1871,8 +1881,19 @@
         await window.MH.store.orders.update(o.order_id, { lead_content_notes: updatedNotes });
       }
       o.lead_content_notes = updatedNotes || o.lead_content_notes;
-      const view = document.getElementById('lc-notes-view');
-      if (view) { view.textContent = o.lead_content_notes || ''; view.classList.remove('lc-notes-empty'); }
+      // Thread comment nay render bằng LongTextBlock (2026-07-31) → cập nhật vào
+      // `.drawer-longtext__body` trong chính section này. Giữ fallback #lc-notes-view
+      // cho nhánh chưa có comment nào (lúc đó vẫn là div cũ).
+      const sectionEl = document.querySelector('#order-drawer .ow-lc-comments');
+      const ltBody = sectionEl && sectionEl.querySelector('.drawer-longtext__body');
+      if (ltBody) {
+        ltBody.textContent = o.lead_content_notes || '';
+        const meta = sectionEl.querySelector('.drawer-longtext__meta');
+        if (meta) meta.textContent = String(o.lead_content_notes || '').length + ' ký tự';
+      } else {
+        const view = document.getElementById('lc-notes-view');
+        if (view) { view.textContent = o.lead_content_notes || ''; view.classList.remove('lc-notes-empty'); }
+      }
       if (input) input.value = '';
       window.MH.toast({ type: 'success', title: 'Đã gửi comment', message: 'Account/Admin sẽ thấy trong Order Drawer.' });
       // Báo Admin + Account có comment mới (type 'system' — nằm trong CHECK notifications).

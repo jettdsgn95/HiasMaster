@@ -190,6 +190,155 @@
     if (isMediaOrder(order)) return mediaNeedsContentScript(order);
     return WORDING_TYPES.indexOf(order.request_type) >= 0;
   }
+  /* ---------- LONG TEXT trong DRAWER (2026-07-31) ----------
+     Vấn đề: field dài (brief / script / feedback / note) render thẳng vào drawer →
+     rớt dòng liên tục, block cao bất thường, đẩy nút Save/Push/Approve xuống sâu.
+     Giải pháp dùng chung (đặt ở app.js vì 5 file drawer đều cần — copy 5 bản là
+     nguồn sinh lệch UI):
+        ≤300 ký tự      → hiển thị đầy đủ
+        301–800 ký tự   → clamp 3 dòng + "Xem thêm / Thu gọn" + Copy
+        >800 ký tự      → clamp 3 dòng + "Xem đầy đủ" (modal riêng) + Copy
+     KHÔNG giảm font-size, KHÔNG render HTML thô từ input người dùng (escape hết),
+     giữ nguyên xuống dòng bằng white-space: pre-wrap ở CSS. */
+  function ltEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  const LT_THRESHOLD = 300;   // trên mức này thì clamp
+  const LT_MODAL = 800;       // trên mức này thì đọc trong modal thay vì expand tại chỗ
+  function renderLongTextBlock(title, text, options) {
+    options = options || {};
+    const raw = String(text == null ? '' : text).trim();
+    const threshold = options.threshold || LT_THRESHOLD;
+    const modalThreshold = options.modalThreshold || LT_MODAL;
+    const lines = options.lines || 3;
+    const head = '<div class="drawer-longtext__head"><span class="drawer-longtext__title">' + ltEsc(title) + '</span>';
+    if (!raw) {
+      return '<div class="drawer-longtext">' + head + '</div>'
+        + '<div class="drawer-longtext__empty">' + ltEsc(options.emptyText || 'Chưa có nội dung.') + '</div></div>';
+    }
+    const isLong = raw.length > threshold;
+    const useModal = raw.length > modalThreshold;
+    return '<div class="drawer-longtext" data-longtext data-longtext-modal="' + (useModal ? '1' : '0') + '">'
+      + head + '<span class="drawer-longtext__meta">' + raw.length + ' ký tự</span></div>'
+      + '<div class="drawer-longtext__body' + (isLong ? ' is-clamped' : '') + '" style="--lt-lines:' + lines + '">' + ltEsc(raw) + '</div>'
+      + (isLong
+        ? '<div class="drawer-longtext__actions">'
+          + (useModal
+            ? '<button type="button" class="drawer-longtext__btn" data-longtext-open>Xem đầy đủ</button>'
+            : '<button type="button" class="drawer-longtext__btn" data-longtext-toggle>Xem thêm</button>')
+          + '<button type="button" class="drawer-longtext__btn" data-longtext-copy>Copy</button>'
+          + '</div>'
+        : '')
+      + '</div>';
+  }
+  /* Link dài (Drive/preview/final/script): KHÔNG render raw URL — nó wrap vỡ layout.
+     Đổi thành 2 nút "Mở link" + "Copy link". */
+  function renderLinkActions(label, url, opts) {
+    opts = opts || {};
+    const raw = String(url == null ? '' : url).trim();
+    if (!raw) return '<span class="text-xs muted">' + ltEsc(opts.emptyText || 'Chưa có link.') + '</span>';
+    const safe = /^(https?:)?\/\//i.test(raw) || raw.charAt(0) === '/' ? raw : 'https://' + raw;
+    return '<span class="drawer-link-actions">'
+      + (label ? '<span class="drawer-link-label">' + ltEsc(label) + '</span>' : '')
+      + '<a class="btn btn-secondary btn-sm" href="' + ltEsc(safe) + '" target="_blank" rel="noopener">Mở link</a>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-copy-link="' + ltEsc(safe) + '">Copy link</button>'
+      + '</span>';
+  }
+  // Modal đọc full — tạo LAZY vào <body> để không phải sửa <script> của 20 file HTML.
+  function ensureLongTextModal() {
+    let m = document.getElementById('mh-longtext-modal');
+    if (m) return m;
+    m = document.createElement('div');
+    m.id = 'mh-longtext-modal';
+    m.className = 'longtext-modal';
+    m.hidden = true;
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<div class="longtext-modal__backdrop" data-longtext-close></div>'
+      + '<div class="longtext-modal__panel">'
+      + '<div class="longtext-modal__head"><h3 id="mh-lt-title">Nội dung đầy đủ</h3>'
+      + '<div class="longtext-modal__head-actions">'
+      + '<button type="button" class="btn btn-secondary btn-sm" id="mh-lt-copy">Copy</button>'
+      + '<button type="button" class="icon-btn" data-longtext-close aria-label="Đóng">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+      + '</button></div></div>'
+      + '<div class="longtext-modal__body" id="mh-lt-body"></div></div>';
+    document.body.appendChild(m);
+    m.querySelector('#mh-lt-copy').addEventListener('click', function () {
+      copyText(document.getElementById('mh-lt-body').textContent);
+    });
+    return m;
+  }
+  function openLongTextModal(title, text) {
+    const m = ensureLongTextModal();
+    m.querySelector('#mh-lt-title').textContent = title || 'Nội dung đầy đủ';
+    m.querySelector('#mh-lt-body').textContent = text || '';
+    m.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLongTextModal() {
+    const m = document.getElementById('mh-longtext-modal');
+    if (!m || m.hidden) return;
+    m.hidden = true;
+    // Drawer đang mở cũng khoá scroll body → chỉ trả lại khi không còn drawer nào mở.
+    if (!document.querySelector('.drawer.is-open, .task-modal.is-open')) document.body.style.overflow = '';
+  }
+  function copyText(txt) {
+    const s = String(txt == null ? '' : txt);
+    const done = function () { if (window.MH && window.MH.toast) window.MH.toast({ type: 'success', title: 'Đã copy' }); };
+    const fail = function () { if (window.MH && window.MH.toast) window.MH.toast({ type: 'warning', title: 'Không copy được', message: 'Bôi đen và Ctrl+C thủ công giúp anh/chị.' }); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(done).catch(fail);
+      return;
+    }
+    // Fallback cho ngữ cảnh không có clipboard API (http, iframe…).
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); done();
+    } catch (e) { fail(); }
+  }
+  // Event delegation 1 lần cho toàn hệ thống (mọi drawer render sau vẫn chạy).
+  document.addEventListener('click', function (e) {
+    const toggle = e.target.closest('[data-longtext-toggle]');
+    if (toggle) {
+      const box = toggle.closest('[data-longtext]');
+      const body = box && box.querySelector('.drawer-longtext__body');
+      if (!body) return;
+      const expanding = body.classList.contains('is-clamped');
+      body.classList.toggle('is-clamped', !expanding);
+      toggle.textContent = expanding ? 'Thu gọn' : 'Xem thêm';
+      return;
+    }
+    const copyBtn = e.target.closest('[data-longtext-copy]');
+    if (copyBtn) {
+      const box = copyBtn.closest('[data-longtext]');
+      const body = box && box.querySelector('.drawer-longtext__body');
+      if (body) copyText(body.textContent.trim());
+      return;
+    }
+    const openBtn = e.target.closest('[data-longtext-open]');
+    if (openBtn) {
+      const box = openBtn.closest('[data-longtext]');
+      const t = box && box.querySelector('.drawer-longtext__title');
+      const b = box && box.querySelector('.drawer-longtext__body');
+      openLongTextModal(t ? t.textContent : 'Nội dung đầy đủ', b ? b.textContent.trim() : '');
+      return;
+    }
+    const linkCopy = e.target.closest('[data-copy-link]');
+    if (linkCopy) { copyText(linkCopy.getAttribute('data-copy-link')); return; }
+    if (e.target.closest('[data-longtext-close]')) closeLongTextModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      const m = document.getElementById('mh-longtext-modal');
+      if (m && !m.hidden) { e.stopPropagation(); closeLongTextModal(); }
+    }
+  }, true); // capture: đóng modal TRƯỚC khi drawer bắt Escape và tự đóng theo
+  window.MH.longText = renderLongTextBlock;
+  window.MH.linkActions = renderLinkActions;
+  window.MH.openLongText = openLongTextModal;
+  window.MH.copyText = copyText;
+
   window.MH.routing = {
     MEDIA_TYPES: MEDIA_TYPES,
     WORDING_TYPES: WORDING_TYPES,

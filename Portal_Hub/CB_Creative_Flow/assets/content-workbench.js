@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    content-workbench.js — Phase 3: Content Wording Workbench + Drawer
    - Content chuẩn hóa brief (order-level fields) trước Confirm Brief.
    - Persist: localStorage cache (mh-wording-drafts) + Supabase orders.update (best-effort).
@@ -54,6 +54,15 @@
   /* ---------- Helpers / constants ---------- */
   function toast(t, ti, m) { if (window.MH && window.MH.toast) window.MH.toast({ type: t, title: ti, message: m }); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
+  // Long text / link dài trong drawer — helper chung ở app.js (preview 3 dòng → Xem thêm → modal).
+  function longText(title, text, opts) {
+    return (window.MH && window.MH.longText) ? window.MH.longText(title, text, opts)
+      : '<div class="drawer-longtext"><div class="drawer-longtext__body">' + esc(text || '—') + '</div></div>';
+  }
+  function linkBlock(label, url, emptyText) {
+    return (window.MH && window.MH.linkActions) ? window.MH.linkActions(label, url, { emptyText: emptyText })
+      : (url ? '<a class="link" target="_blank" rel="noopener" href="' + esc(url) + '">Mở link</a>' : '<em class="muted">—</em>');
+  }
   function fmtDT(s) { if (!s) return '—'; s = String(s); const d = new Date(/[Z+]/.test(s.slice(10)) ? s : s.replace(' ', 'T') + 'Z'); if (isNaN(d.getTime())) return s; const p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   // Trễ hạn wording: có wording_deadline, chưa duyệt/hoàn tất, chưa hủy, đã quá hạn.
   function isWordingOverdue(o) {
@@ -280,7 +289,7 @@
     if (ws === 'client_feedback' && o.wording_client_feedback) {
       clientInner = '<div class="dw-callout dw--warning"><p><b>Client yêu cầu chỉnh — Vòng ' + (o.brief_wording_round || 0) + '</b>'
         + (o.wording_client_feedback_at ? ' <span class="dw-meta">· ' + fmtDT(o.wording_client_feedback_at) + '</span>' : '') + '</p>'
-        + '<p style="white-space:pre-wrap">' + esc(o.wording_client_feedback) + '</p></div>';
+        + longText('Nội dung Client yêu cầu chỉnh', o.wording_client_feedback, { lines: 3 }) + '</div>';
     } else if (ws === 'sent_to_client') {
       clientInner = '<div class="dw-callout dw--brand"><p>Đã gửi Client — chờ Client xác nhận brief wording.</p></div>';
     } else if (ws === 'client_approved' || ws === 'completed') {
@@ -303,7 +312,7 @@
         + '<dt>Kênh sử dụng</dt><dd>' + arr(o.usage_channels) + '</dd>'
         + '<dt>Loại yêu cầu</dt><dd>' + v(TYPE_LABEL[o.request_type] || o.request_type) + '</dd>'
         + '<dt>Hạng mục</dt><dd>' + arr(o.deliverable_type) + '</dd>'
-        + '<dt>Nội dung gốc</dt><dd style="white-space:pre-wrap">' + v(o.content_brief) + '</dd>'
+        + '</dl>' + longText('Nội dung gốc (brief từ Client)', o.content_brief) + '<dl class="drawer-dl-cont">'
         + '<dt>Định hướng</dt><dd>' + v(o.creative_direction) + '</dd>'
         + '<dt>Kích thước</dt><dd>' + v(o.size_ratio) + '</dd>'
         + '<dt>File brief</dt><dd>' + link(o.file_brief_url) + '</dd>'
@@ -943,7 +952,7 @@
       + '<dt>Mã task</dt><dd><span class="order-id">' + esc(cwbCode(t)) + '</span></dd>'
       + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[t.source] || t.source) + (t.order_id ? ' · Order ' + esc(t.order_id) : '') + (p ? ' · Plan: ' + esc(p.title) : '') + '</dd>'
       + '<dt>Output yêu cầu</dt><dd>' + outputChips(t.output_types) + '</dd>'
-      + '<dt>Brief</dt><dd style="white-space:pre-wrap">' + v(t.brief) + '</dd>'
+      + '</dl>' + longText('Brief của task', t.brief) + '<dl class="drawer-dl-cont">'
       + (p ? '<dt>Key message (Plan)</dt><dd>' + v(p.key_message) + '</dd><dt>Đối tượng (Plan)</dt><dd>' + v(p.target_audience) + '</dd>' : '')
       + '<dt>Hạn wording</dt><dd>' + (t.wording_deadline ? '<span class="' + (overdue ? 'cwb-overdue' : '') + '">' + esc(fmtDT(t.wording_deadline)) + '</span>' + (overdue ? ' · ⚠ trễ' : '') : '<em class="muted">—</em>') + '</dd>'
       + '<dt>Vòng sửa nội bộ</dt><dd>' + (t.internal_revision_count || 0) + '</dd>'
