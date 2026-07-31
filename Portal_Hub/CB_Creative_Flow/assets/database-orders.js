@@ -2207,18 +2207,19 @@
       const link = order.source_ads_order_id
         ? 'content-team.html?tab=ads-orders&id=' + order.source_ads_order_id
         : 'content-team.html?task=' + order.source_content_task_id;
-      const { data: leads } = await window.MH.supabase
-        .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
-      if (!Array.isArray(leads) || !leads.length) return;
-      await window.MH.supabase.from('notifications').insert(leads.map((u) => ({
-        user_id: u.id,
-        type: isFinal ? 'delivery_final' : 'delivery_preview',
-        title: isFinal ? 'Media đã bàn giao Final' : 'Media đã gửi Preview',
-        message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media ' + (isFinal ? 'đã bàn giao Final' : 'đã có Preview') + '. Mở để xem.',
-        link: link,
-        related_entity_type: 'orders',
-        related_entity_id: order.order_id
-      })));
+      // RPC notify_roles (2026-07-31) thay cho lookup users trực tiếp: bản cũ phụ thuộc RLS
+      // bảng users của người gửi + nuốt lỗi trong catch → Lead Content có thể không nhận
+      // được thông báo bàn giao mà không ai biết (cùng class bug Internal Media Request).
+      const { error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: ['lead_content'],
+        p_type: isFinal ? 'delivery_final' : 'delivery_preview',
+        p_title: isFinal ? 'Media đã bàn giao Final' : 'Media đã gửi Preview',
+        p_message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media ' + (isFinal ? 'đã bàn giao Final' : 'đã có Preview') + '. Mở để xem.',
+        p_link: link,
+        p_entity_type: 'orders',
+        p_entity_id: order.order_id
+      });
+      if (error) console.warn('[delivery] notify_roles error (chạy add-notify-roles-rpc.sql?):', error);
     } catch (e) { console.warn('[delivery] notify content lead failed:', e); }
   }
 

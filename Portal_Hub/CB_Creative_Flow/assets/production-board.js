@@ -733,6 +733,23 @@
      - review            → báo Account + Admin (có task chờ duyệt nội bộ)
      - revision/feedback_fix → báo PIC (task cần chỉnh sửa)
      Fire-and-forget, không block UI. */
+  /* Gửi noti theo ROLE qua RPC `notify_roles` (SECURITY DEFINER, add-notify-roles-rpc.sql).
+     ⚠ 2026-07-31: trước đây các nhánh dưới tự `.from('users').select('id').in('role',…)` rồi
+     insert. Cách đó phụ thuộc RLS bảng `users` của NGƯỜI GỬI + nuốt lỗi trong catch → noti
+     không tới mà không ai biết (đúng class bug đã làm Internal Media Request mất noti hoàn
+     toàn, phát hiện khi audit DB production). RPC lookup + insert hộ trong DB và trả SỐ DÒNG.
+     Trả về: số noti đã gửi, -1 nếu lỗi. */
+  async function notifyRolesRpc(roles, n) {
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return 0;
+    try {
+      const { data, error } = await window.MH.supabase.rpc('notify_roles', {
+        p_roles: roles, p_type: n.type, p_title: n.title, p_message: n.message || null,
+        p_link: n.link || null, p_entity_type: n.related_entity_type || null, p_entity_id: n.related_entity_id || null
+      });
+      if (error) { console.warn('[task] notify_roles error (chạy add-notify-roles-rpc.sql?):', error); return -1; }
+      return typeof data === 'number' ? data : 0;
+    } catch (e) { console.warn('[task] notify_roles failed:', e); return -1; }
+  }
   async function notifyTaskStatusChange(task, newStatus) {
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !window.MH.supabase) return;
     const base = {
@@ -742,16 +759,12 @@
     };
     try {
       if (newStatus === 'review') {
-        const { data: staff } = await window.MH.supabase
-          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-        if (Array.isArray(staff) && staff.length) {
-          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
-            user_id: u.id,
-            type: 'task_status_changed',
-            title: 'Task Media chờ duyệt',
-            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã gửi duyệt. Vui lòng kiểm tra.`
-          })));
-        }
+        // lead_media = người duyệt nội bộ của Media (brief Media Ops §7.1) → nhận cùng Account/Admin.
+        await notifyRolesRpc(['admin', 'account', 'lead_media'], Object.assign({}, base, {
+          type: 'task_status_changed',
+          title: 'Task Media chờ duyệt',
+          message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã gửi duyệt. Vui lòng kiểm tra.`
+        }));
       } else if (newStatus === 'revision' || newStatus === 'feedback_fix') {
         const picId = task.assigned_to_user_id || await window.MH.store.notifications.findUserIdByName(task.assigned_to);
         if (picId) {
@@ -774,32 +787,22 @@
           }));
         }
       } else if (newStatus === 'inprogress') {
-        // PIC bắt đầu sản xuất → báo Account/Admin (nội bộ, họ mở được Task Tracker).
-        const { data: staff } = await window.MH.supabase
-          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-        if (Array.isArray(staff) && staff.length) {
-          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
-            user_id: u.id,
-            type: 'task_status_changed',
-            title: 'PIC đã bắt đầu task',
-            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã bắt đầu sản xuất.`
-          })));
-        }
+        // PIC bắt đầu sản xuất → báo Account/Admin/Lead Media (nội bộ, họ mở được Task Tracker).
+        await notifyRolesRpc(['admin', 'account', 'lead_media'], Object.assign({}, base, {
+          type: 'task_status_changed',
+          title: 'PIC đã bắt đầu task',
+          message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'} đã bắt đầu sản xuất.`
+        }));
       } else if (newStatus === 'delivered' || newStatus === 'completed') {
         // Bàn giao / hoàn tất → báo Account/Admin (NỘI BỘ). KHÔNG đụng client:
         // notif client (delivery Preview/Final) do database-orders lo, đã OK.
         // Order nội bộ (Content) → Lead Content nhận qua notifyContentOnProdStatus.
         const label = newStatus === 'completed' ? 'Task hoàn tất' : 'Task đã bàn giao';
-        const { data: staff } = await window.MH.supabase
-          .from('users').select('id').in('role', ['admin', 'account']).eq('status', 'active');
-        if (Array.isArray(staff) && staff.length) {
-          await window.MH.supabase.from('notifications').insert(staff.map((u) => Object.assign({}, base, {
-            user_id: u.id,
-            type: 'task_status_changed',
-            title: label,
-            message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'}: ${label.toLowerCase()}.`
-          })));
-        }
+        await notifyRolesRpc(['admin', 'account', 'lead_media'], Object.assign({}, base, {
+          type: 'task_status_changed',
+          title: label,
+          message: `${task.task_id} · ${task.project_name || ''} — ${task.assigned_to || 'PIC'}: ${label.toLowerCase()}.`
+        }));
       }
     } catch (e) { console.warn('[task] notify status change failed:', e); }
   }
@@ -826,19 +829,10 @@
       const label = CONTENT_PROD_NOTIFY[newStatus];
       const msg = order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media' + (fromAds ? ' (Ads)' : '') + ': ' + label.toLowerCase() + '.';
       // 1) Lead Content (sở hữu handoff Media + block tracking ở content-team) — link content-team.
-      const { data: leads } = await window.MH.supabase
-        .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
-      if (Array.isArray(leads) && leads.length) {
-        await window.MH.supabase.from('notifications').insert(leads.map((u) => ({
-          user_id: u.id,
-          type: 'task_status_changed',
-          title: label,
-          message: msg,
-          link: link,
-          related_entity_type: 'orders',
-          related_entity_id: order.order_id
-        })));
-      }
+      await notifyRolesRpc(['lead_content'], {
+        type: 'task_status_changed', title: label, message: msg, link: link,
+        related_entity_type: 'orders', related_entity_id: order.order_id
+      });
       // 2) PIC Content (người tạo Media Request) — để biết mà "Hoàn tất task".
       //    Deep-link content-workbench (content role MỞ ĐƯỢC; content-team sẽ bounce).
       //    Chỉ path Content Task (source_content_task_id); Ads do Lead lo.

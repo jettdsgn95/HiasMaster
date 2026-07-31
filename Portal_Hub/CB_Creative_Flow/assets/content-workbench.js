@@ -444,22 +444,11 @@
     }
     reloadAndReopen();
   }
-  // Notify mọi lead_content active (fire-and-forget, pattern notifyContentWording).
+  // Notify mọi lead_content active — qua RPC (2026-07-31), xem ghi chú ở notifyRolesWb.
   async function notifyLeads(o, title, message) {
-    if (!o || !window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
-    try {
-      const { data: leads } = await window.MH.supabase
-        .from('users').select('id').eq('role', 'lead_content').eq('status', 'active');
-      if (Array.isArray(leads) && leads.length) {
-        await window.MH.supabase.from('notifications').insert(leads.map(function (u) {
-          return {
-            user_id: u.id, type: 'task_status_changed', title: title, message: message,
-            link: 'content-team.html?id=' + (o.order_id || ''),
-            related_entity_type: 'orders', related_entity_id: o.order_id
-          };
-        }));
-      }
-    } catch (e) { console.warn('[cwb] notify leads failed:', e); }
+    if (!o) return 0;
+    return notifyRolesWb(o, ['lead_content'], 'task_status_changed', title, message,
+      'content-team.html?id=' + (o.order_id || ''));
   }
   // Notify nhiều role active (fire-and-forget). type base-CHECK-safe để chạy không phụ thuộc migration.
   // Cùng lý do: RPC thay cho lookup users trực tiếp (2026-07-31). Trả số noti / -1 nếu lỗi.
