@@ -50,12 +50,24 @@ CREATE POLICY "notifications insert internal" ON public.notifications
 --    ⚠⚠ KHÔNG revoke 5 HELPER dùng TRONG RLS POLICY:
 --        current_user_role() · is_staff() · is_admin() · is_admin_or_account()
 --        · is_system_supervisor()
---    Lý do (ĐÃ KIỂM, không suy đoán): `tracking.html` tra cứu đơn công khai
---    bằng mã MEDIA-* khi CHƯA ĐĂNG NHẬP (anon). Postgres đánh giá TẤT CẢ policy
---    permissive trên `orders`, trong đó `orders staff read` gọi is_staff() →
---    current_user_role(). Biểu thức policy chạy với quyền NGƯỜI ĐANG QUERY ⇒
---    revoke khỏi anon sẽ làm anon query orders lỗi "permission denied for
---    function" → CHẾT trang tra cứu công khai. 5 warning này là CỐ Ý chấp nhận.
+--
+--    ĐÍNH CHÍNH 2026-07-31: bản đầu file này ghi lý do là "tracking.html tra cứu
+--    công khai khi chưa đăng nhập". SAI — `tracking.html` (dòng ~470) CHẶN TRƯỚC:
+--    chưa login thì hiện requireLoginModal(), KHÔNG hề query Supabase. Đã kiểm lại
+--    toàn bộ trang public: chỉ `login.html` + `tracking.html` chạm MH.store, và cả
+--    hai đều query SAU khi có session ⇒ hiện KHÔNG có đường query bảng nào ở
+--    trạng thái anon.
+--
+--    Lý do GIỮ (đúng): (a) biểu thức RLS policy chạy với quyền NGƯỜI ĐANG QUERY —
+--    revoke khỏi anon thì BẤT KỲ query anon nào chạm bảng có policy gọi helper sẽ
+--    lỗi cứng "permission denied for function" (HTTP 500) thay vì trả rỗng; rủi ro
+--    này áp cho mọi path phát sinh sau này (Realtime, trang public mới, settings…).
+--    (b) Lợi ích gần bằng 0: với anon, current_user_role() trả NULL và is_*() trả
+--    false ⇒ KHÔNG lộ thông tin gì. Đổi lại chỉ để tắt 5 dòng WARN.
+--    ⇒ Quyết định: chấp nhận 5 WARN, giữ EXECUTE cho anon.
+--    Bằng chứng revoke hiện tại KHÔNG phá gì: gọi REST bằng anon key
+--    `GET /rest/v1/orders?order_id=eq.MEDIA-2026-7819` → HTTP 200 `[]`
+--    (RLS lọc sạch, KHÔNG phải lỗi quyền).
 --
 --    ⚠ Lưu ý kỹ thuật: `REVOKE ... FROM anon` KHÔNG có tác dụng nếu quyền được
 --    cấp qua PUBLIC (mọi role thừa hưởng). Phải REVOKE FROM PUBLIC rồi GRANT lại
