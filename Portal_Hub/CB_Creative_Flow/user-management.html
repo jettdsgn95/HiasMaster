@@ -165,15 +165,18 @@
         <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
         <input class="input" id="search-input" type="search" placeholder="Tìm theo tên, email, chi nhánh, role..." />
       </div>
+      <!-- Cùng danh sách role với #u-role (= users_role_check). Trước đây filter
+           liệt kê "manager"/"staff" (role cũ, DB không có ai) và THIẾU
+           design/editor ⇒ không lọc được nhân sự Production. -->
       <select class="select" id="filter-role">
         <option value="">Mọi role</option>
         <option value="admin">Admin</option>
-        <option value="manager">Manager / Leader</option>
         <option value="account">Account</option>
         <option value="lead_content">Lead Content</option>
         <option value="lead_media">Lead Media</option>
         <option value="content">Content</option>
-        <option value="staff">Staff (Production)</option>
+        <option value="design">Design</option>
+        <option value="editor">Editor</option>
         <option value="system_supervisor">Giám sát hệ thống</option>
         <option value="client">Client</option>
       </select>
