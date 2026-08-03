@@ -186,6 +186,26 @@
   const MEDIA_TYPES = ['media', 'shoot', 'photo', 'video'];
   const WORDING_TYPES = ['design', 'digital', 'slide'];
   const SCRIPTED_MEDIA_TYPES = ['tvc', 'testimonial', 'interview', 'scripted_video', 'voice_over', 'course_intro', 'recruitment_video', 'video_series'];
+  /* Order nội bộ do team Content đặt cho Media (KHÔNG phải Client Order).
+     Bản chuẩn duy nhất — database-orders.js / media-operations.js / production-board.js
+     đều gọi qua đây (trước có 2 bản copy, dễ sinh lệch ngữ cảnh "Client"). */
+  function isInternalContentOrder(order) {
+    return !!(order && (
+      order.order_kind === 'internal_media_request'
+      || order.origin === 'content_team'
+      || order.client_visible === false
+      || order.source_content_task_id
+    ));
+  }
+  /* Có được phép dùng wording "Client" cho order này không.
+     Chưa nạp được order → false (thà dùng chữ trung tính còn hơn nói sai "Client"). */
+  function isClientFeedbackContext(order) {
+    if (!order) return false;
+    return !isInternalContentOrder(order);
+  }
+  window.MH.isInternalContentOrder = isInternalContentOrder;
+  window.MH.isClientFeedbackContext = isClientFeedbackContext;
+
   function isAdsOrder(order) {
     if (!order) return false;
     return order.order_kind === 'ads_order' || order.request_type === 'ads';

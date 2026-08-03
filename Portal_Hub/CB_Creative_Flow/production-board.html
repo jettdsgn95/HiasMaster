@@ -290,6 +290,19 @@
 
     <!-- ============ MY TASKS VIEW ============ -->
     <div id="view-mytasks" class="view-pane" style="display:none">
+      <!-- Chip lọc theo LOẠI VIỆC — chỉ hiện cho design/editor (Creative PIC).
+           JS bật/tắt trong renderMyTasks; không ảnh hưởng Table/Kanban. -->
+      <div class="creative-task-filter" id="creative-type-chips" style="display:none">
+        <button class="saved-view-chip is-active" data-creative-type="">Tất cả</button>
+        <button class="saved-view-chip" data-creative-type="design">Design</button>
+        <button class="saved-view-chip" data-creative-type="motion">Motion</button>
+        <button class="saved-view-chip" data-creative-type="media">Media</button>
+        <button class="saved-view-chip" data-creative-type="video">Video/Edit</button>
+        <button class="saved-view-chip" data-creative-type="photo">Photo</button>
+        <button class="saved-view-chip" data-creative-type="shoot">Quay</button>
+        <button class="saved-view-chip" data-creative-type="due_soon">Sắp đến hạn</button>
+        <button class="saved-view-chip" data-creative-type="need_fix">Cần chỉnh sửa</button>
+      </div>
       <div class="my-tasks-board">
         <section class="mt-group" id="mtg-new">
           <div class="mt-group-head">
@@ -301,6 +314,15 @@
         <section class="mt-group" id="mtg-progress">
           <div class="mt-group-head">
             <h4><span class="group-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span> Đang thực hiện</h4>
+            <span class="count">0</span>
+          </div>
+          <div class="mt-list"></div>
+        </section>
+        <!-- Chờ duyệt nội bộ: chỉ hiện cho design/editor. Với admin/account/lead_media
+             giữ nguyên hành vi cũ (review/ready nằm trong "Đang thực hiện"). -->
+        <section class="mt-group" id="mtg-review" style="display:none">
+          <div class="mt-group-head">
+            <h4><span class="group-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg></span> Chờ duyệt nội bộ</h4>
             <span class="count">0</span>
           </div>
           <div class="mt-list"></div>

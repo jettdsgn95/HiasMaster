@@ -449,6 +449,59 @@ People/departments reused across modules:
   - ⚠ `tasks.assigned_to` lưu **tên ngắn** ("Duy") nhưng `mh-user.name` của account là **tên đầy đủ** ("Duy Trần"). `production-board.js isMyTask(assignedTo)` (2026-06-02) match user↔task: bằng nhau HOẶC full name chứa tên PIC theo word-boundary. **Đừng dùng `=== user.name` hay `.split(' ').pop()`** (lấy nhầm chữ cuối → design/editor không thấy task của mình). Task chỉ tạo khi **Push → Production** (assigned_to = order.production_pic).
 - Departments: HO Marketing, Academic, Sales, CB Mekong, CB Hưng Phú, CB Cần Thơ, CB Tiên Thủy.
 
+### Creative PIC Workspace — design/editor (2026-08-03)
+
+**Không có `editor-workspace.html` / `designer-workspace.html`.** Production Board
+đóng luôn vai workspace của PIC; tách page sẽ sinh 2 nơi ghi status/link → lệch data.
+
+Luật cốt lõi:
+
+```text
+ROLE      quyết định QUYỀN  (thấy task nào, đổi được status nào)
+TASK TYPE quyết định UI     (summary, checklist, nhãn link, next action)
+```
+
+⚠ **Tuyệt đối không suy workflow từ role.** Designer trong team là hybrid — vẫn nhận
+task `photo`/`shoot`/`edit`. Suy từ role sẽ render checklist thiết kế cho buổi chụp.
+
+`taskWorkflowType(t)` (production-board.js) là nguồn duy nhất:
+
+| task_type | workflow | Summary |
+|---|---|---|
+| design · digital · slide · ads | `design` | Design Task Summary |
+| motion | `motion` | Motion Task Summary |
+| media · shoot · photo · video · edit | `media` | Media Task Summary (kèm lịch/giờ/địa điểm) |
+| còn lại | `generic` | Production Task Summary |
+
+`taskLinkLabels(t)` chỉ đổi **chữ hiển thị** — cột DB vẫn là `link_drive` /
+`preview_link` / `final_link`, không đổi. `buildProductionChecklist(t)` chọn 1 trong
+6 bộ (design/motion/shoot/photo/video/generic), tính runtime từ
+`status + link + shoot_date/time/location`, **không có bảng checklist mới**.
+
+**Quick Action Bar** (`creativePicQuickActions`) chỉ render nút mà
+`buildStatusActions(t)` ĐÃ cho phép ⇒ không thể mở thêm quyền qua đường này.
+Nút dùng chung `data-status` + `canTransition` + `updateStatus`; "Lưu link" chỉ
+`.click()` hộ `#save-links`, không nhân bản logic lưu.
+
+My Tasks của Creative PIC tách nhóm **Chờ duyệt nội bộ** (`review`/`ready`) ra khỏi
+"Đang thực hiện" — gửi duyệt xong là hết việc của PIC, gộp chung khiến họ tưởng còn
+phải làm. Vai trò quản lý giữ nguyên nhóm cũ (`#mtg-review` ẩn).
+
+⚠ `lead_media` bị **alias sang `account`** ở `production-board.js` dòng ~45 (cố ý,
+quyền vận hành ngang Account). Nên `isCreativePicRole()` không bao giờ đúng với
+lead_media, và mọi test permission phải tính tới alias này.
+
+**Wording context-aware**: `taskFeedbackMeta(order)` chọn giữa `FEEDBACK_STATUS_LABEL`
+(Client) và `FEEDBACK_STATUS_LABEL_INTERNAL`. Chưa nạp được order → dùng bản trung
+tính (thà nói "Chờ feedback" còn hơn nói sai "Chờ client"). `MH.isInternalContentOrder`
+/ `MH.isClientFeedbackContext` nay ở **app.js** — trước có 2 bản copy ở
+database-orders.js + media-operations.js, giờ 2 chỗ đó delegate về MH.
+
+**P9 audit (không phải sửa)**: `media-operations.js` `pushProduction()` đã map đúng
+`task_type` (shoot/photo/edit) · `assigned_to` + `assigned_to_user_id` ·
+`shoot_date`/`shoot_time`/`shoot_location` · `order_id`. Bảng `tasks` ĐÃ có đủ 3 cột
+lịch quay (đã kiểm DB) ⇒ Media Task Summary hiện được logistics thật.
+
 ### User Management = nguồn quản trị user THẬT (2026-08-03)
 
 **Add User KHÔNG còn là mock.** Trước đây `USERS.push(newUser)` + toast success ⇒

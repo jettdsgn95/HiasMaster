@@ -6448,6 +6448,52 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .src-chip.src-media  { background: rgb(13 148 136 / 0.16); color: #0f766e; }
 .src-chip.src-other  { background: var(--surface-2); color: var(--text-muted); }
 
+/* ── Creative PIC Workspace (2026-08-03) ──────────────────────────────
+   Production Board đóng vai workspace cho design/editor. Không redesign —
+   chỉ thêm block summary theo loại việc + hàng thao tác nhanh + chip lọc. */
+.creative-ws-tag {
+  display: inline-block; vertical-align: middle; margin-left: 8px;
+  padding: 3px 10px; border-radius: 999px;
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .02em; text-transform: uppercase;
+  background: rgb(99 102 241 / 0.12); color: var(--brand-600, #4f46e5);
+  border: 1px solid rgb(99 102 241 / 0.28);
+}
+.creative-task-filter {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 0 0 var(--space-4);
+}
+.tw-task-summary-dynamic .summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 14px; margin-bottom: 10px;
+}
+.tw-task-summary-dynamic .summary-cell label {
+  display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--text-muted); margin-bottom: 2px;
+}
+.tw-task-summary-dynamic .summary-cell b { font-size: 13px; font-weight: 600; word-break: break-word; }
+.tw-task-summary-dynamic .summary-flags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sum-flag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px; font-size: 12px;
+  background: var(--surface-2, rgb(120 120 120 / 0.08));
+  border: 1px solid var(--border); color: var(--text-muted);
+}
+.sum-flag.is-on {
+  background: rgb(22 163 74 / 0.12); border-color: rgb(22 163 74 / 0.3);
+  color: var(--success, #16a34a); font-weight: 600;
+}
+/* Viền trái đổi màu theo loại việc — nhận diện nhanh khi PIC mở nhiều task. */
+.tw-design-summary { border-left: 3px solid var(--brand-600, #4f46e5); }
+.tw-motion-summary { border-left: 3px solid #a855f7; }
+.tw-media-summary  { border-left: 3px solid #0ea5e9; }
+.tw-generic-summary { border-left: 3px solid var(--border); }
+.tw-creative-quick-actions { border-left: 3px solid var(--warning, #b07600); }
+.creative-action-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.creative-action-row .btn { flex: 0 0 auto; }
+.tw-task-summary-dynamic .block-letter svg,
+.tw-creative-quick-actions .block-letter svg { width: 15px; height: 15px; }
+
 /* ── Nút đang chờ backend (2026-08-03) ────────────────────────────────
    Phủ nhãn "Đang…" mà KHÔNG xoá phần tử con của nút (xem withBusy trong
    user-management.js). `color: transparent` bắt được cả text node lẫn svg

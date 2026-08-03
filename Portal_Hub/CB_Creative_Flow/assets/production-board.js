@@ -395,7 +395,8 @@
     view: ['design', 'editor'].includes(user.role) ? 'mytasks' : 'table',
     search: '', status: '', priority: '', type: '', pic: '',
     quick: null,     // summary card quick-filter
-    quickChip: ''    // chip filter row above toolbar
+    quickChip: '',   // chip filter row above toolbar
+    creativeType: '' // chip lọc theo loại việc — CHỈ dùng trong My Tasks của design/editor
   };
 
   /* ---------- Match task PIC với user hiện tại ----------
@@ -419,6 +420,95 @@
     if (a === u) return true;
     return u.startsWith(a + ' ') || u.endsWith(' ' + a) || u.includes(' ' + a + ' ');
   }
+
+  /* ═══ CREATIVE PIC WORKSPACE (2026-08-03) ═════════════════════════════
+     Production Board đóng vai Creative PIC Workspace cho design/editor.
+     Nguyên tắc: ROLE quyết định QUYỀN · TASK TYPE quyết định UI.
+     Tuyệt đối KHÔNG suy workflow từ role — Designer trong team vẫn nhận
+     task photo/shoot/edit (hybrid), suy từ role sẽ render sai màn hình. */
+  function isCreativePicRole() { return ['design', 'editor'].includes(user.role); }
+  function isDesignerWorkspace() { return user.role === 'design'; }
+  function isEditorWorkspace() { return user.role === 'editor'; }
+
+  // task_type → nhóm workflow. Nguồn duy nhất cho summary/checklist/label.
+  const CREATIVE_TASK_GROUPS = {
+    design: ['design', 'digital', 'slide', 'ads'],
+    motion: ['motion'],
+    media: ['media', 'shoot', 'photo', 'video', 'edit'],
+    video: ['video', 'edit'],
+    photo: ['photo'],
+    shoot: ['shoot']
+  };
+  function taskWorkflowType(t) {
+    if (!t) return 'generic';
+    const ty = t.task_type;
+    if (CREATIVE_TASK_GROUPS.design.includes(ty)) return 'design';
+    if (CREATIVE_TASK_GROUPS.motion.includes(ty)) return 'motion';
+    if (CREATIVE_TASK_GROUPS.media.includes(ty)) return 'media';
+    return 'generic';
+  }
+
+  /* Nhãn hiển thị của 3 ô link. KHÔNG đổi cột DB
+     (link_drive / preview_link / final_link) — chỉ đổi chữ theo loại việc. */
+  function taskLinkLabels(t) {
+    const type = t && t.task_type;
+    if (CREATIVE_TASK_GROUPS.design.includes(type)) {
+      return { source: 'Working File / Source Design', preview: 'Preview / Mockup', final: 'Final Artwork / Export' };
+    }
+    if (type === 'motion') {
+      return { source: 'Asset / Project File', preview: 'Motion Preview', final: 'Motion Final Export' };
+    }
+    if (type === 'shoot') {
+      return { source: 'Raw Footage Folder', preview: 'Clip mẫu / Review cut', final: 'Footage bàn giao / Recap final' };
+    }
+    if (type === 'photo') {
+      return { source: 'Raw Photo Folder', preview: 'Album chọn / Contact sheet', final: 'Album final' };
+    }
+    if (['video', 'edit'].includes(type)) {
+      return { source: 'Footage / Project / Asset Folder', preview: 'Bản dựng Preview', final: 'Video Final Export' };
+    }
+    return { source: 'Source / Working Drive', preview: 'Preview Link', final: 'Final Link' };
+  }
+
+  // Icon = inline SVG Lucide-style (quy ước project: KHÔNG emoji trang trí).
+  const WF_ICON = {
+    design: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',
+    motion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>',
+    media: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>',
+    generic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2H8.6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h9.8a2 2 0 0 0 2-2V7.5Z"/><path d="M15 2v6h6"/></svg>'
+  };
+  function taskSummaryMeta(t) {
+    const wf = taskWorkflowType(t);
+    const labels = taskLinkLabels(t);
+    const TITLE = { design: 'Design Task Summary', motion: 'Motion Task Summary', media: 'Media Task Summary', generic: 'Production Task Summary' };
+    return {
+      wf: wf,
+      title: TITLE[wf],
+      icon: WF_ICON[wf],
+      sourceLabel: labels.source,
+      previewLabel: labels.preview,
+      finalLabel: labels.final,
+      hasSource: Boolean(t && t.link_drive),
+      hasPreview: Boolean(t && t.preview_link),
+      hasFinal: Boolean(t && t.final_link)
+    };
+  }
+
+  // Hook chỉ để harness headless kiểm helper thuần (không dùng trong app).
+  window.__PB_TEST = {
+    isCreativePicRole: function () { return isCreativePicRole(); },
+    isDesignerWorkspace: function () { return isDesignerWorkspace(); },
+    isEditorWorkspace: function () { return isEditorWorkspace(); },
+    taskWorkflowType: function (t) { return taskWorkflowType(t); },
+    taskLinkLabels: function (t) { return taskLinkLabels(t); },
+    taskSummaryMeta: function (t) { return taskSummaryMeta(t); },
+    buildProductionChecklist: function (t) { return buildProductionChecklist(t); },
+    buildStatusActions: function (t) { return buildStatusActions(t); },
+    creativePicQuickActions: function (t) { return creativePicQuickActions(t); },
+    matchCreativeChip: function (t, c) { return matchCreativeChip(t, c); },
+    taskFeedbackMeta: function (o) { return taskFeedbackMeta(o); },
+    isMyTask: function (t) { return isMyTask(t); }
+  };
 
   /* ---------- Scoping by role ---------- */
   function visibleTasks() {
@@ -595,14 +685,38 @@
   }
 
   /* ---------- Render: my tasks ---------- */
+  // Lọc theo chip loại việc (chỉ áp dụng trong My Tasks, chỉ cho Creative PIC).
+  function matchCreativeChip(t, chip) {
+    if (!chip) return true;
+    if (chip === 'due_soon') { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && !['completed', 'delivered'].includes(t.status); }
+    if (chip === 'need_fix') return ['revision', 'feedback_fix'].includes(t.status);
+    const types = CREATIVE_TASK_GROUPS[chip];
+    return types ? types.includes(t.task_type) : true;
+  }
+
   function renderMyTasks() {
+    const creative = isCreativePicRole();
+    const chipsRow = document.getElementById('creative-type-chips');
+    if (chipsRow) chipsRow.style.display = creative ? '' : 'none';
+    const reviewGroup = document.getElementById('mtg-review');
+    if (reviewGroup) reviewGroup.style.display = creative ? '' : 'none';
+
     const scope = visibleTasks();
-    const userTasks = scope.filter((t) => isMyTask(t));
+    let userTasks = scope.filter((t) => isMyTask(t));
+    if (creative) userTasks = userTasks.filter((t) => matchCreativeChip(t, state.creativeType));
+
+    // Creative PIC cần tách "Chờ duyệt nội bộ" ra khỏi "Đang thực hiện": sau khi
+    // gửi duyệt là hết việc của PIC, gộp chung khiến họ tưởng còn phải làm.
+    // Vai trò quản lý giữ nguyên nhóm cũ để không đổi thói quen đọc bảng.
+    const progressStatuses = creative
+      ? ['inprogress', 'feedback_wait']
+      : ['inprogress', 'review', 'ready', 'feedback_wait'];
     const groups = {
       new: userTasks.filter((t) => ['pending', 'received'].includes(t.status)),
       // 'ready' (đã duyệt nội bộ, đang ở pha Preview/bàn giao) + 'feedback_wait' (đã gửi Preview, chờ client)
       // VẪN là đang thực hiện — KHÔNG tính Hoàn thành. Chỉ 'delivered' (final) / 'completed' (đóng) mới Hoàn thành.
-      progress: userTasks.filter((t) => ['inprogress', 'review', 'ready', 'feedback_wait'].includes(t.status)),
+      progress: userTasks.filter((t) => progressStatuses.includes(t.status)),
+      review: creative ? userTasks.filter((t) => ['review', 'ready'].includes(t.status)) : [],
       revision: userTasks.filter((t) => ['revision', 'feedback_fix'].includes(t.status)),
       soon: userTasks.filter((t) => { const d = diffDays(t.internal_deadline); return d !== null && d >= 0 && d <= 2 && t.status !== 'completed'; }),
       done: userTasks.filter((t) => ['delivered', 'completed'].includes(t.status)).slice(0, 5)
@@ -629,6 +743,7 @@
     }
     fill('mtg-new', groups.new);
     fill('mtg-progress', groups.progress);
+    if (creative) fill('mtg-review', groups.review);
     fill('mtg-revision', groups.revision);
     fill('mtg-soon', groups.soon);
     fill('mtg-done', groups.done);
@@ -657,16 +772,25 @@
     setView(btn.getAttribute('data-view'));
   });
 
-  // Subtitle per role
+  // Subtitle per role. design/editor = Creative PIC Workspace (cùng trang,
+  // khác cách nói: designer nghiêng thiết kế/motion, editor nghiêng quay/chụp/dựng).
   const subtitle = document.getElementById('page-subtitle');
   if (subtitle) {
     const text = {
       admin: 'Quản lý toàn bộ task sản xuất — Kanban / Table / My Tasks.',
       account: 'Theo dõi task của order bạn phụ trách + duyệt nội bộ.',
-      design: 'Task được giao cho bạn — cập nhật status, upload preview/final.',
-      editor: 'Task được giao cho bạn — cập nhật status, upload preview/final.'
+      design: 'Công việc thiết kế / motion / media được giao cho bạn — cập nhật source, preview, final và gửi duyệt nội bộ.',
+      editor: 'Công việc quay / chụp / dựng được giao cho bạn — cập nhật source, preview, final và gửi duyệt nội bộ.'
     };
     subtitle.textContent = text[user.role] || text.admin;
+  }
+  // Tiêu đề trang: thêm ngữ cảnh workspace cho PIC, giữ nguyên cho vai trò quản lý.
+  if (isCreativePicRole()) {
+    const h1 = document.querySelector('.page-head h1, .page-title, h1');
+    if (h1 && !h1.querySelector('[data-creative-tag]')) {
+      h1.insertAdjacentHTML('beforeend', ' <span class="creative-ws-tag" data-creative-tag>Creative PIC Workspace</span>');
+    }
+    document.body.setAttribute('data-creative-pic', user.role);
   }
 
   /* ---------- Toolbar ---------- */
@@ -989,6 +1113,21 @@
     waiting_feedback: 'Chờ feedback từ client', feedback_received: 'Client đã gửi feedback',
     revision_in_progress: 'Đang chỉnh theo feedback', approved: 'Client đã duyệt', exceeded_limit: 'Đã đạt giới hạn chỉnh sửa'
   };
+  // Bản NỘI BỘ: order do Content đặt cho Media KHÔNG có client thật → nói "Client"
+  // là sai ngữ cảnh, PIC tưởng đang chờ khách hàng trong khi người duyệt là Lead.
+  const FEEDBACK_STATUS_LABEL_INTERNAL = {
+    waiting_feedback: 'Chờ feedback', feedback_received: 'Đã nhận feedback',
+    revision_in_progress: 'Đang chỉnh theo feedback', approved: 'Đã duyệt', exceeded_limit: 'Đã đạt giới hạn chỉnh sửa'
+  };
+  // Toàn bộ chữ của block feedback lấy từ đây — không hardcode "Client" chỗ nào.
+  function taskFeedbackMeta(order) {
+    const isClient = window.MH && window.MH.isClientFeedbackContext
+      ? window.MH.isClientFeedbackContext(order)
+      : !!order;
+    return isClient
+      ? { statusMap: FEEDBACK_STATUS_LABEL, roundTitle: 'Client Feedback Round', noteTitle: 'Nội dung feedback từ Client', fixing: 'Đang chỉnh Feedback Round' }
+      : { statusMap: FEEDBACK_STATUS_LABEL_INTERNAL, roundTitle: 'Feedback nội bộ — Vòng', noteTitle: 'Nội dung feedback', fixing: 'Đang chỉnh theo feedback vòng' };
+  }
   // Async: nạp feedback của Client Order liên kết vào task drawer (Round N/3 + note + status).
   async function loadOrderFeedbackIntoTaskDrawer(orderId, taskStatus) {
     const mount = document.getElementById('tw-feedback-mount');
@@ -1000,25 +1139,28 @@
     // Stash để gate transition "review" (Vòng 3 yêu cầu Final Link).
     if (currentTask) { currentTask._refOrderRound = round; currentTask._refOrderFb = (order && order.feedback_status) || ''; currentTask._refOrderLimit = limit; }
     if (!order || round <= 0) { mount.innerHTML = ''; return; }
-    const fbStatus = order.feedback_status ? (FEEDBACK_STATUS_LABEL[order.feedback_status] || order.feedback_status) : '—';
+    const FB = taskFeedbackMeta(order);
+    const fbStatus = order.feedback_status ? (FB.statusMap[order.feedback_status] || order.feedback_status) : '—';
     const fixing = taskStatus === 'feedback_fix';
     const isR3 = round >= limit;
     const needFinal = isR3 && fixing && !(currentTask && currentTask.final_link);
     mount.innerHTML = `
       <div class="tw-fb-block ${fixing ? 'is-fixing' : ''}">
         <div class="tw-fb-head">
-          <span class="tw-fb-title">${isR3 ? 'Feedback Vòng 3 — Final Check' : `Client Feedback Round ${round}/${limit}`}</span>
-          ${fixing ? `<span class="tw-fb-fixing">Đang chỉnh Feedback Round ${round}</span>` : ''}
+          <span class="tw-fb-title">${isR3 ? `Feedback Vòng ${round} — Final Check` : `${FB.roundTitle} ${round}/${limit}`}</span>
+          ${fixing ? `<span class="tw-fb-fixing">${FB.fixing} ${round}</span>` : ''}
         </div>
         ${isR3 ? `<p class="tw-fb-note" style="font-weight:600">Đây là vòng chỉnh sửa cuối cùng của Order hiện tại. PIC cần xử lý đầy đủ feedback và cập nhật <b>Final Link</b> trước khi gửi duyệt nội bộ.</p>` : ''}
-        ${longText('Nội dung feedback từ Client', order.latest_feedback_note, { emptyText: 'Chưa có nội dung feedback.' })}
+        ${longText(FB.noteTitle, order.latest_feedback_note, { emptyText: 'Chưa có nội dung feedback.' })}
         <p class="tw-fb-meta">Feedback status: <b>${fbStatus}</b></p>
         ${needFinal ? `<p class="tw-fb-meta" style="color:var(--danger,#dc2626);font-weight:600">⚠ Feedback Vòng 3 yêu cầu Final Link trước khi gửi duyệt nội bộ.</p>` : ''}
       </div>`;
     // Vô hiệu hóa nút "Gửi duyệt nội bộ" khi Vòng 3 chưa có Final Link.
     if (needFinal) {
-      const rv = drawerBody && drawerBody.querySelector('.status-action-btn[data-status="review"]');
-      if (rv) { rv.setAttribute('disabled', ''); rv.style.opacity = '.5'; rv.style.cursor = 'not-allowed'; }
+      // Khóa CẢ nút ở Status & Actions LẪN nút ở Quick Action Bar — bỏ sót 1 chỗ là
+      // PIC vẫn gửi duyệt được khi Vòng cuối chưa có Final Link.
+      const rvs = drawerBody ? drawerBody.querySelectorAll('[data-status="review"]') : [];
+      rvs.forEach((rv) => { rv.setAttribute('disabled', ''); rv.style.opacity = '.5'; rv.style.cursor = 'not-allowed'; });
     }
   }
 
@@ -1054,19 +1196,82 @@
     return actions;
   }
 
-  function buildProductionChecklist(t) {
-    const statusRank = {
-      pending: 0, received: 1, inprogress: 2, review: 3, revision: 3,
-      feedback_wait: 3, feedback_fix: 3, ready: 4, delivered: 5, completed: 5
-    };
-    const rank = statusRank[t.status] || 0;
-    const items = [
+  /* Checklist tính RUNTIME từ status + link + task_type + lịch quay/chụp.
+     KHÔNG lưu bảng checklist riêng ở phase này (không thêm DB field nào). */
+  function buildDesignChecklist(t, rank) {
+    return [
+      { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
+      { label: 'Kiểm tra brief / size / format / guideline', done: Boolean((t.content && t.content.trim()) || t.link_drive) },
+      { label: 'Chuẩn bị working file / source design', done: Boolean(t.link_drive) },
+      { label: 'Upload preview / mockup', done: Boolean(t.preview_link) },
+      { label: 'Gửi duyệt nội bộ cho Account / Lead', done: rank >= 3 },
+      { label: 'Upload final artwork / export', done: Boolean(t.final_link) }
+    ];
+  }
+  function buildMotionChecklist(t, rank) {
+    return [
+      { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
+      { label: 'Kiểm tra brief / storyboard / asset', done: Boolean((t.content && t.content.trim()) || t.link_drive) },
+      { label: 'Chuẩn bị asset / project file', done: Boolean(t.link_drive) },
+      { label: 'Upload motion preview', done: Boolean(t.preview_link) },
+      { label: 'Kiểm tra duration / format / logo / text', done: Boolean(t.preview_link) || rank >= 3 },
+      { label: 'Upload motion final export', done: Boolean(t.final_link) }
+    ];
+  }
+  function buildShootChecklist(t, rank) {
+    return [
+      { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
+      { label: 'Kiểm tra lịch, địa điểm và onsite contact', done: Boolean(t.shoot_date || t.shoot_time || t.shoot_location) },
+      { label: 'Chuẩn bị thiết bị / nhân sự quay', done: rank >= 2 },
+      { label: 'Hoàn tất buổi quay', done: Boolean(t.link_drive) || rank >= 3 },
+      { label: 'Upload raw footage / source folder', done: Boolean(t.link_drive) },
+      { label: 'Gửi duyệt nội bộ cho Lead Media / Account', done: rank >= 3 }
+    ];
+  }
+  function buildPhotoChecklist(t, rank) {
+    return [
+      { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
+      { label: 'Kiểm tra lịch, địa điểm và onsite contact', done: Boolean(t.shoot_date || t.shoot_time || t.shoot_location) },
+      { label: 'Hoàn tất buổi chụp', done: Boolean(t.link_drive) || rank >= 3 },
+      { label: 'Upload raw photo folder', done: Boolean(t.link_drive) },
+      { label: 'Upload album chọn / preview', done: Boolean(t.preview_link) },
+      { label: 'Gửi duyệt nội bộ cho Lead Media / Account', done: rank >= 3 }
+    ];
+  }
+  function buildVideoChecklist(t, rank) {
+    return [
+      { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
+      { label: 'Đã nhận footage / source / asset folder', done: Boolean(t.link_drive) },
+      { label: 'Dựng bản preview', done: Boolean(t.preview_link) },
+      { label: 'Kiểm tra âm thanh / subtitle / logo / format', done: Boolean(t.preview_link) || rank >= 3 },
+      { label: 'Gửi duyệt nội bộ cho Lead Media / Account', done: rank >= 3 },
+      { label: 'Upload final export sau khi duyệt', done: Boolean(t.final_link) }
+    ];
+  }
+  function buildGenericChecklist(t, rank) {
+    return [
       { label: 'Nhận task và xác nhận bắt đầu xử lý', done: rank >= 1 },
       { label: 'Kiểm tra brief, nội dung và tài nguyên đầu vào', done: Boolean((t.content && t.content.trim()) || t.link_drive) },
       { label: 'Cập nhật source / preview / final link', done: Boolean(t.link_drive || t.preview_link || t.final_link) },
       { label: 'Gửi duyệt nội bộ cho Account / Lead', done: rank >= 3 },
       { label: 'Sẵn sàng bàn giao hoặc đóng task', done: rank >= 4 }
     ];
+  }
+  function buildProductionChecklist(t) {
+    const statusRank = {
+      pending: 0, received: 1, inprogress: 2, review: 3, revision: 3,
+      feedback_wait: 3, feedback_fix: 3, ready: 4, delivered: 5, completed: 5
+    };
+    const rank = statusRank[t.status] || 0;
+    // Chọn theo TASK TYPE (không theo role) — Designer nhận task photo vẫn ra checklist chụp.
+    const ty = t.task_type;
+    let items;
+    if (CREATIVE_TASK_GROUPS.design.includes(ty)) items = buildDesignChecklist(t, rank);
+    else if (ty === 'motion') items = buildMotionChecklist(t, rank);
+    else if (ty === 'shoot') items = buildShootChecklist(t, rank);
+    else if (ty === 'photo') items = buildPhotoChecklist(t, rank);
+    else if (['video', 'edit'].includes(ty)) items = buildVideoChecklist(t, rank);
+    else items = buildGenericChecklist(t, rank);
     const done = items.filter((item) => item.done).length;
     return { items, done, total: items.length };
   }
@@ -1136,6 +1341,67 @@
     return 'Theo dõi activity và cập nhật khi có thay đổi mới.';
   }
 
+  /* ---------- Summary động theo loại việc (P4) ----------
+     Đặt ngay dưới task-summary-grid. Chỉ đọc dữ liệu sẵn có, không field mới. */
+  function renderDynamicSummary(t, deadlineText) {
+    const m = taskSummaryMeta(t);
+    const esc = escapeHtml;
+    const dash = '<em class="muted">—</em>';
+    const flag = (ok, label) => `<span class="sum-flag ${ok ? 'is-on' : ''}">${ok ? '✓' : '○'} ${esc(label)}</span>`;
+    const cell = (label, val) => `<div class="summary-cell"><label>${esc(label)}</label><b>${val || dash}</b></div>`;
+
+    let rows = cell('Loại việc', esc(TYPE_LABEL[t.task_type] || t.task_type))
+      + cell('Linked Order', t.order_id && !t.is_standalone ? `<span class="mono">${esc(t.order_id)}</span>` : '<em class="muted">Standalone</em>')
+      + cell('Deadline nội bộ', esc(deadlineText));
+
+    // Media (quay/chụp/dựng) cần logistics ngay trên đầu — PIC phải biết đi đâu, mấy giờ.
+    if (m.wf === 'media') {
+      rows += cell('Lịch quay / chụp', t.shoot_date ? esc(t.shoot_date) : '')
+        + cell('Giờ', t.shoot_time ? esc(t.shoot_time) : '')
+        + cell('Địa điểm', t.shoot_location ? esc(t.shoot_location) : '');
+    }
+
+    return `
+      <section class="drawer-block tw-task-summary-dynamic tw-${m.wf}-summary">
+        <div class="drawer-block-head"><span class="block-letter">${m.icon}</span><h4>${esc(m.title)}</h4></div>
+        <div class="summary-grid">${rows}</div>
+        <div class="summary-flags">
+          ${flag(m.hasSource, m.sourceLabel)}
+          ${flag(m.hasPreview, m.previewLabel)}
+          ${flag(m.hasFinal, m.finalLabel)}
+        </div>
+      </section>`;
+  }
+
+  /* ---------- Quick Action Bar cho Creative PIC (P7) ----------
+     KHÔNG tạo status/logic mới: nút chỉ mang data-status như status-action-btn
+     (dùng chung handler updateStatus), hoặc bấm hộ #save-links.
+     Chỉ render đúng những chuyển trạng thái mà buildStatusActions() đã cho phép
+     ⇒ không thể mở thêm quyền (ready/completed/cancelled/paused) qua đường này. */
+  function creativePicQuickActions(t) {
+    if (!isCreativePicRole() || !isMyTask(t) || READONLY) return '';
+    const allowed = buildStatusActions(t).reduce((acc, a) => { acc[a.id] = a; return acc; }, {});
+    const btn = (id, label) => allowed[id]
+      ? `<button class="btn btn-primary btn-sm" data-status="${id}"${allowed[id].disabled ? ' disabled' : ''}>${label}</button>`
+      : '';
+    const canEdit = user.role !== 'client' && (isMyTask(t) || ['admin', 'account'].includes(user.role));
+    const parts = [
+      btn('received', 'Nhận task'),
+      btn('inprogress', 'Bắt đầu thực hiện'),
+      canEdit ? '<button class="btn btn-secondary btn-sm" data-creative-save-links>Lưu link</button>' : '',
+      btn('review', 'Gửi duyệt nội bộ')
+    ].filter(Boolean);
+    if (!parts.length) return '';
+    return `
+      <section class="drawer-block tw-creative-quick-actions">
+        <div class="drawer-block-head">
+          <span class="block-letter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+          <h4>Thao tác nhanh</h4>
+        </div>
+        <div class="creative-action-row">${parts.join('')}</div>
+      </section>`;
+  }
+
   function openDrawer(t) {
     currentTask = t;
     replyingToId = null;
@@ -1173,6 +1439,7 @@
       ? `<input class="input" id="${id}" type="url" value="${escapeHtml(value || '')}" placeholder="${placeholder}" />`
       : `<span class="text-xs">${value ? `<a href="${escapeHtml(value)}" target="_blank" class="link">${escapeHtml(value)}</a>` : '<em class="muted">Chưa có</em>'}</span>`;
     const checklist = buildProductionChecklist(t);
+    const LINKS = taskLinkLabels(t);
 
     drawerBody.innerHTML = `
       <div class="task-summary-grid">
@@ -1181,6 +1448,9 @@
         <div class="task-summary-tile"><label>Loại task</label><b>${TYPE_LABEL[t.task_type] || t.task_type}</b></div>
         <div class="task-summary-tile"><label>Checklist</label><b>${checklist.done}/${checklist.total}</b></div>
       </div>
+
+      ${renderDynamicSummary(t, dl_fmt)}
+      ${creativePicQuickActions(t)}
 
       <section class="drawer-block tw-worktype">
         <div class="drawer-block-head"><span class="block-letter">🔗</span><h4>Loại công việc</h4></div>
@@ -1222,19 +1492,19 @@
 
         <div class="link-row ${t.link_drive ? 'has-link' : ''}">
           <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
-          <div class="l-info"><b>Source / Working Drive</b>${canEditLinks ? '' : `<span>${linkBlock('', t.link_drive, 'Chưa có')}</span>`}</div>
+          <div class="l-info"><b>${escapeHtml(LINKS.source)}</b>${canEditLinks ? '' : `<span>${linkBlock('', t.link_drive, 'Chưa có')}</span>`}</div>
           ${canEditLinks ? linkInput('link-drive-in', t.link_drive, 'https://drive.google.com/...') : ''}
         </div>
 
         <div class="link-row ${t.preview_link ? 'has-link' : ''}">
           <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-          <div class="l-info"><b>Preview Link</b>${canEditLinks ? '' : `<span>${linkBlock('', t.preview_link, 'Chưa có')}</span>`}</div>
+          <div class="l-info"><b>${escapeHtml(LINKS.preview)}</b>${canEditLinks ? '' : `<span>${linkBlock('', t.preview_link, 'Chưa có')}</span>`}</div>
           ${canEditLinks ? linkInput('preview-in', t.preview_link, 'https://drive.google.com/preview...') : ''}
         </div>
 
         <div class="link-row ${t.final_link ? 'has-link' : ''}">
           <span class="l-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-          <div class="l-info"><b>Final Link</b>${canEditLinks ? '' : `<span>${linkBlock('', t.final_link, 'Chưa có')}</span>`}</div>
+          <div class="l-info"><b>${escapeHtml(LINKS.final)}</b>${canEditLinks ? '' : `<span>${linkBlock('', t.final_link, 'Chưa có')}</span>`}</div>
           ${canEditLinks ? linkInput('final-in', t.final_link, 'https://drive.google.com/final...') : ''}
         </div>
 
@@ -1329,8 +1599,9 @@
       </section>
     `;
 
-    // Wire status action buttons
-    drawerBody.querySelectorAll('.status-action-btn').forEach((btn) => {
+    // Wire status action buttons (gồm cả Quick Action Bar của Creative PIC —
+    // dùng CHUNG canTransition + updateStatus, không có đường đổi status riêng).
+    drawerBody.querySelectorAll('.status-action-btn, .creative-action-row [data-status]').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (btn.disabled) return;
         const newStatus = btn.getAttribute('data-status');
@@ -1346,6 +1617,16 @@
     if (aiChecklistBtn) {
       aiChecklistBtn.addEventListener('click', () => {
         window.MH.toast({ type: 'info', title: 'Checklist đã sẵn sàng', message: 'Production checklist đang được tính từ status, links và dữ liệu task hiện tại.' });
+      });
+    }
+
+    // "Lưu link" ở Quick Action Bar chỉ bấm hộ #save-links — KHÔNG nhân bản logic lưu.
+    const quickSave = drawerBody.querySelector('[data-creative-save-links]');
+    if (quickSave) {
+      quickSave.addEventListener('click', () => {
+        const real = document.getElementById('save-links');
+        if (real) { real.click(); return; }
+        window.MH.toast({ type: 'warning', title: 'Không lưu được link', message: 'Bạn không có quyền sửa link của task này.' });
       });
     }
 
@@ -1736,6 +2017,18 @@
       tryFocusTask(true);
     }
   });
+
+  /* ---------- Chip lọc loại việc (Creative PIC · My Tasks) ---------- */
+  const creativeChipsRow = document.getElementById('creative-type-chips');
+  if (creativeChipsRow) {
+    creativeChipsRow.addEventListener('click', (e) => {
+      const btn = e.target.closest('.saved-view-chip');
+      if (!btn) return;
+      state.creativeType = btn.getAttribute('data-creative-type') || '';
+      creativeChipsRow.querySelectorAll('.saved-view-chip').forEach((c) => c.classList.toggle('is-active', c === btn));
+      render();
+    });
+  }
 
   /* ---------- Quick filter chips ---------- */
   const chipsRow = document.getElementById('quick-filter-chips');

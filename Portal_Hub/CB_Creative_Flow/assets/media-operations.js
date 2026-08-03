@@ -75,7 +75,10 @@
 
   // Order nội bộ do Content Team tạo → KHÔNG có client thật (đồng bộ helper cùng tên
   // trong database-orders.js). CỐ Ý không gồm nhánh Ads (flow Ads chưa chốt).
+  // Nguồn sự thật ở app.js (MH.isInternalContentOrder) — giữ fallback cho trường
+  // hợp app.js chưa nạp; KHÔNG sửa logic riêng ở đây nữa.
   function isInternalContentOrder(order) {
+    if (window.MH && window.MH.isInternalContentOrder) return window.MH.isInternalContentOrder(order);
     return !!(order && (
       order.order_kind === 'internal_media_request'
       || order.origin === 'content_team'

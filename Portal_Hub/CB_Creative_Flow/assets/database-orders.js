@@ -421,7 +421,10 @@
      ⚠ Hẹp hơn `isInternalOrder()` (hàm cũ, gom cả Ads): CỐ Ý **không** gồm
      `internal_ads_media_request` / `origin='ads_order'` / `source_ads_order_id` vì flow Ads
      chưa được chốt — đụng vào là đổi nghiệp vụ Ads ngoài phạm vi. */
+  // Nguồn sự thật ở app.js (MH.isInternalContentOrder) — giữ fallback cho trường
+  // hợp app.js chưa nạp; KHÔNG sửa logic riêng ở đây nữa.
   function isInternalContentOrder(order) {
+    if (window.MH && window.MH.isInternalContentOrder) return window.MH.isInternalContentOrder(order);
     return !!(order && (
       order.order_kind === 'internal_media_request'
       || order.origin === 'content_team'
