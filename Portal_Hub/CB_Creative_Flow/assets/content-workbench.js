@@ -1532,8 +1532,9 @@
     if (taskId) {
       const t = TASKS.find(function (x) { return x.id === taskId; });
       // TASKS role content đã lọc isMineTask; task của người khác không có trong TASKS.
+      // Không tìm thấy → LUÔN báo (mọi role), tránh rơi vào trang rỗng mà không hiểu vì sao.
       if (t) { cwbView = 'tasks'; renderCwbTabs(); openTaskDrawer(t); }
-      else if (isContent) toast('warning', 'Không có quyền xem', 'Task này không được gán cho bạn hoặc không còn thuộc bạn.');
+      else toast('warning', 'Không mở được task', 'Task không tồn tại hoặc bạn không có quyền xem.');
     }
     renderCwbTabs();
   });

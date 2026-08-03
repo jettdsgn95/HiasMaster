@@ -73,6 +73,16 @@
   function initials(name) { return String(name || '?').trim().split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); }
   function dayStart(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 
+  // Order nội bộ do Content Team tạo → KHÔNG có client thật (đồng bộ helper cùng tên
+  // trong database-orders.js). CỐ Ý không gồm nhánh Ads (flow Ads chưa chốt).
+  function isInternalContentOrder(order) {
+    return !!(order && (
+      order.order_kind === 'internal_media_request'
+      || order.origin === 'content_team'
+      || order.client_visible === false
+      || order.source_content_task_id
+    ));
+  }
   const ROUTING = (window.MH && window.MH.routing) || {
     isAdsOrder: function (o) { return !!o && (o.order_kind === 'ads_order' || o.request_type === 'ads'); },
     isMediaOrder: function (o) { return !!o && ['media', 'shoot', 'photo', 'video'].indexOf(o.request_type) >= 0 && !(o.order_kind === 'ads_order' || o.request_type === 'ads'); },
@@ -838,13 +848,15 @@
       </section>
 
       <section class="drawer-block">
-        <div class="drawer-block-head"><span class="block-letter">I</span><h4>Bàn giao cho requester / client</h4></div>
+        <div class="drawer-block-head"><span class="block-letter">I</span><h4>${isInternalContentOrder(o) ? 'Bàn giao nội bộ cho Content' : 'Bàn giao cho requester / client'}</h4></div>
         <dl>
           <dt>Preview đã gửi</dt><dd>${linkBlock('', o.preview_link, 'Chưa gửi Preview.')}</dd>
           <dt>Final đã gửi</dt><dd>${linkBlock('', o.final_delivery_link, 'Chưa gửi Final.')}</dd>
         </dl>
-        <p class="text-xs muted" style="margin:8px 0 0">Gửi Preview/Final cho client vẫn thực hiện ở <b>Client Orders</b> (Account/Admin) để giữ 1 nguồn liên lạc với client.</p>
-        <div class="row" style="margin-top:8px"><a class="btn btn-secondary btn-sm" href="database-orders.html?id=${esc(o.order_id)}">Mở Client Orders →</a></div>
+        <p class="text-xs muted" style="margin:8px 0 0">${isInternalContentOrder(o)
+          ? 'Đây là <b>yêu cầu nội bộ từ Content</b> — không có client thật. Gửi Preview/Final thực hiện ở <b>Client Orders</b>; PIC Content/Lead Content sẽ nhận thông báo trong Content Workspace.'
+          : 'Gửi Preview/Final cho client vẫn thực hiện ở <b>Client Orders</b> (Account/Admin) để giữ 1 nguồn liên lạc với client.'}</p>
+        <div class="row" style="margin-top:8px"><a class="btn btn-secondary btn-sm" href="database-orders.html?id=${esc(o.order_id)}">Mở ${isInternalContentOrder(o) ? 'yêu cầu nội bộ' : 'Client Orders'} →</a></div>
       </section>`;
   }
 

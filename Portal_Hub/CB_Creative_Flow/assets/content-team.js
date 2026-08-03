@@ -23,9 +23,16 @@
   if (user.role === 'client') { location.replace('client-dashboard.html'); return; }
   // Content Workspace = trang của LEAD (sidebar "Content Team → Content Workspace").
   // Role content làm việc ở Content Wording — redirect kèm ?id để mở đúng order.
+  // ⚠ PHẢI giữ nguyên query khi redirect: noti bàn giao của Media deep-link
+  // `content-team.html?task=<content_task_id>`; role content bị đá sang workbench mà
+  // MẤT `?task=` thì PIC bấm noti sẽ rơi vào trang rỗng, tưởng không có task.
   if (user.role === 'content') {
-    const q = new URLSearchParams(location.search).get('id');
-    location.replace('content-workbench.html' + (q ? '?id=' + encodeURIComponent(q) : ''));
+    const params = new URLSearchParams(location.search);
+    const task = params.get('task');
+    const id = params.get('id');
+    if (task) location.replace('content-workbench.html?task=' + encodeURIComponent(task));
+    else if (id) location.replace('content-workbench.html?id=' + encodeURIComponent(id));
+    else location.replace('content-workbench.html');
     return;
   }
   // system_supervisor = monitor read-only: vào xem được, nhưng KHÔNG có cờ Lead/Content/Account

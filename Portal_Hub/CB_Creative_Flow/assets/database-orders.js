@@ -381,7 +381,96 @@
   // Quy tắc 3 vòng feedback/revision áp dụng CHÍNH cho order design (design + digital design).
   // Type khác (video/media/slide/motion/other): linh hoạt — không chặn cứng vòng 4.
   function appliesRevisionRule(o) {
+    // Order NỘI BỘ Content→Media không có "client" nên KHÔNG áp luật 3 vòng feedback Client.
+    if (isInternalContentOrder(o)) return false;
     return ['design', 'digital'].includes(o.request_type);
+  }
+
+  /* ---------- INTERNAL CONTENT ORDER — context-aware wording (2026-08-03) ----------
+     Order do Content Team tạo sang Media KHÔNG phải Client Order: không có client thật,
+     không lộ Client Portal, không notify client. Người nhận bàn giao là **PIC Content**
+     của `source_content_task_id`, Lead Content chỉ CC/giám sát.
+     ⚠ Hẹp hơn `isInternalOrder()` (hàm cũ, gom cả Ads): CỐ Ý **không** gồm
+     `internal_ads_media_request` / `origin='ads_order'` / `source_ads_order_id` vì flow Ads
+     chưa được chốt — đụng vào là đổi nghiệp vụ Ads ngoài phạm vi. */
+  function isInternalContentOrder(order) {
+    return !!(order && (
+      order.order_kind === 'internal_media_request'
+      || order.origin === 'content_team'
+      || order.client_visible === false
+      || order.source_content_task_id
+    ));
+  }
+  // Toàn bộ chữ trong block Bàn giao lấy từ đây — KHÔNG hardcode "Client" ở chỗ nào nữa.
+  function deliveryTargetMeta(order) {
+    if (isInternalContentOrder(order)) {
+      return {
+        isInternalContent: true,
+        title: 'Bàn giao nội bộ cho Content',
+        previewBtn: 'Gửi Preview → Content',
+        finalBtn: 'Gửi Final → Content',
+        sentPreviewToast: 'Đã gửi Preview cho Content',
+        sentFinalToast: 'Đã gửi Final cho Content',
+        sentDetail: 'PIC Content/Lead Content đã nhận thông báo + link.',
+        helpPreview: 'Nhập link Drive rồi bấm gửi — PIC Content/Lead Content nhận thông báo và mở link trong Content Workspace.',
+        helpFinal: 'Final chỉ gửi một lần. PIC Content/Lead Content sẽ nhận thông báo để tiếp tục xử lý task gốc.',
+        finalSentBtn: '✓ Đã gửi Final cho Content',
+        alreadyFinalMsg: 'Yêu cầu nội bộ này đã bàn giao Final cho Content rồi — không gửi lại.',
+        needFinalMsg: 'Cần gửi Final cho Content trước khi đóng yêu cầu nội bộ.',
+        closeLabel: 'Đóng yêu cầu nội bộ — Hoàn thành',
+        closeHelp: 'Đóng khi Content đã nhận sản phẩm và xử lý xong task gốc.',
+        closedToast: 'Đã đóng yêu cầu nội bộ — Hoàn thành',
+        closedDetail: 'Đã bàn giao cho Content.',
+        completedText: 'Yêu cầu nội bộ đã hoàn thành và bàn giao cho Content.',
+        ratingLabel: 'Xác nhận nội bộ',
+        deliveryTargetName: 'Content'
+      };
+    }
+    return {
+      isInternalContent: false,
+      title: 'Bàn giao cho Client',
+      previewBtn: 'Gửi Preview → Client',
+      finalBtn: 'Gửi Final → Client',
+      sentPreviewToast: 'Đã gửi Preview',
+      sentFinalToast: 'Đã gửi Final',
+      sentDetail: 'Client đã nhận thông báo + link.',
+      helpPreview: 'Nhập link Drive rồi bấm gửi — client nhận thông báo và mở link ngay trong Client Portal. Final chỉ gửi một lần.',
+      helpFinal: 'Đã bàn giao Final cho client — chỉ gửi MỘT lần. Cần thay đổi thì liên hệ quản trị.',
+      finalSentBtn: '✓ Đã gửi Final',
+      alreadyFinalMsg: 'Order này đã bàn giao Final cho client rồi — không gửi lại.',
+      needFinalMsg: 'Cần gửi Final cho client trước khi đóng đơn.',
+      closeLabel: 'Đóng đơn — Hoàn thành',
+      closeHelp: 'Đóng đơn khi client đã nhận sản phẩm. Rating của client là <b>tùy chọn</b> — không bắt buộc để hoàn thành đơn.',
+      closedToast: 'Đã đóng đơn — Hoàn thành',
+      closedDetail: 'Rating của client (nếu có sau) vẫn được ghi nhận.',
+      completedText: 'Đơn đã Hoàn thành.',
+      ratingLabel: 'Rating',
+      deliveryTargetName: 'Client'
+    };
+  }
+  // Hook chỉ để harness headless kiểm được các helper + render drawer (không dùng trong app).
+  window.__DBO_TEST = {
+    isInternalContentOrder: function (o) { return isInternalContentOrder(o); },
+    deliveryTargetMeta: function (o) { return deliveryTargetMeta(o); },
+    feedbackMeta: function (o) { return feedbackMeta(o); },
+    appliesRevisionRule: function (o) { return appliesRevisionRule(o); },
+    openDrawer: function (o) { return openDrawer(o); }
+  };
+  function feedbackMeta(order) {
+    if (isInternalContentOrder(order)) {
+      return {
+        title: 'Feedback / Chỉnh sửa nội bộ',
+        latestLabel: 'Feedback gần nhất từ Content',
+        emptyText: 'Chưa có feedback từ Content.',
+        appliesClientRevisionLimit: false
+      };
+    }
+    return {
+      title: 'Feedback / Vòng chỉnh sửa',
+      latestLabel: 'Feedback gần nhất từ Client',
+      emptyText: 'Chưa có feedback.',
+      appliesClientRevisionLimit: appliesRevisionRule(order)
+    };
   }
   const FEEDBACK_STATUS_LABEL = {
     waiting_feedback: 'Chờ feedback từ client',
@@ -390,27 +479,40 @@
     approved: 'Client đã duyệt / đã Final',
     exceeded_limit: 'Đã đạt giới hạn chỉnh sửa'
   };
+  // Bản nhãn cho order NỘI BỘ Content→Media: cùng key nhưng đổi "Client" → "Content".
+  // Thiếu bản này thì dù title/nút đã đúng, dòng "Feedback status" vẫn rò chữ Client.
+  const FEEDBACK_STATUS_LABEL_INTERNAL = {
+    waiting_feedback: 'Chờ feedback từ Content',
+    feedback_received: 'Content đã gửi feedback',
+    revision_in_progress: 'Đang chỉnh theo feedback',
+    approved: 'Content đã duyệt / đã Final',
+    exceeded_limit: 'Đã đạt giới hạn chỉnh sửa'
+  };
   // Panel Feedback/Vòng chỉnh sửa trong Order drawer (cạnh khu Bàn giao Preview/Final).
   function buildRevisionPanel(o) {
-    const applies = appliesRevisionRule(o);
+    const fMeta = feedbackMeta(o);
+    // Internal Content Order: KHÔNG áp luật 3 vòng feedback Client → không hiện badge "0/3",
+    // feedback nội bộ Content↔Media KHÔNG bị tính vào hạn mức của Client Order.
+    const applies = fMeta.appliesClientRevisionLimit;
     const round = o.revision_round || 0;
     const limit = o.revision_limit || 3;
     const atLimit = applies && round >= limit;
-    const fbStatus = o.feedback_status ? (FEEDBACK_STATUS_LABEL[o.feedback_status] || o.feedback_status) : '—';
+    const fbLabels = isInternalContentOrder(o) ? FEEDBACK_STATUS_LABEL_INTERNAL : FEEDBACK_STATUS_LABEL;
+    const fbStatus = o.feedback_status ? (fbLabels[o.feedback_status] || o.feedback_status) : '—';
     const roundBadge = applies
       ? `<span class="rev-round-badge ${atLimit ? 'is-limit' : ''}">Vòng chỉnh sửa: <b>${round}/${limit}</b></span>`
-      : `<span class="rev-round-badge is-flex">Linh hoạt — không giới hạn vòng</span>`;
+      : `<span class="rev-round-badge is-flex">${fMeta.appliesClientRevisionLimit === false && isInternalContentOrder(o) ? 'Nội bộ — không giới hạn vòng' : 'Linh hoạt — không giới hạn vòng'}</span>`;
     const canAct = ['admin', 'account'].includes(user.role);
     return `
       <div class="rev-panel ${atLimit ? 'rev-panel--limit' : ''}">
         <div class="rev-panel-head">
-          <span class="rev-panel-title">Feedback / Vòng chỉnh sửa</span>
+          <span class="rev-panel-title">${escapeHtml(fMeta.title)}</span>
           ${roundBadge}
           ${atLimit ? `<span class="rev-limit-badge">Đã đạt giới hạn chỉnh sửa</span>` : ''}
         </div>
         <dl class="rev-panel-dl">
           <dt>Feedback status</dt><dd>${fbStatus}</dd>
-          <dt>Feedback gần nhất</dt><dd>${o.latest_feedback_note ? '<span class="text-xs muted">xem bên dưới</span>' : '<em class="muted">Chưa có feedback</em>'}</dd>
+          <dt>Feedback gần nhất</dt><dd>${o.latest_feedback_note ? '<span class="text-xs muted">xem bên dưới</span>' : `<em class="muted">${escapeHtml(fMeta.emptyText)}</em>`}</dd>
           <dt>Lúc</dt><dd>${o.last_feedback_at ? fmtDateTime(o.last_feedback_at) : '<em class="muted">—</em>'}</dd>
           <dt>Bởi</dt><dd>${o.last_feedback_by ? escapeHtml(o.last_feedback_by) : '<em class="muted">—</em>'}</dd>
         </dl>
@@ -418,7 +520,7 @@
           <div style="margin-top:10px;padding:11px 13px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-left:3px solid var(--info,#0ea5e9);border-radius:8px;font-size:12.5px;line-height:1.55">
             <b>Feedback Vòng 3 — Final Check.</b> Đây là vòng chỉnh sửa cuối cùng của Order hiện tại. Account/Admin cần gửi feedback này cho PIC xử lý. Sau khi Production hoàn tất, PIC cập nhật Final Link và gửi duyệt nội bộ. Account/Admin kiểm tra và gửi Final cho Client.
           </div>` : ''}
-        ${longText('Feedback gần nhất từ Client', o.latest_feedback_note, { emptyText: 'Chưa có feedback.', lines: 3 })}
+        ${longText(fMeta.latestLabel, o.latest_feedback_note, { emptyText: fMeta.emptyText, lines: 3 })}
         ${(o.latest_feedback_note && canAct && o.feedback_status === 'feedback_received') ? `
           <div class="rev-panel-actions">
             <button type="button" class="btn btn-sm ${atLimit ? 'btn-primary' : 'btn-secondary'}" id="btn-send-feedback-pic">${atLimit ? 'Gửi feedback vòng 3 cho PIC' : 'Gửi feedback này cho PIC'}</button>
@@ -1169,7 +1271,9 @@
       case 'feedback_received':return { title: 'Gửi feedback cho PIC', detail: `Client đã gửi Feedback Round ${N}. Account cần chuyển feedback này cho PIC trong Task Tracker để chỉnh sửa.` };
       case 'preview_sent':     return { title: 'Chờ Client phản hồi', detail: 'Đã gửi Preview — theo dõi feedback từ Client. Nếu Client duyệt Preview, Account gửi Final. Nếu Client gửi feedback, chuyển feedback cho PIC xử lý.' };
       case 'production': {
-        if (o.production_status === 'ready')  return { title: 'Bàn giao cho client', detail: 'Task đã sẵn sàng. Lấy Preview Link ở "Links from Task Tracker" → mục Bàn giao → bấm Gửi Preview.' };
+        if (o.production_status === 'ready') return isInternalContentOrder(o)
+          ? { title: 'Bàn giao nội bộ cho Content', detail: 'Task đã sẵn sàng. Lấy Preview Link ở "Links from Task Tracker" → mục Bàn giao → bấm Gửi Preview → Content.' }
+          : { title: 'Bàn giao cho client', detail: 'Task đã sẵn sàng. Lấy Preview Link ở "Links from Task Tracker" → mục Bàn giao → bấm Gửi Preview.' };
         if (o.production_status === 'review') return { title: 'Duyệt nội bộ', detail: 'Team đã gửi preview/final — mở Task Tracker duyệt (Đạt → Sẵn sàng bàn giao) trước khi gửi Preview.' };
         return { title: 'Theo dõi sản xuất', detail: 'Mở Task Tracker để xem tiến độ chi tiết của team Media.' };
       }
@@ -1373,6 +1477,8 @@
     const link = (u, label) => u ? `<a class="link" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(label || u)}</a>` : '<em class="muted">—</em>';
 
     const nextAction = orderNextAction(o);
+    // Mọi chữ trong block Bàn giao lấy từ đây (Client Order thật vs Internal Content Order).
+    const dMeta = deliveryTargetMeta(o);
     drawerBody.innerHTML = `
       ${(function () { const ref = getRevisionRef(o); return ref ? `
       <div class="ow-revision-banner" style="margin-bottom:14px;padding:11px 14px;background:rgba(186,17,15,.07);border:1px solid rgba(186,17,15,.28);border-left:3px solid #BA110F;border-radius:10px;font-size:13px;line-height:1.55">
@@ -1577,7 +1683,7 @@
       </section>
 
       <section class="drawer-block ow-delivery">
-        <div class="drawer-block-head"><span class="block-letter">D</span><h4>Bàn giao cho client</h4></div>
+        <div class="drawer-block-head"><span class="block-letter">D</span><h4>${escapeHtml(dMeta.title)}</h4></div>
         ${['admin', 'account'].includes(user.role) ? `
         ${!o.final_delivery_link ? `
         <div class="edit-row">
@@ -1585,26 +1691,26 @@
           <input class="input" id="dlv-preview-link" type="url" value="${escapeHtml(o.preview_link || '')}" placeholder="https://drive.google.com/preview..." />
         </div>
         <div class="row" style="justify-content:flex-end; margin:4px 0 12px">
-          <button class="btn btn-secondary btn-sm" id="send-preview-btn">Gửi Preview → Client</button>
+          <button class="btn btn-secondary btn-sm" id="send-preview-btn">${escapeHtml(dMeta.previewBtn)}</button>
         </div>` : ''}
         <div class="edit-row">
           <label>Final Link</label>
           <input class="input" id="dlv-final-link" type="url" value="${escapeHtml(o.final_delivery_link || '')}" placeholder="https://drive.google.com/final..." ${o.final_delivery_link ? 'readonly' : ''} />
         </div>
         <div class="row" style="justify-content:flex-end; margin-top:4px">
-          <button class="btn btn-primary btn-sm" id="send-final-btn" ${o.final_delivery_link ? 'disabled' : ''}>${o.final_delivery_link ? '✓ Đã gửi Final' : 'Gửi Final → Client'}</button>
+          <button class="btn btn-primary btn-sm" id="send-final-btn" ${o.final_delivery_link ? 'disabled' : ''}>${escapeHtml(o.final_delivery_link ? dMeta.finalSentBtn : dMeta.finalBtn)}</button>
         </div>
-        <p class="text-xs muted" style="margin:10px 0 0">${o.final_delivery_link ? 'Đã bàn giao Final cho client — chỉ gửi MỘT lần. Cần thay đổi thì liên hệ quản trị.' : 'Nhập link Drive rồi bấm gửi — client nhận thông báo và mở link ngay trong Client Portal. Final chỉ gửi một lần.'}</p>
+        <p class="text-xs muted" style="margin:10px 0 0">${escapeHtml(o.final_delivery_link ? dMeta.helpFinal : dMeta.helpPreview)}</p>
         ${o.final_delivery_link && o.production_status !== 'completed' ? `
         <div class="row" style="justify-content:flex-end; margin-top:12px">
-          <button class="btn btn-success btn-sm" id="close-order-btn">Đóng đơn — Hoàn thành</button>
+          <button class="btn btn-success btn-sm" id="close-order-btn">${escapeHtml(dMeta.closeLabel)}</button>
         </div>
-        <p class="text-xs muted" style="margin:6px 0 0">Đóng đơn khi client đã nhận sản phẩm. Rating của client là <b>tùy chọn</b> — không bắt buộc để hoàn thành đơn.</p>` : ''}
-        ${o.production_status === 'completed' ? '<p class="text-xs" style="margin:12px 0 0;color:var(--success);font-weight:600">✓ Đơn đã Hoàn thành.</p>' : ''}
+        <p class="text-xs muted" style="margin:6px 0 0">${dMeta.closeHelp}</p>` : ''}
+        ${o.production_status === 'completed' ? `<p class="text-xs" style="margin:12px 0 0;color:var(--success);font-weight:600">✓ ${escapeHtml(dMeta.completedText)}</p>` : ''}
         ` : `
         <dl>
-          <dt>Preview Link</dt><dd>${link(o.preview_link)}</dd>
-          <dt>Final Link</dt><dd>${link(o.final_delivery_link)}</dd>
+          <dt>Preview Link</dt><dd>${linkBlock('', o.preview_link, 'Chưa có Preview.')}</dd>
+          <dt>Final Link</dt><dd>${linkBlock('', o.final_delivery_link, 'Chưa có Final.')}</dd>
         </dl>
         `}
         ${buildRevisionPanel(o)}
@@ -1612,9 +1718,9 @@
         <dl style="margin-top:12px">
           <dt>Delivery Status</dt><dd>${o.delivery_status ? `<span class="tb-status s--${o.delivery_status}"><span class="dot"></span>${PROD_STATUS_LABEL[o.delivery_status] || o.delivery_status}</span>` : '<em class="muted">—</em>'}</dd>
           <dt>Delivery Date</dt><dd>${v(o.delivery_date)}</dd>
-          <dt>Rating</dt><dd>${o.satisfaction_score ? `<b style="color:var(--warning); font-size:var(--text-base)">★ ${o.satisfaction_score}/5</b>` : '<em class="muted">Chưa có rating</em>'}</dd>
-          <dt>Feedback</dt><dd>${v(o.client_feedback)}</dd>
+          ${dMeta.isInternalContent ? '' : `<dt>${escapeHtml(dMeta.ratingLabel)}</dt><dd>${o.satisfaction_score ? `<b style="color:var(--warning); font-size:var(--text-base)">★ ${o.satisfaction_score}/5</b>` : '<em class="muted">Chưa có rating</em>'}</dd>`}
         </dl>
+        ${dMeta.isInternalContent ? '' : longText('Feedback của Client', o.client_feedback, { emptyText: 'Chưa có feedback.' })}
       </section>
 
       <section class="drawer-block ow-activity">
@@ -1650,10 +1756,11 @@
     // Wire delivery hand-off (gửi Preview/Final link → update order + notify client)
     function sendDelivery(kind) {
       const isFinal = kind === 'final';
+      const meta = deliveryTargetMeta(currentOrder);
       // Guard: Final chỉ gửi MỘT lần. Đã có final_delivery_link → chặn (tránh re-persist + re-notify
       // do bấm nhiều lần / double-click trước khi drawer re-render disable nút).
       if (isFinal && currentOrder.final_delivery_link && String(currentOrder.final_delivery_link).trim()) {
-        window.MH.toast({ type: 'warning', title: 'Đã gửi Final', message: 'Order này đã bàn giao Final cho client rồi — không gửi lại.' });
+        window.MH.toast({ type: 'warning', title: 'Đã gửi Final', message: meta.alreadyFinalMsg });
         return;
       }
       const input = document.getElementById(isFinal ? 'dlv-final-link' : 'dlv-preview-link');
@@ -1678,9 +1785,14 @@
       notifyClient(currentOrder, isFinal
         ? { type: 'delivery_final', title: 'Final đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã được xử lý theo Feedback Vòng 3 và bàn giao bản Final. Anh/chị vui lòng kiểm tra sản phẩm hoàn thiện và gửi đánh giá. Nếu cần chỉnh sửa hoặc phát sinh thêm sau Final, vui lòng tạo một Order mới từ yêu cầu hiện tại.`, link: linkVal }
         : { type: 'delivery_preview', title: 'Sản phẩm Preview đã sẵn sàng', message: `Yêu cầu ${currentOrder.order_id} đã có bản Preview. Anh/chị vui lòng kiểm tra nội dung, bố cục, hình ảnh và gửi feedback trực tiếp trên hệ thống để team Media tiếp tục hoàn thiện.`, link: linkVal });
-      // Khép kín: order nội bộ → báo Lead Content (notifyClient đã tự bỏ qua internal order).
+      // Khép kín: order nội bộ → báo PIC Content (chính) + Lead Content (giám sát).
+      // notifyClient đã tự bỏ qua internal order nên client thật KHÔNG nhận gì.
       if (isInternalOrder(currentOrder)) notifyContentRequester(currentOrder, isFinal, linkVal);
-      window.MH.toast({ type: 'success', title: isFinal ? 'Đã gửi Final' : 'Đã gửi Preview', message: isInternalOrder(currentOrder) ? 'Đã báo Lead Content + cập nhật link.' : 'Client đã nhận thông báo + link.' });
+      window.MH.toast({
+        type: 'success',
+        title: isFinal ? meta.sentFinalToast : meta.sentPreviewToast,
+        message: meta.sentDetail
+      });
       render();
       openDrawer(currentOrder);
     }
@@ -1688,14 +1800,15 @@
     // không gate hoàn thành). Set production_status+delivery_status='completed'.
     function closeOrderCompleted(o) {
       if (!o) return;
-      if (o.production_status === 'completed') { window.MH.toast({ type: 'info', title: 'Đã hoàn thành', message: 'Đơn này đã ở trạng thái Hoàn thành.' }); return; }
-      if (!o.final_delivery_link) { window.MH.toast({ type: 'warning', title: 'Chưa gửi Final', message: 'Cần gửi Final cho client trước khi đóng đơn.' }); return; }
+      const meta = deliveryTargetMeta(o);
+      if (o.production_status === 'completed') { window.MH.toast({ type: 'info', title: 'Đã hoàn thành', message: meta.completedText }); return; }
+      if (!o.final_delivery_link) { window.MH.toast({ type: 'warning', title: 'Chưa gửi Final', message: meta.needFinalMsg }); return; }
       const nowIso = new Date().toISOString();
       o.production_status = 'completed';
       o.delivery_status = 'completed';
       o.last_updated = nowIso.slice(0, 16).replace('T', ' ');
       persistOrder(o.order_id, { production_status: 'completed', delivery_status: 'completed', last_updated: nowIso });
-      window.MH.toast({ type: 'success', title: 'Đã đóng đơn — Hoàn thành', message: o.order_id + ' · Rating của client (nếu có sau) vẫn được ghi nhận.' });
+      window.MH.toast({ type: 'success', title: meta.closedToast, message: o.order_id + ' · ' + meta.closedDetail });
       render();
       openDrawer(o);
     }
@@ -2221,27 +2334,83 @@
      Chỉ insert notifications (quyền staff) — Content tự thấy link Preview/Final qua block tracking
      (fillMediaTrack đọc order). related_entity_type='orders' (CHECK constraint). */
   async function notifyContentRequester(order, isFinal, linkVal) {
-    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return;
-    if (!order || !(order.source_content_task_id || order.source_ads_order_id)) return;
+    if (!window.MH || !window.MH.supabaseEnabled || !window.MH.supabase) return false;
+    if (!order || !(order.source_content_task_id || order.source_ads_order_id)) return false;
+
+    const type = isFinal ? 'delivery_final' : 'delivery_preview';
+    const title = isFinal ? 'Media đã bàn giao Final' : 'Media đã gửi Preview';
+
+    /* ---- Nhánh Ads: giữ NGUYÊN hành vi cũ (chỉ Lead Content, deep-link Ads Orders).
+           Flow Ads chưa chốt → không đụng. ---- */
+    if (!order.source_content_task_id) {
+      try {
+        const { error } = await window.MH.supabase.rpc('notify_roles', {
+          p_roles: ['lead_content'], p_type: type, p_title: title,
+          p_message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media ' + (isFinal ? 'đã bàn giao Final' : 'đã có Preview') + '. Mở để xem.',
+          p_link: 'content-team.html?tab=ads-orders&id=' + order.source_ads_order_id,
+          p_entity_type: 'orders', p_entity_id: order.order_id
+        });
+        if (error) { console.warn('[delivery] notify_roles (ads) error:', error); return false; }
+        return true;
+      } catch (e) { console.warn('[delivery] notify lead_content (ads) failed:', e); return false; }
+    }
+
+    /* ---- Nhánh Content: người nhận CHÍNH là PIC Content của task gốc; Lead Content chỉ CC.
+           Trước 2026-08-03 chỉ notify role lead_content ⇒ PIC Content — người phải xử lý
+           tiếp task — KHÔNG hề biết Media đã bàn giao. ---- */
+    const taskId = order.source_content_task_id;
+    const link = 'content-team.html?task=' + encodeURIComponent(taskId);
+    const message = order.order_id + ' · ' + (order.project_name || '')
+      + ' — Media đã ' + (isFinal ? 'bàn giao Final' : 'gửi Preview')
+      + ' cho yêu cầu nội bộ từ Content. Mở Content Task để kiểm tra link.';
+
+    let primaryNotified = false;
+    let task = null;
     try {
-      // Ads Media Request → deep-link Ads Orders; Content Task → deep-link content task.
-      const link = order.source_ads_order_id
-        ? 'content-team.html?tab=ads-orders&id=' + order.source_ads_order_id
-        : 'content-team.html?task=' + order.source_content_task_id;
-      // RPC notify_roles (2026-07-31) thay cho lookup users trực tiếp: bản cũ phụ thuộc RLS
-      // bảng users của người gửi + nuốt lỗi trong catch → Lead Content có thể không nhận
-      // được thông báo bàn giao mà không ai biết (cùng class bug Internal Media Request).
+      const { data, error } = await window.MH.supabase
+        .from('content_tasks')
+        .select('id, assigned_pic_user_id, created_by_user_id, assigned_pic, title')
+        .eq('id', taskId).maybeSingle();
+      if (error) console.warn('[delivery] load source content task failed:', error);
+      task = data;
+    } catch (e) { console.warn('[delivery] load source content task threw:', e); }
+
+    const primaryUserId = task && (task.assigned_pic_user_id || task.created_by_user_id);
+    if (primaryUserId && window.MH.store && window.MH.store.notifications) {
+      try {
+        await window.MH.store.notifications.create({
+          user_id: primaryUserId, type: type, title: title, message: message, link: link,
+          related_entity_type: 'orders', related_entity_id: order.order_id
+        });
+        primaryNotified = true;
+      } catch (e) { console.warn('[delivery] notify primary Content PIC failed:', e); }
+    }
+
+    let leadNotified = false;
+    try {
       const { error } = await window.MH.supabase.rpc('notify_roles', {
-        p_roles: ['lead_content'],
-        p_type: isFinal ? 'delivery_final' : 'delivery_preview',
-        p_title: isFinal ? 'Media đã bàn giao Final' : 'Media đã gửi Preview',
-        p_message: order.order_id + ' · ' + (order.project_name || '') + ' — đơn nội bộ Media ' + (isFinal ? 'đã bàn giao Final' : 'đã có Preview') + '. Mở để xem.',
-        p_link: link,
-        p_entity_type: 'orders',
-        p_entity_id: order.order_id
+        p_roles: ['lead_content'], p_type: type, p_title: title, p_message: message,
+        p_link: link, p_entity_type: 'orders', p_entity_id: order.order_id
       });
-      if (error) console.warn('[delivery] notify_roles error (chạy add-notify-roles-rpc.sql?):', error);
-    } catch (e) { console.warn('[delivery] notify content lead failed:', e); }
+      if (error) console.warn('[delivery] notify_roles lead_content error:', error);
+      else leadNotified = true;
+    } catch (e) { console.warn('[delivery] notify lead_content failed:', e); }
+
+    // KHÔNG fail im lặng — người gửi phải biết ai đã/chưa nhận được.
+    if (!primaryNotified && !leadNotified) {
+      window.MH.toast({
+        type: 'warning', title: 'Đã lưu link nhưng chưa báo được Content',
+        message: 'Không gửi được notification cho PIC Content/Lead Content. Kiểm tra RLS hoặc RPC notify_roles.'
+      });
+      return false;
+    }
+    if (!primaryNotified) {
+      window.MH.toast({
+        type: 'warning', title: 'Đã báo Lead Content, chưa báo được PIC Content',
+        message: 'Không xác định được assigned_pic_user_id/created_by_user_id của Content Task gốc.'
+      });
+    }
+    return true;
   }
 
   function updateStatus(o, newStatus, msg) {
