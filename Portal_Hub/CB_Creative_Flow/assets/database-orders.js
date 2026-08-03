@@ -141,7 +141,8 @@
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return 0;
     try {
       const list = await window.MH.store.users.list();
-      STAFF_USERS = (list || []).filter((u) => u && u.name && u.status !== 'inactive');
+      // MH.isActiveUser loại cả 'suspended'/'archived'/'pending' — "Deactivate" ghi 'suspended'.
+      STAFF_USERS = (list || []).filter((u) => u && u.name && (window.MH && window.MH.isActiveUser ? window.MH.isActiveUser(u) : u.status !== 'inactive'));
       if (window.MH.setUserDir) window.MH.setUserDir(list || []); // resolve id→tên cho PIC (Stage 2)
     } catch (e) { console.warn('[database-orders] users load failed:', e); }
     return STAFF_USERS.length;
@@ -2375,7 +2376,32 @@
       task = data;
     } catch (e) { console.warn('[delivery] load source content task threw:', e); }
 
-    const primaryUserId = task && (task.assigned_pic_user_id || task.created_by_user_id);
+    /* ⚠ 2026-08-03: PHẢI kiểm `status` người nhận. Insert notification cho user đã bị
+       Deactivate (status='suspended') vẫn THÀNH CÔNG ở DB — RLS chỉ kiểm role NGƯỜI GỬI —
+       nên trước đó code báo "đã gửi" trong khi thư rơi vào hộp không ai mở. Chọn người
+       nhận đầu tiên CÒN HOẠT ĐỘNG theo thứ tự: PIC được gán → người tạo task. */
+    const candidates = [];
+    if (task && task.assigned_pic_user_id) candidates.push({ id: task.assigned_pic_user_id, why: 'PIC được gán' });
+    if (task && task.created_by_user_id && task.created_by_user_id !== task.assigned_pic_user_id) {
+      candidates.push({ id: task.created_by_user_id, why: 'người tạo task' });
+    }
+    let primaryUserId = null;
+    let inactiveHit = null;
+    if (candidates.length) {
+      let statusById = {};
+      try {
+        const { data: us } = await window.MH.supabase
+          .from('users').select('id, name, email, status').in('id', candidates.map((c) => c.id));
+        (us || []).forEach((u) => { statusById[u.id] = u; });
+      } catch (e) { console.warn('[delivery] load recipient status failed:', e); statusById = null; }
+      for (const c of candidates) {
+        const u = statusById ? statusById[c.id] : null;
+        // Không đọc được bảng users (RLS/lỗi mạng) → vẫn gửi, tốt hơn là im lặng bỏ qua.
+        const active = !statusById || !u || (window.MH.isActiveUser ? window.MH.isActiveUser(u) : true);
+        if (active) { primaryUserId = c.id; break; }
+        if (!inactiveHit) inactiveHit = { who: (u && (u.name || u.email)) || c.why, status: u && u.status, why: c.why };
+      }
+    }
     if (primaryUserId && window.MH.store && window.MH.store.notifications) {
       try {
         await window.MH.store.notifications.create({
@@ -2406,8 +2432,13 @@
     }
     if (!primaryNotified) {
       window.MH.toast({
-        type: 'warning', title: 'Đã báo Lead Content, chưa báo được PIC Content',
-        message: 'Không xác định được assigned_pic_user_id/created_by_user_id của Content Task gốc.'
+        type: 'warning',
+        title: 'Đã báo Lead Content, chưa báo được PIC Content',
+        message: inactiveHit
+          // Ca thường gặp nhất: PIC đã bị Deactivate trong User Management.
+          ? ('PIC Content của task (' + (inactiveHit.who || '—') + ') đang ở trạng thái "' + (inactiveHit.status || 'không hoạt động') + '" nên không nhận được thông báo. Lead Content cần gán lại PIC cho Content Task này.')
+          : 'Không xác định được assigned_pic_user_id/created_by_user_id của Content Task gốc.',
+        duration: 7000
       });
     }
     return true;

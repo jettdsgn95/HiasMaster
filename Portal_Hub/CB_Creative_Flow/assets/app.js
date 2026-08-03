@@ -156,6 +156,22 @@
   window.MH = window.MH || {};
   window.MH.toast = toast;
 
+  /* ---------- USER CÒN HOẠT ĐỘNG (2026-08-03) ----------
+     ⚠ BUG ĐÃ VẤP: User Management bấm "Deactivate" ghi `status='suspended'`
+     (và coi `['inactive','suspended','archived']` là không-hoạt-động), nhưng 4 chỗ
+     lọc dropdown PIC lại viết `u.status !== 'inactive'` ⇒ user vừa bị khoá VẪN
+     hiện ra để gán PIC, và vẫn nhận notification vào hộp thư không ai mở.
+     Từ nay mọi nơi lọc "user còn dùng được" phải gọi hàm này.
+     `pending` = chưa kích hoạt (chưa đăng nhập lần nào) → cũng không gán được. */
+  const MH_INACTIVE_STATUSES = ['inactive', 'suspended', 'archived', 'pending'];
+  function isActiveUser(u) {
+    if (!u) return false;
+    const s = String(u.status == null ? 'active' : u.status).toLowerCase();
+    return MH_INACTIVE_STATUSES.indexOf(s) < 0;
+  }
+  window.MH.isActiveUser = isActiveUser;
+  window.MH.INACTIVE_STATUSES = MH_INACTIVE_STATUSES;
+
   /* ---------- ROUTING HELPERS (Media Capture Routing, 2026-07-31) ----------
      NGUỒN SỰ THẬT DUY NHẤT cho câu hỏi "order này đi luồng nào".
      Đặt ở app.js vì database-orders.js + media-operations.js + production-board.js

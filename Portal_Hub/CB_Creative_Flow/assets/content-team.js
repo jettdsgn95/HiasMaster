@@ -245,7 +245,8 @@
         // → nạp directory resolve id→tên hiện tại (PIC keyed theo user_id).
         const all = (await window.MH.store.users.list()) || [];
         if (window.MH.setUserDir) window.MH.setUserDir(all);
-        CONTENT_USERS = all.filter(function (u) { return u.role === 'content' && u.status !== 'inactive'; });
+        // Dùng MH.isActiveUser: "Deactivate" ghi status='suspended', lọc `!== 'inactive'` cũ để lọt.
+        CONTENT_USERS = all.filter(function (u) { return u.role === 'content' && (window.MH && window.MH.isActiveUser ? window.MH.isActiveUser(u) : u.status !== 'inactive'); });
       } catch (e) { console.warn('[ctm] load content users failed:', e); }
     }
   }

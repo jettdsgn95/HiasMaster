@@ -203,7 +203,8 @@
     if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled) return 0;
     try {
       const list = await window.MH.store.users.list();
-      STAFF_USERS = (list || []).filter((u) => u && u.name && u.status !== 'inactive');
+      // MH.isActiveUser loại cả 'suspended'/'archived'/'pending' — "Deactivate" ghi 'suspended'.
+      STAFF_USERS = (list || []).filter((u) => u && u.name && (window.MH && window.MH.isActiveUser ? window.MH.isActiveUser(u) : u.status !== 'inactive'));
       if (window.MH.setUserDir) window.MH.setUserDir(list || []); // resolve id→tên cho PIC (Stage 3)
       // @mention autocomplete dùng chung danh sách: bổ sung user thật (trừ client) vào TEAM_MEMBERS.
       STAFF_USERS.forEach((u) => {

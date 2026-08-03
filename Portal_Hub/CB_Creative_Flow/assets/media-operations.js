@@ -258,7 +258,8 @@
     if (!(window.MH && window.MH.store && window.MH.supabaseEnabled)) return;
     try {
       const list = (await window.MH.store.users.list()) || [];
-      STAFF = list.filter(function (u) { return u.status !== 'inactive'; });
+      // MH.isActiveUser loại cả 'suspended'/'archived'/'pending' — "Deactivate" ghi 'suspended'.
+      STAFF = list.filter(function (u) { return (window.MH && window.MH.isActiveUser) ? window.MH.isActiveUser(u) : u.status !== 'inactive'; });
       if (window.MH.setUserDir) window.MH.setUserDir(list);
     } catch (e) { console.warn('[mo] load users failed:', e); }
   }
