@@ -216,9 +216,13 @@
     }
     const isLong = raw.length > threshold;
     const useModal = raw.length > modalThreshold;
+    // opts.html = HTML ĐÃ ESCAPE SẴN của chính nội dung này (vd comment có
+    // highlight @mention). Chỉ dùng khi bên gọi tự escape — độ dài/copy/modal
+    // vẫn tính trên `text` thô nên không lệch.
+    const bodyHtml = options.html != null ? options.html : ltEsc(raw);
     return '<div class="drawer-longtext" data-longtext data-longtext-modal="' + (useModal ? '1' : '0') + '">'
       + head + '<span class="drawer-longtext__meta">' + raw.length + ' ký tự</span></div>'
-      + '<div class="drawer-longtext__body' + (isLong ? ' is-clamped' : '') + '" style="--lt-lines:' + lines + '">' + ltEsc(raw) + '</div>'
+      + '<div class="drawer-longtext__body' + (isLong ? ' is-clamped' : '') + '" style="--lt-lines:' + lines + '">' + bodyHtml + '</div>'
       + (isLong
         ? '<div class="drawer-longtext__actions">'
           + (useModal

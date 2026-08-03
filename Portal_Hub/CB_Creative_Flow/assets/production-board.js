@@ -294,7 +294,11 @@
             <time>${fmtDateTime(c.time)}</time>
           </div>
           ${replyBadge}
-          <div>${renderCommentText(c.text)}</div>
+          ${/* Comment dài: clamp 3 dòng + Xem thêm (brief §5.2). Truyền HTML đã escape
+                sẵn qua opts.html để GIỮ highlight @mention của renderCommentText. */''}
+          ${String(c.text || '').length > 300
+            ? longText('Nội dung comment', c.text, { lines: 3, html: renderCommentText(c.text) })
+            : `<div>${renderCommentText(c.text)}</div>`}
           <div class="comment-actions">
             <button type="button" data-reply="${c.id}" title="Trả lời">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
@@ -993,7 +997,7 @@
           ${fixing ? `<span class="tw-fb-fixing">Đang chỉnh Feedback Round ${round}</span>` : ''}
         </div>
         ${isR3 ? `<p class="tw-fb-note" style="font-weight:600">Đây là vòng chỉnh sửa cuối cùng của Order hiện tại. PIC cần xử lý đầy đủ feedback và cập nhật <b>Final Link</b> trước khi gửi duyệt nội bộ.</p>` : ''}
-        <p class="tw-fb-note">${order.latest_feedback_note ? escapeHtml(order.latest_feedback_note) : '<em class="muted">Chưa có nội dung feedback</em>'}</p>
+        ${longText('Nội dung feedback từ Client', order.latest_feedback_note, { emptyText: 'Chưa có nội dung feedback.' })}
         <p class="tw-fb-meta">Feedback status: <b>${fbStatus}</b></p>
         ${needFinal ? `<p class="tw-fb-meta" style="color:var(--danger,#dc2626);font-weight:600">⚠ Feedback Vòng 3 yêu cầu Final Link trước khi gửi duyệt nội bộ.</p>` : ''}
       </div>`;

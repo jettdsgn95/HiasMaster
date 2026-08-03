@@ -852,7 +852,7 @@
     }).join('');
     const revisionNote = (ws === 'lead_revision' && o.wording_lead_note) ? '<div class="dw-callout dw--warning" style="margin-top:var(--space-3)"><p><b>Lead yêu cầu chỉnh:</b> ' + esc(o.wording_lead_note) + '</p></div>'
       : ((ws === 'account_revision' && o.wording_account_note) ? '<div class="dw-callout dw--warning" style="margin-top:var(--space-3)"><p><b>Account yêu cầu chỉnh:</b> ' + esc(o.wording_account_note) + '</p></div>'
-        : ((ws === 'client_feedback' && o.wording_client_feedback) ? '<div class="dw-callout dw--warning" style="margin-top:var(--space-3)"><p><b>Client yêu cầu chỉnh — Vòng ' + (o.brief_wording_round || 0) + ':</b></p><p style="white-space:pre-wrap">' + esc(o.wording_client_feedback) + '</p></div>' : ''));
+        : ((ws === 'client_feedback' && o.wording_client_feedback) ? '<div class="dw-callout dw--warning" style="margin-top:var(--space-3)"><p><b>Client yêu cầu chỉnh — Vòng ' + (o.brief_wording_round || 0) + ':</b></p>' + longText('Nội dung Client yêu cầu chỉnh', o.wording_client_feedback, { lines: 3 }) + '</div>' : ''));
 
     const wf = WFIELDS.map(function (f) {
       return '<div class="field"><label class="label">' + f.label + (f.req ? ' <span class="req" style="color:var(--danger)">*</span>' : '') + '</label><textarea class="textarea ctm-field" id="ct-' + f.k + '" rows="' + f.rows + '" ' + ro + ' placeholder="...">' + esc(o[f.k] || '') + '</textarea></div>';
@@ -1381,14 +1381,13 @@
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Thông tin kế hoạch</h4></div><dl>'
         + '<dt>Nguồn</dt><dd>' + v(SOURCE_LABEL[p.source] || p.source) + (p.origin ? ' · ' + v(p.origin) : '') + '</dd>'
         + '<dt>Campaign</dt><dd>' + v(p.campaign_name) + '</dd>'
-        + '<dt>Mục tiêu</dt><dd style="white-space:pre-wrap">' + v(p.objective) + '</dd>'
         + '<dt>Kênh sử dụng</dt><dd>' + chHtml + '</dd>'
         + '<dt>Đối tượng</dt><dd>' + v(p.target_audience) + '</dd>'
         + '<dt>Key message</dt><dd>' + v(p.key_message) + '</dd>'
         + '<dt>CTA</dt><dd>' + v(p.cta) + '</dd>'
         + '<dt>Deadline tổng</dt><dd>' + (p.plan_deadline ? esc(fmtDT(p.plan_deadline)) : '<em class="muted">—</em>') + '</dd>'
         + '<dt>File/link kế hoạch</dt><dd>' + fileHtml + '</dd>'
-      + '</dl></section>'
+      + '</dl>' + longText('Mục tiêu kế hoạch', p.objective, { emptyText: 'Chưa có mục tiêu.' }) + '</section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">S</span><h4>Progress summary</h4></div>'
         + '<div class="ctm-progress lg"><i style="width:' + r.progress + '%"></i></div>'
         + '<div class="ctm-sum-grid">'
@@ -2390,7 +2389,7 @@
         + rowd('Hotline', v(d.hotline_or_contact)) + rowd('Landing / Form', link(d.landing_or_form_url)) + '</div></section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">T</span><h4>Content Tasks</h4></div>' + taskRows + taskBtn + '</section>'
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">M</span><h4>Internal Media Request</h4></div>' + mediaBlock + creativeReadyBtn + '</section>'
-      + (d.special_notes ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">N</span><h4>Ghi chú khách hàng</h4></div><p style="white-space:pre-wrap;margin:0">' + esc(d.special_notes) + '</p></section>' : '')
+      + (d.special_notes ? '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">N</span><h4>Ghi chú khách hàng</h4></div>' + longText('Ghi chú từ Client (Ads)', d.special_notes) + '</section>' : '')
       + '<section class="drawer-block"><div class="drawer-block-head"><span class="block-letter">·</span><h4>Hoạt động</h4></div><ul class="activity-mini">' + actHtml + '</ul></section>';
   }
 

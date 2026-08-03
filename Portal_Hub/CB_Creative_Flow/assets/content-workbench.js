@@ -960,7 +960,8 @@
 
     // Lead revision callout
     const revisionNote = (t.status === 'lead_revision' && (t.lead_review_note || t.last_revision_reason))
-      ? '<div class="dw-callout dw--warning" style="margin:0 0 var(--space-3)"><p><b>Lead yêu cầu chỉnh:</b> ' + esc(t.lead_review_note || t.last_revision_reason) + '</p></div>' : '';
+      ? '<div class="dw-callout dw--warning" style="margin:0 0 var(--space-3)"><p><b>Lead yêu cầu chỉnh:</b></p>'
+        + longText('Ghi chú của Lead Content', t.lead_review_note || t.last_revision_reason, { lines: 3 }) + '</div>' : '';
 
     // Phase 5a — Media Order theo dõi (read-only, điền async ở openTaskDrawer/fillMediaTrack)
     const mediaTrackHtml = (t.media_request_created && t.media_order_id)
