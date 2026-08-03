@@ -499,10 +499,17 @@ Role trong `#u-role` phải **khớp `users_role_check`** — đã bỏ `manager
 `activity`/`work_stats` = jsonb **Phase 1**; Phase 2 nên tách `user_activity_logs`
 và derive `work_stats` từ orders/tasks.
 
-⏳ **Còn phải chạy tay**: `supabase/add-user-management-admin.sql` mục 2+3
-(`current_user_role()` chỉ trả role khi `status='active'`, + trigger chặn user tự
-nâng quyền qua policy `users self update`). Công cụ tự động bị chặn tạo hàm
-`SECURITY DEFINER`.
+✅ `supabase/add-user-management-admin.sql` **đã chạy đủ** (2026-08-03):
+`current_user_role()` chỉ trả role khi `status='active'` ⇒ user bị khoá mất sạch
+quyền ở tầng DB (đọc 0 order / 0 content_task), + trigger chặn user tự nâng quyền
+qua policy `users self update`.
+
+⚠⚠ **Trigger guard PHẢI là SECURITY INVOKER.** Bản đầu viết `security definer` và
+hỏng: trong hàm `SECURITY DEFINER`, `current_user` trả về **chủ sở hữu hàm**
+(`postgres`), không phải role đang gọi ⇒ `current_user = 'service_role'` không bao
+giờ đúng ⇒ **trigger chặn luôn Edge Function admin-*** (Deactivate / đổi role fail
+42501). Quy tắc chung: **cần biết "ai đang gọi" thì đừng dùng SECURITY DEFINER** —
+dùng INVOKER, hoặc đọc `auth.role()` / `auth.uid()` (GUC, không bị definer che).
 
 ### PIC ↔ tài khoản bị deactivate (2026-08-03)
 

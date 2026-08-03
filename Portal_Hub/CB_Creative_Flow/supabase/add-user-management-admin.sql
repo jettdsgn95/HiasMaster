@@ -8,17 +8,16 @@
 -- mất khi reload. File này bổ sung cột + siết quyền.
 --
 -- ┌────────────────────────────────────────────────────────────────────┐
--- │ TRẠNG THÁI ÁP DỤNG (2026-08-03)                                    │
--- │  ✅ Mục 1 (cột) + CHECK  — ĐÃ CHẠY trên production qua migration.   │
--- │  ⏳ Mục 2 + 3            — CHƯA CHẠY. Cần Admin mở Supabase SQL     │
--- │     Editor và chạy TAY phần từ "-- 2)" tới hết file.                │
--- │     (Công cụ tự động bị chặn tạo hàm SECURITY DEFINER.)             │
--- │  Chưa chạy mục 2+3 thì hệ thống VẪN an toàn nhờ 2 lớp khác:         │
--- │    · Edge Function admin-update-user BAN Auth user khi khoá         │
--- │      ⇒ token vô hiệu, không đăng nhập lại được.                     │
--- │    · supabase-client.js tự signOut khi profile.status != active.    │
--- │  Nhưng mục 3 mới bịt được lỗ "user tự UPDATE role của mình thành    │
--- │  admin" qua policy `users self update`. NÊN CHẠY SỚM.               │
+-- │ TRẠNG THÁI ÁP DỤNG (2026-08-03) — ✅ ĐÃ CHẠY ĐỦ trên production.    │
+-- │  Mục 1 (cột + CHECK) · Mục 2 (current_user_role) · Mục 3 (trigger). │
+-- │  Đã test trực tiếp trên DB (impersonate role, bọc rollback):        │
+-- │    A. user suspended → current_user_role()=NULL, đọc 0 order,       │
+-- │       0 content_task (RLS chặn sạch).                    ✅         │
+-- │    B. user active    → vẫn đọc bình thường, không regression. ✅    │
+-- │    C. user tự UPDATE role='admin'        → BỊ CHẶN 42501. ✅        │
+-- │    E. user tự sửa bio/phone/title        → vẫn OK.        ✅        │
+-- │    F. service_role (Edge Function)       → đổi được.      ✅        │
+-- │    G. admin đổi status người khác        → đổi được.      ✅        │
 -- └────────────────────────────────────────────────────────────────────┘
 --
 -- ⚠ ĐÃ KIỂM TRA TRƯỚC KHI VIẾT (không đoán):
@@ -113,15 +112,24 @@ $$;
 -- Policy hiện tại: UPDATE USING (id = auth.uid()) WITH CHECK (id = auth.uid())
 -- ⇒ user tự đổi role của mình thành 'admin' hoặc tự bật lại status='active'.
 -- Không thu hẹp policy (sẽ vỡ trang Profile ở app.js) mà chặn theo CỘT bằng trigger.
+-- ⚠⚠ BẮT BUỘC là SECURITY INVOKER (mặc định), TUYỆT ĐỐI KHÔNG security definer.
+-- Bản đầu viết `security definer` và ĐÃ HỎNG: trong hàm SECURITY DEFINER,
+-- `current_user` trả về CHỦ SỞ HỮU HÀM (postgres), KHÔNG phải role đang gọi
+-- ⇒ điều kiện `current_user = 'service_role'` không bao giờ đúng ⇒ trigger chặn
+-- luôn Edge Function admin-* ⇒ Deactivate/Đổi role user fail 42501.
+-- Đã test lại: service_role PASS · admin PASS · user tự nâng quyền BỊ CHẶN ·
+-- user tự sửa bio/phone PASS.
 create or replace function public.users_guard_privileged_columns()
 returns trigger
 language plpgsql
-security definer
 set search_path to 'public'
 as $$
 begin
   -- service_role (Edge Function admin-*) và admin đang active được đổi tất cả.
-  if current_user = 'service_role' or public.is_admin() then
+  -- auth.role() là lớp dự phòng khi PostgREST không SET ROLE như mong đợi.
+  if current_user in ('service_role', 'postgres', 'supabase_admin')
+     or coalesce(auth.role(), '') = 'service_role'
+     or public.is_admin() then
     return new;
   end if;
   if new.role                is distinct from old.role
