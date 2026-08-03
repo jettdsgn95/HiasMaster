@@ -326,15 +326,16 @@
             <label class="label" for="u-role">Role <span class="req">*</span></label>
             <select class="select" id="u-role" required>
               <option value="">— Chọn role —</option>
+              <!-- ⚠ Danh sách này phải KHỚP users_role_check trong DB. Đã bỏ
+                   "manager" và "staff" (role cũ, KHÔNG có trong CHECK) — chọn
+                   chúng thì insert/update sẽ fail 23514. -->
               <option value="admin">Admin</option>
-              <option value="manager">Manager / Leader</option>
               <option value="account">Account</option>
               <option value="lead_content">Lead Content</option>
               <option value="lead_media">Lead Media</option>
               <option value="content">Content</option>
               <option value="design">Design</option>
               <option value="editor">Editor</option>
-              <option value="staff">Staff (Production)</option>
               <option value="system_supervisor">Giám sát hệ thống</option>
               <option value="client">Client</option>
             </select>

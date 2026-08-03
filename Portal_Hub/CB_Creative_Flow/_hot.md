@@ -449,6 +449,61 @@ People/departments reused across modules:
   - ⚠ `tasks.assigned_to` lưu **tên ngắn** ("Duy") nhưng `mh-user.name` của account là **tên đầy đủ** ("Duy Trần"). `production-board.js isMyTask(assignedTo)` (2026-06-02) match user↔task: bằng nhau HOẶC full name chứa tên PIC theo word-boundary. **Đừng dùng `=== user.name` hay `.split(' ').pop()`** (lấy nhầm chữ cuối → design/editor không thấy task của mình). Task chỉ tạo khi **Push → Production** (assigned_to = order.production_pic).
 - Departments: HO Marketing, Academic, Sales, CB Mekong, CB Hưng Phú, CB Cần Thơ, CB Tiên Thủy.
 
+### User Management = nguồn quản trị user THẬT (2026-08-03)
+
+**Add User KHÔNG còn là mock.** Trước đây `USERS.push(newUser)` + toast success ⇒
+reload là mất, không login được, DB/Auth không có gì. Nay:
+
+```text
+User Management (anon key)
+  → MH.store.users.create/update/setStatus/resendInvite/sendPasswordReset
+  → Edge Function admin-create-user | admin-update-user   (service_role, chỉ ở server)
+  → Supabase Auth Admin + public.users
+  → trả record → frontend RELOAD users từ DB (không tin state local)
+```
+
+`service_role` **tuyệt đối không** xuất hiện ở frontend. 2 function đặt
+`verify_jwt=false` **có chủ đích**: preflight `OPTIONS` không mang `Authorization`,
+bật verify_jwt là gateway trả 401 trước khi tới code ⇒ CORS chết. Bù lại
+`requireAdmin()` tự xác thực: có Bearer → `getUser()` thật → profile phải
+`role='admin'` **và** `status='active'`.
+
+| Bất biến | Ở đâu |
+|---|---|
+| `public.users.id` = `auth.users.id` | FK `ON DELETE CASCADE` |
+| Auth tạo xong mà profile lỗi → **xoá Auth user** rồi báo lỗi | `admin-create-user` mục 5 |
+| Trùng email → 409, chặn cả profile lẫn Auth user mồ côi | `admin-create-user` mục 2 |
+| `sendInvite=true` → ép `status='pending'` | không cho ghi 'active' giả |
+| `sendInvite=false` → trả `action_link` (recovery) | không tạo user không login được |
+| `status != active` → **ban Auth user** (`ban_duration`) | `applyAuthBan()` |
+| Không khoá được Admin active cuối cùng | kiểm ở server, không tin UI |
+
+**Auth guard 2 lớp** cho user bị khoá: `supabase-client.js` thấy
+`profile.status != 'active'` → xoá `mh-user` + `signOut()` + về
+`login.html?locked=<status>`; `login.html` có `assertActiveProfile()` chặn ngay
+sau `signIn`. Guard CHỈ chạy khi **đọc được row thật** — query lỗi trả null thì
+không logout (bài học "tự đăng xuất" 2026-07-10).
+
+⚠ Bẫy đã vấp khi làm việc này: `withBusy()` bản đầu đổi nhãn nút bằng
+`btn.textContent = label` ⇒ **xoá mất `<span id="toggle-status-label">`** nằm
+trong `#act-toggle-status`, `openDrawer()` ghi vào đó → `TypeError` ⇒ **toast
+báo lỗi giả trong khi DB đã ghi xong**. Nay `withBusy` chỉ *thêm* lớp phủ
+`.btn-busy-label` + class `.is-busy` (CSS `color: transparent` che cả text node
+lẫn svg), không đụng children. **Đừng đổi nhãn nút bằng innerHTML/textContent
+khi nút có phần tử con mà code khác tham chiếu.**
+
+Role trong `#u-role` phải **khớp `users_role_check`** — đã bỏ `manager`/`staff`
+(role cũ, không có trong CHECK → insert fail 23514).
+
+`tag`/`permission_group`/`data_scope`/`allowed_departments` = cột thật.
+`activity`/`work_stats` = jsonb **Phase 1**; Phase 2 nên tách `user_activity_logs`
+và derive `work_stats` từ orders/tasks.
+
+⏳ **Còn phải chạy tay**: `supabase/add-user-management-admin.sql` mục 2+3
+(`current_user_role()` chỉ trả role khi `status='active'`, + trigger chặn user tự
+nâng quyền qua policy `users self update`). Công cụ tự động bị chặn tạo hàm
+`SECURITY DEFINER`.
+
 ### PIC ↔ tài khoản bị deactivate (2026-08-03)
 
 **Deactivate ở User Management ghi `status='suspended'`, KHÔNG phải `'inactive'`.** Mọi

@@ -338,8 +338,9 @@
             department: r.department || '',
             created_at: fmtStamp(r.created_at) || r.created_at,
             last_login_at: fmtStamp(r.last_login_at),
+            allowed_departments: Array.isArray(r.allowed_departments) ? r.allowed_departments : [],
             work_stats: r.work_stats || { assigned_tasks: 0, open_tasks: 0, overdue_tasks: 0, completed_tasks: 0, avg_progress: 0 },
-            activity: r.activity || []
+            activity: Array.isArray(r.activity) ? r.activity : []
           }));
         });
         return remote.length;
@@ -347,14 +348,44 @@
     } catch (e) { console.warn('[user-management] remote load failed:', e); }
     return null;
   }
-  function persistUser(userId, patch) {
-    if (!window.MH || !window.MH.store || !window.MH.supabaseEnabled || !userId) return;
-    // Direct table update via supabase client (data-store.js chưa có users.update — gọi raw)
-    if (window.MH.supabase) {
-      window.MH.supabase.from('users').update(patch).eq('id', userId).then(function (res) {
-        if (res.error) console.warn('[user-management] persist failed:', res.error);
+  /* ---------- Supabase mode helpers ----------
+     LIVE = có Supabase ⇒ MỌI thao tác user đi qua Edge Function admin-* và
+     nguồn sự thật là DB (reload sau mỗi lần ghi). USERS.push chỉ dùng ở chế độ
+     demo/offline. Không bao giờ toast success trước khi backend trả ok. */
+  function isLive() { return !!(window.MH && window.MH.store && window.MH.supabaseEnabled); }
+  // Đọc lại toàn bộ users từ DB rồi render — dùng sau mọi create/update/status.
+  async function reloadFromDb() {
+    const n = await loadUsersFromStore(USERS);
+    render();
+    return n;
+  }
+  /* Nút đang chạy → khoá lại + phủ nhãn "Đang…", tránh double-submit tạo 2 user.
+     ⚠ KHÔNG được ghi đè innerHTML để đổi nhãn: các nút này chứa phần tử con mà
+     code khác cần (vd `#toggle-status-label` nằm trong `#act-toggle-status`,
+     openDrawer() ghi vào đó) — xoá đi là openDrawer ném TypeError giữa lúc
+     backend ĐÃ ghi xong ⇒ toast báo lỗi giả. Ngoài ra restore innerHTML cũ còn
+     làm nhãn nút bị stale sau khi status đổi. Vì vậy: chỉ THÊM 1 lớp phủ. */
+  function withBusy(btn, label, fn) {
+    if (!btn) return Promise.resolve().then(fn);
+    const prevDisabled = btn.disabled;
+    const lbl = document.createElement('span');
+    lbl.className = 'btn-busy-label';
+    lbl.textContent = label;
+    btn.appendChild(lbl);
+    btn.classList.add('is-busy');
+    btn.disabled = true;
+    return Promise.resolve()
+      .then(fn)
+      .finally(function () {
+        lbl.remove();
+        btn.classList.remove('is-busy');
+        btn.disabled = prevDisabled;
       });
-    }
+  }
+  function errToast(title, e) {
+    const msg = (e && e.message) ? e.message : 'Lỗi không xác định.';
+    console.error('[user-management] ' + title + ':', e);
+    window.MH.toast({ type: 'error', title: title, message: msg, duration: 7000 });
   }
 
   /* ---------- Helpers ---------- */
@@ -659,18 +690,39 @@
 
   /* ---------- Drawer actions ---------- */
   document.getElementById('act-edit').addEventListener('click', () => openModal('edit', curUser));
-  document.getElementById('act-resend').addEventListener('click', () => {
-    if (!curUser) return;
-    curUser.activity.push({ time: fmtDT(), actor: user.name, action: 'invite_resent', desc: 'Gửi lại email mời' });
-    window.MH.toast({ type: 'success', title: 'Đã gửi lại invite', message: curUser.email });
-    openDrawer(curUser);
-  });
-  document.getElementById('act-reset').addEventListener('click', () => {
-    if (!curUser) return;
-    curUser.activity.push({ time: fmtDT(), actor: user.name, action: 'password_reset_sent', desc: 'Gửi link reset password' });
-    window.MH.toast({ type: 'success', title: 'Đã gửi link reset', message: curUser.email });
-    openDrawer(curUser);
-  });
+  // Resend Invite / Reset Password: gọi Supabase Auth THẬT qua Edge Function.
+  // Chế độ demo (không Supabase) → không giả vờ thành công, báo rõ chưa hỗ trợ.
+  const resendBtn = document.getElementById('act-resend');
+  const resetBtn = document.getElementById('act-reset');
+  function authMailAction(btn, kind) {
+    return function () {
+      if (!curUser) return;
+      if (!isLive()) {
+        window.MH.toast({ type: 'warning', title: 'Chưa hỗ trợ ở chế độ demo',
+          message: 'Gửi email cần Supabase Auth. Bật Supabase rồi thử lại.' });
+        return;
+      }
+      const isInvite = kind === 'invite';
+      const redirectTo = location.origin + '/login.html';
+      withBusy(btn, isInvite ? 'Đang gửi invite...' : 'Đang gửi link...', async function () {
+        try {
+          if (isInvite) await window.MH.store.users.resendInvite(curUser.id, redirectTo);
+          else await window.MH.store.users.sendPasswordReset(curUser.id, redirectTo);
+          await reloadFromDb();
+          const fresh = USERS.find((x) => x.id === curUser.id);
+          if (fresh) { curUser = fresh; openDrawer(fresh); }
+          window.MH.toast({ type: 'success',
+            title: isInvite ? 'Đã gửi lại invite' : 'Đã gửi link đặt lại mật khẩu',
+            message: curUser.email });
+        } catch (e) {
+          errToast(isInvite ? 'Không gửi được invite' : 'Không gửi được link reset', e);
+        }
+      });
+    };
+  }
+  resendBtn.addEventListener('click', authMailAction(resendBtn, 'invite'));
+  resetBtn.addEventListener('click', authMailAction(resetBtn, 'reset'));
+
   document.getElementById('act-toggle-status').addEventListener('click', () => {
     if (!curUser) return;
     // Validation: không deactivate admin duy nhất
@@ -697,10 +749,27 @@
     } else {
       newStatus = 'active'; actionType = 'user_reactivated'; desc = 'Reactivate user';
     }
+
+    // LIVE: ghi DB + ban/unban Auth TRƯỚC, UI chỉ đổi sau khi backend trả ok.
+    // (Trước đây đổi local rồi fire-and-forget ⇒ UI báo đã khoá mà DB không đổi.)
+    if (isLive()) {
+      const btn = document.getElementById('act-toggle-status');
+      withBusy(btn, 'Đang cập nhật...', async function () {
+        try {
+          await window.MH.store.users.setStatus(curUser.id, newStatus);
+          await reloadFromDb();
+          const fresh = USERS.find((x) => x.id === curUser.id);
+          if (fresh) { curUser = fresh; openDrawer(fresh); }
+          window.MH.toast({ type: 'success', title: '✓ Đã cập nhật status',
+            message: `${curUser.full_name}: ${STATUS_LABEL[newStatus]}` });
+        } catch (e) { errToast('Không đổi được status', e); }
+      });
+      return;
+    }
+
+    // Demo/offline: giữ hành vi local cũ.
     curUser.status = newStatus;
     curUser.activity.push({ time: fmtDT(), actor: user.name, action: actionType, desc: `${desc}: ${STATUS_LABEL[oldStatus]} → ${STATUS_LABEL[newStatus]}` });
-    // Phase 1: persist sang Supabase nếu enabled (curUser.id là uuid từ auth)
-    persistUser(curUser.id, { status: newStatus });
     window.MH.toast({ type: 'success', title: '✓ Đã cập nhật status', message: `${curUser.full_name}: ${STATUS_LABEL[newStatus]}` });
     render(); openDrawer(curUser);
   });
@@ -841,7 +910,41 @@
       if (!confirm('Admin thông thường nên có Permission Group = Full Access. Tiếp tục với Custom?')) return;
     }
 
+    /* ================= CREATE ================= */
     if (modalMode === 'create') {
+      // LIVE: Edge Function tạo Auth user + profile. Modal chỉ đóng khi backend ok.
+      if (isLive()) {
+        const submitBtn = document.getElementById('modal-submit');
+        withBusy(submitBtn, 'Đang tạo user...', async function () {
+          try {
+            const res = await window.MH.store.users.create({
+              name: name, email: email, phone: phone, department: dept, role: role,
+              tag: tag, permission_group: perm, data_scope: scope,
+              status: status, sendInvite: sendInvite, allowed_departments: [],
+              redirectTo: location.origin + '/login.html'
+            });
+            await reloadFromDb();     // nguồn sự thật là DB, không phải USERS.push
+            closeModal();
+            window.MH.toast({ type: 'success', title: '✓ Đã tạo user',
+              message: `${name} · ${ROLE_LABEL[role] || role}` + (res.invited ? ' · đã gửi invite' : ''),
+              duration: 6000 });
+            // Không gửi invite ⇒ user chưa có mật khẩu. Đưa link đặt mật khẩu cho
+            // admin gửi tay, nếu không user sẽ không bao giờ đăng nhập được.
+            if (!res.invited && res.action_link) {
+              window.MH.toast({ type: 'info', title: 'Link đặt mật khẩu (gửi cho user)',
+                message: res.action_link, duration: 20000 });
+              try { await navigator.clipboard.writeText(res.action_link); } catch (e) {}
+            }
+          } catch (e) {
+            // Modal GIỮ NGUYÊN để admin sửa và thử lại.
+            if (e && e.code === 'duplicate_email') markError(document.getElementById('u-email'));
+            errToast('Không tạo được user', e);
+          }
+        });
+        return;   // mọi thứ còn lại xử lý trong nhánh async ở trên
+      }
+
+      // Demo/offline: giữ nguyên hành vi cũ (chỉ local, không có DB để ghi).
       const newId = 'USR-' + String(USERS.length + 1).padStart(4, '0');
       const newUser = {
         user_id: newId, full_name: name, email, phone,
@@ -853,11 +956,9 @@
         activity: [{ time: fmtDT(), actor: user.name, action: 'user_created', desc: `Tạo user role ${ROLE_LABEL[role]}, tag ${tag}` }],
         work_stats: {}
       };
-      if (sendInvite) {
-        newUser.activity.push({ time: fmtDT(), actor: 'system', action: 'invite_sent', desc: 'Gửi email mời tới ' + email });
-      }
       USERS.push(newUser);
-      window.MH.toast({ type: 'success', title: '✓ Đã tạo user', message: `${name} · ${ROLE_LABEL[role]}${sendInvite ? ' · invite đã gửi' : ''}` });
+      window.MH.toast({ type: 'warning', title: 'Đã tạo user (chế độ demo)',
+        message: 'Supabase đang tắt — user chỉ tồn tại trong trình duyệt này, reload sẽ mất.' });
     } else if (editingUser) {
       const changes = [];
       if (editingUser.full_name !== name) changes.push(`name: ${editingUser.full_name} → ${name}`);
@@ -865,6 +966,28 @@
       if (editingUser.permission_group !== perm) changes.push(`permission: ${PERM_LABEL[editingUser.permission_group]} → ${PERM_LABEL[perm]}`);
       if (editingUser.data_scope !== scope) changes.push(`scope: ${SCOPE_LABEL[editingUser.data_scope]} → ${SCOPE_LABEL[scope]}`);
       if (editingUser.status !== status) changes.push(`status: ${STATUS_LABEL[editingUser.status]} → ${STATUS_LABEL[status]}`);
+      // LIVE: await Edge Function, sync ĐẦY ĐỦ field quản trị (không chỉ 5 cột như trước).
+      if (isLive()) {
+        const submitBtn = document.getElementById('modal-submit');
+        const targetId = editingUser.id;
+        withBusy(submitBtn, 'Đang lưu...', async function () {
+          try {
+            await window.MH.store.users.update(targetId, {
+              name: name, phone: phone, department: dept, role: role, tag: tag,
+              permission_group: perm, data_scope: scope, status: status,
+              allowed_departments: editingUser.allowed_departments || []
+            });
+            await reloadFromDb();
+            closeModal();
+            const fresh = USERS.find((x) => x.id === targetId);
+            if (fresh && curUser && curUser.id === targetId) { curUser = fresh; openDrawer(fresh); }
+            window.MH.toast({ type: 'success', title: '✓ Đã cập nhật user', message: name });
+          } catch (e) { errToast('Không lưu được thay đổi', e); }
+        });
+        return;
+      }
+
+      // Demo/offline
       Object.assign(editingUser, {
         full_name: name, phone, department: dept, role, tag,
         permission_group: perm, data_scope: scope, status
@@ -872,14 +995,6 @@
       if (changes.length) {
         editingUser.activity.push({ time: fmtDT(), actor: user.name, action: 'user_updated', desc: changes.join(' · ') });
       }
-      // Phase 1: persist update sang Supabase (chỉ những field nằm trong public.users schema)
-      persistUser(editingUser.id, {
-        name: name,
-        phone: phone || null,
-        department: dept || null,
-        role: role,
-        status: status
-      });
       window.MH.toast({ type: 'success', title: '✓ Đã cập nhật user', message: name });
       if (curUser && curUser.user_id === editingUser.user_id) openDrawer(editingUser);
     }

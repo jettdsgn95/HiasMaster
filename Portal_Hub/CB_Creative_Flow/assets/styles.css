@@ -6448,6 +6448,18 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .src-chip.src-media  { background: rgb(13 148 136 / 0.16); color: #0f766e; }
 .src-chip.src-other  { background: var(--surface-2); color: var(--text-muted); }
 
+/* ── Nút đang chờ backend (2026-08-03) ────────────────────────────────
+   Phủ nhãn "Đang…" mà KHÔNG xoá phần tử con của nút (xem withBusy trong
+   user-management.js). `color: transparent` bắt được cả text node lẫn svg
+   (svg dùng currentColor) nên không cần đụng tới cấu trúc bên trong. */
+.btn.is-busy { position: relative; color: transparent !important; pointer-events: none; opacity: .75; }
+.btn.is-busy > * { visibility: hidden; }
+.btn.is-busy .btn-busy-label {
+  visibility: visible; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text); font-size: inherit; white-space: nowrap;
+}
+
 /* ── PIC đã ngưng hoạt động (2026-08-03) ──────────────────────────────
    Chip READ-ONLY: giữ lịch sử "ai từng phụ trách" nhưng KHÔNG cho chọn lại
    trong dropdown (dropdown chỉ còn user active). */

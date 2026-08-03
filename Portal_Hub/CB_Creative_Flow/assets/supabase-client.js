@@ -66,6 +66,22 @@
                 var u = res && res.data ? res.data : null;
                 var meta = session.user.user_metadata || {};
 
+                // ── Guard tài khoản bị khoá (2026-08-03) ────────────────
+                // Admin deactivate/suspend/archive user ⇒ profile.status đổi,
+                // nhưng token cũ vẫn còn hiệu lực tới khi hết hạn. Ở đây phát
+                // hiện ngay lần auth event kế tiếp và ĐÁ RA.
+                // CHỈ chạy khi ĐỌC ĐƯỢC row thật (u) — query lỗi/mạng chập trả
+                // null thì tuyệt đối không logout (bài học "tự đăng xuất" 2026-07-10).
+                if (u && u.status && u.status !== 'active') {
+                  localStorage.removeItem('mh-user');
+                  try { sessionStorage.setItem('mh-locked-reason', u.status); } catch (e) {}
+                  client.auth.signOut().finally(function () {
+                    var onLogin = /login\.html$/i.test(location.pathname) || location.pathname === '/login';
+                    if (!onLogin) location.replace('login.html?locked=' + encodeURIComponent(u.status));
+                  });
+                  return;
+                }
+
                 // Không có users row + đã có mh-user hợp lệ của CHÍNH user này
                 // → GIỮ NGUYÊN, tuyệt đối không hạ role về 'client'.
                 if (!u && samePrev.role) return;

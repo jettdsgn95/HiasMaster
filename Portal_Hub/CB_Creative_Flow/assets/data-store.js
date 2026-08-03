@@ -105,6 +105,55 @@
       }
       // Fallback: trả mock từ user-management.js qua window.MH_MOCK_USERS nếu có
       return (window.MH_MOCK_USERS || []);
+    },
+
+    /* ---- Admin user management (qua Edge Function) --------------------
+       KHÔNG tạo/sửa user bằng anon key ở frontend: tạo Auth user cần
+       service_role, mà service_role TUYỆT ĐỐI không được nằm ở client.
+       Mọi hàm dưới đây THROW khi thất bại — caller phải await và chỉ toast
+       success sau khi có kết quả, không fire-and-forget. */
+    async _adminFn(fnName, payload) {
+      const s = await sb();
+      if (!s) throw new Error('Supabase chưa sẵn sàng — không thể thao tác user thật.');
+      const { data, error } = await s.functions.invoke(fnName, { body: payload });
+      // invoke() gói lỗi HTTP vào FunctionsHttpError; body JSON của mình nằm ở
+      // error.context.json() → phải đọc ra mới có message/code thật cho UI.
+      if (error) {
+        let detail = null;
+        try { detail = error.context && error.context.json ? await error.context.json() : null; } catch (e) {}
+        const err = new Error((detail && detail.message) || error.message || (fnName + ' thất bại'));
+        err.code = detail && detail.code;
+        throw err;
+      }
+      if (!data || data.ok === false) {
+        const err = new Error((data && data.message) || (fnName + ' thất bại'));
+        err.code = data && data.code;
+        throw err;
+      }
+      return data;
+    },
+    async create(payload) {
+      const res = await users._adminFn('admin-create-user', payload);
+      return { user: res.user, action_link: res.action_link || null, invited: !!res.invited };
+    },
+    async update(userId, patch) {
+      const res = await users._adminFn('admin-update-user',
+        Object.assign({ action: 'update', id: userId }, patch));
+      return res.user;
+    },
+    async setStatus(userId, status) {
+      const res = await users._adminFn('admin-update-user', { action: 'set_status', id: userId, status: status });
+      return res.user;
+    },
+    async resendInvite(userId, redirectTo) {
+      const res = await users._adminFn('admin-update-user',
+        { action: 'resend_invite', id: userId, redirectTo: redirectTo || '' });
+      return res.user;
+    },
+    async sendPasswordReset(userId, redirectTo) {
+      const res = await users._adminFn('admin-update-user',
+        { action: 'reset_password', id: userId, redirectTo: redirectTo || '' });
+      return res.user;
     }
   };
 

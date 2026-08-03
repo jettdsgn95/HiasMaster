@@ -145,6 +145,40 @@
     setTimeout(() => location.href = redirectTo || defaultRedirect, 700);
   }
 
+  // Tài khoản bị khoá bị supabase-client.js đá về đây kèm ?locked=<status>.
+  (function showLockedNotice() {
+    const st = new URLSearchParams(location.search).get('locked');
+    if (!st) return;
+    const LABEL = { inactive: 'ngưng hoạt động', suspended: 'tạm khoá', archived: 'lưu trữ', pending: 'chưa kích hoạt' };
+    window.MH.toast({ type: 'error', title: 'Tài khoản đã ngưng hoạt động',
+      message: 'Tài khoản của bạn đang ở trạng thái "' + (LABEL[st] || st) + '". Liên hệ Admin để được mở lại.',
+      duration: 12000 });
+  })();
+
+  /* Chặn đăng nhập khi profile không active.
+     Edge Function admin-update-user đã ban Auth user khi khoá (signIn fail sẵn),
+     nhưng user bị khoá TRƯỚC khi có cơ chế ban thì Auth vẫn cho vào → phải kiểm
+     public.users.status ở đây nữa. Không đọc được profile = chưa được cấp quyền. */
+  async function assertActiveProfile() {
+    const sb = await window.MH.supabaseReady;
+    if (!sb) return { ok: true };
+    const { data: s } = await sb.auth.getSession();
+    const uid = s && s.session && s.session.user && s.session.user.id;
+    if (!uid) return { ok: false, msg: 'Không lấy được phiên đăng nhập.' };
+    const { data: prof, error } = await sb.from('users').select('status, name').eq('id', uid).maybeSingle();
+    if (error) return { ok: false, msg: 'Không đọc được hồ sơ tài khoản: ' + error.message };
+    if (!prof) {
+      await window.MH.store.auth.signOut();
+      return { ok: false, msg: 'Tài khoản chưa được cấp quyền trong hệ thống. Liên hệ Admin.' };
+    }
+    if (prof.status !== 'active') {
+      await window.MH.store.auth.signOut();
+      try { localStorage.removeItem('mh-user'); } catch (e) {}
+      return { ok: false, msg: 'Tài khoản đã ngưng hoạt động (' + prof.status + '). Liên hệ Admin để mở lại.' };
+    }
+    return { ok: true };
+  }
+
   async function pollUser() {
     let user = null;
     for (let i = 0; i < 30 && !user; i++) {
@@ -204,6 +238,8 @@
       gFail('Chỉ email @' + ALLOWED_DOMAIN + ' được phép đăng nhập.');
       return;
     }
+    const act = await assertActiveProfile();
+    if (!act.ok) { gFail(act.msg); return; }
     const user = await pollUser();
     if (!user) { gFail('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
     await touchLastLogin();
@@ -227,6 +263,8 @@
       await window.MH.supabaseReady;
       const { error } = await window.MH.store.auth.signIn(emailVal, pwdVal);
       if (error) { failLogin(error.message || 'Email hoặc mật khẩu không đúng.'); return; }
+      const act = await assertActiveProfile();
+      if (!act.ok) { failLogin(act.msg); return; }
       const user = await pollUser();
       if (!user) { failLogin('Không lấy được thông tin tài khoản. Liên hệ admin.'); return; }
       await touchLastLogin();
