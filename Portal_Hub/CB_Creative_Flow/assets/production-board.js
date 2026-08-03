@@ -219,14 +219,27 @@
       .filter((u) => PROD_PIC_ROLES.includes(u.role) && !seen[u.name] && (seen[u.name] = 1))
       .map((u) => ({ name: u.name, role: u.role }));
     if (!pool.length) pool = FALLBACK_PROD_PICS.slice(); // Supabase off / users chưa load
-    if (current && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' }); // giữ giá trị đang gán
+    // Giữ giá trị đang gán — TRỪ tài khoản đã bị vô hiệu hoá (không cho chọn lại).
+    const curActive = !window.MH || !window.MH.isActiveUserName || window.MH.isActiveUserName(current);
+    if (current && curActive && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' });
     return pool.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
   }
   // PIC task (assigned_to) keyed theo user_id (Stage 3). value=id; hiển thị resolve id→tên hiện tại.
   function taskPicName(t) { return (t && window.MH && window.MH.picLabel) ? window.MH.picLabel(t.assigned_to_user_id, t.assigned_to) : (t && t.assigned_to) || ''; }
+  function picNoticeHtml(currentId, currentName, label) {
+    return (window.MH && window.MH.inactivePicNotice) ? window.MH.inactivePicNotice(currentId, currentName, label || 'PIC cũ') : '';
+  }
+  function picNotice(selectId, currentId, currentName, label) {
+    // Slot luôn có mặt để bơm lại chip sau khi users nạp xong (async).
+    return `<div data-pic-slot="${selectId}">${picNoticeHtml(currentId, currentName, label)}</div>`;
+  }
   function prodPicOptions(currentId, currentName) {
     const users = STAFF_USERS.filter((u) => PROD_PIC_ROLES.includes(u.role));
-    return window.MH.picOptionsById(users, { current: currentId || '', currentName: currentName || '', placeholder: '— Chưa gán —', roleTag: ROLE_TAG });
+    const dead = picNoticeHtml(currentId, currentName);
+    return window.MH.picOptionsById(users, {
+      current: currentId || '', currentName: currentName || '',
+      placeholder: dead ? '— Chọn PIC active để thay thế —' : '— Chưa gán —', roleTag: ROLE_TAG
+    });
   }
 
   function teamMembersForUser(currentUserName) {
@@ -1240,7 +1253,8 @@
         </div>
         ${actionsHtml}
         ${['admin', 'account'].includes(user.role) ? `
-        <div class="edit-row mt-4">
+        <div class="mt-4">${picNotice('edit-pic', t.assigned_to_user_id, t.assigned_to, 'PIC cũ')}</div>
+        <div class="edit-row">
           <label>P.I.C</label>
           <select class="select" id="edit-pic" data-pic-dd>
             ${prodPicOptions(t.assigned_to_user_id, t.assigned_to)}
@@ -1367,8 +1381,10 @@
           window.MH.toast({ type: 'warning', title: 'Không có quyền', message: 'Bạn không có quyền chỉnh sửa thông tin công việc. Vui lòng liên hệ Account/Admin.' });
           return;
         }
-        // PIC keyed theo user_id: value = id | "name:<tên>" (legacy) | "". picPick giữ tên legacy.
-        const pickE = window.MH.picPick(document.getElementById('edit-pic').value || '');
+        // PIC keyed theo user_id: value = id | "name:<tên>" (legacy) | "". picPickPreserve giữ tên
+        // legacy VÀ giữ PIC cũ đã inactive (không còn là option) khi Save mà chưa chọn người mới.
+        const pickE = window.MH.picPickPreserve(document.getElementById('edit-pic').value || '',
+          currentTask.assigned_to_user_id || '', currentTask.assigned_to || '');
         currentTask.assigned_to_user_id = pickE.id;
         currentTask.assigned_to = pickE.name;
         currentTask.internal_deadline = document.getElementById('edit-deadline').value.replace('T', ' ');
@@ -1694,6 +1710,9 @@
     const editPic = document.getElementById('edit-pic');
     if (editPic && currentTask) {
       editPic.innerHTML = prodPicOptions(editPic.value || currentTask.assigned_to_user_id, currentTask.assigned_to);
+      // Bơm lại chip PIC inactive: lúc build drawer chưa biết status (users về sau).
+      const slot = drawer.querySelector('[data-pic-slot="edit-pic"]');
+      if (slot) slot.innerHTML = picNoticeHtml(currentTask.assigned_to_user_id, currentTask.assigned_to, 'PIC cũ');
       if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(drawer);
     }
   });
@@ -1799,6 +1818,9 @@
     // Rebuild options mỗi lần mở: users thật (value=id) + giữ PIC cũ (id hoặc legacy "name:").
     tmPic.innerHTML = prodPicOptions(p.assigned_to_user_id, p.assigned_to);
     tmPic.value = p.assigned_to_user_id || (p.assigned_to ? 'name:' + p.assigned_to : '');
+    // PIC cũ đã bị vô hiệu hoá → không còn option ⇒ value rỗng; hiện chip read-only để giữ lịch sử.
+    const tmSlot = modal.querySelector('[data-pic-slot="tm-pic"]');
+    if (tmSlot) tmSlot.innerHTML = picNoticeHtml(p.assigned_to_user_id, p.assigned_to, 'PIC cũ');
     // Custom dropdown P.I.C (tên + badge role) — rebuild menu theo options mới.
     if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(modal);
     if (p.internal_deadline) {
@@ -1872,7 +1894,8 @@
       const t = TASKS.find((x) => x.task_id === editingTaskId);
       if (!t) { closeTaskModal(); return; }
       const prevPicId = t.assigned_to_user_id; const prevPic = t.assigned_to; // #4: phát hiện reassign (theo id)
-      const pickM = window.MH.picPick(tmPic.value || '');
+      // Giữ PIC cũ khi tài khoản đó đã inactive (không còn option) và chưa chọn người mới.
+      const pickM = window.MH.picPickPreserve(tmPic.value || '', prevPicId || '', prevPic || '');
       t.project_name = project;
       t.content = tmContent.value.trim();
       t.task_type = tmType.value;

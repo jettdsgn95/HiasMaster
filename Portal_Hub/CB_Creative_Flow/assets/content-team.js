@@ -813,6 +813,7 @@
     const ws = o.brief_wording_status || 'none';
     const btnLabel = ws === 'assigned' ? 'Gán PIC & bắt đầu' : 'Cập nhật phân công';
     return '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công</h4></div>'
+      + picNoticeHtml(o.brief_wording_pic_user_id, o.brief_wording_pic)
       + '<div class="ctm-assign-grid">'
       + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ct-pic">' + picOptionsByIdCT(o.brief_wording_pic_user_id, o.brief_wording_pic) + '</select></div>'
       + '<div class="field"><label class="label">Hạn hoàn thành wording</label><input class="input" type="datetime-local" id="ct-deadline" value="' + toLocalInput(o.wording_deadline) + '" /></div>'
@@ -1187,11 +1188,16 @@
      sửa RPC update_brief_wording). Cả hai đều nguồn từ CONTENT_USERS thật — ĐÃ BỎ seed
      cứng + BỎ append tên lịch sử trong task/order (nguồn sinh trùng tên cũ/mới). */
   const ROLE_TAG_CT = { content: 'Content', lead_content: 'Lead', admin: 'Admin', account: 'Account' };
+  // Chip read-only cho PIC đã bị vô hiệu hoá (giữ lịch sử, không cho chọn lại trong dropdown).
+  function picNoticeHtml(currentId, currentName, label) {
+    return (window.MH && window.MH.inactivePicNotice) ? window.MH.inactivePicNotice(currentId, currentName, label || 'PIC Content cũ') : '';
+  }
   // Content_tasks: option keyed theo user_id.
   function picOptionsByIdCT(currentId, currentName) {
+    const dead = picNoticeHtml(currentId, currentName);
     return window.MH.picOptionsById(CONTENT_USERS, {
       current: currentId || '', currentName: currentName || '',
-      placeholder: '— Chọn PIC Content —', roleTag: ROLE_TAG_CT
+      placeholder: dead ? '— Chọn PIC active để thay thế —' : '— Chọn PIC Content —', roleTag: ROLE_TAG_CT
     });
   }
   // Orders/ads (name-based tạm thời): nguồn users thật + giữ current, KHÔNG seed, KHÔNG
@@ -1199,7 +1205,9 @@
   function contentPicNames(current) {
     const names = {};
     CONTENT_USERS.forEach(function (u) { if (u.name) names[u.name] = 1; });
-    if (current) names[current] = 1; // giữ giá trị hiện tại để select hiển thị đúng
+    // Giữ giá trị hiện tại — TRỪ tài khoản đã bị vô hiệu hoá (không cho chọn lại).
+    const curActive = !window.MH || !window.MH.isActiveUserName || window.MH.isActiveUserName(current);
+    if (current && curActive) names[current] = 1;
     return Object.keys(names).sort(function (a, b) { return a.localeCompare(b, 'vi'); });
   }
   function picSelectOptions(current) {
@@ -1487,6 +1495,7 @@
     if (isLead) {
       const planDl = plan && plan.plan_deadline ? ' data-plan-deadline="' + esc(plan.plan_deadline) + '"' : '';
       assignHtml = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead — Phân công &amp; follow</h4></div>'
+        + picNoticeHtml(t.assigned_pic_user_id, t.assigned_pic)
         + '<div class="ctm-assign-grid">'
         + '<div class="field"><label class="label">PIC Content</label><select class="select" id="ctm-t-pic">' + picOptionsByIdCT(t.assigned_pic_user_id, t.assigned_pic) + '</select></div>'
         + '<div class="field"><label class="label">Hạn wording</label><input class="input" type="datetime-local" id="ctm-t-deadline"' + planDl + ' value="' + toLocalInput(t.wording_deadline) + '" /></div>'
@@ -1679,7 +1688,9 @@
   async function saveTaskAssign() {
     if (!isLead || !currentTask) return;
     // PIC content_tasks keyed theo user_id: select value = id (user thật) | "name:<tên>" (legacy) | "".
-    const pick = window.MH.picPick(document.getElementById('ctm-t-pic').value || '');
+    // picPickPreserve: PIC cũ đã inactive không còn là option ⇒ giữ nguyên, Save không xoá lịch sử.
+    const pick = window.MH.picPickPreserve(document.getElementById('ctm-t-pic').value || '',
+      currentTask.assigned_pic_user_id || '', currentTask.assigned_pic || '');
     const picId = pick.id;
     const pic = pick.name || '';
     const dlEl = document.getElementById('ctm-t-deadline');
@@ -2346,6 +2357,7 @@
     let assign = '';
     if (isLead && ADS_TERMINAL.indexOf(st) < 0) {
       assign = '<section class="drawer-block ctm-assign"><div class="drawer-block-head"><span class="block-letter">P</span><h4>Lead Content — Phân công PIC</h4></div>'
+        + picNoticeHtml(o.brief_wording_pic_user_id, adsPicOf(o))
         + '<div class="ctm-assign-grid"><div class="field"><label class="label">PIC Content</label><select class="select" id="ads-pic">' + picOptionsByIdCT(o.brief_wording_pic_user_id, adsPicOf(o)) + '</select></div></div>'
         + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" id="ads-assign">Gán PIC Content</button></div></section>';
     }
@@ -2516,6 +2528,7 @@
     const chips = ADS_TASK_TYPES.map(function (t) { return '<label class="ctm-chk-chip"><input type="checkbox" name="ads-tt" value="' + t.k + '" /> ' + t.label + '</label>'; }).join('');
     const body = '<p class="text-xs muted" style="margin:0 0 8px">Chọn hạng mục nội dung cần tách. Mỗi hạng mục tạo 1 Content Task cho PIC xử lý ở Content Wording.</p>'
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>Hạng mục</label><div class="ctm-chk-group">' + chips + '</div></div>'
+      + picNoticeHtml(o.brief_wording_pic_user_id, adsPicOf(o))
       + '<div class="edit-row" style="grid-template-columns:1fr"><label>PIC Content</label><select class="select" id="ads-tt-pic">' + picOptionsByIdCT(o.brief_wording_pic_user_id, adsPicOf(o)) + '</select></div>'
       + fieldText('ads-tt-deadline', 'Hạn wording', '', { type: 'datetime-local' });
     openModal('Tách Content Tasks — ' + (o.project_name || o.order_id), body, function () { return createAdsContentTasks(o); });

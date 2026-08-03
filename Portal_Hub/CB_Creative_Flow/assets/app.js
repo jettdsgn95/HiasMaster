@@ -471,7 +471,72 @@
      hết trùng tên cũ/mới. Các trang tự nạp danh sách users rồi gọi MH.setUserDir. */
   const USER_DIR = {}; // id -> { name, role }
   window.MH.setUserDir = function (list) {
-    (list || []).forEach((u) => { if (u && u.id) USER_DIR[u.id] = { name: u.name || '', role: u.role || '' }; });
+    // Lưu cả `status`: dropdown PIC cần biết user đang gán còn hoạt động không
+    // (list truyền vào là FULL list, chưa lọc active — cố ý, để resolve được tên PIC cũ).
+    (list || []).forEach((u) => { if (u && u.id) USER_DIR[u.id] = { name: u.name || '', role: u.role || '', status: u.status == null ? 'active' : u.status, email: u.email || '' }; });
+  };
+  window.MH.userStatus = function (id) { return id && USER_DIR[id] ? USER_DIR[id].status : ''; };
+  // true khi id trỏ tới user CÒN hoạt động. Không biết id (chưa load users) → true để
+  // không cảnh báo oan lúc dữ liệu chưa về.
+  window.MH.isActiveUserId = function (id) {
+    if (!id) return false;
+    const u = USER_DIR[id];
+    if (!u) return true;
+    return isActiveUser(u);
+  };
+  window.MH.findUserByIdOrName = function (users, id, name) {
+    const list = (users && users.length) ? users : Object.keys(USER_DIR).map((k) => Object.assign({ id: k }, USER_DIR[k]));
+    return list.find((u) => u && ((id && u.id === id) || (name && u.name === name))) || null;
+  };
+  // Bản theo TÊN cho các select PIC legacy (value = tên, chưa keyed theo id).
+  // Không tìm thấy tên trong directory → true (không cảnh báo oan / không nuốt dữ liệu lạ).
+  window.MH.isActiveUserName = function (name) {
+    if (!name) return false;
+    const ids = Object.keys(USER_DIR);
+    for (let i = 0; i < ids.length; i++) {
+      if (USER_DIR[ids[i]].name === name) return isActiveUser(USER_DIR[ids[i]]);
+    }
+    return true;
+  };
+  /* Chip read-only cho PIC đã bị vô hiệu hoá: GIỮ thông tin lịch sử (ai từng phụ trách)
+     nhưng KHÔNG cho chọn lại trong dropdown. Trả '' nếu PIC hiện tại vẫn active. */
+  window.MH.inactivePicNotice = function (currentId, currentName, label) {
+    if (!currentId && !currentName) return '';
+    const u = currentId ? USER_DIR[currentId]
+      : window.MH.findUserByIdOrName(null, null, currentName); // select legacy lưu theo tên
+    if (!u || isActiveUser(u)) return '';
+    const nm = u.name || currentName || u.email || 'PIC cũ';
+    return '<div class="pic-inactive-notice">'
+      + '<b>' + picDdEsc(label || 'PIC cũ') + ':</b> ' + picDdEsc(nm)
+      + ' <span class="pic-inactive-status">' + picDdEsc(u.status || 'inactive') + '</span>'
+      + '<span class="pic-inactive-help">Tài khoản đã ngưng hoạt động — chọn PIC active để thay thế nếu việc còn xử lý.</span>'
+      + '</div>';
+  };
+  /* Guard dùng chung cho các action đẩy việc đi tiếp (Push Production / Confirm Assign /
+     Complete handoff): không cho tiếp tục khi PIC đang gán là tài khoản đã vô hiệu hoá.
+     pairs = [[label, id, nameSnapshot], …] → trả mảng nhãn PIC chết (rỗng = OK). */
+  window.MH.inactivePics = function (pairs) {
+    const out = [];
+    (pairs || []).forEach((p) => {
+      if (!p) return;
+      const id = p[1], nm = p[2];
+      const u = id ? USER_DIR[id] : window.MH.findUserByIdOrName(null, null, nm);
+      if (!u || isActiveUser(u)) return;
+      out.push(p[0] + ': ' + (u.name || nm || id));
+    });
+    return out;
+  };
+  window.MH.INACTIVE_PIC_MSG = 'PIC hiện tại đã inactive/deactivated. Vui lòng gán lại PIC active trước khi tiếp tục.';
+  // true = ĐÃ CHẶN (đã toast). Gọi ở đầu handler action rồi `if (…) return;`.
+  window.MH.blockIfInactivePic = function (pairs, title) {
+    const dead = window.MH.inactivePics(pairs);
+    if (!dead.length) return false;
+    window.MH.toast({
+      type: 'error', duration: 6000,
+      title: title || 'PIC không còn hoạt động',
+      message: window.MH.INACTIVE_PIC_MSG + ' (' + dead.join(' · ') + ')'
+    });
+    return true;
   };
   window.MH.userName = function (id) { return id && USER_DIR[id] ? USER_DIR[id].name : ''; };
   window.MH.userRole = function (id) { return id && USER_DIR[id] ? USER_DIR[id].role : ''; };
@@ -496,12 +561,20 @@
         + (u.id === cur ? ' selected' : '') + '>' + esc(nm + (tag ? ' · ' + tag : '')) + '</option>';
     });
     if (cur && !seen[cur]) {
-      // PIC đang gán (id) nhưng không còn trong pool (role đổi/nghỉ) → giữ option để không mất.
-      const nm = window.MH.userName(cur) || curName || cur;
-      html += '<option value="' + esc(cur) + '" data-name="' + esc(nm) + '" selected>' + esc(nm) + '</option>';
-    } else if (!cur && curName) {
+      /* PIC đang gán không nằm trong pool. Phân biệt 2 ca:
+         · Tài khoản đã bị vô hiệu hoá (suspended/inactive/archived/pending) → KHÔNG đưa vào
+           dropdown nữa (yêu cầu nghiệp vụ: không cho gán/chọn lại). Thông tin PIC cũ hiển thị
+           bằng chip read-only `MH.inactivePicNotice`, và `MH.picPickPreserve` lo giữ dữ liệu
+           khi Save mà chưa chọn người mới → KHÔNG mất assignment.
+         · Chỉ là đổi role / ngoài pool nhưng vẫn active → GIỮ option như cũ, tránh mất assignment. */
+      if (window.MH.isActiveUserId(cur)) {
+        const nm = window.MH.userName(cur) || curName || cur;
+        html += '<option value="' + esc(cur) + '" data-name="' + esc(nm) + '" selected>' + esc(nm) + '</option>';
+      }
+    } else if (!cur && curName && window.MH.isActiveUserName(curName)) {
       // LEGACY: PIC lưu bằng TÊN chưa backfill id (orphan). Giữ option value="name:<tên>" để
       // Save KHÔNG xóa mất assignment; decode qua MH.picPick. Reassign sang user thật sẽ set id.
+      // Tên khớp một tài khoản đã vô hiệu hoá → BỎ option (chip read-only lo phần lịch sử).
       html += '<option value="name:' + esc(curName) + '" data-name="' + esc(curName) + '" selected>' + esc(curName) + ' · (chưa liên kết)</option>';
     }
     return html;
@@ -512,6 +585,24 @@
     if (!value) return { id: null, name: null };
     if (value.indexOf('name:') === 0) return { id: null, name: value.slice(5) };
     return { id: value, name: window.MH.userName(value) || null };
+  };
+  /* Đọc select PIC khi SAVE, có bảo toàn PIC cũ đã bị vô hiệu hoá.
+     Vì user inactive không còn là option, select sẽ rỗng — nếu cứ ghi null thì bấm Save
+     là MẤT lịch sử ai từng phụ trách. Quy tắc:
+       · Có chọn người mới            → dùng người mới (reassign thật).
+       · Rỗng + PIC cũ INACTIVE       → GIỮ NGUYÊN PIC cũ (preserved = true).
+       · Rỗng + PIC cũ vẫn active     → coi là bỏ gán có chủ đích (giữ hành vi cũ). */
+  window.MH.picPickPreserve = function (value, currentId, currentName) {
+    const picked = window.MH.picPick(value);
+    if (picked.id || picked.name) return picked;
+    if (currentId && !window.MH.isActiveUserId(currentId)) {
+      return { id: currentId, name: currentName || window.MH.userName(currentId) || null, preserved: true };
+    }
+    // Legacy: PIC lưu bằng tên, tên đó thuộc tài khoản đã vô hiệu hoá → cũng phải giữ.
+    if (!currentId && currentName && !window.MH.isActiveUserName(currentName)) {
+      return { id: null, name: currentName, preserved: true };
+    }
+    return { id: null, name: null };
   };
 
   /* ---------- Copy helpers ---------- */

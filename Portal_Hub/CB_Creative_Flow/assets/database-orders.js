@@ -149,9 +149,34 @@
   }
   // PIC nay keyed theo user_id (rename-proof). Option value=id; hiển thị resolve id→tên hiện tại.
   function picName(id, snapshot) { return (window.MH && window.MH.picLabel) ? window.MH.picLabel(id, snapshot) : (snapshot || ''); }
+  // Placeholder đổi thành lời nhắc khi PIC đang gán đã bị vô hiệu hoá (select sẽ rỗng).
+  function picPlaceholder(currentId, currentName) {
+    const dead = window.MH && window.MH.inactivePicNotice && window.MH.inactivePicNotice(currentId, currentName, '');
+    return dead ? '— Chọn PIC active để thay thế —' : '— Chưa gán —';
+  }
   function picOptionsId(currentId, currentName, roles) {
     const users = STAFF_USERS.filter((u) => roles.includes(u.role));
-    return window.MH.picOptionsById(users, { current: currentId || '', currentName: currentName || '', placeholder: '— Chưa gán —', roleTag: ROLE_TAG });
+    return window.MH.picOptionsById(users, { current: currentId || '', currentName: currentName || '', placeholder: picPlaceholder(currentId, currentName), roleTag: ROLE_TAG });
+  }
+  /* Chip read-only "PIC cũ đã ngưng hoạt động" đặt NGAY TRÊN select tương ứng.
+     LUÔN render slot rỗng (data-pic-slot) kể cả khi chưa có nội dung: users nạp async,
+     lúc build drawer USER_DIR có thể còn trống ⇒ cần chỗ để bơm chip lại sau khi users về. */
+  function picNoticeHtml(currentId, currentName, label) {
+    return (window.MH && window.MH.inactivePicNotice) ? window.MH.inactivePicNotice(currentId, currentName, label) : '';
+  }
+  function picNotice(selectId, currentId, currentName, label) {
+    return `<div data-pic-slot="${selectId}">${picNoticeHtml(currentId, currentName, label)}</div>`;
+  }
+  // Chặn Push / Confirm khi order còn PIC là tài khoản đã vô hiệu hoá. true = đã chặn.
+  function inactivePicGuard(o, title) {
+    if (!o || !window.MH || !window.MH.blockIfInactivePic) return false;
+    return window.MH.blockIfInactivePic([
+      ['Account PIC', o.account_pic_user_id, o.account_pic],
+      ['Production PIC', o.production_pic_user_id, o.production_pic],
+      ['PIC Quay', o.production_pic_video_user_id, o.production_pic_video],
+      ['PIC Chụp', o.production_pic_photo_user_id, o.production_pic_photo],
+      ['PIC Edit', o.production_pic_editor_user_id, o.production_pic_editor]
+    ], title);
   }
   function picUserPool(roles, fallback, current) {
     const seen = {};
@@ -159,7 +184,9 @@
       .filter((u) => roles.includes(u.role) && !seen[u.name] && (seen[u.name] = 1))
       .map((u) => ({ name: u.name, role: u.role }));
     if (!pool.length) pool = fallback.slice(); // Supabase off / users chưa load
-    if (current && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' }); // giữ giá trị đang gán
+    // Giữ giá trị đang gán — TRỪ khi tài khoản đó đã bị vô hiệu hoá (không cho chọn lại).
+    const curActive = !window.MH || !window.MH.isActiveUserName || window.MH.isActiveUserName(current);
+    if (current && curActive && !pool.some((u) => u.name === current)) pool.push({ name: current, role: '' });
     return pool.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
   }
   function picOptions(current, roles, fallback) {
@@ -1560,6 +1587,7 @@
             ${Object.entries(ACCOUNT_STATUS_LABEL).map(([k, label]) => `<option value="${k}" ${o.account_status === k ? 'selected' : ''}>${label}</option>`).join('')}
           </select>
         </div>
+        ${picNotice('edit-account-pic', o.account_pic_user_id, o.account_pic, 'Account PIC cũ')}
         <div class="edit-row">
           <label>Account PIC</label>
           <select class="select" id="edit-account-pic" data-pic-dd>
@@ -1567,12 +1595,14 @@
           </select>
         </div>
         ${o.request_type === 'media' ? `
+        ${picNotice('edit-prod-pic-video', o.production_pic_video_user_id, o.production_pic_video, 'PIC Quay cũ')}
         <div class="edit-row">
           <label>PIC Quay</label>
           <select class="select" id="edit-prod-pic-video" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
             ${picOptionsId(o.production_pic_video_user_id, o.production_pic_video, PROD_PIC_ROLES)}
           </select>
         </div>
+        ${picNotice('edit-prod-pic-photo', o.production_pic_photo_user_id, o.production_pic_photo, 'PIC Chụp cũ')}
         <div class="edit-row">
           <label>PIC Chụp</label>
           <select class="select" id="edit-prod-pic-photo" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
@@ -1580,6 +1610,7 @@
           </select>
         </div>
         ` : `
+        ${picNotice('edit-prod-pic', o.production_pic_user_id, o.production_pic, 'Production PIC cũ')}
         <div class="edit-row">
           <label>Production PIC</label>
           <select class="select" id="edit-prod-pic" data-pic-dd ${isOrderPushed(o) ? 'disabled' : ''}>
@@ -1842,7 +1873,9 @@
       const readPic = (el, curId, curName) => {
         // value = id (user thật) | "name:<tên>" (legacy chưa backfill) | "" (bỏ gán). picPick giải mã
         // → giữ tên legacy, KHÔNG xóa mất assignment khi Save nếu PIC chưa liên kết id.
-        if (el && !el.disabled) { return window.MH.picPick(el.value || ''); }
+        // picPickPreserve: select rỗng vì PIC cũ đã inactive (không còn là option) → GIỮ NGUYÊN
+        // PIC cũ thay vì ghi null ⇒ bấm Save không xoá lịch sử ai từng phụ trách.
+        if (el && !el.disabled) { return window.MH.picPickPreserve(el.value || '', curId || '', curName || ''); }
         return { id: curId || null, name: curName || null };
       };
       const acctPic = readPic(document.getElementById('edit-account-pic'), currentOrder.account_pic_user_id, currentOrder.account_pic);
@@ -2657,6 +2690,8 @@
       window.MH.toast({ type: 'error', title: 'Không thể push', message: 'Thiếu: ' + missing.join(' · ') });
       return;
     }
+    // PIC đã bị vô hiệu hoá → chặn: task đẩy sang Production sẽ không có người thật nhận.
+    if (inactivePicGuard(o, 'Không thể push')) return;
 
     // Idempotent check (option A): nếu order đã có task → KHÔNG tạo mới, toast warning.
     if (window.MH && window.MH.store && window.MH.supabaseEnabled) {
@@ -2927,13 +2962,16 @@
     }
     // Drawer đang mở (options build trước khi users về) → refresh options tại chỗ.
     if (!currentOrder) return;
-    [['edit-account-pic', currentOrder.account_pic_user_id, currentOrder.account_pic, ACCT_PIC_ROLES],
-     ['edit-prod-pic', currentOrder.production_pic_user_id, currentOrder.production_pic, PROD_PIC_ROLES],
-     ['edit-prod-pic-video', currentOrder.production_pic_video_user_id, currentOrder.production_pic_video, PROD_PIC_ROLES],
-     ['edit-prod-pic-photo', currentOrder.production_pic_photo_user_id, currentOrder.production_pic_photo, PROD_PIC_ROLES]
+    [['edit-account-pic', currentOrder.account_pic_user_id, currentOrder.account_pic, ACCT_PIC_ROLES, 'Account PIC cũ'],
+     ['edit-prod-pic', currentOrder.production_pic_user_id, currentOrder.production_pic, PROD_PIC_ROLES, 'Production PIC cũ'],
+     ['edit-prod-pic-video', currentOrder.production_pic_video_user_id, currentOrder.production_pic_video, PROD_PIC_ROLES, 'PIC Quay cũ'],
+     ['edit-prod-pic-photo', currentOrder.production_pic_photo_user_id, currentOrder.production_pic_photo, PROD_PIC_ROLES, 'PIC Chụp cũ']
     ].forEach(function (cfg) {
       const el = document.getElementById(cfg[0]);
       if (el) el.innerHTML = picOptionsId(el.value || cfg[1], cfg[2], cfg[3]);
+      // Bơm lại chip PIC inactive: lúc build drawer chưa biết status (users về sau).
+      const slot = document.querySelector('[data-pic-slot="' + cfg[0] + '"]');
+      if (slot) slot.innerHTML = picNoticeHtml(cfg[1], cfg[2], cfg[4]);
     });
     // Rebuild menu custom dropdown sau khi options đổi.
     if (window.MH && window.MH.enhancePicSelects) window.MH.enhancePicSelects(document.getElementById('order-drawer'));

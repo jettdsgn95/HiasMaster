@@ -6448,6 +6448,28 @@ body[data-user-role="lead_content"] .cal-chip[data-type="shoot"] { display: none
 .src-chip.src-media  { background: rgb(13 148 136 / 0.16); color: #0f766e; }
 .src-chip.src-other  { background: var(--surface-2); color: var(--text-muted); }
 
+/* ── PIC đã ngưng hoạt động (2026-08-03) ──────────────────────────────
+   Chip READ-ONLY: giữ lịch sử "ai từng phụ trách" nhưng KHÔNG cho chọn lại
+   trong dropdown (dropdown chỉ còn user active). */
+.pic-inactive-notice {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 8px; padding: 8px 11px;
+  background: rgb(176 118 0 / 0.09);
+  border: 1px solid rgb(176 118 0 / 0.28);
+  border-left: 3px solid var(--warning, #b07600);
+  border-radius: 8px;
+  font-size: 13px; line-height: 1.5; color: var(--text);
+}
+.pic-inactive-notice b { font-weight: 700; }
+.pic-inactive-status {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+  padding: 1px 8px; border-radius: 999px;
+  background: rgb(176 118 0 / 0.18); color: #8a5b00;
+}
+.pic-inactive-help { flex: 1 1 100%; font-size: 12px; color: var(--text-muted); }
+[data-theme="dark"] .pic-inactive-notice { background: rgb(224 176 85 / 0.12); border-color: rgb(224 176 85 / 0.3); }
+[data-theme="dark"] .pic-inactive-status { background: rgb(224 176 85 / 0.22); color: #e0b055; }
+
 /* ══ LONG TEXT trong DRAWER (2026-07-31) ══════════════════════════════
    Field dài (brief/script/feedback/note) render thẳng làm drawer cao bất thường
    và đẩy nút action xuống sâu. Chuẩn: preview 3 dòng → Xem thêm → modal.

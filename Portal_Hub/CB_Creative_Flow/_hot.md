@@ -449,6 +449,47 @@ People/departments reused across modules:
   - ⚠ `tasks.assigned_to` lưu **tên ngắn** ("Duy") nhưng `mh-user.name` của account là **tên đầy đủ** ("Duy Trần"). `production-board.js isMyTask(assignedTo)` (2026-06-02) match user↔task: bằng nhau HOẶC full name chứa tên PIC theo word-boundary. **Đừng dùng `=== user.name` hay `.split(' ').pop()`** (lấy nhầm chữ cuối → design/editor không thấy task của mình). Task chỉ tạo khi **Push → Production** (assigned_to = order.production_pic).
 - Departments: HO Marketing, Academic, Sales, CB Mekong, CB Hưng Phú, CB Cần Thơ, CB Tiên Thủy.
 
+### PIC ↔ tài khoản bị deactivate (2026-08-03)
+
+**Deactivate ở User Management ghi `status='suspended'`, KHÔNG phải `'inactive'`.** Mọi
+chỗ lọc user phải dùng helper chung, đừng tự viết `u.status !== 'inactive'` (lọt suspended
+→ user đã nghỉ vẫn hiện trong dropdown + vẫn được chọn làm người nhận notification).
+
+Helper ở `assets/app.js` (`window.MH.*`) — nguồn sự thật duy nhất:
+
+| Helper | Dùng khi |
+|---|---|
+| `isActiveUser(u)` | lọc mảng users (object có `status`) |
+| `isActiveUserId(id)` | biết id, tra `USER_DIR` |
+| `isActiveUserName(name)` | select legacy lưu theo TÊN |
+| `inactivePicNotice(id, name, label)` | chip read-only `.pic-inactive-notice`; trả `''` nếu còn active |
+| `picPickPreserve(value, curId, curName)` | ĐỌC select lúc Save (thay `picPick`) |
+| `inactivePics(pairs)` / `blockIfInactivePic(pairs, title)` | guard Push/Confirm |
+
+`INACTIVE_STATUSES = ['inactive','suspended','archived','pending']`. `status` null/thiếu
+⇒ coi là **active** (data cũ chưa có cột). `isActiveUserId` với id lạ ⇒ **true** (users
+chưa nạp xong thì đừng cảnh báo oan).
+
+Quy tắc nghiệp vụ đã chốt:
+
+```text
+1. Dropdown PIC chỉ chứa user ACTIVE — kể cả khi PIC đang gán là người đã nghỉ
+   (picOptionsById BỎ luôn option "current" nếu id/tên đó inactive).
+2. PIC cũ KHÔNG bị xoá khỏi DB. Hiện bằng chip read-only phía trên select
+   (slot `data-pic-slot="<id-select>"` để bơm lại sau khi users nạp async).
+3. Placeholder đổi thành "— Chọn PIC active để thay thế —" khi PIC hiện tại đã nghỉ.
+4. Bấm Save mà chưa chọn người mới → picPickPreserve GIỮ NGUYÊN PIC cũ.
+   (picPick trần sẽ ghi null vì select rỗng ⇒ MẤT lịch sử ai từng phụ trách.)
+   Bỏ gán CÓ CHỦ ĐÍCH (PIC cũ vẫn active + chọn "— Chưa gán —") vẫn clear như cũ.
+5. Push Production / Confirm & Chuyển Production bị CHẶN khi order còn PIC inactive:
+   "PIC hiện tại đã inactive/deactivated. Vui lòng gán lại PIC active trước khi tiếp tục."
+6. KHÔNG auto-reassign. Người phụ trách phải chọn tay.
+```
+
+⚠ Các form **tạo mới** (`cct-pic`, `cim-pic`, task modal tạo mới) không có PIC cũ →
+vẫn dùng `picPick` trần, đúng chủ đích. Các action **gán PIC** (`assignPic`,
+`assignAdsPic`) đã `return` sớm khi select rỗng nên không thể xoá nhầm.
+
 ---
 
 ## 7. Common UI Patterns

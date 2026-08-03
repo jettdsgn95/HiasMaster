@@ -700,9 +700,21 @@
   const drawerBody = document.getElementById('mo-drawer-body');
   const drawerActions = document.getElementById('mo-drawer-actions');
 
+  // Chip read-only cho PIC đã bị vô hiệu hoá (giữ lịch sử, không cho chọn lại).
+  function picNoticeHtml(currentId, currentName, label) {
+    return (window.MH && window.MH.inactivePicNotice) ? window.MH.inactivePicNotice(currentId, currentName, label || 'PIC cũ') : '';
+  }
+  // Slot luôn render để bơm lại chip sau khi STAFF/users nạp xong (async).
+  function picNotice(selectId, currentId, currentName, label) {
+    return '<div data-pic-slot="' + selectId + '">' + picNoticeHtml(currentId, currentName, label) + '</div>';
+  }
   function picOptions(currentId, currentName) {
     if (window.MH && window.MH.picOptionsById) {
-      return window.MH.picOptionsById(STAFF, { current: currentId || (currentName ? 'name:' + currentName : ''), roleTag: PROD_PIC_ROLES, placeholder: '— Chưa gán —' });
+      const dead = picNoticeHtml(currentId, currentName);
+      return window.MH.picOptionsById(STAFF, {
+        current: currentId || '', currentName: currentName || '', roleTag: PROD_PIC_ROLES,
+        placeholder: dead ? '— Chọn PIC active để thay thế —' : '— Chưa gán —'
+      });
     }
     return '<option value="">— Chưa gán —</option>';
   }
@@ -818,8 +830,11 @@
 
       <section class="drawer-block">
         <div class="drawer-block-head"><span class="block-letter">F</span><h4>Phân công Media PIC</h4></div>
+        ${picNotice('mo-pic-video', o.production_pic_video_user_id, o.production_pic_video, 'PIC Quay cũ')}
         <div class="edit-row"><label>PIC Quay</label><select class="select" id="mo-pic-video" data-pic-dd ${lock}>${picOptions(o.production_pic_video_user_id, o.production_pic_video)}</select></div>
+        ${picNotice('mo-pic-photo', o.production_pic_photo_user_id, o.production_pic_photo, 'PIC Chụp cũ')}
         <div class="edit-row"><label>PIC Chụp</label><select class="select" id="mo-pic-photo" data-pic-dd ${lock}>${picOptions(o.production_pic_photo_user_id, o.production_pic_photo)}</select></div>
+        ${picNotice('mo-pic-editor', o.production_pic_editor_user_id, o.production_pic_editor, 'PIC Dựng cũ')}
         <div class="edit-row"><label>PIC Dựng / Hậu kỳ</label><select class="select" id="mo-pic-editor" data-pic-dd ${lock}>${picOptions(o.production_pic_editor_user_id, o.production_pic_editor)}</select></div>
         <div class="edit-row"><label>Internal Deadline</label><input class="input" type="datetime-local" id="mo-internal-deadline" value="${esc(toLocalInput(o.internal_deadline))}" ${lock} /></div>
         ${CAN_OPERATE && !isPushed(o) ? '<button class="btn btn-secondary btn-sm" id="mo-save-assign">Lưu logistics &amp; phân công</button>' : ''}
@@ -916,12 +931,17 @@
   });
 
   function readAssignForm(o) {
-    const pick = function (id) {
-      const el = document.getElementById(id); if (!el) return { id: null, name: null };
+    // picPickPreserve: PIC cũ đã inactive không còn là option ⇒ select rỗng. Giữ nguyên PIC cũ
+    // thay vì ghi null, để bấm Lưu không xoá lịch sử ai từng phụ trách.
+    const pick = function (id, curId, curName) {
+      const el = document.getElementById(id); if (!el) return { id: curId || null, name: curName || null };
+      if (window.MH && window.MH.picPickPreserve) return window.MH.picPickPreserve(el.value, curId || '', curName || '');
       return (window.MH && window.MH.picPick) ? window.MH.picPick(el.value) : { id: null, name: el.value || null };
     };
     const val = function (id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    const video = pick('mo-pic-video'), photo = pick('mo-pic-photo'), editor = pick('mo-pic-editor');
+    const video = pick('mo-pic-video', o.production_pic_video_user_id, o.production_pic_video);
+    const photo = pick('mo-pic-photo', o.production_pic_photo_user_id, o.production_pic_photo);
+    const editor = pick('mo-pic-editor', o.production_pic_editor_user_id, o.production_pic_editor);
     const dl = val('mo-internal-deadline');
     return {
       shoot_date: val('mo-shoot-date') || null,
@@ -1118,6 +1138,12 @@
   async function pushProduction(o) {
     const miss = pushMissing(o);
     if (miss.length) { toast('error', 'Chưa thể Push', 'Thiếu: ' + miss.join(' · ')); return; }
+    // PIC đã bị vô hiệu hoá → chặn: task tạo ra sẽ không có người thật nhận việc.
+    if (window.MH && window.MH.blockIfInactivePic && window.MH.blockIfInactivePic([
+      ['PIC Quay', o.production_pic_video_user_id, o.production_pic_video],
+      ['PIC Chụp', o.production_pic_photo_user_id, o.production_pic_photo],
+      ['PIC Dựng', o.production_pic_editor_user_id, o.production_pic_editor]
+    ], 'Chưa thể Push')) return;
     const existing = TASKS.filter(function (t) { return t.order_id === o.order_id; });
     if (existing.length) {
       toast('warning', 'Order đã có task', existing.map(function (t) { return t.task_id; }).join(', ') + ' — không tạo mới.');
